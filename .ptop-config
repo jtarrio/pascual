@@ -1,7 +1,7 @@
 end=crbefore,dindonkey,dindent,crafter
 [end]=if,then,else,while,with,for,record,try,finally,except,class,object,private,public,protected,published,casevar,colon,equals
 begin=crbefore,dindonkey,inbytab,crafter
-[begin]=var,label,const,type,if,else,while
+[begin]=var,label,const,type,if,else,while,for
 if=spaft,gobsym,inbytab
 then=
 else=crbefore,dindonkey,inbytab

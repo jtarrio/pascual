@@ -50,7 +50,7 @@ procedure LxGetSymbol(Id : TLxTokenId; Length : integer);
 begin
   LxToken.Id := Id;
   LxToken.Value := copy(LxLine, 1, length);
-  delete(LxLine, 1, length);
+  delete(LxLine, 1, length)
 end;
 
 procedure LxGetIdentifier;
@@ -81,11 +81,11 @@ begin
     LxToken.Value[Pos] := UpCase(LxToken.Value[Pos]);
   WordId := TkAnd;
   for Pos := 1 to 35 do
-    begin
-      if LxToken.Value = Words[Pos] then
-        LxToken.Id := WordId;
-      WordId := succ(WordId)
-    end
+  begin
+    if LxToken.Value = Words[Pos] then
+      LxToken.Id := WordId;
+    WordId := succ(WordId)
+  end
 end;
 
 procedure LxGetNumber;
@@ -102,7 +102,7 @@ begin
     InToken := LxIsDigit(Chr);
     if InToken then Pos := Pos + 1
   end;
-  LxGetSymbol(TkNumber, Pos);
+  LxGetSymbol(TkNumber, Pos)
 end;
 
 procedure LxGetString;
@@ -123,18 +123,10 @@ begin
         Pos := Pos + 1
       else
         Instring := False;
-    end;
+    end
   end;
-  LxGetSymbol(TkString, Pos);
+  LxGetSymbol(TkString, Pos)
 end;
-
-procedure LxGetComment;
-var 
-  Comment : (No, Brace, Paren);
-  Saved : boolean;
-begin
-end;
-
 
 procedure LxReadToken;
 const 
@@ -161,13 +153,9 @@ begin
       LxGetNumber();
     if (LxToken.Id = TkUnknown) and (Chr = '''') then
       LxGetString();
-    if (LxToken.Id = TkUnknown) and (Chr = '{') then
-      LxGetComment();
     if (LxToken.Id = TkUnknown) and (Length(LxLine) > 1) then
     begin
       Nxt := LxLine[2];
-      if (LxToken.Id = TkUnknown) and (Chr = '(') and (Nxt = '*') then
-        LxGetComment();
       if (LxToken.Id = TkUnknown) and (Chr = '<') and (Nxt = '>') then
         LxGetSymbol(TkNotEquals, 2);
       if (LxToken.Id = TkUnknown) and (Chr = '<') and (Nxt = '=') then
@@ -177,16 +165,16 @@ begin
       if (LxToken.Id = TkUnknown) and (Chr = ':') and (Nxt = '=') then
         LxGetSymbol(TkAssign, 2);
       if (LxToken.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
-        LxGetSymbol(TkRange, 2);
+        LxGetSymbol(TkRange, 2)
     end;
     SymbolId := TkPlus;
     for i := 1 to 16 do
-      begin
-        if (LxToken.Id = TkUnknown) and (Chr = Symbols[i]) then
-          LxGetSymbol(SymbolId, 1);
-        SymbolId := succ(SymbolId)
-      end;
-  end;
+    begin
+      if (LxToken.Id = TkUnknown) and (Chr = Symbols[i]) then
+        LxGetSymbol(SymbolId, 1);
+      SymbolId := succ(SymbolId)
+    end
+  end
 end;
 
 begin
