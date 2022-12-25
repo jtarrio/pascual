@@ -210,10 +210,18 @@ begin
 end;
 
 type 
+  TPsEnumType = array[1..70] of string;
+  TPsRecordField = record
+    Name : string;
+    FieldType : string
+  end;
+  TPsRecordType = array[1..16] of TPsRecordField;
   TPsType = record
     Name : string;
     EnumSize : integer;
-    EnumValues : array[1..70] of string;
+    EnumValues : TPsEnumType;
+    RecordSize : integer;
+    RecordFields : TPsRecordType;
   end;
 
 function PsTypeDenoter : TPsType;
@@ -222,8 +230,12 @@ var
 begin
   Def.Name := '';
   Def.EnumSize := 0;
+  Def.RecordSize := 0;
   if LxToken.Id = TkIdentifier then
-    Def.Name := LxToken.Value
+  begin
+    Def.Name := LxToken.Value;
+    ReadToken()
+  end
   else if LxToken.Id = TkLparen then
   begin
     SkipToken(TkLparen);
@@ -237,18 +249,36 @@ begin
     until LxToken.Id = TkRparen;
     SkipToken(TkRparen);
   end
+  else if LxToken.Id = TkRecord then
+  begin
+    SkipToken(TkRecord);
+    repeat
+      WantToken(TkIdentifier);
+      Def.RecordSize := Def.RecordSize + 1;
+      Def.RecordFields[Def.RecordSize].Name := LxToken.Value;
+      ReadToken();
+      WantTokenAndRead(TkColon);
+      WantToken(TkIdentifier);
+      Def.RecordFields[Def.RecordSize].Fieldtype := LxToken.Value;
+      ReadToken();
+      WantToken2(TkSemicolon, TkEnd);
+      SkipToken(TkSemicolon);
+    until LxToken.Id = TkEnd;
+    SkipToken(TkEnd);
+  end
   else
   begin
     writeln(StdErr, 'Wanted type definition, found ', LxToken.Id, ': ',
-     LxToken.Value);
+            LxToken.Value);
     halt(1)
   end;
   PsTypeDenoter := Def;
 end;
 
-procedure OutNameAndtype(Name : string; Def : TPsType);
-var
+procedure OutNameAndType(Name : string; Def : TPsType);
+var 
   Pos : integer;
+  SubDef : TPsType;
 begin
   if Def.EnumSize > 0 then
   begin
@@ -258,6 +288,20 @@ begin
       if Pos > 1 then
         write(Output, ', ');
       write(Output, Def.EnumValues[Pos])
+    end;
+    write(Output, '} ', Name);
+  end
+  else if Def.RecordSize > 0 then
+  begin
+    SubDef.EnumSize := 0;
+    SubDef.RecordSize := 0;
+    writeln(Output, 'struct { ');
+    for Pos := 1 to Def.RecordSize do
+    begin
+      write(Output, '  ');
+      SubDef.Name := Def.RecordFields[Pos].FieldType;
+      OutNameAndType(Def.RecordFields[Pos].Name, SubDef);
+      writeln(Output, ';');
     end;
     write(Output, '} ', Name);
   end
@@ -289,6 +333,29 @@ begin
   until LxToken.Id <> TkIdentifier;
 end;
 
+procedure OutVarDefinition(Name : string; VarType : TPsType);
+begin
+  OutNameAndType(Name, VarType);
+  writeln(Output, ';');
+end;
+
+procedure PsVarDefinitions;
+var 
+  Name : string;
+  VarType : TPsType;
+begin
+  WantTokenAndRead(TkVar);
+  repeat
+    WantToken(TkIdentifier);
+    Name := LxToken.Value;
+    ReadToken();
+    WantTokenAndRead(TkColon);
+    VarType := PsTypeDenoter();
+    WantTokenAndRead(TkSemicolon);
+    OutVarDefinition(Name, VarType);
+  until LxToken.Id <> TkIdentifier;
+end;
+
 procedure PsDefinitions;
 var 
   Done : boolean;
@@ -297,6 +364,8 @@ begin
   repeat
     if LxToken.Id = TkType then
       PsTypeDefinitions()
+    else if LxToken.Id = TkVar then
+           PsVarDefinitions()
     else
       Done := true;
   until Done;
