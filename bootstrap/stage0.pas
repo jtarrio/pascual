@@ -7,10 +7,10 @@ type
                 TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
                 TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAnd,
                 TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                TkElse, TkEnd, TkFile, TkFor, TkFunction, TkGoto, TkIf, TkIn,
-                TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked, TkProcedure,
-                TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo, TkType,
-                TkUntil, TkVar, TkWhile, TkWith);
+                TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
+                TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
+                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo,
+                TkType, TkUntil, TkVar, TkWhile, TkWith);
   TLxToken = record
     Id : TLxTokenId;
     Value : string
@@ -55,13 +55,14 @@ end;
 
 procedure LxGetIdentifier;
 const 
-  Words : array[1..35] of string = ('AND', 'ARRAY', 'BEGIN', 'CASE', 'CONST',
+  Words : array[1..36] of string = ('AND', 'ARRAY', 'BEGIN', 'CASE', 'CONST',
                                     'DIV', 'DO', 'DOWNTO', 'ELSE', 'END',
-                                    'FILE', 'FOR', 'FUNCTION', 'GOTO', 'IF',
-                                    'IN', 'LABEL', 'MOD', 'NIL', 'NOT', 'OF',
-                                    'OR', 'PACKED', 'PROCEDURE', 'PROGRAM',
-                                    'RECORD', 'REPEAT', 'SET', 'THEN', 'TO',
-                                    'TYPE', 'UNTIL', 'VAR', 'WHILE', 'WITH');
+                                    'FILE', 'FOR', 'FORWARD', 'FUNCTION',
+                                    'GOTO', 'IF', 'IN', 'LABEL', 'MOD', 'NIL',
+                                    'NOT', 'OF', 'OR', 'PACKED', 'PROCEDURE',
+                                    'PROGRAM', 'RECORD', 'REPEAT', 'SET',
+                                    'THEN', 'TO', 'TYPE', 'UNTIL', 'VAR',
+                                    'WHILE', 'WITH');
 var 
   Chr : char;
   Pos : integer;
@@ -221,7 +222,11 @@ type
     EnumSize : integer;
     EnumValues : TPsEnumType;
     RecordSize : integer;
-    RecordFields : TPsRecordType;
+    RecordFields : TPsRecordType
+  end;
+  TPsVar = record
+    Name : string;
+    VarType : TPsType
   end;
 
 function PsTypeDenoter : TPsType;
@@ -298,15 +303,19 @@ begin
     writeln(Output, 'struct { ');
     for Pos := 1 to Def.RecordSize do
     begin
-      write(Output, '  ');
       SubDef.Name := Def.RecordFields[Pos].FieldType;
       OutNameAndType(Def.RecordFields[Pos].Name, SubDef);
-      writeln(Output, ';');
+      write(Output, '; ');
     end;
     write(Output, '} ', Name);
   end
   else
     write(Output, Def.Name, ' ', Name);
+end;
+
+procedure OutVar(Def : TPsVar);
+begin
+  OutNameAndType(Def.Name, Def.VarType)
 end;
 
 procedure OutTypeDefinition(Name : string; Def : TPsType);
@@ -341,19 +350,100 @@ end;
 
 procedure PsVarDefinitions;
 var 
-  Name : string;
-  VarType : TPsType;
+  Def : TPsVar;
 begin
   WantTokenAndRead(TkVar);
   repeat
     WantToken(TkIdentifier);
-    Name := LxToken.Value;
+    Def.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkColon);
-    VarType := PsTypeDenoter();
+    Def.VarType := PsTypeDenoter();
     WantTokenAndRead(TkSemicolon);
-    OutVarDefinition(Name, VarType);
+    OutVarDefinition(Def.Name, Def.VarType);
   until LxToken.Id <> TkIdentifier;
+end;
+
+type 
+  TPsFunction = record
+    Name : string;
+    ArgCount : integer;
+    Args : array[1..4] of TPsVar;
+    Ret : TPsType
+  end;
+
+procedure OutFunctionPrototype(Def : TPsFunction);
+var 
+  Pos : integer;
+begin
+  OutNameAndType(Def.Name, Def.Ret);
+  write(Output, '(');
+  for Pos := 1 to Def.ArgCount do
+  begin
+    OutVar(def.Args[Pos]);
+    if Pos <> Def.ArgCount then
+      write(Output, ', ')
+  end;
+  write(Output, ')')
+end;
+
+procedure OutFunctionDeclaration(Def : TPsFunction);
+begin
+  OutFunctionPrototype(Def);
+  writeln(Output, ';')
+end;
+
+procedure OutFunctionDefinition(Def : TPsFunction);
+begin
+  OutFunctionPrototype(Def);
+  write(Output, ' ')
+end;
+
+procedure PsStatement;
+forward;
+
+procedure PsFunctionDefinition;
+var 
+  Def : TPsFunction;
+begin
+  WantTokenAndRead(TkFunction);
+  WantToken(TkIdentifier);
+  Def.Name := LxToken.Value;
+  Def.ArgCount := 0;
+  ReadToken();
+  WantToken2(TkLparen, TkColon);
+  if LxToken.Id = TkLparen then
+  begin
+    WantTokenAndRead(TkLparen);
+    repeat
+      Def.ArgCount := Def.ArgCount + 1;
+      WantToken(TkIdentifier);
+      Def.Args[Def.ArgCount].Name := LxToken.Value;
+      ReadToken();
+      WantTokenAndRead(TkColon);
+      Def.Args[Def.ArgCount].VarType := PsTypeDenoter();
+      WantToken2(TkComma, TkRparen);
+      SkipToken(TkComma);
+    until LxToken.Id = TkRparen;
+    SkipToken(TkRparen)
+  end;
+  WantTokenAndRead(TkColon);
+  Def.Ret := PsTypeDenoter();
+  WantTokenAndRead(TkSemicolon);
+
+  if LxToken.Id = TkForward then
+  begin
+    SkipToken(TkForward);
+    WantTokenAndRead(TkSemicolon);
+    OutFunctionDeclaration(Def);
+  end
+  else
+  begin
+    OutFunctionDefinition(Def);
+    WantToken(TkBegin);
+    PsStatement();
+    WantTokenAndRead(TkSemicolon);
+  end
 end;
 
 procedure PsDefinitions;
@@ -366,6 +456,8 @@ begin
       PsTypeDefinitions()
     else if LxToken.Id = TkVar then
            PsVarDefinitions()
+    else if LxToken.Id = TkFunction then
+           PsFunctionDefinition()
     else
       Done := true;
   until Done;
@@ -393,6 +485,33 @@ begin
     SkipToken(TkRparen);
   end;
   WantTokenAndRead(TkSemicolon);
+end;
+
+procedure OutBegin;
+begin
+  writeln(Output, '{')
+end;
+
+procedure OutEnd;
+begin
+  writeln(Output, '}')
+end;
+
+procedure PsStatement;
+begin
+  if LxToken.Id = TkBegin then
+  begin
+    OutBegin();
+    SkipToken(TkBegin);
+    while LxToken.Id <> TkEnd do
+    begin
+      PsStatement();
+    end;
+    OutEnd();
+    SkipToken(TkEnd);
+  end
+  else
+    WantToken(TkUnknown);
 end;
 
 procedure PsProgramBlock;
