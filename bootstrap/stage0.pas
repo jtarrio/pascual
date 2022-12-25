@@ -187,12 +187,6 @@ begin
   end
 end;
 
-procedure WantTokenAndRead(Id : TLxTokenId);
-begin
-  WantToken(Id);
-  ReadToken()
-end;
-
 procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
 begin
   if (LxToken.Id <> Id1) and (LxToken.Id <> Id2) then
@@ -203,17 +197,121 @@ begin
   end
 end;
 
+procedure WantTokenAndRead(Id : TLxTokenId);
+begin
+  WantToken(Id);
+  ReadToken()
+end;
+
 procedure SkipToken(Id : TLxTokenId);
 begin
   if LxToken.Id = Id then
     ReadToken()
 end;
 
-procedure PsProgramHeader;
+type 
+  TPsType = record
+    Name : string;
+    EnumSize : integer;
+    EnumValues : array[1..70] of string;
+  end;
+
+function PsTypeDenoter : TPsType;
+var 
+  Def : TPsType;
+begin
+  Def.Name := '';
+  Def.EnumSize := 0;
+  if LxToken.Id = TkIdentifier then
+    Def.Name := LxToken.Value
+  else if LxToken.Id = TkLparen then
+  begin
+    SkipToken(TkLparen);
+    repeat
+      WantToken(TkIdentifier);
+      Def.EnumSize := Def.EnumSize + 1;
+      Def.EnumValues[Def.EnumSize] := LxToken.Value;
+      ReadToken();
+      WantToken2(TkComma, TkRparen);
+      SkipToken(TkComma);
+    until LxToken.Id = TkRparen;
+    SkipToken(TkRparen);
+  end
+  else
+  begin
+    writeln(StdErr, 'Wanted type definition, found ', LxToken.Id, ': ',
+     LxToken.Value);
+    halt(1)
+  end;
+  PsTypeDenoter := Def;
+end;
+
+procedure OutNameAndtype(Name : string; Def : TPsType);
+var
+  Pos : integer;
+begin
+  if Def.EnumSize > 0 then
+  begin
+    write(Output, 'enum { ');
+    for Pos := 1 to Def.EnumSize do
+    begin
+      if Pos > 1 then
+        write(Output, ', ');
+      write(Output, Def.EnumValues[Pos])
+    end;
+    write(Output, '} ', Name);
+  end
+  else
+    write(Output, Def.Name, ' ', Name);
+end;
+
+procedure OutTypeDefinition(Name : string; Def : TPsType);
+begin
+  write(Output, 'typedef ');
+  OutNameAndType(Name, Def);
+  writeln(Output, ';');
+end;
+
+procedure PsTypeDefinitions;
+var 
+  Name : string;
+  Def : TPsType;
+begin
+  WantTokenAndRead(TkType);
+  repeat
+    WantToken(TkIdentifier);
+    Name := LxToken.Value;
+    ReadToken();
+    WantTokenAndRead(TkEquals);
+    Def := PsTypeDenoter();
+    WantTokenAndRead(TkSemicolon);
+    OutTypeDefinition(Name, Def);
+  until LxToken.Id <> TkIdentifier;
+end;
+
+procedure PsDefinitions;
+var 
+  Done : boolean;
+begin
+  Done := false;
+  repeat
+    if LxToken.Id = TkType then
+      PsTypeDefinitions()
+    else
+      Done := true;
+  until Done;
+end;
+
+procedure OutProgramHeading(Name : string);
+begin
+  writeln(Output, '/* Program: ', Name, ' */');
+end;
+
+procedure PsProgramHeading;
 begin
   WantTokenAndRead(TkProgram);
   WantToken(TkIdentifier);
-  writeln(Output, '/* Program: ', LxToken.Value , ' */');
+  OutProgramHeading(LxToken.Value);
   ReadToken();
   if LxToken.Id = TkLparen then
   begin
@@ -228,10 +326,18 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
+procedure PsProgramBlock;
+begin
+  PsDefinitions();
+end;
+
 procedure ParseProgram;
 begin
   ReadToken();
-  PsProgramHeader()
+  PsProgramHeading();
+  PsProgramBlock();
+  WantTokenAndRead(TkDot);
+  WantToken(TkEof);
 end;
 
 begin
