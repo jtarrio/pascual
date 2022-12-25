@@ -128,7 +128,7 @@ begin
   LxGetSymbol(TkString, Pos)
 end;
 
-procedure LxReadToken;
+procedure ReadToken;
 const 
   Symbols : array[1..16] of string = ('+', '-', '*', '/', '=', '<', '>', '[',
                                       ']', '.', ',', ':', ';', '^', '(', ')');
@@ -177,9 +177,63 @@ begin
   end
 end;
 
+procedure WantToken(Id : TLxTokenId);
 begin
-  repeat
-    LxReadToken();
-    writeln(Output, LxToken.Id, ' [', LxToken.Value, ']')
-  until (LxToken.Id = TkEof) or (LxToken.Id = TkUnknown)
+  if LxToken.Id <> Id then
+  begin
+    writeln(StdErr, 'Wanted token ', Id, ', found ', LxToken.Id, ': ',
+            LxToken.Value);
+    halt(1)
+  end
+end;
+
+procedure WantTokenAndRead(Id : TLxTokenId);
+begin
+  WantToken(Id);
+  ReadToken()
+end;
+
+procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
+begin
+  if (LxToken.Id <> Id1) and (LxToken.Id <> Id2) then
+  begin
+    writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxToken.Id,
+            ': ', LxToken.Value);
+    halt(1)
+  end
+end;
+
+procedure SkipToken(Id : TLxTokenId);
+begin
+  if LxToken.Id = Id then
+    ReadToken()
+end;
+
+procedure PsProgramHeader;
+begin
+  WantTokenAndRead(TkProgram);
+  WantToken(TkIdentifier);
+  writeln(Output, '/* Program: ', LxToken.Value , ' */');
+  ReadToken();
+  if LxToken.Id = TkLparen then
+  begin
+    repeat
+      ReadToken();
+      WantToken2(TkIdentifier, TkRparen);
+      SkipToken(TkIdentifier);
+      WantToken2(TkComma, TkRparen)
+    until LxToken.Id = TkRparen;
+    SkipToken(TkRparen);
+  end;
+  WantTokenAndRead(TkSemicolon);
+end;
+
+procedure ParseProgram;
+begin
+  ReadToken();
+  PsProgramHeader()
+end;
+
+begin
+  ParseProgram();
 end.
