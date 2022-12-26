@@ -211,34 +211,112 @@ begin
 end;
 
 type 
-  TPsEnumType = array[1..70] of string;
+  TPsEnumValues = array[1..70] of string;
+  TPsEnumType = record
+    Size : integer;
+    Values : TPsEnumValues
+  end;
   TPsRecordField = record
     Name : string;
-    FieldType : string
+    Typ : string
   end;
-  TPsRecordType = array[1..16] of TPsRecordField;
+  TPsRecordFields = array[1..16] of TPsRecordField;
+  TPsRecordType = record
+    Size : integer;
+    Fields : TPsRecordFields
+  end;
   TPsType = record
-    Name : string;
-    EnumSize : integer;
-    EnumValues : TPsEnumType;
-    RecordSize : integer;
-    RecordFields : TPsRecordType
+    Typ : string;
+    Enum : TPsEnumType;
+    Rec : TPsRecordType
   end;
-  TPsVar = record
+  TPsNamedType = record
     Name : string;
-    VarType : TPsType
+    Typ : TPsType
   end;
+  TPsFunction = record
+    Name : string;
+    ArgCount : integer;
+    Args : array[1..4] of TPsNamedType;
+    Ret : TPsType
+  end;
+  TPsScope = (Global, Local);
+  TPsCount = record
+    Global : integer;
+    Local : integer
+  end;
+  TPsDefs = record
+    NumTypes : TPsCount;
+    Types : array[1..16] of TPsNamedType;
+    NumVars : TPsCount;
+    Vars : array[1..16] of TPsNamedType;
+    NumFuns : integer;
+    Funs : array[1..64] of TPsFunction;
+  end;
+var
+  Defs : TPsDefs;
+
+procedure StartLocalScope;
+begin
+  Defs.NumTypes.Local := 0;
+  Defs.NumVars.Local := 0
+end;
+
+procedure AddType(Typ : TPsNamedType; Scope : TPsScope);
+var
+  Pos : integer;
+begin
+  if Scope = Local then
+    Defs.NumTypes.Global := Defs.NumTypes.Global + 1
+  else
+    Defs.NumTypes.Local := Defs.NumTypes.Local + 1;
+  Pos := Defs.NumTypes.Global + Defs.NumTypes.Local;
+  if Pos > 16 then
+  begin
+    writeln(StdErr, 'Too many types');
+    halt(1)
+  end;
+  Defs.Types[Pos] := Typ
+end;
+
+procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
+var
+  Pos : integer;
+begin
+  if Scope = Local then
+    Defs.NumVars.Global := Defs.NumVars.Global + 1
+  else
+    Defs.NumVars.Local := Defs.NumVars.Local + 1;
+  Pos := Defs.NumVars.Global + Defs.NumVars.Local;
+  if Pos > 16 then
+  begin
+    writeln(StdErr, 'Too many vars');
+    halt(1)
+  end;
+  Defs.Vars[Pos] := VarDef
+end;
+
+procedure AddFunction(Fun : TPsFunction);
+begin
+  Defs.NumFuns := Defs.NumFuns + 1;
+  if Defs.NumFuns > 64 then
+  begin
+    writeln(StdErr, 'Too many functions');
+    halt(1)
+  end;
+  Defs.Funs[Defs.NumFuns] := Fun
+end;
 
 function PsTypeDenoter : TPsType;
 var 
   Def : TPsType;
 begin
-  Def.Name := '';
-  Def.EnumSize := 0;
-  Def.RecordSize := 0;
+  Def.Typ := '';
+  Def.Enum.Size := 0;
+  Def.Rec.Size := 0;
   if LxToken.Id = TkIdentifier then
   begin
-    Def.Name := LxToken.Value;
+    Def.Typ := LxToken.Value;
     ReadToken()
   end
   else if LxToken.Id = TkLparen then
@@ -246,8 +324,8 @@ begin
     SkipToken(TkLparen);
     repeat
       WantToken(TkIdentifier);
-      Def.EnumSize := Def.EnumSize + 1;
-      Def.EnumValues[Def.EnumSize] := LxToken.Value;
+      Def.Enum.Size := Def.Enum.Size + 1;
+      Def.Enum.Values[Def.Enum.Size] := LxToken.Value;
       ReadToken();
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
@@ -259,12 +337,12 @@ begin
     SkipToken(TkRecord);
     repeat
       WantToken(TkIdentifier);
-      Def.RecordSize := Def.RecordSize + 1;
-      Def.RecordFields[Def.RecordSize].Name := LxToken.Value;
+      Def.Rec.Size := Def.Rec.Size + 1;
+      Def.Rec.Fields[Def.Rec.Size].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
       WantToken(TkIdentifier);
-      Def.RecordFields[Def.RecordSize].Fieldtype := LxToken.Value;
+      Def.Rec.Fields[Def.Rec.Size].Typ := LxToken.Value;
       ReadToken();
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon);
@@ -285,72 +363,72 @@ var
   Pos : integer;
   SubDef : TPsType;
 begin
-  if Def.EnumSize > 0 then
+  if Def.Enum.Size > 0 then
   begin
     write(Output, 'enum { ');
-    for Pos := 1 to Def.EnumSize do
+    for Pos := 1 to Def.Enum.Size do
     begin
       if Pos > 1 then
         write(Output, ', ');
-      write(Output, Def.EnumValues[Pos])
+      write(Output, Def.Enum.Values[Pos])
     end;
     write(Output, '} ', Name);
   end
-  else if Def.RecordSize > 0 then
+  else if Def.Rec.Size > 0 then
   begin
-    SubDef.EnumSize := 0;
-    SubDef.RecordSize := 0;
-    writeln(Output, 'struct { ');
-    for Pos := 1 to Def.RecordSize do
+    SubDef.Enum.Size := 0;
+    SubDef.Rec.Size := 0;
+    write(Output, 'struct { ');
+    for Pos := 1 to Def.Rec.Size do
     begin
-      SubDef.Name := Def.RecordFields[Pos].FieldType;
-      OutNameAndType(Def.RecordFields[Pos].Name, SubDef);
+      SubDef.Typ := Def.Rec.Fields[Pos].Typ;
+      OutNameAndType(Def.Rec.Fields[Pos].Name, SubDef);
       write(Output, '; ');
     end;
     write(Output, '} ', Name);
   end
   else
-    write(Output, Def.Name, ' ', Name);
+    write(Output, Def.Typ, ' ', Name);
 end;
 
-procedure OutVar(Def : TPsVar);
+procedure OutVar(Def : TPsNamedType);
 begin
-  OutNameAndType(Def.Name, Def.VarType)
+  OutNameAndType(Def.Name, Def.Typ)
 end;
 
-procedure OutTypeDefinition(Name : string; Def : TPsType);
+procedure OutTypeDefinition(Def : TPsNamedType);
 begin
   write(Output, 'typedef ');
-  OutNameAndType(Name, Def);
+  OutNameAndType(Def.Name, Def.Typ);
   writeln(Output, ';');
 end;
 
-procedure PsTypeDefinitions;
+procedure PsTypeDefinitions(Scope : TPsScope);
 var 
-  Name : string;
-  Def : TPsType;
+  Def : TPsNamedType;
 begin
   WantTokenAndRead(TkType);
   repeat
     WantToken(TkIdentifier);
-    Name := LxToken.Value;
+    Def.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkEquals);
-    Def := PsTypeDenoter();
+    Def.Typ := PsTypeDenoter();
     WantTokenAndRead(TkSemicolon);
-    OutTypeDefinition(Name, Def);
+    OutTypeDefinition(Def);
+    AddType(Def, Scope)
   until LxToken.Id <> TkIdentifier;
 end;
 
-procedure OutVarDefinition(Name : string; VarType : TPsType);
+procedure OutVarDefinition(Def : TPsNamedType);
 begin
-  OutNameAndType(Name, VarType);
+  OutNameAndType(Def.Name, Def.Typ);
   writeln(Output, ';');
 end;
 
-procedure PsVarDefinitions;
+procedure PsVarDefinitions(Scope : TPsScope);
 var 
-  Def : TPsVar;
+  Def : TPsNamedType;
 begin
   WantTokenAndRead(TkVar);
   repeat
@@ -358,19 +436,12 @@ begin
     Def.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkColon);
-    Def.VarType := PsTypeDenoter();
+    Def.Typ := PsTypeDenoter();
     WantTokenAndRead(TkSemicolon);
-    OutVarDefinition(Def.Name, Def.VarType);
+    OutVarDefinition(Def);
+    AddVar(Def, Scope)
   until LxToken.Id <> TkIdentifier;
 end;
-
-type 
-  TPsFunction = record
-    Name : string;
-    ArgCount : integer;
-    Args : array[1..4] of TPsVar;
-    Ret : TPsType
-  end;
 
 procedure OutFunctionPrototype(Def : TPsFunction);
 var 
@@ -421,7 +492,7 @@ begin
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].VarType := PsTypeDenoter();
+      Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
     until LxToken.Id = TkRparen;
@@ -441,21 +512,22 @@ begin
   begin
     OutFunctionDefinition(Def);
     WantToken(TkBegin);
+    StartLocalScope();
     PsStatement();
     WantTokenAndRead(TkSemicolon);
   end
 end;
 
-procedure PsDefinitions;
+procedure PsDefinitions(Scope : TPsScope);
 var 
   Done : boolean;
 begin
   Done := false;
   repeat
     if LxToken.Id = TkType then
-      PsTypeDefinitions()
+      PsTypeDefinitions(Scope)
     else if LxToken.Id = TkVar then
-           PsVarDefinitions()
+           PsVarDefinitions(Scope)
     else if LxToken.Id = TkFunction then
            PsFunctionDefinition()
     else
@@ -516,7 +588,7 @@ end;
 
 procedure PsProgramBlock;
 begin
-  PsDefinitions();
+  PsDefinitions(Global);
 end;
 
 procedure ParseProgram;
