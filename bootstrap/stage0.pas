@@ -263,6 +263,35 @@ begin
   Defs.NumVars.Local := 0
 end;
 
+function TypeName(Typ : TPsType) : string;
+var
+  Ret : string;
+  Pos : integer;
+begin
+  if Typ.Enum.Size > 0 then
+  begin
+    Ret := '(';
+    for Pos := 1 to Typ.Enum.Size do
+    begin
+      if Pos <> 1 then
+        Ret := ',';
+      Ret := Ret + Typ.Enum.Values[Pos]
+    end;
+    Ret := Ret + ')'
+  end
+  else if Typ.Rec.Size > 0 then
+  begin
+    Ret := 'record ';
+    for Pos := 1 to Typ.Rec.Size do
+    begin
+      Ret := Ret + Typ.Rec.Fields[Pos].Name + ':' + Typ.Rec.Fields[Pos].Typ + '; '
+    end;
+    Ret := Ret + ' end'
+  end
+  else Ret := Typ.Typ;
+  TypeName := Ret
+end;
+
 function ClearType : TPsType;
 var 
   Ret : TPsType;
@@ -276,6 +305,24 @@ end;
 function IsEmptyType(Typ : TPsType) : boolean;
 begin
   IsEmptyType := (Typ.Typ = '') and (Typ.Enum.Size = 0) and (Typ.Rec.Size = 0)
+end;
+
+function IsNumericType(Typ : TPsType) : boolean;
+begin
+  IsNumericType := (Typ.Rec.Size = 0)
+                   and ((Typ.Typ = 'INTEGER') or (Typ.Enum.Size > 0))
+end;
+
+function IsStringyType(Typ : TPsType) : boolean;
+begin
+  IsStringyType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+                   and ((Typ.Typ = 'STRING') or (Typ.Typ = 'CHAR'))
+end;
+
+function IsBooleanType(Typ : TPsType) : boolean;
+begin
+  IsBooleanType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+                   and (Typ.Typ = 'BOOLEAN')
 end;
 
 function FindType(Name : string; Scope : TPsScopeSearch) : TPsType;
@@ -736,7 +783,8 @@ type
     Name : string
   end;
   TPsExpression = record
-    Value : string
+    Value : string;
+    Typ : TPsType;
   end;
 
 function SetIdentifier(Name : string; Id : TPsIdentifier) : TPsIdentifier;
@@ -761,7 +809,6 @@ var
   Name : string;
   Ident : TPsIdentifier;
   Fn : TPsFunction;
-  Typ : TPsType;
 begin
   Name := LxToken.Value;
   Fn := FindFunction(Name);
@@ -769,20 +816,21 @@ begin
   begin
     Ident.Cls := IdcFunction;
     Ident := SetIdentifier(Name, Ident);
+    Ident.Fn := Fn;
     ReadToken()
   end
   else
   begin
     Ident.Cls := IdcVariable;
-    Typ := ResolveVar(Name);
     Ident := SetIdentifier(Name, Ident);
+    Ident.Typ := ResolveVar(Name);
     ReadToken();
     while (LxToken.Id = TkDot) do
     begin
       WantTokenAndRead(TkDot);
       Name := LxToken.Value;
-      Typ := FindField(Typ, Name);
       Ident := AddField(Name, Ident);
+      Ident.Typ := FindField(Ident.Typ, Name);
       ReadToken()
     end
   end;
@@ -820,7 +868,8 @@ var
 begin
   InStr := false;
   LastQuote := false;
-  Expr.Value := '"';
+  Expr.Typ := ClearType();
+  Expr.Value := '';
   for Pos := 1 to Length(Value) do
   begin
     if Value[Pos] = '''' then
@@ -837,7 +886,16 @@ begin
       Expr.Value := Expr.Value + Value[Pos];
     end
   end;
-  Expr.Value := Expr.Value + '"';
+  if Length(Expr.Value) = 1 then
+  begin
+    Expr.Value := '''' + Expr.Value + '''';
+    Expr.Typ.Typ := 'CHAR'
+  end
+  else
+  begin
+    Expr.Value := 'str_make("' + Expr.Value + '")';
+    Expr.Typ.Typ := 'STRING'
+  end;
   GenStringConstant := Expr
 end;
 
@@ -845,49 +903,132 @@ function GenNumberConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
+  Expr.Typ := ClearType();
+  Expr.Typ.Typ := 'INTEGER';
   Expr.Value := Value;
   GenNumberConstant := Expr
 end;
 
-function GenIdentifier(Id : TPsIdentifier) : TPsExpression;
+function NumericBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
+                          TPsExpression) : TPsExpression;
 var 
+  Oper : string;
+  Cmp : string;
   Expr : TPsExpression;
 begin
-  Expr.Value := Id.Name;
-  GenIdentifier := Expr
+  Oper := '';
+  Cmp := '';
+  if Op = TkPlus then Oper := '+'
+  else if Op = TkMinus then Oper := '-'
+  else if Op = TkAsterisk then Oper := '*'
+  else if Op = TkSlash then Oper := '/'
+  else if Op = TkDiv then Oper := '/'
+  else if Op = TkMod then Oper := '%'
+  else if Op = TkAnd then Oper := '&'
+  else if Op = TkOr then Oper := '|'
+  else if Op = TkEquals then Cmp := '=='
+  else if Op = TkNotEquals then Cmp := '!='
+  else if Op = TkLessthan then Cmp := '<'
+  else if Op = TkMorethan then Cmp := '>'
+  else if Op = TkLessOrEquals then Cmp := '<='
+  else if Op = TkMoreOrEquals then Cmp := '>='
+  else
+  begin
+    writeln(StdErr, 'Expected binary operator, found ', Op);
+    halt(1)
+  end;
+  Expr.Typ := ClearType();
+  if Cmp = '' then
+    Expr.Typ.Typ := 'INTEGER'
+  else
+    Expr.Typ.Typ := 'BOOLEAN';
+  Expr.Value := Left.Value + ' ' + Oper + Cmp + ' ' + Right.Value;
+  NumericBinaryExpression := Expr
+end;
+
+function BooleanBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
+                          TPsExpression) : TPsExpression;
+var 
+  Oper : string;
+  Expr : TPsExpression;
+begin
+  if Op = TkAnd then Oper := '&&'
+  else if Op = TkOr then Oper := '||'
+  else if Op = TkEquals then Oper := '=='
+  else if Op = TkNotEquals then Oper := '!='
+  else if Op = TkLessthan then Oper := '<'
+  else if Op = TkMorethan then Oper := '>'
+  else if Op = TkLessOrEquals then Oper := '<='
+  else if Op = TkMoreOrEquals then Oper := '>='
+  else
+  begin
+    writeln(StdErr, 'Expected binary operator, found ', Op);
+    halt(1)
+  end;
+  Expr.Typ := ClearType();
+  Expr.Typ.Typ := 'BOOLEAN';
+  Expr.Value := Left.Value + ' ' + Oper + ' ' + Right.Value;
+  BooleanBinaryExpression := Expr
+end;
+
+
+function StringyBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
+                          TPsExpression) : TPsExpression;
+var 
+  FName : string;
+  Cmp : string;
+  Expr : TPsExpression;
+begin
+  FName := 'str_compare';
+  Cmp := '';
+  if Op = TkPlus then FName := 'str_concat'
+  else if Op = TkEquals then Cmp := '='
+  else if Op = TkNotEquals then Cmp := '!='
+  else if Op = TkLessthan then Cmp := '<'
+  else if Op = TkMorethan then Cmp := '>'
+  else if Op = TkLessOrEquals then Cmp := '<='
+  else if Op = TkMoreOrEquals then Cmp := '>='
+  else
+  begin
+    writeln(StdErr, 'Expected binary operator, found ', Op);
+    halt(1)
+  end;
+
+  FName := FName + '_' + Left.Typ.Typ + '_' + Right.Typ.Typ;
+
+  Expr.Typ := ClearType();
+  Expr.Typ.Typ := 'STRING';
+  Expr.Value := FName + '(' + Left.Value + ', ' + Right.Value + ')';
+  if Cmp <> '' then
+  begin
+    Expr.Typ.Typ := 'BOOLEAN';
+    Expr.Value := '(' + Expr.Value + ' ' + Cmp + ' 0)'
+  end;
+  StringyBinaryExpression := Expr
 end;
 
 function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
                           TPsExpression) : TPsExpression;
-var 
-  Operator : string;
-  Expr : TPsExpression;
 begin
-  if Op = TkPlus then Operator := '+'
-  else if Op = TkMinus then Operator := '-'
-  else if Op = TkAsterisk then Operator := '*'
-  else if Op = TkSlash then Operator := '/'
-  else if Op = TkDiv then Operator := '/'
-  else if Op = TkAnd then Operator := '&&'
-  else if Op = TkOr then Operator := '||'
-  else if Op = TkEquals then Operator := '=='
-  else if Op = TkNotEquals then Operator := '!='
-  else if Op = TkLessthan then Operator := '<'
-  else if Op = TkMorethan then Operator := '>'
-  else if Op = TkLessOrEquals then Operator := '<='
-  else if Op = TkMoreOrEquals then Operator := '>='
+  if IsBooleanType(Left.Typ) and IsBooleanType(Right.Typ) then
+    BinaryExpression := BooleanBinaryExpression(Left, Op, Right)
+  else if IsNumericType(Left.Typ) and IsNumericType(Right.Typ) then
+    BinaryExpression := NumericBinaryExpression(Left, Op, Right)
+  else if IsStringyType(Left.Typ) and IsStringyType(Right.Typ) then
+    BinaryExpression := StringyBinaryExpression(Left, Op, Right)
   else
   begin
-    writeln('Expected binary operator, found ', Op);
+    writeln(StdErr, 'Type mismatch for operator ', Op, ': ', TypeName(Left.Typ), ' and ', TypeName(Right.Typ));
     halt(1)
-  end;
-  Expr.Value := Left.Value + ' ' + Operator + ' ' + Right.Value;
-  BinaryExpression := Expr
+  end
 end;
 
 function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression) : TPsExpression;
 begin
-  if Op = TkNot then Expr.Value := '!' + Expr.Value
+  if IsBooleanType(Expr.Typ) and (Op = TkNot) then
+  begin
+    Expr.Value := '!(' + Expr.Value + ')'
+  end
   else
   begin
     writeln('Expected unary operator, found ', Op);
@@ -924,22 +1065,34 @@ begin
   GenParens := Expr
 end;
 
-function PsCall(FnProc : TPsExpression) : TPsExpression;
+function PsCall(Id : TPsIdentifier) : TPsExpression;
 var 
+  Expr : TPsExpression;
   First : boolean;
 begin
+  Expr.Typ := Id.Fn.Ret;
+  Expr.Value := Id.Name;
   First := true;
   WantTokenAndRead(TkLparen);
-  FnProc := GenCallStart(FnProc);
+  Expr := GenCallStart(Expr);
   while LxToken.Id <> TkRparen do
   begin
-    FnProc := GenCallArgument(FnProc, PsExpression(), First);
+    Expr := GenCallArgument(Expr, PsExpression(), First);
     First := false;
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma)
   end;
   WantTokenAndRead(TkRparen);
-  PsCall := GenCallEnd(FnProc)
+  PsCall := GenCallEnd(Expr)
+end;
+
+function GenVariable(Id : TPsIdentifier) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.Typ := Id.Typ;
+  Expr.Value := Id.Name;
+  GenVariable := Expr
 end;
 
 function PsFactor : TPsExpression;
@@ -960,9 +1113,10 @@ begin
   else if LxToken.Id = TkIdentifier then
   begin
     Id := PsIdentifier();
-    Expr := GenIdentifier(Id);
     if Id.Cls = IdcFunction then
-      Expr := PsCall(Expr);
+      Expr := PsCall(Id)
+    else
+      Expr := GenVariable(Id)
   end
   else if LxToken.Id = TkLparen then
   begin
