@@ -241,6 +241,7 @@ type
     Ret : TPsType
   end;
   TPsScope = (Global, Local);
+  TPsScopeSearch = (GlobalOnly, LocalOnly, AllScope);
   TPsCount = record
     Global : integer;
     Local : integer
@@ -253,7 +254,7 @@ type
     NumFuns : integer;
     Funs : array[1..64] of TPsFunction;
   end;
-var
+var 
   Defs : TPsDefs;
 
 procedure StartLocalScope;
@@ -262,8 +263,45 @@ begin
   Defs.NumVars.Local := 0
 end;
 
+function ClearType : TPsType;
+var 
+  Ret : TPsType;
+begin
+  Ret.Typ := '';
+  Ret.Enum.Size := 0;
+  Ret.Rec.Size := 0;
+  ClearType := Ret
+end;
+
+function IsEmptyType(Typ : TPsType) : boolean;
+begin
+  IsEmptyType := (Typ.Typ = '') and (Typ.Enum.Size = 0) and (Typ.Rec.Size = 0)
+end;
+
+function FindType(Name : string; Scope : TPsScopeSearch) : TPsType;
+var 
+  Pos : integer;
+  First : integer;
+  Last : integer;
+  Ret : TPsType;
+begin
+  Ret := ClearType();
+  First := 1;
+  if Scope = LocalOnly then
+    First := Defs.NumTypes.Global;
+  Last := Defs.NumTypes.Global;
+  if Scope <> GlobalOnly then
+    Last := Defs.NumTypes.Local;
+  for Pos := First to Last do
+  begin
+    if Name = Defs.Types[Pos].Name then
+      Ret := Defs.Types[Pos].Typ
+  end;
+  FindType := Ret
+end;
+
 procedure AddType(Typ : TPsNamedType; Scope : TPsScope);
-var
+var 
   Pos : integer;
 begin
   if Scope = Local then
@@ -279,8 +317,55 @@ begin
   Defs.Types[Pos] := Typ
 end;
 
+function FindVar(Name : string; Scope : TPsScopeSearch) : TPsType;
+var 
+  Pos : integer;
+  First : integer;
+  Last : integer;
+  Ret : TPsType;
+begin
+  Ret := ClearType();
+  First := 1;
+  if Scope = LocalOnly then
+    First := Defs.NumVars.Global;
+  Last := Defs.NumVars.Global;
+  if Scope <> GlobalOnly then
+    Last := Defs.NumVars.Local;
+  for Pos := First to Last do
+  begin
+    if Name = Defs.Vars[Pos].Name then
+      Ret := Defs.Vars[Pos].Typ
+  end;
+  FindVar := Ret
+end;
+
+function IsPrimaryType(Typ : TPsType) : boolean;
+begin
+  IsPrimaryType := (Typ.Enum.Size > 0) or (Typ.Rec.Size > 0)
+                   or (Typ.Typ = 'CHAR') or (Typ.Typ = 'STRING')
+                   or (Typ.Typ = 'INTEGER')
+end;
+
+function ResolveVar(Name : string) : TPsType;
+var 
+  Typ : TPsType;
+begin
+  Typ := FindVar(Name, AllScope);
+  while not IsPrimaryType(Typ) do
+  begin
+    if IsEmptyType(Typ) then
+    begin
+      writeln(StdErr, 'Unknown type: ', Name);
+      halt(1)
+    end;
+    Name := Typ.Typ;
+    Typ := FindType(Name, AllScope);
+  end;
+  ResolveVar := Typ
+end;
+
 procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
-var
+var 
   Pos : integer;
 begin
   if Scope = Local then
@@ -296,6 +381,45 @@ begin
   Defs.Vars[Pos] := VarDef
 end;
 
+procedure AddArgumentsToLocalScope(Def : TPsFunction);
+var 
+  Pos : integer;
+begin
+  for Pos := 1 to Def.ArgCount do
+    AddVar(Def.Args[Pos], Global)
+end;
+
+function ClearFunction : TPsFunction;
+var 
+  Ret : TPsFunction;
+begin
+  Ret.Name := '';
+  Ret.ArgCount := 0;
+  Ret.Ret := ClearType();
+  ClearFunction := Ret
+end;
+
+function IsEmptyFunction(Fn : TPsFunction) : boolean;
+begin
+  IsEmptyFunction := (Fn.Name = '')
+                     and (Fn.ArgCount = 0)
+                     and IsEmptyType(Fn.Ret)
+end;
+
+function FindFunction(Name : string) : TPsFunction;
+var 
+  Pos : integer;
+  Ret : TPsFunction;
+begin
+  Ret := ClearFunction();
+  for Pos := 1 to Defs.NumFuns do
+  begin
+    if Defs.Funs[Pos].Name = Name then
+      Ret := Defs.Funs[Pos]
+  end;
+  FindFunction := Ret
+end;
+
 procedure AddFunction(Fun : TPsFunction);
 begin
   Defs.NumFuns := Defs.NumFuns + 1;
@@ -305,6 +429,28 @@ begin
     halt(1)
   end;
   Defs.Funs[Defs.NumFuns] := Fun
+end;
+
+function FindField(Typ : TPsType; Name : string) : TPsType;
+var 
+  Pos : integer;
+  Ret : TPsType;
+begin
+  if Typ.Rec.Size = 0 then
+  begin
+    writeln(StdErr, 'Not a record: ', Name);
+    halt(1)
+  end;
+  Ret := ClearType();
+  for Pos := 1 to Typ.Rec.Size do
+    if Typ.Rec.Fields[Pos].Name = Name then
+      Ret := FindType(Typ.Rec.Fields[Pos].Typ, AllScope);
+  if IsEmptyType(Ret) then
+  begin
+    writeln(StdErr, 'Field not found: ', Name);
+    halt(1)
+  end;
+  FindField := Ret
 end;
 
 function PsTypeDenoter : TPsType;
@@ -467,7 +613,15 @@ end;
 procedure OutFunctionDefinition(Def : TPsFunction);
 begin
   OutFunctionPrototype(Def);
-  write(Output, ' ')
+  writeln(Output, ' {');
+  OutNameAndType(Def.Name, Def.Ret);
+  writeln(Output, ';')
+end;
+
+procedure OutFunctionEnd(Def : TPsFunction);
+begin
+  writeln(Output, 'return ', Def.Name, ';');
+  writeln(Output, '}')
 end;
 
 procedure PsStatement;
@@ -501,6 +655,7 @@ begin
   WantTokenAndRead(TkColon);
   Def.Ret := PsTypeDenoter();
   WantTokenAndRead(TkSemicolon);
+  AddFunction(Def);
 
   if LxToken.Id = TkForward then
   begin
@@ -510,10 +665,13 @@ begin
   end
   else
   begin
-    OutFunctionDefinition(Def);
-    WantToken(TkBegin);
     StartLocalScope();
-    PsStatement();
+    AddArgumentsToLocalScope(Def);
+    OutFunctionDefinition(Def);
+    WantTokenAndRead(TkBegin);
+    while LxToken.Id <> TkEnd do
+      PsStatement();
+    WantTokenAndRead(TkEnd);
     WantTokenAndRead(TkSemicolon);
   end
 end;
@@ -569,7 +727,322 @@ begin
   writeln(Output, '}')
 end;
 
+type 
+  TPsIdClass = (IdcVariable, IdcFunction);
+  TPsIdentifier = record
+    Cls : TPsIdClass;
+    Fn : TPsFunction;
+    Typ : TPsType;
+    Name : string
+  end;
+  TPsExpression = record
+    Value : string
+  end;
+
+function SetIdentifier(Name : string; Id : TPsIdentifier) : TPsIdentifier;
+begin
+  Id.Name := Name;
+  SetIdentifier := Id
+end;
+
+function AddField(Name : string; Id : TPsIdentifier) : TPsIdentifier;
+begin
+  Id.Name := Id.Name + '.' + Name;
+  AddField := Id
+end;
+
+procedure OutIdentifier(Id : TPsIdentifier);
+begin
+  write(Output, Id.Name)
+end;
+
+function PsIdentifier : TPsIdentifier;
+var 
+  Name : string;
+  Ident : TPsIdentifier;
+  Fn : TPsFunction;
+  Typ : TPsType;
+begin
+  Name := LxToken.Value;
+  Fn := FindFunction(Name);
+  if not IsEmptyFunction(Fn) then
+  begin
+    Ident.Cls := IdcFunction;
+    Ident := SetIdentifier(Name, Ident);
+    ReadToken()
+  end
+  else
+  begin
+    Ident.Cls := IdcVariable;
+    Typ := ResolveVar(Name);
+    Ident := SetIdentifier(Name, Ident);
+    ReadToken();
+    while (LxToken.Id = TkDot) do
+    begin
+      WantTokenAndRead(TkDot);
+      Name := LxToken.Value;
+      Typ := FindField(Typ, Name);
+      Ident := AddField(Name, Ident);
+      ReadToken()
+    end
+  end;
+  PsIdentifier := Ident;
+end;
+
+function IsOpAdding(Tok : TLxToken) : boolean;
+begin
+  IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)
+end;
+
+function IsOpMultipying(Tok : TLxToken) : boolean;
+begin
+  IsOpMultipying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
+                    or (Tok.Id = TkDiv) or (Tok.Id = TkMod) or (Tok.Id = TkAnd)
+end;
+
+function IsOpRelational(Tok : TLxToken) : boolean;
+begin
+  IsOpRelational := (Tok.Id = TkEquals) or (Tok.Id = TkNotEquals)
+                    or (Tok.Id = TkLessthan) or (Tok.Id = TkMorethan)
+                    or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
+                    or (Tok.Id = TkIn);
+end;
+
+function PsExpression : TPsExpression
+                        forward;
+
+function GenStringConstant(Value : string) : TPsExpression;
+var 
+  Expr : TPsExpression;
+  Pos : integer;
+  InStr : boolean;
+  LastQuote : boolean;
+begin
+  InStr := false;
+  LastQuote := false;
+  Expr.Value := '"';
+  for Pos := 1 to Length(Value) do
+  begin
+    if Value[Pos] = '''' then
+    begin
+      InStr := not InStr;
+      if InStr and LastQuote then
+        Expr.Value := Expr.Value + ''''
+      else
+        LastQuote := InStr
+    end
+    else
+    begin
+      LastQuote := false;
+      Expr.Value := Expr.Value + Value[Pos];
+    end
+  end;
+  Expr.Value := Expr.Value + '"';
+  GenStringConstant := Expr
+end;
+
+function GenNumberConstant(Value : string) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.Value := Value;
+  GenNumberConstant := Expr
+end;
+
+function GenIdentifier(Id : TPsIdentifier) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.Value := Id.Name;
+  GenIdentifier := Expr
+end;
+
+function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
+                          TPsExpression) : TPsExpression;
+var 
+  Operator : string;
+  Expr : TPsExpression;
+begin
+  if Op = TkPlus then Operator := '+'
+  else if Op = TkMinus then Operator := '-'
+  else if Op = TkAsterisk then Operator := '*'
+  else if Op = TkSlash then Operator := '/'
+  else if Op = TkDiv then Operator := '/'
+  else if Op = TkAnd then Operator := '&&'
+  else if Op = TkOr then Operator := '||'
+  else if Op = TkEquals then Operator := '=='
+  else if Op = TkNotEquals then Operator := '!='
+  else if Op = TkLessthan then Operator := '<'
+  else if Op = TkMorethan then Operator := '>'
+  else if Op = TkLessOrEquals then Operator := '<='
+  else if Op = TkMoreOrEquals then Operator := '>='
+  else
+  begin
+    writeln('Expected binary operator, found ', Op);
+    halt(1)
+  end;
+  Expr.Value := Left.Value + ' ' + Operator + ' ' + Right.Value;
+  BinaryExpression := Expr
+end;
+
+function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression) : TPsExpression;
+begin
+  if Op = TkNot then Expr.Value := '!' + Expr.Value
+  else
+  begin
+    writeln('Expected unary operator, found ', Op);
+    halt(1)
+  end;
+  UnaryExpression := Expr
+end;
+
+function GenCallStart(FnProc : TPsExpression) : TPsExpression;
+begin
+  FnProc.Value := FnProc.Value + '(';
+  GenCallStart := FnProc
+end;
+
+function GenCallEnd(FnProc : TPsExpression) : TPsExpression;
+begin
+  FnProc.Value := FnProc.Value + ')';
+  GenCallEnd := FnProc
+end;
+
+function GenCallArgument(FnProc : TPsExpression; Arg : TPsExpression; First :
+                         boolean)
+: TPsExpression;
+begin
+  if not First then
+    FnProc.Value := FnProc.Value + ', ';
+  FnProc.Value := FnProc.Value + Arg.Value;
+  GenCallArgument := FnProc
+end;
+
+function GenParens(Expr : TPsExpression) : TPsExpression;
+begin
+  Expr.Value := '(' + Expr.Value + ')';
+  GenParens := Expr
+end;
+
+function PsCall(FnProc : TPsExpression) : TPsExpression;
+var 
+  First : boolean;
+begin
+  First := true;
+  WantTokenAndRead(TkLparen);
+  FnProc := GenCallStart(FnProc);
+  while LxToken.Id <> TkRparen do
+  begin
+    FnProc := GenCallArgument(FnProc, PsExpression(), First);
+    First := false;
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma)
+  end;
+  WantTokenAndRead(TkRparen);
+  PsCall := GenCallEnd(FnProc)
+end;
+
+function PsFactor : TPsExpression;
+var 
+  Expr : TPsExpression;
+  Id : TPsIdentifier;
+begin
+  if LxToken.Id = TkString then
+  begin
+    Expr := GenStringConstant(LxToken.Value);
+    ReadToken()
+  end
+  else if LxToken.Id = TkNumber then
+  begin
+    Expr := GenNumberConstant(LxToken.Value);
+    ReadToken()
+  end
+  else if LxToken.Id = TkIdentifier then
+  begin
+    Id := PsIdentifier();
+    Expr := GenIdentifier(Id);
+    if Id.Cls = IdcFunction then
+      Expr := PsCall(Expr);
+  end
+  else if LxToken.Id = TkLparen then
+  begin
+    WantTokenAndRead(TkLparen);
+    Expr := GenParens(PsExpression());
+    WantTokenAndRead(TkRparen)
+  end
+  else if LxToken.Id = TkNot then
+  begin
+    Expr := UnaryExpression(LxToken.Id, PsExpression());
+  end
+  else
+  begin
+    writeln(StdErr, 'Invalid token in expression: ', LxToken.Id, ': ',
+            LxToken.Value)
+  end;
+  PsFactor := Expr
+end;
+
+function PsTerm : TPsExpression;
+var 
+  Op : TLxTokenId;
+  Expr : TPsExpression;
+begin
+  Expr := PsFactor();
+  while IsOpMultipying(LxToken) do
+  begin
+    Op := LxToken.Id;
+    ReadToken();
+    Expr := BinaryExpression(Expr, Op, PsFactor())
+  end;
+  PsTerm := Expr
+end;
+
+function PsSimpleExpression : TPsExpression;
+var 
+  Op : TLxTokenId;
+  Expr : TPsExpression;
+begin
+  Expr := PsTerm();
+  while IsOpAdding(LxToken) do
+  begin
+    Op := LxToken.Id;
+    ReadToken();
+    Expr := BinaryExpression(Expr, Op, PsTerm())
+  end;
+  PsSimpleExpression := Expr
+end;
+
+function PsExpression : TPsExpression;
+var 
+  Op : TLxTokenId;
+  Expr : TPsExpression;
+begin
+  Expr := PsSimpleExpression();
+  while IsOpRelational(LxToken) do
+  begin
+    Op := LxToken.Id;
+    ReadToken();
+    Expr := BinaryExpression(Expr, Op, PsSimpleExpression())
+  end;
+  PsExpression := Expr
+end;
+
+procedure OutExpression(Expr : TPsExpression);
+begin
+  write(Output, Expr.Value)
+end;
+
+procedure OutAssign(Id : TPsIdentifier; Expr : TPsExpression);
+begin
+  OutIdentifier(Id);
+  write(Output, ' = ');
+  OutExpression(Expr);
+  writeln(Output, ';')
+end;
+
 procedure PsStatement;
+var 
+  Id : TPsIdentifier;
 begin
   if LxToken.Id = TkBegin then
   begin
@@ -581,6 +1054,15 @@ begin
     end;
     OutEnd();
     SkipToken(TkEnd);
+  end
+  else if LxToken.Id = TkIdentifier then
+  begin
+    Id := PsIdentifier();
+    if LxToken.Id = TkAssign then
+    begin
+      WantTokenAndRead(TkAssign);
+      OutAssign(Id, PsExpression());
+    end
   end
   else
     WantToken(TkUnknown);
