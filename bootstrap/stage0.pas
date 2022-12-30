@@ -257,14 +257,8 @@ type
 var 
   Defs : TPsDefs;
 
-procedure StartLocalScope;
-begin
-  Defs.NumTypes.Local := 0;
-  Defs.NumVars.Local := 0
-end;
-
 function TypeName(Typ : TPsType) : string;
-var
+var 
   Ret : string;
   Pos : integer;
 begin
@@ -284,7 +278,8 @@ begin
     Ret := 'record ';
     for Pos := 1 to Typ.Rec.Size do
     begin
-      Ret := Ret + Typ.Rec.Fields[Pos].Name + ':' + Typ.Rec.Fields[Pos].Typ + '; '
+      Ret := Ret + Typ.Rec.Fields[Pos].Name + ':' + Typ.Rec.Fields[Pos].Typ +
+             '; '
     end;
     Ret := Ret + ' end'
   end
@@ -292,14 +287,23 @@ begin
   TypeName := Ret
 end;
 
-function ClearType : TPsType;
+function EmptyType : TPsType;
 var 
   Ret : TPsType;
 begin
   Ret.Typ := '';
   Ret.Enum.Size := 0;
   Ret.Rec.Size := 0;
-  ClearType := Ret
+  EmptyType := Ret
+end;
+
+function SimpleType(Typ : string) : TPsType;
+var
+  Ret : TPsType;
+begin
+  Ret := EmptyType();
+  Ret.Typ := Typ;
+  SimpleType := Ret
 end;
 
 function IsEmptyType(Typ : TPsType) : boolean;
@@ -307,10 +311,25 @@ begin
   IsEmptyType := (Typ.Typ = '') and (Typ.Enum.Size = 0) and (Typ.Rec.Size = 0)
 end;
 
-function IsNumericType(Typ : TPsType) : boolean;
+function IntegerType : TPsType;
 begin
-  IsNumericType := (Typ.Rec.Size = 0)
+  IntegerType := SimpleType('INTEGER')
+end;
+
+function IsIntegerType(Typ : TPsType) : boolean;
+begin
+  IsIntegerType := (Typ.Rec.Size = 0)
                    and ((Typ.Typ = 'INTEGER') or (Typ.Enum.Size > 0))
+end;
+
+function StringType : TPsType;
+begin
+  StringType := SimpleType('STRING')
+end;
+
+function CharType : TPsType;
+begin
+  CharType := SimpleType('CHAR')
 end;
 
 function IsStringyType(Typ : TPsType) : boolean;
@@ -319,10 +338,27 @@ begin
                    and ((Typ.Typ = 'STRING') or (Typ.Typ = 'CHAR'))
 end;
 
+function BooleanType : TPsType;
+begin
+  BooleanType := SimpleType('BOOLEAN')
+end;
+
 function IsBooleanType(Typ : TPsType) : boolean;
 begin
   IsBooleanType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
                    and (Typ.Typ = 'BOOLEAN')
+end;
+
+function TextType : TPsType;
+begin
+  TextType := SimpleType('TEXT')
+end;
+
+function IsPrimaryType(Typ : TPsType) : boolean;
+begin
+  IsPrimaryType := (Typ.Enum.Size > 0) or (Typ.Rec.Size > 0)
+                   or (Typ.Typ = 'CHAR') or (Typ.Typ = 'STRING')
+                   or (Typ.Typ = 'INTEGER') or (Typ.Typ = 'TEXT')
 end;
 
 function FindType(Name : string; Scope : TPsScopeSearch) : TPsType;
@@ -332,7 +368,7 @@ var
   Last : integer;
   Ret : TPsType;
 begin
-  Ret := ClearType();
+  Ret := EmptyType();
   First := 1;
   if Scope = LocalOnly then
     First := Defs.NumTypes.Global;
@@ -371,26 +407,19 @@ var
   Last : integer;
   Ret : TPsType;
 begin
-  Ret := ClearType();
+  Ret := EmptyType();
   First := 1;
   if Scope = LocalOnly then
     First := Defs.NumVars.Global;
   Last := Defs.NumVars.Global;
   if Scope <> GlobalOnly then
-    Last := Defs.NumVars.Local;
+    Last := Last + Defs.NumVars.Local;
   for Pos := First to Last do
   begin
     if Name = Defs.Vars[Pos].Name then
       Ret := Defs.Vars[Pos].Typ
   end;
   FindVar := Ret
-end;
-
-function IsPrimaryType(Typ : TPsType) : boolean;
-begin
-  IsPrimaryType := (Typ.Enum.Size > 0) or (Typ.Rec.Size > 0)
-                   or (Typ.Typ = 'CHAR') or (Typ.Typ = 'STRING')
-                   or (Typ.Typ = 'INTEGER')
 end;
 
 function ResolveVar(Name : string) : TPsType;
@@ -402,7 +431,7 @@ begin
   begin
     if IsEmptyType(Typ) then
     begin
-      writeln(StdErr, 'Unknown type: ', Name);
+      writeln(StdErr, 'Unknown variable: ', Name);
       halt(1)
     end;
     Name := Typ.Typ;
@@ -415,7 +444,7 @@ procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
 var 
   Pos : integer;
 begin
-  if Scope = Local then
+  if Scope = Global then
     Defs.NumVars.Global := Defs.NumVars.Global + 1
   else
     Defs.NumVars.Local := Defs.NumVars.Local + 1;
@@ -436,14 +465,14 @@ begin
     AddVar(Def.Args[Pos], Global)
 end;
 
-function ClearFunction : TPsFunction;
+function EmptyFunction : TPsFunction;
 var 
   Ret : TPsFunction;
 begin
   Ret.Name := '';
   Ret.ArgCount := 0;
-  Ret.Ret := ClearType();
-  ClearFunction := Ret
+  Ret.Ret := EmptyType();
+  EmptyFunction := Ret
 end;
 
 function IsEmptyFunction(Fn : TPsFunction) : boolean;
@@ -458,7 +487,7 @@ var
   Pos : integer;
   Ret : TPsFunction;
 begin
-  Ret := ClearFunction();
+  Ret := EmptyFunction();
   for Pos := 1 to Defs.NumFuns do
   begin
     if Defs.Funs[Pos].Name = Name then
@@ -488,7 +517,7 @@ begin
     writeln(StdErr, 'Not a record: ', Name);
     halt(1)
   end;
-  Ret := ClearType();
+  Ret := EmptyType();
   for Pos := 1 to Typ.Rec.Size do
     if Typ.Rec.Fields[Pos].Name = Name then
       Ret := FindType(Typ.Rec.Fields[Pos].Typ, AllScope);
@@ -498,6 +527,41 @@ begin
     halt(1)
   end;
   FindField := Ret
+end;
+
+procedure StartGlobalScope;
+var 
+  Fun : TPsFunction;
+  Def : TPsNamedType;
+begin
+  Fun.Name := 'LENGTH';
+  Fun.ArgCount := 1;
+  Fun.Args[1].Name := 'STR';
+  Fun.Args[1].Typ := StringType();
+  Fun.Ret := IntegerType();
+  AddFunction(Fun);
+  Fun.Name := 'EOF';
+  Fun.ArgCount := 1;
+  Fun.Args[1].Name := 'F';
+  Fun.Args[1].Typ := TextType();
+  Fun.Ret := BooleanType();
+  AddFunction(Fun);
+
+  Def.Name := 'INPUT';
+  Def.Typ := TextType();
+  AddVar(Def, Global);
+  Def.Name := 'OUTPUT';
+  Def.Typ := TextType();
+  AddVar(Def, Global);
+  Def.Name := 'STDERR';
+  Def.Typ := TextType();
+  AddVar(Def, Global);
+end;
+
+procedure StartLocalScope;
+begin
+  Defs.NumTypes.Local := 0;
+  Defs.NumVars.Local := 0
 end;
 
 function PsTypeDenoter : TPsType;
@@ -868,7 +932,6 @@ var
 begin
   InStr := false;
   LastQuote := false;
-  Expr.Typ := ClearType();
   Expr.Value := '';
   for Pos := 1 to Length(Value) do
   begin
@@ -889,12 +952,12 @@ begin
   if Length(Expr.Value) = 1 then
   begin
     Expr.Value := '''' + Expr.Value + '''';
-    Expr.Typ.Typ := 'CHAR'
+    Expr.Typ := CharType()
   end
   else
   begin
     Expr.Value := 'str_make("' + Expr.Value + '")';
-    Expr.Typ.Typ := 'STRING'
+    Expr.Typ := StringType()
   end;
   GenStringConstant := Expr
 end;
@@ -903,14 +966,13 @@ function GenNumberConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  Expr.Typ := ClearType();
-  Expr.Typ.Typ := 'INTEGER';
+  Expr.Typ := IntegerType();
   Expr.Value := Value;
   GenNumberConstant := Expr
 end;
 
-function NumericBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                          TPsExpression) : TPsExpression;
+function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
+                                 TPsExpression) : TPsExpression;
 var 
   Oper : string;
   Cmp : string;
@@ -937,17 +999,16 @@ begin
     writeln(StdErr, 'Expected binary operator, found ', Op);
     halt(1)
   end;
-  Expr.Typ := ClearType();
   if Cmp = '' then
-    Expr.Typ.Typ := 'INTEGER'
+    Expr.Typ := IntegerType()
   else
-    Expr.Typ.Typ := 'BOOLEAN';
+    Expr.Typ := BooleanType();
   Expr.Value := Left.Value + ' ' + Oper + Cmp + ' ' + Right.Value;
-  NumericBinaryExpression := Expr
+  IntegerBinaryExpression := Expr
 end;
 
 function BooleanBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                          TPsExpression) : TPsExpression;
+                                 TPsExpression) : TPsExpression;
 var 
   Oper : string;
   Expr : TPsExpression;
@@ -965,15 +1026,14 @@ begin
     writeln(StdErr, 'Expected binary operator, found ', Op);
     halt(1)
   end;
-  Expr.Typ := ClearType();
-  Expr.Typ.Typ := 'BOOLEAN';
+  Expr.Typ := BooleanType();
   Expr.Value := Left.Value + ' ' + Oper + ' ' + Right.Value;
   BooleanBinaryExpression := Expr
 end;
 
 
 function StringyBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                          TPsExpression) : TPsExpression;
+                                 TPsExpression) : TPsExpression;
 var 
   FName : string;
   Cmp : string;
@@ -996,12 +1056,11 @@ begin
 
   FName := FName + '_' + Left.Typ.Typ + '_' + Right.Typ.Typ;
 
-  Expr.Typ := ClearType();
-  Expr.Typ.Typ := 'STRING';
+  Expr.Typ := StringType();
   Expr.Value := FName + '(' + Left.Value + ', ' + Right.Value + ')';
   if Cmp <> '' then
   begin
-    Expr.Typ.Typ := 'BOOLEAN';
+    Expr.Typ := BooleanType();
     Expr.Value := '(' + Expr.Value + ' ' + Cmp + ' 0)'
   end;
   StringyBinaryExpression := Expr
@@ -1012,28 +1071,32 @@ function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
 begin
   if IsBooleanType(Left.Typ) and IsBooleanType(Right.Typ) then
     BinaryExpression := BooleanBinaryExpression(Left, Op, Right)
-  else if IsNumericType(Left.Typ) and IsNumericType(Right.Typ) then
-    BinaryExpression := NumericBinaryExpression(Left, Op, Right)
+  else if IsIntegerType(Left.Typ) and IsIntegerType(Right.Typ) then
+         BinaryExpression := IntegerBinaryExpression(Left, Op, Right)
   else if IsStringyType(Left.Typ) and IsStringyType(Right.Typ) then
-    BinaryExpression := StringyBinaryExpression(Left, Op, Right)
+         BinaryExpression := StringyBinaryExpression(Left, Op, Right)
   else
   begin
-    writeln(StdErr, 'Type mismatch for operator ', Op, ': ', TypeName(Left.Typ), ' and ', TypeName(Right.Typ));
+    writeln(StdErr, 'Type mismatch for operator ', Op, ': ', TypeName(Left.Typ),
+    ' and ', TypeName(Right.Typ));
     halt(1)
   end
 end;
 
 function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression) : TPsExpression;
 begin
-  if IsBooleanType(Expr.Typ) and (Op = TkNot) then
-  begin
-    Expr.Value := '!(' + Expr.Value + ')'
-  end
-  else
+  if Op <> TkNot then
   begin
     writeln('Expected unary operator, found ', Op);
     halt(1)
-  end;
+  end
+  else if not IsBooleanType(Expr.Typ) then
+  begin
+    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    halt(1)
+  end
+  else
+    Expr.Value := '!' + Expr.Value;
   UnaryExpression := Expr
 end;
 
@@ -1126,7 +1189,8 @@ begin
   end
   else if LxToken.Id = TkNot then
   begin
-    Expr := UnaryExpression(LxToken.Id, PsExpression());
+    WantTokenAndRead(TkNot);
+    Expr := UnaryExpression(TkNot, PsFactor());
   end
   else
   begin
@@ -1194,6 +1258,36 @@ begin
   writeln(Output, ';')
 end;
 
+procedure OutRepeatBegin;
+begin
+  writeln(Output, 'repeat {')
+end;
+
+procedure OutRepeatEnd(Expr : TPsExpression);
+begin
+  if not IsBooleanType(Expr.Typ) then
+  begin
+    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    halt(1)
+  end;
+  writeln(Output, 'while (!(', Expr.Value, '));')
+end;
+
+procedure OutWhileBegin(Expr : TPsExpression);
+begin
+  if not IsBooleanType(Expr.Typ) then
+  begin
+    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    halt(1)
+  end;
+  writeln(Output, 'while (', Expr.Value, ') {')
+end;
+
+procedure OutWhileEnd;
+begin
+  writeln(Output, '}')
+end;
+
 procedure PsStatement;
 var 
   Id : TPsIdentifier;
@@ -1218,6 +1312,22 @@ begin
       OutAssign(Id, PsExpression());
     end
   end
+  else if LxToken.Id = TkRepeat then
+  begin
+    WantTokenAndRead(TkRepeat);
+    OutRepeatBegin();
+    PsStatement();
+    WantTokenAndRead(TkUntil);
+    OutRepeatEnd(PsExpression());
+  end
+  else if LxToken.Id = TkWhile then
+  begin
+    WantTokenAndRead(TkWhile);
+    OutWhileBegin(PsExpression);
+    WantTokenAndRead(TkDo);
+    PsStatement();
+    OutWhileEnd()
+  end
   else
     WantToken(TkUnknown);
 end;
@@ -1229,6 +1339,7 @@ end;
 
 procedure ParseProgram;
 begin
+  StartGlobalScope();
   ReadToken();
   PsProgramHeading();
   PsProgramBlock();
