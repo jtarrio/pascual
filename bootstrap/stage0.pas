@@ -298,7 +298,7 @@ begin
 end;
 
 function SimpleType(Typ : string) : TPsType;
-var
+var 
   Ret : TPsType;
 begin
   Ret := EmptyType();
@@ -352,6 +352,12 @@ end;
 function TextType : TPsType;
 begin
   TextType := SimpleType('TEXT')
+end;
+
+function IsTextType(Typ : TPsType) : boolean;
+begin
+  IsTextType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+                and (Typ.Typ = 'TEXT')
 end;
 
 function IsPrimaryType(Typ : TPsType) : boolean;
@@ -531,20 +537,21 @@ end;
 
 procedure StartGlobalScope;
 var 
+  Proc : TPsProcedure;
   Fun : TPsFunction;
   Def : TPsNamedType;
 begin
-  Fun.Name := 'LENGTH';
-  Fun.ArgCount := 1;
-  Fun.Args[1].Name := 'STR';
-  Fun.Args[1].Typ := StringType();
-  Fun.Ret := IntegerType();
-  AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
   Fun.Args[1].Name := 'F';
   Fun.Args[1].Typ := TextType();
   Fun.Ret := BooleanType();
+  AddFunction(Fun);
+  Fun.Name := 'LENGTH';
+  Fun.ArgCount := 1;
+  Fun.Args[1].Name := 'STR';
+  Fun.Args[1].Typ := StringType();
+  Fun.Ret := IntegerType();
   AddFunction(Fun);
 
   Def.Name := 'INPUT';
@@ -839,7 +846,8 @@ begin
 end;
 
 type 
-  TPsIdClass = (IdcVariable, IdcFunction);
+  TPsIdClass = (IdcVariable, IdcFunction, IdcRead, IdcReadln, IdcWrite,
+                IdcWriteln);
   TPsIdentifier = record
     Cls : TPsIdClass;
     Fn : TPsFunction;
@@ -863,6 +871,16 @@ begin
   AddField := Id
 end;
 
+function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier) : TPsIdentifier;
+begin
+  Id.Name := Id.Name + '.chr[' + Idx.Value + ']';
+  Id.Typ := CharType();
+  SetStringIndex := Id
+end;
+
+function PsExpression : TPsExpression;
+forward;
+
 procedure OutIdentifier(Id : TPsIdentifier);
 begin
   write(Output, Id.Name)
@@ -873,10 +891,31 @@ var
   Name : string;
   Ident : TPsIdentifier;
   Fn : TPsFunction;
+  Expr : TPsExpression;
 begin
   Name := LxToken.Value;
   Fn := FindFunction(Name);
-  if not IsEmptyFunction(Fn) then
+  if Name = 'READ' then
+  begin
+    Ident.Cls := IdcRead;
+    ReadToken()
+  end
+  else if Name = 'READLN' then
+  begin
+    Ident.Cls := IdcReadln;
+    ReadToken()
+  end
+  else if Name = 'WRITE' then
+  begin
+    Ident.Cls := IdcWrite;
+    ReadToken()
+  end
+  else if Name = 'WRITELN' then
+  begin
+    Ident.Cls := IdcWriteln;
+    ReadToken()
+  end
+  else if not IsEmptyFunction(Fn) then
   begin
     Ident.Cls := IdcFunction;
     Ident := SetIdentifier(Name, Ident);
@@ -889,16 +928,33 @@ begin
     Ident := SetIdentifier(Name, Ident);
     Ident.Typ := ResolveVar(Name);
     ReadToken();
-    while (LxToken.Id = TkDot) do
+    while (LxToken.Id = TkDot) or (LxToken.Id = TkLbracket) do
     begin
-      WantTokenAndRead(TkDot);
-      Name := LxToken.Value;
-      Ident := AddField(Name, Ident);
-      Ident.Typ := FindField(Ident.Typ, Name);
+      if LxToken.Id = TkDot then
+      begin
+        WantTokenAndRead(TkDot);
+        Name := LxToken.Value;
+        Ident := AddField(Name, Ident);
+        Ident.Typ := FindField(Ident.Typ, Name);
+      end
+      else
+      begin
+        WantTokenAndRead(TkLbracket);
+        Expr := PsExpression();
+        WantToken(TkRbracket);
+        if IsStringyType(Ident.Typ) then
+          Ident := SetStringIndex(Expr, Ident)
+        else
+        begin
+          writeln(StdErr, 'Specified index for variable ', Ident.Name,
+                  ', which is not an array');
+          halt(1)
+        end
+      end;
       ReadToken()
     end
   end;
-  PsIdentifier := Ident;
+  PsIdentifier := Ident
 end;
 
 function IsOpAdding(Tok : TLxToken) : boolean;
@@ -919,9 +975,6 @@ begin
                     or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
                     or (Tok.Id = TkIn);
 end;
-
-function PsExpression : TPsExpression
-                        forward;
 
 function GenStringConstant(Value : string) : TPsExpression;
 var 
@@ -1042,7 +1095,7 @@ begin
   FName := 'str_compare';
   Cmp := '';
   if Op = TkPlus then FName := 'str_concat'
-  else if Op = TkEquals then Cmp := '='
+  else if Op = TkEquals then Cmp := '=='
   else if Op = TkNotEquals then Cmp := '!='
   else if Op = TkLessthan then Cmp := '<'
   else if Op = TkMorethan then Cmp := '>'
@@ -1149,6 +1202,60 @@ begin
   PsCall := GenCallEnd(Expr)
 end;
 
+procedure OutRead(Src : string; OutVar : TPsIdentifier);
+begin
+  if OutVar.Cls <> IdcVariable then
+  begin
+    writeln(StdErr, 'Expected variable for read argument, got ', OutVar.Name);
+    halt(1)
+  end;
+  if not IsStringyType(OutVar.Typ) then
+  begin
+    writeln(StdErr, 'Invalid type for read argument ', OutVar.Name, ' got ',
+            TypeName(OutVar.Typ));
+    halt(1)
+  end;
+  writeln(Output, 'read_', TypeName(OutVar.Typ), '(', Src, ', ', OutVar.Name,
+  ');')
+end;
+
+procedure OutReadln(Src : string);
+begin
+  writeln(Output, 'readln(', Src, ');')
+end;
+
+procedure PsRead(Id : TPsIdentifier);
+var 
+  Src : string;
+  Expr : TPsExpression;
+  OutVar : TPsIdentifier;
+begin
+  Src := 'INPUT';
+  WantTokenAndRead(TkLparen);
+  Expr := PsExpression();
+  if IsTextType(Expr.Typ) then
+  begin
+    Src := Expr.Value;
+    WantTokenAndRead(TkComma)
+  end;
+  repeat
+    WantToken(TkIdentifier);
+    OutVar := PsIdentifier();
+    OutRead(Src, OutVar);
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma);
+  until LxToken.Id = TkRparen;
+  WantTokenAndRead(TkRparen);
+  if Id.Cls = IdcReadln then
+    OutReadln(Src)
+end;
+
+procedure PsWrite(Id : TPsIdentifier);
+begin
+  writeln(StdErr, 'PsWrite');
+  halt(1)
+end;
+
 function GenVariable(Id : TPsIdentifier) : TPsExpression;
 var 
   Expr : TPsExpression;
@@ -1178,8 +1285,13 @@ begin
     Id := PsIdentifier();
     if Id.Cls = IdcFunction then
       Expr := PsCall(Id)
+    else if Id.Cls = IdcVariable then
+           Expr := GenVariable(Id)
     else
-      Expr := GenVariable(Id)
+    begin
+      writeln(StdErr, 'Expected variable or function, got ', Id.Cls);
+      halt(1)
+    end
   end
   else if LxToken.Id = TkLparen then
   begin
@@ -1292,7 +1404,9 @@ procedure PsStatement;
 var 
   Id : TPsIdentifier;
 begin
-  if LxToken.Id = TkBegin then
+  if LxToken.Id = TkSemicolon then
+    WantTokenAndRead(TkSemicolon)
+  else if LxToken.Id = TkBegin then
   begin
     OutBegin();
     SkipToken(TkBegin);
@@ -1306,7 +1420,11 @@ begin
   else if LxToken.Id = TkIdentifier then
   begin
     Id := PsIdentifier();
-    if LxToken.Id = TkAssign then
+    if (Id.Cls = IdcRead) or (Id.Cls = IdcReadln) then
+      PsRead(Id)
+    else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then
+           PsWrite(Id)
+    else if LxToken.Id = TkAssign then
     begin
       WantTokenAndRead(TkAssign);
       OutAssign(Id, PsExpression());
@@ -1316,7 +1434,8 @@ begin
   begin
     WantTokenAndRead(TkRepeat);
     OutRepeatBegin();
-    PsStatement();
+    while LxToken.Id <> TkUntil do
+      PsStatement();
     WantTokenAndRead(TkUntil);
     OutRepeatEnd(PsExpression());
   end
