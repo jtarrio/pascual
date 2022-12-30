@@ -618,6 +618,16 @@ begin
   Proc.Args[3].Typ := IntegerType();
   AddProcedure(Proc);
 
+  Fun.Name := 'COPY';
+  Fun.ArgCount := 3;
+  Proc.Args[1].Name := 'STR';
+  Proc.Args[1].Typ := StringType();
+  Proc.Args[2].Name := 'FIRST';
+  Proc.Args[2].Typ := IntegerType();
+  Proc.Args[3].Name := 'NUM';
+  Proc.Args[3].Typ := IntegerType();
+  Fun.Ret := StringType();
+  AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
   Fun.Args[1].Name := 'F';
@@ -1103,6 +1113,11 @@ begin
     Ident.Cls := IdcVariable;
     Ident := SetIdentifier(Name, Ident);
     Ident.Typ := ResolveVar(Name);
+    if IsEmptyType(Ident.Typ) then
+    begin
+      writeln(StdErr, 'Unknown variable: ', Name);
+      halt(1)
+    end;
     ReadToken();
     while (LxToken.Id = TkDot) or (LxToken.Id = TkLbracket) do
     begin
