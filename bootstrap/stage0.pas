@@ -1074,39 +1074,29 @@ begin
   Name := LxToken.Value;
   Proc := FindProcedure(Name);
   Fn := FindFunction(Name);
-  if Name = 'READ' then
+  ReadToken();
+  if LxToken.Id = TkLparen then
   begin
-    Ident.Cls := IdcRead;
-    ReadToken()
-  end
-  else if Name = 'READLN' then
-  begin
-    Ident.Cls := IdcReadln;
-    ReadToken()
-  end
-  else if Name = 'WRITE' then
-  begin
-    Ident.Cls := IdcWrite;
-    ReadToken()
-  end
-  else if Name = 'WRITELN' then
-  begin
-    Ident.Cls := IdcWriteln;
-    ReadToken()
-  end
-  else if not IsEmptyProcedure(Proc) then
-  begin
-    Ident.Cls := IdcProcedure;
-    Ident := SetIdentifier(Name, Ident);
-    Ident.Proc := Proc;
-    ReadToken()
-  end
-  else if not IsEmptyFunction(Fn) then
-  begin
-    Ident.Cls := IdcFunction;
-    Ident := SetIdentifier(Name, Ident);
-    Ident.Fn := Fn;
-    ReadToken()
+    if Name = 'READ' then
+      Ident.Cls := IdcRead
+    else if Name = 'READLN' then
+           Ident.Cls := IdcReadln
+    else if Name = 'WRITE' then
+           Ident.Cls := IdcWrite
+    else if Name = 'WRITELN' then
+           Ident.Cls := IdcWriteln
+    else if not IsEmptyProcedure(Proc) then
+    begin
+      Ident.Cls := IdcProcedure;
+      Ident := SetIdentifier(Name, Ident);
+      Ident.Proc := Proc;
+    end
+    else if not IsEmptyFunction(Fn) then
+    begin
+      Ident.Cls := IdcFunction;
+      Ident := SetIdentifier(Name, Ident);
+      Ident.Fn := Fn;
+    end
   end
   else
   begin
@@ -1114,11 +1104,12 @@ begin
     Ident := SetIdentifier(Name, Ident);
     Ident.Typ := ResolveVar(Name);
     if IsEmptyType(Ident.Typ) then
+      Ident.Typ := Fn.Ret;
+    if IsEmptyType(Ident.Typ) then
     begin
       writeln(StdErr, 'Unknown variable: ', Name);
       halt(1)
     end;
-    ReadToken();
     while (LxToken.Id = TkDot) or (LxToken.Id = TkLbracket) do
     begin
       if LxToken.Id = TkDot then
