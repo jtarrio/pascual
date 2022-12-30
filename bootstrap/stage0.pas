@@ -234,6 +234,11 @@ type
     Name : string;
     Typ : TPsType
   end;
+  TPsProcedure = record
+    Name : string;
+    ArgCount : integer;
+    Args : array[1..4] of TPsNamedType
+  end;
   TPsFunction = record
     Name : string;
     ArgCount : integer;
@@ -248,9 +253,11 @@ type
   end;
   TPsDefs = record
     NumTypes : TPsCount;
-    Types : array[1..16] of TPsNamedType;
+    Types : array[1..32] of TPsNamedType;
     NumVars : TPsCount;
-    Vars : array[1..16] of TPsNamedType;
+    Vars : array[1..32] of TPsNamedType;
+    NumProcs : integer;
+    Procs : array[1..64] of TPsProcedure;
     NumFuns : integer;
     Funs : array[1..64] of TPsFunction;
   end;
@@ -268,7 +275,7 @@ begin
     for Pos := 1 to Typ.Enum.Size do
     begin
       if Pos <> 1 then
-        Ret := ',';
+        Ret := Ret + ',';
       Ret := Ret + Typ.Enum.Values[Pos]
     end;
     Ret := Ret + ')'
@@ -380,7 +387,7 @@ begin
     First := Defs.NumTypes.Global;
   Last := Defs.NumTypes.Global;
   if Scope <> GlobalOnly then
-    Last := Defs.NumTypes.Local;
+    Last := Last + Defs.NumTypes.Local;
   for Pos := First to Last do
   begin
     if Name = Defs.Types[Pos].Name then
@@ -393,12 +400,12 @@ procedure AddType(Typ : TPsNamedType; Scope : TPsScope);
 var 
   Pos : integer;
 begin
-  if Scope = Local then
+  if Scope = Global then
     Defs.NumTypes.Global := Defs.NumTypes.Global + 1
   else
     Defs.NumTypes.Local := Defs.NumTypes.Local + 1;
   Pos := Defs.NumTypes.Global + Defs.NumTypes.Local;
-  if Pos > 16 then
+  if Pos > 32 then
   begin
     writeln(StdErr, 'Too many types');
     halt(1)
@@ -428,34 +435,47 @@ begin
   FindVar := Ret
 end;
 
-function ResolveVar(Name : string) : TPsType;
+function GetUltimateType(Typ : TPsType) : TPsType;
 var 
-  Typ : TPsType;
+  Name : string;
 begin
-  Typ := FindVar(Name, AllScope);
-  while not IsPrimaryType(Typ) do
+  while not IsPrimaryType(Typ) and not IsEmptyType(Typ) do
   begin
-    if IsEmptyType(Typ) then
-    begin
-      writeln(StdErr, 'Unknown variable: ', Name);
-      halt(1)
-    end;
     Name := Typ.Typ;
     Typ := FindType(Name, AllScope);
   end;
-  ResolveVar := Typ
+  GetUltimateType := Typ
+end;
+
+function ResolveType(Name : string) : TPsType;
+begin
+  ResolveType := GetUltimateType(SimpleType(Name))
+end;
+
+function ResolveVar(Name : string) : TPsType;
+begin
+  ResolveVar := GetUltimateType(FindVar(Name, AllScope))
 end;
 
 procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
 var 
+  SearchScope : TPsScopeSearch;
   Pos : integer;
 begin
+  SearchScope := LocalOnly;
+  if Scope = Global then
+    SearchScope := AllScope;
+  if not IsEmptyType(FindVar(VarDef.Name, SearchScope)) then
+  begin
+    writeln(StdErr, 'A variable named ', VarDef.Name, ' is already defined');
+    halt(1)
+  end;
   if Scope = Global then
     Defs.NumVars.Global := Defs.NumVars.Global + 1
   else
     Defs.NumVars.Local := Defs.NumVars.Local + 1;
   Pos := Defs.NumVars.Global + Defs.NumVars.Local;
-  if Pos > 16 then
+  if Pos > 32 then
   begin
     writeln(StdErr, 'Too many vars');
     halt(1)
@@ -463,12 +483,59 @@ begin
   Defs.Vars[Pos] := VarDef
 end;
 
-procedure AddArgumentsToLocalScope(Def : TPsFunction);
+procedure AddProcArgsToLocalScope(Def : TPsProcedure);
 var 
   Pos : integer;
 begin
   for Pos := 1 to Def.ArgCount do
-    AddVar(Def.Args[Pos], Global)
+    AddVar(Def.Args[Pos], Local)
+end;
+
+procedure AddFuncArgsToLocalScope(Def : TPsFunction);
+var 
+  Pos : integer;
+begin
+  for Pos := 1 to Def.ArgCount do
+    AddVar(Def.Args[Pos], Local)
+end;
+
+function EmptyProcedure : TPsProcedure;
+var 
+  Ret : TPsProcedure;
+begin
+  Ret.Name := '';
+  Ret.ArgCount := 0;
+  EmptyProcedure := Ret
+end;
+
+function IsEmptyProcedure(Fn : TPsProcedure) : boolean;
+begin
+  IsEmptyProcedure := (Fn.Name = '') and (Fn.ArgCount = 0)
+end;
+
+function FindProcedure(Name : string) : TPsProcedure;
+var 
+  Pos : integer;
+  Ret : TPsProcedure;
+begin
+  Ret := EmptyProcedure();
+  for Pos := 1 to Defs.NumProcs do
+  begin
+    if Defs.Procs[Pos].Name = Name then
+      Ret := Defs.Procs[Pos]
+  end;
+  FindProcedure := Ret
+end;
+
+procedure AddProcedure(Proc : TPsProcedure);
+begin
+  Defs.NumProcs := Defs.NumProcs + 1;
+  if Defs.NumProcs > 64 then
+  begin
+    writeln(StdErr, 'Too many functions');
+    halt(1)
+  end;
+  Defs.Procs[Defs.NumProcs] := Proc
 end;
 
 function EmptyFunction : TPsFunction;
@@ -526,7 +593,7 @@ begin
   Ret := EmptyType();
   for Pos := 1 to Typ.Rec.Size do
     if Typ.Rec.Fields[Pos].Name = Name then
-      Ret := FindType(Typ.Rec.Fields[Pos].Typ, AllScope);
+      Ret := ResolveType(Typ.Rec.Fields[Pos].Typ);
   if IsEmptyType(Ret) then
   begin
     writeln(StdErr, 'Field not found: ', Name);
@@ -541,6 +608,16 @@ var
   Fun : TPsFunction;
   Def : TPsNamedType;
 begin
+  Proc.Name := 'DELETE';
+  Proc.ArgCount := 3;
+  Proc.Args[1].Name := 'STR';
+  Proc.Args[1].Typ := StringType();
+  Proc.Args[2].Name := 'FIRST';
+  Proc.Args[2].Typ := IntegerType();
+  Proc.Args[3].Name := 'NUM';
+  Proc.Args[3].Typ := IntegerType();
+  AddProcedure(Proc);
+
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
   Fun.Args[1].Name := 'F';
@@ -651,6 +728,12 @@ begin
     end;
     write(Output, '} ', Name);
   end
+  else if Def.Typ = 'BOOLEAN' then
+         write(Output, 'PBoolean ', Name)
+  else if Def.Typ = 'CHAR' then
+         write(Output, 'char ', Name)
+  else if Def.Typ = 'INTEGER' then
+         write(Output, 'int ', Name)
   else
     write(Output, Def.Typ, ' ', Name);
 end;
@@ -707,6 +790,37 @@ begin
   until LxToken.Id <> TkIdentifier;
 end;
 
+procedure OutProcedurePrototype(Def : TPsProcedure);
+var 
+  Pos : integer;
+begin
+  write(Output, 'void ', Def.Name, '(');
+  for Pos := 1 to Def.ArgCount do
+  begin
+    OutVar(def.Args[Pos]);
+    if Pos <> Def.ArgCount then
+      write(Output, ', ')
+  end;
+  write(Output, ')')
+end;
+
+procedure OutProcedureDeclaration(Def : TPsProcedure);
+begin
+  OutProcedurePrototype(Def);
+  writeln(Output, ';')
+end;
+
+procedure OutProcedureDefinition(Def : TPsProcedure);
+begin
+  OutProcedurePrototype(Def);
+  writeln(Output, ' {');
+end;
+
+procedure OutProcedureEnd(Def : TPsProcedure);
+begin
+  writeln(Output, '}')
+end;
+
 procedure OutFunctionPrototype(Def : TPsFunction);
 var 
   Pos : integer;
@@ -745,6 +859,54 @@ end;
 procedure PsStatement;
 forward;
 
+procedure PsProcedureDefinition;
+var 
+  Def : TPsProcedure;
+begin
+  WantTokenAndRead(TkProcedure);
+  WantToken(TkIdentifier);
+  Def.Name := LxToken.Value;
+  Def.ArgCount := 0;
+  ReadToken();
+  WantToken2(TkLparen, TkSemicolon);
+  if LxToken.Id = TkLparen then
+  begin
+    WantTokenAndRead(TkLparen);
+    repeat
+      Def.ArgCount := Def.ArgCount + 1;
+      WantToken(TkIdentifier);
+      Def.Args[Def.ArgCount].Name := LxToken.Value;
+      ReadToken();
+      WantTokenAndRead(TkColon);
+      Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
+      WantToken2(TkSemicolon, TkRparen);
+      SkipToken(TkSemicolon);
+    until LxToken.Id = TkRparen;
+    SkipToken(TkRparen)
+  end;
+  WantTokenAndRead(TkSemicolon);
+  AddProcedure(Def);
+
+  if LxToken.Id = TkForward then
+  begin
+    SkipToken(TkForward);
+    WantTokenAndRead(TkSemicolon);
+    OutProcedureDeclaration(Def);
+  end
+  else
+  begin
+    StartLocalScope();
+    AddProcArgsToLocalScope(Def);
+    OutProcedureDefinition(Def);
+    WantTokenAndRead(TkBegin);
+    while LxToken.Id <> TkEnd do
+      PsStatement();
+    WantTokenAndRead(TkEnd);
+    WantTokenAndRead(TkSemicolon);
+    OutProcedureEnd(Def);
+  end
+end;
+
 procedure PsFunctionDefinition;
 var 
   Def : TPsFunction;
@@ -765,8 +927,8 @@ begin
       ReadToken();
       WantTokenAndRead(TkColon);
       Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
+      WantToken2(TkSemicolon, TkRparen);
+      SkipToken(TkSemicolon);
     until LxToken.Id = TkRparen;
     SkipToken(TkRparen)
   end;
@@ -784,13 +946,14 @@ begin
   else
   begin
     StartLocalScope();
-    AddArgumentsToLocalScope(Def);
+    AddFuncArgsToLocalScope(Def);
     OutFunctionDefinition(Def);
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
     WantTokenAndRead(TkEnd);
     WantTokenAndRead(TkSemicolon);
+    OutFunctionEnd(Def);
   end
 end;
 
@@ -804,6 +967,8 @@ begin
       PsTypeDefinitions(Scope)
     else if LxToken.Id = TkVar then
            PsVarDefinitions(Scope)
+    else if LxToken.Id = TkProcedure then
+           PsProcedureDefinition()
     else if LxToken.Id = TkFunction then
            PsFunctionDefinition()
     else
@@ -846,10 +1011,11 @@ begin
 end;
 
 type 
-  TPsIdClass = (IdcVariable, IdcFunction, IdcRead, IdcReadln, IdcWrite,
-                IdcWriteln);
+  TPsIdClass = (IdcVariable, IdcProcedure, IdcFunction,
+                IdcRead, IdcReadln, IdcWrite, IdcWriteln);
   TPsIdentifier = record
     Cls : TPsIdClass;
+    Proc : TPsProcedure;
     Fn : TPsFunction;
     Typ : TPsType;
     Name : string
@@ -871,7 +1037,8 @@ begin
   AddField := Id
 end;
 
-function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier) : TPsIdentifier;
+function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier) : TPsIdentifier
+;
 begin
   Id.Name := Id.Name + '.chr[' + Idx.Value + ']';
   Id.Typ := CharType();
@@ -890,10 +1057,12 @@ function PsIdentifier : TPsIdentifier;
 var 
   Name : string;
   Ident : TPsIdentifier;
+  Proc : TPsProcedure;
   Fn : TPsFunction;
   Expr : TPsExpression;
 begin
   Name := LxToken.Value;
+  Proc := FindProcedure(Name);
   Fn := FindFunction(Name);
   if Name = 'READ' then
   begin
@@ -913,6 +1082,13 @@ begin
   else if Name = 'WRITELN' then
   begin
     Ident.Cls := IdcWriteln;
+    ReadToken()
+  end
+  else if not IsEmptyProcedure(Proc) then
+  begin
+    Ident.Cls := IdcProcedure;
+    Ident := SetIdentifier(Name, Ident);
+    Ident.Proc := Proc;
     ReadToken()
   end
   else if not IsEmptyFunction(Fn) then
@@ -1153,26 +1329,27 @@ begin
   UnaryExpression := Expr
 end;
 
-function GenCallStart(FnProc : TPsExpression) : TPsExpression;
+function GenFunctionCallStart(FnProc : TPsExpression) : TPsExpression;
 begin
   FnProc.Value := FnProc.Value + '(';
-  GenCallStart := FnProc
+  GenFunctionCallStart := FnProc
 end;
 
-function GenCallEnd(FnProc : TPsExpression) : TPsExpression;
+function GenFunctionCallEnd(FnProc : TPsExpression) : TPsExpression;
 begin
   FnProc.Value := FnProc.Value + ')';
-  GenCallEnd := FnProc
+  GenFunctionCallEnd := FnProc
 end;
 
-function GenCallArgument(FnProc : TPsExpression; Arg : TPsExpression; First :
-                         boolean)
+function GenFunctionCallArgument(FnProc : TPsExpression; Arg : TPsExpression;
+                                 First :
+                                 boolean)
 : TPsExpression;
 begin
   if not First then
     FnProc.Value := FnProc.Value + ', ';
   FnProc.Value := FnProc.Value + Arg.Value;
-  GenCallArgument := FnProc
+  GenFunctionCallArgument := FnProc
 end;
 
 function GenParens(Expr : TPsExpression) : TPsExpression;
@@ -1181,7 +1358,7 @@ begin
   GenParens := Expr
 end;
 
-function PsCall(Id : TPsIdentifier) : TPsExpression;
+function PsFunctionCall(Id : TPsIdentifier) : TPsExpression;
 var 
   Expr : TPsExpression;
   First : boolean;
@@ -1190,16 +1367,16 @@ begin
   Expr.Value := Id.Name;
   First := true;
   WantTokenAndRead(TkLparen);
-  Expr := GenCallStart(Expr);
+  Expr := GenFunctionCallStart(Expr);
   while LxToken.Id <> TkRparen do
   begin
-    Expr := GenCallArgument(Expr, PsExpression(), First);
+    Expr := GenFunctionCallArgument(Expr, PsExpression(), First);
     First := false;
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma)
   end;
   WantTokenAndRead(TkRparen);
-  PsCall := GenCallEnd(Expr)
+  PsFunctionCall := GenFunctionCallEnd(Expr)
 end;
 
 procedure OutRead(Src : string; OutVar : TPsIdentifier);
@@ -1284,7 +1461,7 @@ begin
   begin
     Id := PsIdentifier();
     if Id.Cls = IdcFunction then
-      Expr := PsCall(Id)
+      Expr := PsFunctionCall(Id)
     else if Id.Cls = IdcVariable then
            Expr := GenVariable(Id)
     else
@@ -1370,6 +1547,41 @@ begin
   writeln(Output, ';')
 end;
 
+procedure OutProcedureCallStart(Id : TPsIdentifier);
+begin
+  write(Output, Id.Name, '(')
+end;
+
+procedure OutProcedureCallEnd;
+begin
+  writeln(Output, ');')
+end;
+
+procedure OutProcedureCallArgument(Arg : TPsExpression; First : boolean);
+begin
+  if not First then
+    write(Output, ', ');
+  write(Output, Arg.Value)
+end;
+
+procedure PsProcedureCall(Id : TPsIdentifier);
+var 
+  First : boolean;
+begin
+  First := true;
+  WantTokenAndRead(TkLparen);
+  OutProcedureCallStart(Id);
+  while LxToken.Id <> TkRparen do
+  begin
+    OutProcedureCallArgument(PsExpression, First);
+    First := false;
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma)
+  end;
+  WantTokenAndRead(TkRparen);
+  OutProcedureCallEnd()
+end;
+
 procedure OutRepeatBegin;
 begin
   writeln(Output, 'repeat {')
@@ -1424,6 +1636,8 @@ begin
       PsRead(Id)
     else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then
            PsWrite(Id)
+    else if Id.Cls = IdcProcedure then
+           PsProcedureCall(Id)
     else if LxToken.Id = TkAssign then
     begin
       WantTokenAndRead(TkAssign);
