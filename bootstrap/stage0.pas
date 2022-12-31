@@ -54,20 +54,10 @@ begin
 end;
 
 procedure LxGetIdentifier;
-const 
-  Words : array[1..36] of string = ('AND', 'ARRAY', 'BEGIN', 'CASE', 'CONST',
-                                    'DIV', 'DO', 'DOWNTO', 'ELSE', 'END',
-                                    'FILE', 'FOR', 'FORWARD', 'FUNCTION',
-                                    'GOTO', 'IF', 'IN', 'LABEL', 'MOD', 'NIL',
-                                    'NOT', 'OF', 'OR', 'PACKED', 'PROCEDURE',
-                                    'PROGRAM', 'RECORD', 'REPEAT', 'SET',
-                                    'THEN', 'TO', 'TYPE', 'UNTIL', 'VAR',
-                                    'WHILE', 'WITH');
 var 
   Chr : char;
   Pos : integer;
   InToken : boolean;
-  WordId : TLxTokenId;
 begin
   Pos := 0;
   InToken := true;
@@ -80,13 +70,43 @@ begin
   LxGetSymbol(TkIdentifier, Pos);
   for Pos := 1 to Length(LxToken.Value) do
     LxToken.Value[Pos] := UpCase(LxToken.Value[Pos]);
-  WordId := TkAnd;
-  for Pos := 1 to 35 do
-  begin
-    if LxToken.Value = Words[Pos] then
-      LxToken.Id := WordId;
-    WordId := succ(WordId)
-  end
+
+  if LxToken.Value = 'AND' then LxToken.Id := TkAnd
+  else if LxToken.Value = 'ARRAY' then LxToken.Id := TkArray
+  else if LxToken.Value = 'BEGIN' then LxToken.Id := TkBegin
+  else if LxToken.Value = 'CASE' then LxToken.Id := TkCase
+  else if LxToken.Value = 'CONST' then LxToken.Id := TkConst
+  else if LxToken.Value = 'DIV' then LxToken.Id := TkDiv
+  else if LxToken.Value = 'DO' then LxToken.Id := TkDo
+  else if LxToken.Value = 'DOWNTO' then LxToken.Id := TkDownto
+  else if LxToken.Value = 'ELSE' then LxToken.Id := TkElse
+  else if LxToken.Value = 'END' then LxToken.Id := TkEnd
+  else if LxToken.Value = 'FILE' then LxToken.Id := TkFile
+  else if LxToken.Value = 'FOR' then LxToken.Id := TkFor
+  else if LxToken.Value = 'FORWARD' then LxToken.Id := TkForward
+  else if LxToken.Value = 'FUNCTION' then LxToken.Id := TkFunction
+  else if LxToken.Value = 'GOTO' then LxToken.Id := TkGoto
+  else if LxToken.Value = 'IF' then LxToken.Id := TkIf
+  else if LxToken.Value = 'IN' then LxToken.Id := TkIn
+  else if LxToken.Value = 'LABEL' then LxToken.Id := TkLabel
+  else if LxToken.Value = 'MOD' then LxToken.Id := TkMod
+  else if LxToken.Value = 'NIL' then LxToken.Id := TkNil
+  else if LxToken.Value = 'NOT' then LxToken.Id := TkNot
+  else if LxToken.Value = 'OF' then LxToken.Id := TkOf
+  else if LxToken.Value = 'OR' then LxToken.Id := TkOr
+  else if LxToken.Value = 'PACKED' then LxToken.Id := TkPacked
+  else if LxToken.Value = 'PROCEDURE' then LxToken.Id := TkProcedure
+  else if LxToken.Value = 'PROGRAM' then LxToken.Id := TkProgram
+  else if LxToken.Value = 'RECORD' then LxToken.Id := TkRecord
+  else if LxToken.Value = 'REPEAT' then LxToken.Id := TkRepeat
+  else if LxToken.Value = 'SET' then LxToken.Id := TkSet
+  else if LxToken.Value = 'THEN' then LxToken.Id := TkThen
+  else if LxToken.Value = 'TO' then LxToken.Id := TkTo
+  else if LxToken.Value = 'TYPE' then LxToken.Id := TkType
+  else if LxToken.Value = 'UNTIL' then LxToken.Id := TkUntil
+  else if LxToken.Value = 'VAR' then LxToken.Id := TkVar
+  else if LxToken.Value = 'WHILE' then LxToken.Id := TkWhile
+  else if LxToken.Value = 'WITH' then LxToken.Id := TkWith
 end;
 
 procedure LxGetNumber;
@@ -130,14 +150,9 @@ begin
 end;
 
 procedure ReadToken;
-const 
-  Symbols : array[1..16] of string = ('+', '-', '*', '/', '=', '<', '>', '[',
-                                      ']', '.', ',', ':', ';', '^', '(', ')');
 var 
   Chr : char;
   Nxt : char;
-  i : integer;
-  SymbolId : TLxTokenId;
 begin
   LxToken.Value := '';
   LxToken.Id := TkUnknown;
@@ -148,12 +163,9 @@ begin
   begin
     Chr := LxLine[1];
 
-    if LxIsAlpha(Chr) then
-      LxGetIdentifier();
-    if (LxToken.Id = TkUnknown) and LxIsDigit(Chr) then
-      LxGetNumber();
-    if (LxToken.Id = TkUnknown) and (Chr = '''') then
-      LxGetString();
+    if LxIsAlpha(Chr) then LxGetIdentifier();
+    if (LxToken.Id = TkUnknown) and LxIsDigit(Chr) then LxGetNumber();
+    if (LxToken.Id = TkUnknown) and (Chr = '''') then LxGetString();
     if (LxToken.Id = TkUnknown) and (Length(LxLine) > 1) then
     begin
       Nxt := LxLine[2];
@@ -168,13 +180,23 @@ begin
       if (LxToken.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
         LxGetSymbol(TkRange, 2)
     end;
-    SymbolId := TkPlus;
-    for i := 1 to 16 do
-    begin
-      if (LxToken.Id = TkUnknown) and (Chr = Symbols[i]) then
-        LxGetSymbol(SymbolId, 1);
-      SymbolId := succ(SymbolId)
-    end
+    if (LxToken.Id = TkUnknown) and (Chr = '+') then LxGetSymbol(TkPlus, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '-') then LxGetSymbol(TkMinus, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '*') then LxGetSymbol(TkAsterisk, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '/') then LxGetSymbol(TkSlash, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '=') then LxGetSymbol(TkEquals, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '<') then LxGetSymbol(TkLessthan, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '>') then LxGetSymbol(TkMorethan, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '[') then LxGetSymbol(TkLbracket, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = ']') then LxGetSymbol(TkRbracket, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '.') then LxGetSymbol(TkDot, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = ',') then LxGetSymbol(TkComma, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = ':') then LxGetSymbol(TkColon, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = ';') then
+      LxGetSymbol(TkSemicolon, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '^') then LxGetSymbol(TkCaret, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '(') then LxGetSymbol(TkLparen, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = ')') then LxGetSymbol(TkRparen, 1)
   end
 end;
 
@@ -1047,8 +1069,8 @@ begin
   AddField := Id
 end;
 
-function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier) : TPsIdentifier
-;
+function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier)
+: TPsIdentifier;
 begin
   Id.Name := Id.Name + '.chr[' + Idx.Value + ']';
   Id.Typ := CharType();
@@ -1147,7 +1169,8 @@ end;
 function IsOpMultipying(Tok : TLxToken) : boolean;
 begin
   IsOpMultipying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
-                    or (Tok.Id = TkDiv) or (Tok.Id = TkMod) or (Tok.Id = TkAnd)
+                    or (Tok.Id = TkDiv) or (Tok.Id = TkMod)
+                    or (Tok.Id = TkAnd)
 end;
 
 function IsOpRelational(Tok : TLxToken) : boolean;
@@ -1206,8 +1229,8 @@ begin
   GenNumberConstant := Expr
 end;
 
-function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                                 TPsExpression) : TPsExpression;
+function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
+                                 Right : TPsExpression) : TPsExpression;
 var 
   Oper : string;
   Cmp : string;
@@ -1242,8 +1265,8 @@ begin
   IntegerBinaryExpression := Expr
 end;
 
-function BooleanBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                                 TPsExpression) : TPsExpression;
+function BooleanBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
+                                 Right : TPsExpression) : TPsExpression;
 var 
   Oper : string;
   Expr : TPsExpression;
@@ -1267,8 +1290,8 @@ begin
 end;
 
 
-function StringyBinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
-                                 TPsExpression) : TPsExpression;
+function StringyBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
+                                 Right : TPsExpression) : TPsExpression;
 var 
   FName : string;
   Cmp : string;
@@ -1312,13 +1335,14 @@ begin
          BinaryExpression := StringyBinaryExpression(Left, Op, Right)
   else
   begin
-    writeln(StdErr, 'Type mismatch for operator ', Op, ': ', TypeName(Left.Typ),
-    ' and ', TypeName(Right.Typ));
+    writeln(StdErr, 'Type mismatch for operator ', Op,
+            ': ', TypeName(Left.Typ), ' and ', TypeName(Right.Typ));
     halt(1)
   end
 end;
 
-function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression) : TPsExpression;
+function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
+: TPsExpression;
 begin
   if Op <> TkNot then
   begin
