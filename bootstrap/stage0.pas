@@ -1624,6 +1624,16 @@ begin
   OutProcedureCallEnd()
 end;
 
+procedure OutIf(Expr : TPsExpression);
+begin
+  write(Output, 'if (', Expr.Value, ') ')
+end;
+
+procedure OutElse;
+begin
+  write(Output, ' else ')
+end;
+
 procedure OutRepeatBegin;
 begin
   writeln(Output, 'repeat {')
@@ -1683,6 +1693,19 @@ begin
     begin
       WantTokenAndRead(TkAssign);
       OutAssign(Id, PsExpression());
+    end
+  end
+  else if LxToken.Id = TkIf then
+  begin
+    WantTokenAndRead(TkIf);
+    OutIf(PsExpression());
+    WantTokenAndRead(TkThen);
+    PsStatement();
+    if LxToken.Id = TkElse then
+    begin
+      WantTokenAndRead(TkElse);
+      OutElse();
+      PsStatement();
     end
   end
   else if LxToken.Id = TkRepeat then
