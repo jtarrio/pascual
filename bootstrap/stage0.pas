@@ -1636,7 +1636,7 @@ begin
     writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
     halt(1)
   end;
-  writeln(Output, 'while (!(', Expr.Value, '));')
+  writeln(Output, '} while (!(', Expr.Value, '));')
 end;
 
 procedure OutWhileBegin(Expr : TPsExpression);
@@ -1646,12 +1646,11 @@ begin
     writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
     halt(1)
   end;
-  writeln(Output, 'while (', Expr.Value, ') {')
+  write(Output, 'while (', Expr.Value, ') ')
 end;
 
 procedure OutWhileEnd;
 begin
-  writeln(Output, '}')
 end;
 
 procedure PsStatement;
