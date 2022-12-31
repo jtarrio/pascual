@@ -336,6 +336,11 @@ begin
   SimpleType := Ret
 end;
 
+function IsSameType(A : TPsType; B : TPsType) : boolean;
+begin
+  IsSameType := (A.Typ <> '') and (A.Typ = B.Typ)
+end;
+
 function IsEmptyType(Typ : TPsType) : boolean;
 begin
   IsEmptyType := (Typ.Typ = '') and (Typ.Enum.Size = 0) and (Typ.Rec.Size = 0)
@@ -362,10 +367,21 @@ begin
   CharType := SimpleType('CHAR')
 end;
 
+function IsStringType(Typ : TPsType) : boolean;
+begin
+  IsStringType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+                  and (Typ.Typ = 'STRING')
+end;
+
+function IsCharType(Typ : TPsType) : boolean;
+begin
+  IsCharType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+                and (Typ.Typ = 'CHAR')
+end;
+
 function IsStringyType(Typ : TPsType) : boolean;
 begin
-  IsStringyType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
-                   and ((Typ.Typ = 'STRING') or (Typ.Typ = 'CHAR'))
+  IsStringyType := IsStringType(Typ) or IsCharType(Typ)
 end;
 
 function BooleanType : TPsType;
@@ -1104,6 +1120,22 @@ begin
   SetStringIndex := Id
 end;
 
+function CoerceType(Expr : TPsExpression; Typ : TPsType) : TPsExpression;
+begin
+  if IsCharType(Expr.Typ) and IsStringType(Typ) then
+  begin
+    Expr.Typ := StringType();
+    Expr.Value := 'str_of(' + Expr.Value + ')';
+  end
+  else if not IsSameType(Expr.Typ, Typ) then
+  begin
+    writeln(StdErr, 'Cannot assign ', TypeName(Expr.Typ), ' to ',
+    TypeName(Typ));
+    halt(1)
+  end;
+  CoerceType := Expr
+end;
+
 function PsExpression : TPsExpression;
 forward;
 
@@ -1408,7 +1440,7 @@ begin
     FnProc.Value := FnProc.Value + ', ';
   if Def.Typ.IsRef then
     FnProc.Value := FnProc.Value + '&';
-  FnProc.Value := FnProc.Value + Arg.Value;
+  FnProc.Value := FnProc.Value + CoerceType(Arg, Def.Typ).Value;
   GenFunctionCallArgument := FnProc
 end;
 
@@ -1633,7 +1665,7 @@ procedure OutAssign(Id : TPsIdentifier; Expr : TPsExpression);
 begin
   OutIdentifier(Id);
   write(Output, ' = ');
-  OutExpression(Expr);
+  OutExpression(CoerceType(Expr, Id.Typ));
   writeln(Output, ';')
 end;
 
@@ -1654,7 +1686,7 @@ begin
     write(Output, ', ');
   if Def.Typ.IsRef then
     write(Output, '&');
-  write(Output, Arg.Value)
+  write(Output, CoerceType(Arg, Def.Typ).Value)
 end;
 
 procedure PsProcedureCall(Id : TPsIdentifier);
