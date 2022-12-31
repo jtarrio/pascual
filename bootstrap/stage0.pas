@@ -1023,6 +1023,7 @@ end;
 procedure OutProgramHeading(Name : string);
 begin
   writeln(Output, '/* Program: ', Name, ' */');
+  writeln(Output, '#include "runtime.h"')
 end;
 
 procedure PsProgramHeading;
@@ -1196,6 +1197,7 @@ end;
 function GenStringConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
+  Size : string;
   Pos : integer;
   InStr : boolean;
   LastQuote : boolean;
@@ -1226,7 +1228,8 @@ begin
   end
   else
   begin
-    Expr.Value := 'str_make("' + Expr.Value + '")';
+    Str(Length(Expr.Value), Size);
+    Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
     Expr.Typ := StringType()
   end;
   GenStringConstant := Expr
@@ -1457,22 +1460,53 @@ begin
     Src := Expr.Value;
     WantTokenAndRead(TkComma)
   end;
-  repeat
+  while LxToken.Id <> TkRparen do
+  begin
     WantToken(TkIdentifier);
     OutVar := PsIdentifier();
     OutRead(Src, OutVar);
     WantToken2(TkComma, TkRparen);
-    SkipToken(TkComma);
-  until LxToken.Id = TkRparen;
+    SkipToken(TkComma)
+  end;
   WantTokenAndRead(TkRparen);
   if Id.Cls = IdcReadln then
     OutReadln(Src)
 end;
 
-procedure PsWrite(Id : TPsIdentifier);
+procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
-  writeln(StdErr, 'PsWrite');
-  halt(1)
+  writeln(Output, 'write_', TypeName(Expr.Typ), '(', Dst, ', ', Expr.Value,
+  ');')
+end;
+
+procedure OutWriteln(Src : string);
+begin
+  writeln(Output, 'writeln(', Src, ');')
+end;
+
+procedure PsWrite(Id : TPsIdentifier);
+var 
+  Dst : string;
+  Expr : TPsExpression;
+begin
+  Dst := 'OUTPUT';
+  WantTokenAndRead(TkLparen);
+  Expr := PsExpression();
+  if IsTextType(Expr.Typ) then
+    Dst := Expr.Value
+  else
+    OutWrite(Dst, Expr);
+  WantToken2(TkComma, TkRparen);
+  SkipToken(TkComma);
+  while LxToken.Id <> TkRParen do
+  begin
+    OutWrite(Dst, PsExpression());
+    WantToken2(TkComma, TkRParen);
+    SkipToken(TkComma)
+  end;
+  WantTokenAndRead(TkRparen);
+  if Id.Cls = IdcWriteln then
+    OutWriteln(Dst)
 end;
 
 function GenVariable(Id : TPsIdentifier) : TPsExpression;
@@ -1731,7 +1765,8 @@ end;
 
 procedure OutProgramBegin;
 begin
-  writeln('int main() {')
+  writeln('int main() {');
+  writeln('InitFiles();')
 end;
 
 procedure OutProgramEnd;
@@ -1745,10 +1780,10 @@ begin
   PsDefinitions(Global);
   WantTokenAndRead(TkBegin);
   OutProgramBegin();
-  while LxToken.Id <> TkEnd do PsStatement();
+  while LxToken.Id <> TkEnd do
+    PsStatement();
   OutProgramEnd();
-  WantTokenAndRead(TkEnd);
-  WantTokenAndRead(TkDot)
+  WantTokenAndRead(TkEnd)
 end;
 
 procedure ParseProgram;
