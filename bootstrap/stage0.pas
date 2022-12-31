@@ -392,8 +392,9 @@ end;
 function IsPrimaryType(Typ : TPsType) : boolean;
 begin
   IsPrimaryType := (Typ.Enum.Size > 0) or (Typ.Rec.Size > 0)
-                   or (Typ.Typ = 'CHAR') or (Typ.Typ = 'STRING')
-                   or (Typ.Typ = 'INTEGER') or (Typ.Typ = 'TEXT')
+                   or (Typ.Typ = 'BOOLEAN') or (Typ.Typ = 'CHAR')
+                   or (Typ.Typ = 'STRING') or (Typ.Typ = 'INTEGER')
+                   or (Typ.Typ = 'TEXT')
 end;
 
 function FindType(Name : string; Scope : TPsScopeSearch) : TPsType;
@@ -445,7 +446,7 @@ begin
   Ret := EmptyType();
   First := 1;
   if Scope = LocalOnly then
-    First := Defs.NumVars.Global;
+    First := Defs.NumVars.Global + 1;
   Last := Defs.NumVars.Global;
   if Scope <> GlobalOnly then
     Last := Last + Defs.NumVars.Local;
@@ -663,6 +664,12 @@ begin
   Fun.Ret := IntegerType();
   AddFunction(Fun);
 
+  Def.Name := 'FALSE';
+  Def.Typ := BooleanType();
+  AddVar(Def, Global);
+  Def.Name := 'TRUE';
+  Def.Typ := BooleanType();
+  AddVar(Def, Global);
   Def.Name := 'INPUT';
   Def.Typ := TextType();
   AddVar(Def, Global);
@@ -891,6 +898,9 @@ end;
 procedure PsStatement;
 forward;
 
+procedure PsDefinitions(Scope : TPsScope);
+forward;
+
 procedure PsProcedureDefinition;
 var 
   Def : TPsProcedure;
@@ -930,6 +940,7 @@ begin
     StartLocalScope();
     AddProcArgsToLocalScope(Def);
     OutProcedureDefinition(Def);
+    PsDefinitions(Local);
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
@@ -980,6 +991,7 @@ begin
     StartLocalScope();
     AddFuncArgsToLocalScope(Def);
     OutFunctionDefinition(Def);
+    PsDefinitions(Local);
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
