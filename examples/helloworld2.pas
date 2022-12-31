@@ -1,4 +1,4 @@
-program helloworld;
+program helloworld2;
 
 var
   Name : string;
