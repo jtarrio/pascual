@@ -250,7 +250,8 @@ type
   TPsType = record
     Typ : string;
     Enum : TPsEnumType;
-    Rec : TPsRecordType
+    Rec : TPsRecordType;
+    IsRef : boolean;
   end;
   TPsNamedType = record
     Name : string;
@@ -681,7 +682,7 @@ begin
   AddVar(Def, Global);
 end;
 
-procedure StartLocalScope;
+procedure ResetLocalScope;
 begin
   Defs.NumTypes.Local := 0;
   Defs.NumVars.Local := 0
@@ -694,6 +695,7 @@ begin
   Def.Typ := '';
   Def.Enum.Size := 0;
   Def.Rec.Size := 0;
+  Def.IsRef := false;
   if LxToken.Id = TkIdentifier then
   begin
     Def.Typ := LxToken.Value;
@@ -743,6 +745,8 @@ var
   Pos : integer;
   SubDef : TPsType;
 begin
+  if Def.IsRef then
+    Name := '*' + Name;
   if Def.Enum.Size > 0 then
   begin
     write(Output, 'enum { ');
@@ -904,6 +908,7 @@ forward;
 procedure PsProcedureDefinition;
 var 
   Def : TPsProcedure;
+  IsRef : boolean;
 begin
   WantTokenAndRead(TkProcedure);
   WantToken(TkIdentifier);
@@ -916,11 +921,14 @@ begin
     WantTokenAndRead(TkLparen);
     repeat
       Def.ArgCount := Def.ArgCount + 1;
+      IsRef := LxToken.Id = TkVar;
+      SkipToken(TkVar);
       WantToken(TkIdentifier);
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
       Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
+      Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
     until LxToken.Id = TkRparen;
@@ -937,7 +945,7 @@ begin
   end
   else
   begin
-    StartLocalScope();
+    ResetLocalScope();
     AddProcArgsToLocalScope(Def);
     OutProcedureDefinition(Def);
     PsDefinitions(Local);
@@ -953,6 +961,7 @@ end;
 procedure PsFunctionDefinition;
 var 
   Def : TPsFunction;
+  IsRef : boolean;
 begin
   WantTokenAndRead(TkFunction);
   WantToken(TkIdentifier);
@@ -965,11 +974,14 @@ begin
     WantTokenAndRead(TkLparen);
     repeat
       Def.ArgCount := Def.ArgCount + 1;
+      IsRef := LxToken.Id = TkVar;
+      SkipToken(TkVar);
       WantToken(TkIdentifier);
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
       Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
+      Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
     until LxToken.Id = TkRparen;
@@ -988,7 +1000,7 @@ begin
   end
   else
   begin
-    StartLocalScope();
+    ResetLocalScope();
     AddFuncArgsToLocalScope(Def);
     OutFunctionDefinition(Def);
     PsDefinitions(Local);
@@ -1073,6 +1085,8 @@ type
 function SetIdentifier(Name : string; Id : TPsIdentifier) : TPsIdentifier;
 begin
   Id.Name := Name;
+  if (Id.Cls = IdcVariable) and Id.Typ.IsRef then
+    Id.Name := '(*' + Id.Name + ')';
   SetIdentifier := Id
 end;
 
@@ -1136,8 +1150,8 @@ begin
   else
   begin
     Ident.Cls := IdcVariable;
-    Ident := SetIdentifier(Name, Ident);
     Ident.Typ := ResolveVar(Name);
+    Ident := SetIdentifier(Name, Ident);
     if IsEmptyType(Ident.Typ) then
       Ident.Typ := Fn.Ret;
     if IsEmptyType(Ident.Typ) then
@@ -1387,12 +1401,13 @@ begin
 end;
 
 function GenFunctionCallArgument(FnProc : TPsExpression; Arg : TPsExpression;
-                                 First :
-                                 boolean)
+                                 Def: TPsNamedType; First : boolean)
 : TPsExpression;
 begin
   if not First then
     FnProc.Value := FnProc.Value + ', ';
+  if Def.Typ.IsRef then
+    FnProc.Value := FnProc.Value + '&';
   FnProc.Value := FnProc.Value + Arg.Value;
   GenFunctionCallArgument := FnProc
 end;
@@ -1406,19 +1421,18 @@ end;
 function PsFunctionCall(Id : TPsIdentifier) : TPsExpression;
 var 
   Expr : TPsExpression;
-  First : boolean;
+  ArgNum : integer;
 begin
   Expr.Typ := Id.Fn.Ret;
   Expr.Value := Id.Name;
-  First := true;
   WantTokenAndRead(TkLparen);
   Expr := GenFunctionCallStart(Expr);
-  while LxToken.Id <> TkRparen do
+  for ArgNum := 1 to Id.Fn.ArgCount do
   begin
-    Expr := GenFunctionCallArgument(Expr, PsExpression(), First);
-    First := false;
-    WantToken2(TkComma, TkRparen);
-    SkipToken(TkComma)
+    Expr := GenFunctionCallArgument(Expr, PsExpression(),
+            Id.Fn.Args[ArgNum], ArgNum = 1);
+    if ArgNum < Id.Fn.ArgCount then
+      WantTokenAndRead(TkComma)
   end;
   WantTokenAndRead(TkRparen);
   PsFunctionCall := GenFunctionCallEnd(Expr)
@@ -1633,26 +1647,28 @@ begin
   writeln(Output, ');')
 end;
 
-procedure OutProcedureCallArgument(Arg : TPsExpression; First : boolean);
+procedure OutProcedureCallArgument(Arg : TPsExpression; Def : TPsNamedType;
+                                   First : boolean);
 begin
   if not First then
     write(Output, ', ');
+  if Def.Typ.IsRef then
+    write(Output, '&');
   write(Output, Arg.Value)
 end;
 
 procedure PsProcedureCall(Id : TPsIdentifier);
 var 
-  First : boolean;
+  ArgNum : integer;
 begin
-  First := true;
+  ArgNum := 1;
   WantTokenAndRead(TkLparen);
   OutProcedureCallStart(Id);
-  while LxToken.Id <> TkRparen do
+  for ArgNum := 1 to Id.Proc.ArgCount do
   begin
-    OutProcedureCallArgument(PsExpression, First);
-    First := false;
-    WantToken2(TkComma, TkRparen);
-    SkipToken(TkComma)
+    OutProcedureCallArgument(PsExpression, Id.Proc.Args[ArgNum], ArgNum = 1);
+    if ArgNum < Id.Proc.ArgCount then
+      WantTokenAndRead(TkComma)
   end;
   WantTokenAndRead(TkRparen);
   OutProcedureCallEnd()
@@ -1778,6 +1794,7 @@ end;
 procedure PsProgramBlock;
 begin
   PsDefinitions(Global);
+  ResetLocalScope();
   WantTokenAndRead(TkBegin);
   OutProgramBegin();
   while LxToken.Id <> TkEnd do
