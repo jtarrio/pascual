@@ -1437,7 +1437,7 @@ begin
             TypeName(OutVar.Typ));
     halt(1)
   end;
-  writeln(Output, 'read_', TypeName(OutVar.Typ), '(', Src, ', ', OutVar.Name,
+  writeln(Output, 'read_', TypeName(OutVar.Typ), '(', Src, ', &', OutVar.Name,
   ');')
 end;
 
@@ -1449,17 +1449,17 @@ end;
 procedure PsRead(Id : TPsIdentifier);
 var 
   Src : string;
-  Expr : TPsExpression;
   OutVar : TPsIdentifier;
 begin
   Src := 'INPUT';
   WantTokenAndRead(TkLparen);
-  Expr := PsExpression();
-  if IsTextType(Expr.Typ) then
-  begin
-    Src := Expr.Value;
-    WantTokenAndRead(TkComma)
-  end;
+  OutVar := PsIdentifier();
+  if IsTextType(OutVar.Typ) then
+    Src := OutVar.Name
+  else
+    OutRead(Src, OutVar);
+  WantToken2(TkComma, TkRparen);
+  SkipToken(TkComma);
   while LxToken.Id <> TkRparen do
   begin
     WantToken(TkIdentifier);

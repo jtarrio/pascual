@@ -13,13 +13,13 @@ typedef struct {
   union {
     char chr[256];
     struct __attribute__((__packed__)) {
-      char len;
+      unsigned char len;
       char value[255];
     };
   };
-} PString;
+} STRING;
 
-PString str_make(int len, const char* str);
+STRING str_make(int len, const char* str);
 
 typedef struct {
   FILE* file;
@@ -31,7 +31,11 @@ extern PFile STDERR;
 
 void InitFiles();
 
+void readln(PFile file);
+void read_STRING(PFile file, STRING* str);
+
 void writeln(PFile file);
-void write_STRING(PFile file, PString str);
+void write_CHAR(PFile file, char chr);
+void write_STRING(PFile file, STRING str);
 
 #endif  // __RUNTIME_H
