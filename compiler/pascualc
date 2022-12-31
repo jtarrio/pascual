@@ -1,9 +1,10 @@
 #!/bin/sh -e
 
-PC="${PC:-./pascual}"
+my_dir="$(dirname $0)"
+PC="${PC:-${my_dir}/pascual}"
 CC="${CC:-gcc}"
-PINCDIR="${PINCDIR:-.}"
-PLIBDIR="${PLIBDIR:-.}"
+PINCDIR="${PINCDIR:-${my_dir}}"
+PLIBDIR="${PLIBDIR:-${my_dir}}"
 
 input=''
 output=''
