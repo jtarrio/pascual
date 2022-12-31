@@ -1729,9 +1729,26 @@ begin
     WantToken(TkUnknown);
 end;
 
+procedure OutProgramBegin;
+begin
+  writeln('int main() {')
+end;
+
+procedure OutProgramEnd;
+begin
+  writeln('return 0;');
+  writeln('}')
+end;
+
 procedure PsProgramBlock;
 begin
   PsDefinitions(Global);
+  WantTokenAndRead(TkBegin);
+  OutProgramBegin();
+  while LxToken.Id <> TkEnd do PsStatement();
+  OutProgramEnd();
+  WantTokenAndRead(TkEnd);
+  WantTokenAndRead(TkDot)
 end;
 
 procedure ParseProgram;
