@@ -652,6 +652,7 @@ begin
   Proc.ArgCount := 3;
   Proc.Args[1].Name := 'STR';
   Proc.Args[1].Typ := StringType();
+  Proc.Args[1].Typ.IsRef := True;
   Proc.Args[2].Name := 'FIRST';
   Proc.Args[2].Typ := IntegerType();
   Proc.Args[3].Name := 'NUM';
@@ -660,12 +661,12 @@ begin
 
   Fun.Name := 'COPY';
   Fun.ArgCount := 3;
-  Proc.Args[1].Name := 'STR';
-  Proc.Args[1].Typ := StringType();
-  Proc.Args[2].Name := 'FIRST';
-  Proc.Args[2].Typ := IntegerType();
-  Proc.Args[3].Name := 'NUM';
-  Proc.Args[3].Typ := IntegerType();
+  Fun.Args[1].Name := 'STR';
+  Fun.Args[1].Typ := StringType();
+  Fun.Args[2].Name := 'FIRST';
+  Fun.Args[2].Typ := IntegerType();
+  Fun.Args[3].Name := 'NUM';
+  Fun.Args[3].Typ := IntegerType();
   Fun.Ret := StringType();
   AddFunction(Fun);
   Fun.Name := 'EOF';
@@ -1499,20 +1500,23 @@ var
 begin
   Src := 'INPUT';
   WantTokenAndRead(TkLparen);
-  OutVar := PsIdentifier();
-  if IsTextType(OutVar.Typ) then
-    Src := OutVar.Name
-  else
-    OutRead(Src, OutVar);
-  WantToken2(TkComma, TkRparen);
-  SkipToken(TkComma);
-  while LxToken.Id <> TkRparen do
+  if LxToken.Id <> TkRparen then
   begin
-    WantToken(TkIdentifier);
     OutVar := PsIdentifier();
-    OutRead(Src, OutVar);
+    if IsTextType(OutVar.Typ) then
+      Src := OutVar.Name
+    else
+      OutRead(Src, OutVar);
     WantToken2(TkComma, TkRparen);
-    SkipToken(TkComma)
+    SkipToken(TkComma);
+    while LxToken.Id <> TkRparen do
+    begin
+      WantToken(TkIdentifier);
+      OutVar := PsIdentifier();
+      OutRead(Src, OutVar);
+      WantToken2(TkComma, TkRparen);
+      SkipToken(TkComma)
+    end;
   end;
   WantTokenAndRead(TkRparen);
   if Id.Cls = IdcReadln then
@@ -1537,18 +1541,21 @@ var
 begin
   Dst := 'OUTPUT';
   WantTokenAndRead(TkLparen);
-  Expr := PsExpression();
-  if IsTextType(Expr.Typ) then
-    Dst := Expr.Value
-  else
-    OutWrite(Dst, Expr);
-  WantToken2(TkComma, TkRparen);
-  SkipToken(TkComma);
-  while LxToken.Id <> TkRParen do
+  if LxToken.Id <> TkRparen then
   begin
-    OutWrite(Dst, PsExpression());
-    WantToken2(TkComma, TkRParen);
-    SkipToken(TkComma)
+    Expr := PsExpression();
+    if IsTextType(Expr.Typ) then
+      Dst := Expr.Value
+    else
+      OutWrite(Dst, Expr);
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma);
+    while LxToken.Id <> TkRParen do
+    begin
+      OutWrite(Dst, PsExpression());
+      WantToken2(TkComma, TkRParen);
+      SkipToken(TkComma)
+    end;
   end;
   WantTokenAndRead(TkRparen);
   if Id.Cls = IdcWriteln then
@@ -1606,7 +1613,8 @@ begin
   else
   begin
     writeln(StdErr, 'Invalid token in expression: ', LxToken.Id, ': ',
-            LxToken.Value)
+            LxToken.Value);
+    halt(1)
   end;
   PsFactor := Expr
 end;
@@ -1813,13 +1821,11 @@ end;
 
 procedure OutProgramBegin;
 begin
-  writeln('int main() {');
-  writeln('InitFiles();')
+  writeln('void pascual_main() {');
 end;
 
 procedure OutProgramEnd;
 begin
-  writeln('return 0;');
   writeln('}')
 end;
 

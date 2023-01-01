@@ -1,7 +1,44 @@
 #include "runtime.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+typedef enum { reOutOfBounds = 0 } RtError;
+const char* RtErrorMsgs[] = {"Index out of bounds"};
+
+void rt_error(RtError err) {
+  fprintf(stderr, "Run-time error: %s\n", RtErrorMsgs[err]);
+  exit(1);
+}
+
+void ClampStringBounds(STRING* src, int* pos, int* len) {
+  if (*pos < 1) rt_error(reOutOfBounds);
+  if (*pos > src->len) *pos = src->len + 1;
+  if (*len < 1) *len = 0;
+  int max_len = 1 + src->len - *pos;
+  if (*len > max_len) *len = max_len;
+}
+
+int LENGTH(STRING s) { return s.len; }
+
+STRING COPY(STRING src, int pos, int num) {
+  ClampStringBounds(&src, &pos, &num);
+  STRING ret;
+  if ((pos <= src.len) && (num > 0)) {
+    ret.len = num;
+    memcpy(ret.value, src.value + pos - 1, num);
+  }
+  return ret;
+}
+
+void DELETE(STRING* str, int pos, int num) {
+  ClampStringBounds(str, &pos, &num);
+  if ((pos <= str->len) && (num > 0)) {
+    memmove(str->value + pos - 1, str->value + pos + num - 1, num);
+  }
+  str->len = str->len - num;
+}
 
 STRING str_of(char chr) {
   STRING ret;
@@ -72,19 +109,6 @@ int str_compare_STRING_STRING(STRING a, STRING b) {
   return a.len - b.len;
 }
 
-const PBoolean FALSE = 0;
-const PBoolean TRUE = !FALSE;
-
-void InitFiles() {
-  INPUT.file = stdin;
-  OUTPUT.file = stdout;
-  STDERR.file = stderr;
-}
-
-PFile INPUT = {};
-PFile OUTPUT = {};
-PFile STDERR = {};
-
 void readln(PFile file) {
   int chr;
   do {
@@ -110,17 +134,30 @@ void read_STRING(PFile file, STRING* str) {
 void writeln(PFile file) { fputc('\n', file.file); }
 
 void write_BOOLEAN(PFile file, PBoolean val) {
-    fputs(val ? "TRUE" : "FALSE", file.file);
+  fputs(val ? "TRUE" : "FALSE", file.file);
 }
 
-void write_INTEGER(PFile file, int num) {
-  fprintf(file.file, "%d", num);
-}
+void write_INTEGER(PFile file, int num) { fprintf(file.file, "%d", num); }
 
-void write_CHAR(PFile file, char chr) {
-  fputc(chr, file.file);
-}
+void write_CHAR(PFile file, char chr) { fputc(chr, file.file); }
 
 void write_STRING(PFile file, STRING str) {
   for (int pos = 0; pos < str.len; ++pos) fputc(str.value[pos], file.file);
+}
+
+const PBoolean FALSE = 0;
+const PBoolean TRUE = !FALSE;
+
+PFile INPUT = {};
+PFile OUTPUT = {};
+PFile STDERR = {};
+
+extern void pascual_main();
+
+int main() {
+  INPUT.file = stdin;
+  OUTPUT.file = stdout;
+  STDERR.file = stderr;
+  pascual_main();
+  return 0;
 }

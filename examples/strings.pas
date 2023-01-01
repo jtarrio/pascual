@@ -35,6 +35,25 @@ begin
 
   t := 'e' + s;
   writeln(t);
+  writeln(s);
+
+  s := 'ABC';
+  write(s[1]);
+  write(s[2]);
+  write(s[3]);
+  writeln();
+  writeln(Length(s));
+end;
+
+procedure Manipulation;
+var
+  s : string;
+  t : string;
+begin
+  s := '12345';
+  t := copy(s, 2, 3);
+  writeln(t);
+  delete(s, 2, 3);
   writeln(s)
 end;
 
@@ -61,5 +80,6 @@ end;
 begin
   Literals();
   Variables();
+  Manipulation();
   Arguments()
 end.

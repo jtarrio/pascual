@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-#define VAR
-
 typedef int PBoolean;
 extern const PBoolean FALSE;
 extern const PBoolean TRUE;
@@ -19,6 +17,9 @@ typedef struct {
   };
 } STRING;
 
+int LENGTH(STRING s);
+STRING COPY(STRING src, int pos, int num);
+void DELETE(STRING* src, int pos, int num);
 STRING str_of(char chr);
 STRING str_make(int len, const char* str);
 STRING str_concat_CHAR_CHAR(char a, char b);
@@ -37,8 +38,6 @@ typedef struct {
 extern PFile INPUT;
 extern PFile OUTPUT;
 extern PFile STDERR;
-
-void InitFiles();
 
 void readln(PFile file);
 void read_STRING(PFile file, STRING* str);
