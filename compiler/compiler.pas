@@ -233,8 +233,10 @@ begin
 end;
 
 type 
+  TPsEnumIndex = integer;
   TPsEnumValues = array[1..70] of string;
   TPsEnumType = record
+    Idx : TPsEnumIndex;
     Size : integer;
     Values : TPsEnumValues
   end;
@@ -249,7 +251,7 @@ type
   end;
   TPsType = record
     Typ : string;
-    Enum : TPsEnumType;
+    Enum : TPsEnumIndex;
     Rec : TPsRecordType;
     IsRef : boolean;
   end;
@@ -277,6 +279,8 @@ type
   TPsDefs = record
     NumTypes : TPsCount;
     Types : array[1..32] of TPsNamedType;
+    NumEnums : TPsCount;
+    Enums : array[1..16] of TPsEnumType;
     NumVars : TPsCount;
     Vars : array[1..32] of TPsNamedType;
     NumProcs : integer;
@@ -292,14 +296,14 @@ var
   Ret : string;
   Pos : integer;
 begin
-  if Typ.Enum.Size > 0 then
+  if Typ.Enum <> 0 then
   begin
     Ret := '(';
-    for Pos := 1 to Typ.Enum.Size do
+    for Pos := 1 to Defs.Enums[Typ.Enum].Size do
     begin
       if Pos <> 1 then
         Ret := Ret + ',';
-      Ret := Ret + Typ.Enum.Values[Pos]
+      Ret := Ret + Defs.Enums[Typ.Enum].Values[Pos]
     end;
     Ret := Ret + ')'
   end
@@ -322,7 +326,7 @@ var
   Ret : TPsType;
 begin
   Ret.Typ := '';
-  Ret.Enum.Size := 0;
+  Ret.Enum := 0;
   Ret.Rec.Size := 0;
   EmptyType := Ret
 end;
@@ -336,14 +340,9 @@ begin
   SimpleType := Ret
 end;
 
-function IsSameType(A : TPsType; B : TPsType) : boolean;
-begin
-  IsSameType := (A.Typ <> '') and (A.Typ = B.Typ)
-end;
-
 function IsEmptyType(Typ : TPsType) : boolean;
 begin
-  IsEmptyType := (Typ.Typ = '') and (Typ.Enum.Size = 0) and (Typ.Rec.Size = 0)
+  IsEmptyType := (Typ.Typ = '') and (Typ.Enum = 0) and (Typ.Rec.Size = 0)
 end;
 
 function IntegerType : TPsType;
@@ -353,8 +352,8 @@ end;
 
 function IsIntegerType(Typ : TPsType) : boolean;
 begin
-  IsIntegerType := (Typ.Rec.Size = 0)
-                   and ((Typ.Typ = 'INTEGER') or (Typ.Enum.Size > 0))
+  IsIntegerType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
+                   and (Typ.Typ = 'INTEGER')
 end;
 
 function StringType : TPsType;
@@ -369,13 +368,13 @@ end;
 
 function IsStringType(Typ : TPsType) : boolean;
 begin
-  IsStringType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+  IsStringType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
                   and (Typ.Typ = 'STRING')
 end;
 
 function IsCharType(Typ : TPsType) : boolean;
 begin
-  IsCharType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+  IsCharType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
                 and (Typ.Typ = 'CHAR')
 end;
 
@@ -391,7 +390,7 @@ end;
 
 function IsBooleanType(Typ : TPsType) : boolean;
 begin
-  IsBooleanType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+  IsBooleanType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
                    and (Typ.Typ = 'BOOLEAN')
 end;
 
@@ -402,13 +401,13 @@ end;
 
 function IsTextType(Typ : TPsType) : boolean;
 begin
-  IsTextType := (Typ.Rec.Size = 0) and (Typ.Enum.Size = 0)
+  IsTextType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
                 and (Typ.Typ = 'TEXT')
 end;
 
 function IsPrimaryType(Typ : TPsType) : boolean;
 begin
-  IsPrimaryType := (Typ.Enum.Size > 0) or (Typ.Rec.Size > 0)
+  IsPrimaryType := (Typ.Enum <> 0) or (Typ.Rec.Size > 0)
                    or (Typ.Typ = 'BOOLEAN') or (Typ.Typ = 'CHAR')
                    or (Typ.Typ = 'STRING') or (Typ.Typ = 'INTEGER')
                    or (Typ.Typ = 'TEXT')
@@ -475,6 +474,20 @@ begin
   FindVar := Ret
 end;
 
+function FindEnumOfValue(Name : string) : TPsType;
+var 
+  Pos : integer;
+  Ret : TPsType;
+  PosInEnum : integer;
+begin
+  Ret := EmptyType();
+  for Pos := 1 to Defs.NumEnums.Global + Defs.NumEnums.Local do
+    for PosInEnum := 1 to Defs.Enums[Pos].Size do
+      if Name = Defs.Enums[Pos].Values[PosInEnum] then
+        Ret.Enum := Pos;
+  FindEnumOfValue := Ret
+end;
+
 function GetUltimateType(Typ : TPsType) : TPsType;
 var 
   Name : string;
@@ -492,9 +505,22 @@ begin
   ResolveType := GetUltimateType(SimpleType(Name))
 end;
 
-function ResolveVar(Name : string) : TPsType;
+function ResolveVarType(Name : string) : TPsType;
+var 
+  Typ : TPsType;
 begin
-  ResolveVar := GetUltimateType(FindVar(Name, AllScope))
+  Typ := GetUltimateType(FindVar(Name, AllScope));
+  if IsEmptyType(Typ) then
+    Typ := FindEnumOfValue(Name);
+  ResolveVarType := Typ
+end;
+
+function IsSameType(A : TPsType; B : TPsType) : boolean;
+begin
+  A := GetUltimateType(A);
+  B := GetUltimateType(B);
+  IsSameType := ((A.Typ <> '') and (A.Typ = B.Typ))
+                or ((A.Enum <> 0) and (A.Enum = B.Enum))
 end;
 
 procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
@@ -701,18 +727,16 @@ end;
 
 procedure ResetLocalScope;
 begin
+  Defs.NumEnums.Local := 0;
   Defs.NumTypes.Local := 0;
   Defs.NumVars.Local := 0
 end;
 
-function PsTypeDenoter : TPsType;
+function PsTypeDenoter(Scope : TPsScope) : TPsType;
 var 
   Def : TPsType;
 begin
-  Def.Typ := '';
-  Def.Enum.Size := 0;
-  Def.Rec.Size := 0;
-  Def.IsRef := false;
+  Def := EmptyType();
   if LxToken.Id = TkIdentifier then
   begin
     Def.Typ := LxToken.Value;
@@ -721,10 +745,15 @@ begin
   else if LxToken.Id = TkLparen then
   begin
     SkipToken(TkLparen);
+    if Scope = Global then
+      Defs.NumEnums.Global := Defs.NumEnums.Global + 1
+    else
+      Defs.NumEnums.Local := Defs.NumEnums.Local + 1;
+    Def.Enum := Defs.NumEnums.Global + Defs.NumEnums.Local;
     repeat
       WantToken(TkIdentifier);
-      Def.Enum.Size := Def.Enum.Size + 1;
-      Def.Enum.Values[Def.Enum.Size] := LxToken.Value;
+      Defs.Enums[Def.Enum].Size := Defs.Enums[Def.Enum].Size + 1;
+      Defs.Enums[Def.Enum].Values[Defs.Enums[Def.Enum].Size] := LxToken.Value;
       ReadToken();
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
@@ -757,6 +786,28 @@ begin
   PsTypeDenoter := Def;
 end;
 
+procedure OutEnumValues(Pos : TPsEnumIndex);
+var 
+  PosInEnum : integer;
+begin
+  write(Output, 'const char* EnumValues', Pos, '[] = { ');
+  for PosInEnum := 1 to Defs.Enums[Pos].Size do
+  begin
+    if PosInEnum <> 1 then write(Output, ', ');
+    write(Output, '"', Defs.Enums[Pos].Values[PosInEnum], '"')
+  end;
+  writeln(Output, ' };')
+end;
+
+procedure OutLocalEnumValues;
+var 
+  Pos : TPsEnumIndex;
+begin
+  for Pos := Defs.NumEnums.Global + 1
+      to Defs.NumEnums.Global + Defs.NumEnums.Local do
+    OutEnumValues(Pos)
+end;
+
 procedure OutNameAndType(Name : string; Def : TPsType);
 var 
   Pos : integer;
@@ -764,21 +815,20 @@ var
 begin
   if Def.IsRef then
     Name := '*' + Name;
-  if Def.Enum.Size > 0 then
+  if Def.Enum <> 0 then
   begin
     write(Output, 'enum { ');
-    for Pos := 1 to Def.Enum.Size do
+    for Pos := 1 to Defs.Enums[Def.Enum].Size do
     begin
       if Pos > 1 then
         write(Output, ', ');
-      write(Output, Def.Enum.Values[Pos])
+      write(Output, Defs.Enums[Def.Enum].Values[Pos])
     end;
     write(Output, '} ', Name);
   end
   else if Def.Rec.Size > 0 then
   begin
-    SubDef.Enum.Size := 0;
-    SubDef.Rec.Size := 0;
+    SubDef := EmptyType();
     write(Output, 'struct { ');
     for Pos := 1 to Def.Rec.Size do
     begin
@@ -813,18 +863,22 @@ end;
 procedure PsTypeDefinitions(Scope : TPsScope);
 var 
   Def : TPsNamedType;
+  Enum : TPsEnumIndex;
 begin
+  Enum := Defs.NumEnums.Global;
   WantTokenAndRead(TkType);
   repeat
     WantToken(TkIdentifier);
     Def.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkEquals);
-    Def.Typ := PsTypeDenoter();
+    Def.Typ := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
     OutTypeDefinition(Def);
     AddType(Def, Scope)
   until LxToken.Id <> TkIdentifier;
+  for Enum := Enum + 1 to Defs.NumEnums.Global do
+    OutEnumValues(Enum)
 end;
 
 procedure OutVarDefinition(Def : TPsNamedType);
@@ -836,18 +890,22 @@ end;
 procedure PsVarDefinitions(Scope : TPsScope);
 var 
   Def : TPsNamedType;
+  Enum : TPsEnumIndex;
 begin
+  Enum := Defs.NumEnums.Global;
   WantTokenAndRead(TkVar);
   repeat
     WantToken(TkIdentifier);
     Def.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkColon);
-    Def.Typ := PsTypeDenoter();
+    Def.Typ := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
     OutVarDefinition(Def);
     AddVar(Def, Scope)
   until LxToken.Id <> TkIdentifier;
+  for Enum := Enum + 1 to Defs.NumEnums.Global do
+    OutEnumValues(Enum)
 end;
 
 procedure OutProcedurePrototype(Def : TPsProcedure);
@@ -873,7 +931,7 @@ end;
 procedure OutProcedureDefinition(Def : TPsProcedure);
 begin
   OutProcedurePrototype(Def);
-  writeln(Output, ' {');
+  writeln(Output, ' {')
 end;
 
 procedure OutProcedureEnd(Def : TPsProcedure);
@@ -944,7 +1002,7 @@ begin
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
+      Def.Args[Def.ArgCount].Typ := PsTypeDenoter(Local);
       Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
@@ -966,6 +1024,7 @@ begin
     AddProcArgsToLocalScope(Def);
     OutProcedureDefinition(Def);
     PsDefinitions(Local);
+    OutLocalEnumValues();
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
@@ -997,7 +1056,7 @@ begin
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].Typ := PsTypeDenoter();
+      Def.Args[Def.ArgCount].Typ := PsTypeDenoter(Local);
       Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
@@ -1005,7 +1064,7 @@ begin
     SkipToken(TkRparen)
   end;
   WantTokenAndRead(TkColon);
-  Def.Ret := PsTypeDenoter();
+  Def.Ret := PsTypeDenoter(Local);
   WantTokenAndRead(TkSemicolon);
   AddFunction(Def);
 
@@ -1021,6 +1080,7 @@ begin
     AddFuncArgsToLocalScope(Def);
     OutFunctionDefinition(Def);
     PsDefinitions(Local);
+    OutLocalEnumValues();
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
@@ -1183,7 +1243,7 @@ begin
   else
   begin
     Ident.Cls := IdcVariable;
-    Ident.Typ := ResolveVar(Name);
+    Ident.Typ := ResolveVarType(Name);
     Ident := SetIdentifier(Name, Ident);
     if IsEmptyType(Ident.Typ) then
       Ident.Typ := Fn.Ret;
@@ -1525,8 +1585,12 @@ end;
 
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
-  writeln(Output, 'write_', TypeName(Expr.Typ), '(', Dst, ', ', Expr.Value,
-  ');')
+  if Expr.Typ.Enum <> 0 then
+    writeln(Output, 'write_enum(', Dst, ', ', Expr.Value, ', EnumValues',
+            Expr.Typ.Enum, ');')
+  else
+    writeln(Output, 'write_', TypeName(Expr.Typ),
+    '(', Dst, ', ', Expr.Value, ');')
 end;
 
 procedure OutWriteln(Src : string);

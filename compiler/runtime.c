@@ -145,6 +145,10 @@ void write_STRING(PFile file, STRING str) {
   for (int pos = 0; pos < str.len; ++pos) fputc(str.value[pos], file.file);
 }
 
+void write_enum(PFile file, int value, const char** names) {
+  fputs(names[value], file.file);
+}
+
 const PBoolean FALSE = 0;
 const PBoolean TRUE = !FALSE;
 

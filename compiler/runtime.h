@@ -47,5 +47,6 @@ void write_BOOLEAN(PFile file, PBoolean val);
 void write_INTEGER(PFile file, int num);
 void write_CHAR(PFile file, char chr);
 void write_STRING(PFile file, STRING str);
+void write_enum(PFile file, int value, const char** names);
 
 #endif  // __RUNTIME_H
