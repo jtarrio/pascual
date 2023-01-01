@@ -328,6 +328,7 @@ begin
   Ret.Typ := '';
   Ret.Enum := 0;
   Ret.Rec.Size := 0;
+  Ret.IsRef := false;
   EmptyType := Ret
 end;
 
@@ -1817,6 +1818,71 @@ procedure OutWhileEnd;
 begin
 end;
 
+procedure OutForBegin(Id : TPsIdentifier; First : TPsExpression; Last :
+                      TPsExpression; Ascending : boolean);
+var 
+  Tmp1 : TPsNamedType;
+  Tmp2 : TPsNamedType;
+  Iter : TPsNamedType;
+begin
+  Tmp1.Name := 'tmp1';
+  Tmp1.Typ := Id.Typ;
+  Tmp2.Name := 'tmp2';
+  Tmp2.Typ := Id.Typ;
+  writeln(Output, '{');
+  Iter.Name := Id.Name;
+  Iter.Typ := Id.Typ;
+  OutVar(Tmp1);
+  writeln(Output, ' = ', First.Value, ';');
+  OutVar(Tmp2);
+  writeln(Output, ' = ', Last.Value, ';');
+  write(Output, 'if (tmp1 ');
+  if Ascending then
+    write(Output, '<')
+  else
+    write(Output, '>');
+  writeln(Output, ' tmp2)');
+  write(Output, 'for (');
+  OutVar(Iter);
+  write(Output, ' = tmp1; ', Iter.Name, ' != tmp2; ');
+  if Ascending then
+    write(Output, '++')
+  else
+    write(Output, '--');
+  writeln(Output, Iter.Name, ') {')
+end;
+
+procedure OutForEnd;
+begin
+  writeln(Output, '}')
+end;
+
+procedure PsFor;
+var 
+  Id : TPsIdentifier;
+  First : TPsExpression;
+  Last  : TPsExpression;
+  Ascending : boolean;
+begin
+  WantTokenAndRead(TkFor);
+  Id := PsIdentifier();
+  if Id.Cls <> IdcVariable then
+  begin
+    writeln('Expected variable: ', Id.Name);
+    halt(1)
+  end;
+  WantTokenAndRead(TkAssign);
+  First := PsExpression();
+  WantToken2(TkTo, TkDownto);
+  Ascending := LxToken.Id = TkTo;
+  ReadToken();
+  Last := PsExpression();
+  WantTokenAndRead(TkDo);
+  OutForBegin(Id, First, Last, Ascending);
+  PsStatement();
+  OutForEnd()
+end;
+
 procedure PsStatement;
 var 
   Id : TPsIdentifier;
@@ -1879,6 +1945,8 @@ begin
     PsStatement();
     OutWhileEnd()
   end
+  else if LxToken.Id = TkFor then
+         PsFor()
   else
     WantToken(TkUnknown);
 end;
