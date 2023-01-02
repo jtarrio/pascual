@@ -874,6 +874,16 @@ begin
   PsTypeDenoter := TypeIndex;
 end;
 
+procedure OutBegin;
+begin
+  writeln(Output, '{')
+end;
+
+procedure OutEnd;
+begin
+  writeln(Output, '}')
+end;
+
 procedure OutEnumValues(Pos : TPsEnumIndex);
 var 
   PosInEnum : integer;
@@ -1098,7 +1108,11 @@ begin
     PsDefinitions(PreviousScope);
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
+    begin
       PsStatement();
+      WantToken2(TkSemicolon, TkEnd);
+      SkipToken(TkSemicolon)
+    end;
     WantTokenAndRead(TkEnd);
     WantTokenAndRead(TkSemicolon);
     OutFunctionEnd(FnIndex);
@@ -1670,6 +1684,7 @@ var
   Src : string;
   OutVar : TPsIdentifier;
 begin
+  OutBegin();
   Src := 'INPUT';
   WantTokenAndRead(TkLparen);
   if LxToken.Id <> TkRparen then
@@ -1692,7 +1707,8 @@ begin
   end;
   WantTokenAndRead(TkRparen);
   if Id.Cls = IdcReadln then
-    OutReadln(Src)
+    OutReadln(Src);
+  OutEnd()
 end;
 
 procedure OutWrite(Dst : string; Expr : TPsExpression);
@@ -1715,6 +1731,7 @@ var
   Dst : string;
   Expr : TPsExpression;
 begin
+  OutBegin();
   Dst := 'OUTPUT';
   WantTokenAndRead(TkLparen);
   if LxToken.Id <> TkRparen then
@@ -1735,7 +1752,8 @@ begin
   end;
   WantTokenAndRead(TkRparen);
   if Id.Cls = IdcWriteln then
-    OutWriteln(Dst)
+    OutWriteln(Dst);
+  OutEnd()
 end;
 
 procedure OutStr(Dst : string; Expr : TPsExpression);
@@ -1895,7 +1913,7 @@ end;
 
 procedure OutRepeatBegin;
 begin
-  writeln(Output, 'repeat {')
+  writeln(Output, 'do {')
 end;
 
 procedure OutRepeatEnd(Expr : TPsExpression);
@@ -1924,40 +1942,39 @@ procedure OutWhileEnd;
 begin
 end;
 
-procedure OutForBegin(Id : TPsIdentifier; First : TPsExpression; Last :
-                      TPsExpression; Ascending : boolean);
+procedure OutForBegin(Id : TPsIdentifier; FirstExpr : TPsExpression;
+LastExpr : TPsExpression; Ascending : boolean);
 var 
-  Tmp1 : TPsVariable;
-  Tmp2 : TPsVariable;
-  Iter : TPsVariable;
+  First : TPsVariable;
+  Last : TPsVariable;
 begin
-  Tmp1 := MakeVariable('tmp1', Id.TypeIndex, false);
-  Tmp2 := MakeVariable('tmp2', Id.TypeIndex, false);
-  Iter := MakeVariable(Id.Value, Id.TypeIndex, false);
+  First := MakeVariable('first', Id.TypeIndex, false);
+  Last := MakeVariable('last', Id.TypeIndex, false);
   writeln(Output, '{');
-  OutVariableDeclaration(Tmp1);
-  writeln(Output, ' = ', First.Value, ';');
-  OutVariableDeclaration(Tmp2);
-  writeln(Output, ' = ', Last.Value, ';');
-  write(Output, 'if (tmp1 ');
+  OutVariableDeclaration(First);
+  writeln(Output, ' = ', FirstExpr.Value, ';');
+  OutVariableDeclaration(Last);
+  writeln(Output, ' = ', LastExpr.Value, ';');
+  writeln(Output, 'if (first ');
   if Ascending then
     write(Output, '<')
   else
     write(Output, '>');
-  writeln(Output, ' tmp2)');
-  write(Output, 'for (');
-  OutVariableDeclaration(Iter);
-  write(Output, ' = tmp1; ', Iter.Name, ' != tmp2; ');
-  if Ascending then
-    write(Output, '++')
-  else
-    write(Output, '--');
-  writeln(Output, Iter.Name, ') {')
+  writeln(Output, ' last) {');
+  writeln(Output, Id.Value, ' = first;');
+  writeln(Output, 'while (1) {');
 end;
 
-procedure OutForEnd;
+procedure OutForEnd(Id : TPsIdentifier; Ascending : boolean);
 begin
-  writeln(Output, '}')
+  writeln(Output, 'if (', Id.Value, ' == last) break;');
+  if Ascending then
+    writeln(Output, '++', Id.Value, ';')
+  else
+    write(Output, '--', Id.Value, ';');
+  writeln(Output, '}');
+  writeln(Output, '}');
+  writeln(Output, '}');
 end;
 
 procedure PsFor;
@@ -1983,7 +2000,7 @@ begin
   WantTokenAndRead(TkDo);
   OutForBegin(Id, First, Last, Ascending);
   PsStatement();
-  OutForEnd()
+  OutForEnd(Id, Ascending)
 end;
 
 procedure OutProcedureCall(Expr : TPsExpression);
@@ -1996,14 +2013,9 @@ begin
   OutProcedureCall(PsFunctionCall(Id))
 end;
 
-procedure OutBegin;
+procedure OutEmptyStatement;
 begin
-  writeln(Output, '{')
-end;
-
-procedure OutEnd;
-begin
-  writeln(Output, '}')
+  writeln(Output, ';')
 end;
 
 procedure PsStatement;
@@ -2011,7 +2023,7 @@ var
   Id : TPsIdentifier;
 begin
   if LxToken.Id = TkSemicolon then
-    WantTokenAndRead(TkSemicolon)
+    OutEmptyStatement()
   else if LxToken.Id = TkBegin then
   begin
     OutBegin();
@@ -2019,6 +2031,8 @@ begin
     while LxToken.Id <> TkEnd do
     begin
       PsStatement();
+      WantToken2(TkSemicolon, TkEnd);
+      SkipToken(TkSemicolon);
     end;
     OutEnd();
     SkipToken(TkEnd);
@@ -2041,7 +2055,10 @@ begin
     WantTokenAndRead(TkIf);
     OutIf(PsExpression());
     WantTokenAndRead(TkThen);
-    PsStatement();
+    if LxToken.Id = TkElse then
+      OutEmptyStatement()
+    else
+      PsStatement();
     if LxToken.Id = TkElse then
     begin
       WantTokenAndRead(TkElse);
@@ -2054,7 +2071,11 @@ begin
     WantTokenAndRead(TkRepeat);
     OutRepeatBegin();
     while LxToken.Id <> TkUntil do
+    begin
       PsStatement();
+      WantToken2(TkSemicolon, TkUntil);
+      SkipToken(TkSemicolon)
+    end;
     WantTokenAndRead(TkUntil);
     OutRepeatEnd(PsExpression());
   end
@@ -2087,7 +2108,11 @@ begin
   WantTokenAndRead(TkBegin);
   OutProgramBegin();
   while LxToken.Id <> TkEnd do
+  begin
     PsStatement();
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon)
+  end;
   OutProgramEnd();
   WantTokenAndRead(TkEnd)
 end;
