@@ -234,375 +234,334 @@ end;
 
 type 
   TPsEnumIndex = integer;
-  TPsEnumValues = array[1..70] of string;
-  TPsEnumType = record
-    Idx : TPsEnumIndex;
+  TPsRecordIndex = integer;
+  TPsTypeIndex = integer;
+  TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
+                  TtcEnum, TtcRecord);
+  TPsType = record
+    Name : string;
+    Cls : TPsTypeClass;
+    EnumIndex : TPsEnumIndex;
+    RecordIndex : TPsRecordIndex;
+    AliasFor : TPsTypeIndex;
+  end;
+  TPsEnumDef = record
     Size : integer;
-    Values : TPsEnumValues
+    Values : array[1..64] of string;
   end;
   TPsRecordField = record
     Name : string;
-    Typ : string
+    TypeIndex : TPsTypeIndex
   end;
-  TPsRecordFields = array[1..16] of TPsRecordField;
-  TPsRecordType = record
+  TPsRecordDef = record
     Size : integer;
-    Fields : TPsRecordFields
+    Fields : array[1..16] of TPsRecordField
   end;
-  TPsType = record
-    Typ : string;
-    Enum : TPsEnumIndex;
-    Rec : TPsRecordType;
-    IsRef : boolean;
-  end;
-  TPsNamedType = record
+  TPsVariableIndex = integer;
+  TPsVariable = record
     Name : string;
-    Typ : TPsType
+    TypeIndex : TPsTypeIndex;
+    IsReference : boolean
   end;
-  TPsProcedure = record
-    Name : string;
-    ArgCount : integer;
-    Args : array[1..4] of TPsNamedType
-  end;
+  TPsFunctionIndex = integer;
   TPsFunction = record
     Name : string;
     ArgCount : integer;
-    Args : array[1..4] of TPsNamedType;
-    Ret : TPsType
+    Args : array[1..4] of TPsVariable;
+    ReturnTypeIndex : TPsTypeIndex
   end;
-  TPsScope = (Global, Local);
-  TPsScopeSearch = (GlobalOnly, LocalOnly, AllScope);
-  TPsCount = record
-    Global : integer;
-    Local : integer
+  TPsScope = record
+    NumTypes : integer;
+    NumEnums : integer;
+    NumRecords : integer;
+    NumVariables : integer;
+    NumFunctions : integer
   end;
   TPsDefs = record
-    NumTypes : TPsCount;
-    Types : array[1..32] of TPsNamedType;
-    NumEnums : TPsCount;
-    Enums : array[1..16] of TPsEnumType;
-    NumVars : TPsCount;
-    Vars : array[1..32] of TPsNamedType;
-    NumProcs : integer;
-    Procs : array[1..64] of TPsProcedure;
-    NumFuns : integer;
-    Funs : array[1..64] of TPsFunction;
+    Scope : TPsScope;
+    Types : array[1..32] of TPsType;
+    Enums : array[1..16] of TPsEnumDef;
+    Records : array[1..32] of TPsRecordDef;
+    Variables : array[1..32] of TPsVariable;
+    Functions : array[1..128] of TPsFunction;
   end;
 var 
   Defs : TPsDefs;
+  PrimitiveTypes : record
+    PtBoolean : TPsTypeIndex;
+    PtInteger : TPsTypeIndex;
+    PtChar : TPsTypeIndex;
+    PtString : TPsTypeIndex;
+    PtText : TPsTypeIndex
+  end;
+  GlobalScope : TPsScope;
 
-function TypeName(Typ : TPsType) : string;
+procedure ClearDefs;
+begin
+  Defs.Scope.NumTypes := 0;
+  Defs.Scope.NumEnums := 0;
+  Defs.Scope.NumRecords := 0;
+  Defs.Scope.NumVariables := 0;
+  Defs.Scope.NumFunctions := 0;
+end;
+
+function GetCurrentScope: TPsScope;
+begin
+  GetCurrentScope := Defs.Scope
+end;
+
+procedure SetCurrentScope(Scope : TPsScope);
+begin
+  Defs.Scope := Scope
+end;
+
+function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;
 var 
+  Typ : TPsType;
   Ret : string;
   Pos : integer;
 begin
-  if Typ.Enum <> 0 then
+  repeat
+    Typ := Defs.Types[TypeIndex];
+    TypeIndex := Typ.AliasFor
+  until not UseOriginal or (TypeIndex = 0);
+  if Typ.Name <> '' then DeepTypeName := Typ.Name
+  else if Typ.Cls = TtcEnum then
   begin
     Ret := '(';
-    for Pos := 1 to Defs.Enums[Typ.Enum].Size do
+    for Pos := 1 to Defs.Enums[Typ.EnumIndex].Size do
     begin
       if Pos <> 1 then
         Ret := Ret + ',';
-      Ret := Ret + Defs.Enums[Typ.Enum].Values[Pos]
+      Ret := Ret + Defs.Enums[Typ.EnumIndex].Values[Pos]
     end;
-    Ret := Ret + ')'
+    DeepTypeName := Ret + ')'
   end
-  else if Typ.Rec.Size > 0 then
+  else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
-    for Pos := 1 to Typ.Rec.Size do
+    for Pos := 1 to Defs.Records[Typ.RecordIndex].Size do
     begin
-      Ret := Ret + Typ.Rec.Fields[Pos].Name + ':' + Typ.Rec.Fields[Pos].Typ +
-             '; '
+      if Pos <> 1 then Ret := Ret + ',';
+      Ret := Ret +
+             DeepTypeName(Defs.Records[Typ.RecordIndex].Fields[Pos].TypeIndex,
+             true) +
+             ':' + Defs.Records[Typ.RecordIndex].Fields[Pos].Name
     end;
-    Ret := Ret + ' end'
+    DeepTypeName := Ret + ' end'
   end
-  else Ret := Typ.Typ;
-  TypeName := Ret
+  else
+  begin
+    writeln(StdErr, 'Could not get name for type of class ', Typ.Cls);
+    halt(1)
+  end
+end;
+
+function TypeName(TypeIndex : TPsTypeIndex) : string;
+begin
+  TypeName := DeepTypeName(TypeIndex, false)
 end;
 
 function EmptyType : TPsType;
 var 
   Ret : TPsType;
 begin
-  Ret.Typ := '';
-  Ret.Enum := 0;
-  Ret.Rec.Size := 0;
-  Ret.IsRef := false;
+  Ret.Name := '';
+  Ret.Cls := TtcBoolean;
+  Ret.EnumIndex := 0;
+  Ret.RecordIndex := 0;
   EmptyType := Ret
 end;
 
-function SimpleType(Typ : string) : TPsType;
+function PrimitiveType(Cls : TPsTypeClass) : TPsType;
 var 
   Ret : TPsType;
 begin
   Ret := EmptyType();
-  Ret.Typ := Typ;
-  SimpleType := Ret
+  Ret.Cls := Cls;
+  PrimitiveType := Ret
 end;
 
-function IsEmptyType(Typ : TPsType) : boolean;
+function IsPrimitiveType(TypeIndex : TPsTypeIndex; Cls : TPsTypeClass)
+: boolean;
 begin
-  IsEmptyType := (Typ.Typ = '') and (Typ.Enum = 0) and (Typ.Rec.Size = 0)
+  IsPrimitiveType := Defs.Types[TypeIndex].Cls = Cls
 end;
 
 function IntegerType : TPsType;
 begin
-  IntegerType := SimpleType('INTEGER')
+  IntegerType := PrimitiveType(TtcInteger)
 end;
 
-function IsIntegerType(Typ : TPsType) : boolean;
+function IsIntegerType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsIntegerType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
-                   and (Typ.Typ = 'INTEGER')
+  IsIntegerType := IsPrimitiveType(TypeIndex, TtcInteger)
 end;
 
 function StringType : TPsType;
 begin
-  StringType := SimpleType('STRING')
+  StringType := PrimitiveType(TtcString)
 end;
 
 function CharType : TPsType;
 begin
-  CharType := SimpleType('CHAR')
+  CharType := PrimitiveType(TtcChar)
 end;
 
-function IsStringType(Typ : TPsType) : boolean;
+function IsStringType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsStringType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
-                  and (Typ.Typ = 'STRING')
+  IsStringType := IsPrimitiveType(TypeIndex, TtcString)
 end;
 
-function IsCharType(Typ : TPsType) : boolean;
+function IsCharType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsCharType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
-                and (Typ.Typ = 'CHAR')
+  IsCharType := IsPrimitiveType(TypeIndex, TtcChar)
 end;
 
-function IsStringyType(Typ : TPsType) : boolean;
+function IsStringyType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsStringyType := IsStringType(Typ) or IsCharType(Typ)
+  IsStringyType := IsStringType(TypeIndex) or IsCharType(TypeIndex)
 end;
 
 function BooleanType : TPsType;
 begin
-  BooleanType := SimpleType('BOOLEAN')
+  BooleanType := PrimitiveType(TtcBoolean)
 end;
 
-function IsBooleanType(Typ : TPsType) : boolean;
+function IsBooleanType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsBooleanType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
-                   and (Typ.Typ = 'BOOLEAN')
+  IsBooleanType := IsPrimitiveType(TypeIndex, TtcBoolean)
 end;
 
 function TextType : TPsType;
 begin
-  TextType := SimpleType('TEXT')
+  TextType := PrimitiveType(TtcText)
 end;
 
-function IsTextType(Typ : TPsType) : boolean;
+function IsTextType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsTextType := (Typ.Rec.Size = 0) and (Typ.Enum = 0)
-                and (Typ.Typ = 'TEXT')
+  IsTextType := IsPrimitiveType(TypeIndex, TtcText)
 end;
 
-function IsPrimaryType(Typ : TPsType) : boolean;
+function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
+var 
+  A : TPsType;
+  B : TPsType;
 begin
-  IsPrimaryType := (Typ.Enum <> 0) or (Typ.Rec.Size > 0)
-                   or (Typ.Typ = 'BOOLEAN') or (Typ.Typ = 'CHAR')
-                   or (Typ.Typ = 'STRING') or (Typ.Typ = 'INTEGER')
-                   or (Typ.Typ = 'TEXT')
+  A := Defs.Types[AIndex];
+  B := Defs.Types[BIndex];
+  IsSameType := (A.Cls = B.Cls)
+                and (A.EnumIndex = B.EnumIndex)
+                and (A.RecordIndex = B.RecordIndex)
 end;
 
-function FindType(Name : string; Scope : TPsScopeSearch) : TPsType;
+function FindType(Name : string) : TPsTypeIndex;
 var 
   Pos : integer;
-  First : integer;
-  Last : integer;
-  Ret : TPsType;
+  Ret : TPsTypeIndex;
 begin
-  Ret := EmptyType();
-  First := 1;
-  if Scope = LocalOnly then
-    First := Defs.NumTypes.Global;
-  Last := Defs.NumTypes.Global;
-  if Scope <> GlobalOnly then
-    Last := Last + Defs.NumTypes.Local;
-  for Pos := First to Last do
-  begin
-    if Name = Defs.Types[Pos].Name then
-      Ret := Defs.Types[Pos].Typ
-  end;
+  Ret := 0;
+  for Pos := 1 to Defs.Scope.NumTypes do
+    if Name = Defs.Types[Pos].Name then Ret := Pos;
   FindType := Ret
 end;
 
-procedure AddType(Typ : TPsNamedType; Scope : TPsScope);
+function AddType(Typ : TPsType; Scope : TPsScope) : TPsTypeIndex;
 var 
   Pos : integer;
 begin
-  if Scope = Global then
-    Defs.NumTypes.Global := Defs.NumTypes.Global + 1
-  else
-    Defs.NumTypes.Local := Defs.NumTypes.Local + 1;
-  Pos := Defs.NumTypes.Global + Defs.NumTypes.Local;
+  if Typ.Name <> '' then
+  begin
+    Pos := FindType(Typ.Name);
+    if Pos > Scope.NumTypes then
+    begin
+      writeln('Variable ', Typ.Name, ' already defined as ', TypeName(Pos));
+      halt(1)
+    end
+  end;
+  Pos := Defs.Scope.NumTypes + 1;
   if Pos > 32 then
   begin
     writeln(StdErr, 'Too many types');
     halt(1)
   end;
-  Defs.Types[Pos] := Typ
+  Defs.Types[Pos] := Typ;
+  Defs.Scope.NumTypes := Pos;
+  AddType := Pos;
 end;
 
-function FindVar(Name : string; Scope : TPsScopeSearch) : TPsType;
+function FindTypeOfEnumValue(Name : string) : TPsTypeIndex;
 var 
-  Pos : integer;
-  First : integer;
-  Last : integer;
-  Ret : TPsType;
+  Pos : TPsTypeIndex;
+  EnumPos : integer;
 begin
-  Ret := EmptyType();
-  First := 1;
-  if Scope = LocalOnly then
-    First := Defs.NumVars.Global + 1;
-  Last := Defs.NumVars.Global;
-  if Scope <> GlobalOnly then
-    Last := Last + Defs.NumVars.Local;
-  for Pos := First to Last do
+  FindTypeOfEnumValue := 0;
+  for Pos := 1 to Defs.Scope.NumTypes do
+    if Defs.Types[Pos].EnumIndex <> 0 then
+      for EnumPos := 1 to Defs.Enums[Defs.Types[Pos].EnumIndex].Size do
+        if Name = Defs.Enums[Defs.Types[Pos].EnumIndex].Values[EnumPos] then
+          FindTypeOfEnumValue := Pos
+end;
+
+function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;
+begin
+  Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
+  if Defs.Scope.NumEnums > 16 then
   begin
-    if Name = Defs.Vars[Pos].Name then
-      Ret := Defs.Vars[Pos].Typ
-  end;
-  FindVar := Ret
-end;
-
-function FindEnumOfValue(Name : string) : TPsType;
-var 
-  Pos : integer;
-  Ret : TPsType;
-  PosInEnum : integer;
-begin
-  Ret := EmptyType();
-  for Pos := 1 to Defs.NumEnums.Global + Defs.NumEnums.Local do
-    for PosInEnum := 1 to Defs.Enums[Pos].Size do
-      if Name = Defs.Enums[Pos].Values[PosInEnum] then
-        Ret.Enum := Pos;
-  FindEnumOfValue := Ret
-end;
-
-function GetUltimateType(Typ : TPsType) : TPsType;
-var 
-  Name : string;
-begin
-  while not IsPrimaryType(Typ) and not IsEmptyType(Typ) do
-  begin
-    Name := Typ.Typ;
-    Typ := FindType(Name, AllScope);
-  end;
-  GetUltimateType := Typ
-end;
-
-function ResolveType(Name : string) : TPsType;
-begin
-  ResolveType := GetUltimateType(SimpleType(Name))
-end;
-
-function ResolveVarType(Name : string) : TPsType;
-var 
-  Typ : TPsType;
-begin
-  Typ := GetUltimateType(FindVar(Name, AllScope));
-  if IsEmptyType(Typ) then
-    Typ := FindEnumOfValue(Name);
-  ResolveVarType := Typ
-end;
-
-function IsSameType(A : TPsType; B : TPsType) : boolean;
-begin
-  A := GetUltimateType(A);
-  B := GetUltimateType(B);
-  IsSameType := ((A.Typ <> '') and (A.Typ = B.Typ))
-                or ((A.Enum <> 0) and (A.Enum = B.Enum))
-end;
-
-procedure AddVar(VarDef : TPsNamedType; Scope : TPsScope);
-var 
-  SearchScope : TPsScopeSearch;
-  Pos : integer;
-begin
-  SearchScope := LocalOnly;
-  if Scope = Global then
-    SearchScope := AllScope;
-  if not IsEmptyType(FindVar(VarDef.Name, SearchScope)) then
-  begin
-    writeln(StdErr, 'A variable named ', VarDef.Name, ' is already defined');
+    writeln('Too many enums');
     halt(1)
   end;
-  if Scope = Global then
-    Defs.NumVars.Global := Defs.NumVars.Global + 1
-  else
-    Defs.NumVars.Local := Defs.NumVars.Local + 1;
-  Pos := Defs.NumVars.Global + Defs.NumVars.Local;
+  Defs.Enums[Defs.Scope.NumEnums] := Enum;
+  AddEnum := Defs.Scope.NumEnums
+end;
+
+function AddRecord(Rec : TPsRecordDef) : TPsRecordIndex;
+begin
+  Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
+  if Defs.Scope.NumRecords > 32 then
+  begin
+    writeln('Too many records');
+    halt(1)
+  end;
+  Defs.Records[Defs.Scope.NumRecords] := Rec;
+  AddRecord := Defs.Scope.NumRecords
+end;
+
+function FindVariable(Name : string) : TPsVariableIndex;
+var 
+  Pos : integer;
+  Ret : TPsVariableIndex;
+begin
+  Ret := 0;
+  for Pos := 1 to Defs.Scope.NumVariables do
+    if Name = Defs.Variables[Pos].Name then Ret := Pos;
+  FindVariable := Ret
+end;
+
+function AddVariable(VarDef : TPsVariable; Scope : TPsScope)
+: TPsVariableIndex;
+var 
+  Pos : integer;
+begin
+  if VarDef.Name <> '' then
+  begin
+    Pos := FindVariable(VarDef.Name);
+    if Pos > Scope.NumVariables then
+    begin
+      writeln('Variable ', VarDef.Name, ' already defined as ',
+              TypeName(Defs.Variables[Pos].TypeIndex));
+      halt(1)
+    end
+  end;
+  Pos := Defs.Scope.NumVariables + 1;
   if Pos > 32 then
   begin
-    writeln(StdErr, 'Too many vars');
+    writeln(StdErr, 'Too many variables');
     halt(1)
   end;
-  Defs.Vars[Pos] := VarDef
-end;
-
-procedure AddProcArgsToLocalScope(Def : TPsProcedure);
-var 
-  Pos : integer;
-begin
-  for Pos := 1 to Def.ArgCount do
-    AddVar(Def.Args[Pos], Local)
-end;
-
-procedure AddFuncArgsToLocalScope(Def : TPsFunction);
-var 
-  Pos : integer;
-begin
-  for Pos := 1 to Def.ArgCount do
-    AddVar(Def.Args[Pos], Local)
-end;
-
-function EmptyProcedure : TPsProcedure;
-var 
-  Ret : TPsProcedure;
-begin
-  Ret.Name := '';
-  Ret.ArgCount := 0;
-  EmptyProcedure := Ret
-end;
-
-function IsEmptyProcedure(Fn : TPsProcedure) : boolean;
-begin
-  IsEmptyProcedure := (Fn.Name = '') and (Fn.ArgCount = 0)
-end;
-
-function FindProcedure(Name : string) : TPsProcedure;
-var 
-  Pos : integer;
-  Ret : TPsProcedure;
-begin
-  Ret := EmptyProcedure();
-  for Pos := 1 to Defs.NumProcs do
-  begin
-    if Defs.Procs[Pos].Name = Name then
-      Ret := Defs.Procs[Pos]
-  end;
-  FindProcedure := Ret
-end;
-
-procedure AddProcedure(Proc : TPsProcedure);
-begin
-  Defs.NumProcs := Defs.NumProcs + 1;
-  if Defs.NumProcs > 64 then
-  begin
-    writeln(StdErr, 'Too many functions');
-    halt(1)
-  end;
-  Defs.Procs[Defs.NumProcs] := Proc
+  Defs.Variables[Pos] := VarDef;
+  Defs.Scope.NumVariables := Pos;
+  AddVariable := Pos
 end;
 
 function EmptyFunction : TPsFunction;
@@ -611,172 +570,202 @@ var
 begin
   Ret.Name := '';
   Ret.ArgCount := 0;
-  Ret.Ret := EmptyType();
+  Ret.ReturnTypeIndex := 0;
   EmptyFunction := Ret
 end;
 
 function IsEmptyFunction(Fn : TPsFunction) : boolean;
 begin
-  IsEmptyFunction := (Fn.Name = '')
-                     and (Fn.ArgCount = 0)
-                     and IsEmptyType(Fn.Ret)
+  IsEmptyFunction := Fn.Name = ''
 end;
 
-function FindFunction(Name : string) : TPsFunction;
+function FindFunction(Name : string) : TPsFunctionIndex;
 var 
   Pos : integer;
-  Ret : TPsFunction;
 begin
-  Ret := EmptyFunction();
-  for Pos := 1 to Defs.NumFuns do
+  FindFunction := 0;
+  for Pos := 1 to Defs.Scope.NumFunctions do
   begin
-    if Defs.Funs[Pos].Name = Name then
-      Ret := Defs.Funs[Pos]
-  end;
-  FindFunction := Ret
+    if Defs.Functions[Pos].Name = Name then
+      FindFunction := Pos
+  end
 end;
 
-procedure AddFunction(Fun : TPsFunction);
-begin
-  Defs.NumFuns := Defs.NumFuns + 1;
-  if Defs.NumFuns > 64 then
-  begin
-    writeln(StdErr, 'Too many functions');
-    halt(1)
-  end;
-  Defs.Funs[Defs.NumFuns] := Fun
-end;
-
-function FindField(Typ : TPsType; Name : string) : TPsType;
+function AddFunction(Fun : TPsFunction) : TPsFunctionIndex;
 var 
   Pos : integer;
-  Ret : TPsType;
 begin
-  if Typ.Rec.Size = 0 then
+  Pos := FindFunction(Fun.Name);
+  if Pos <> 0 then
   begin
-    writeln(StdErr, 'Not a record: ', Name);
+    writeln('Function ', Fun.Name, ' already defined');
     halt(1)
   end;
-  Ret := EmptyType();
-  for Pos := 1 to Typ.Rec.Size do
-    if Typ.Rec.Fields[Pos].Name = Name then
-      Ret := ResolveType(Typ.Rec.Fields[Pos].Typ);
-  if IsEmptyType(Ret) then
+  Pos := Defs.Scope.NumFunctions + 1;
+  if Pos > 128 then
+  begin
+    writeln(StdErr, 'Too many variables');
+    halt(1)
+  end;
+  Defs.Functions[Pos] := Fun;
+  Defs.Scope.NumFunctions := Pos;
+  AddFunction := Pos
+end;
+
+function FindFieldType(TypeIndex : TPsTypeIndex; Name : string) : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  Rec : TPsRecordDef;
+  Pos : integer;
+begin
+  Typ := Defs.Types[TypeIndex];
+  if Typ.Cls <> TtcRecord then
+  begin
+    writeln(StdErr, 'Not a record: ', Typ.Name);
+    halt(1)
+  end;
+  TypeIndex := 0;
+  Rec := Defs.Records[Typ.RecordIndex];
+  for Pos := 1 to Rec.Size do
+    if Rec.Fields[Pos].Name = Name then
+      TypeIndex := Rec.Fields[Pos].TypeIndex;
+  if TypeIndex = 0 then
   begin
     writeln(StdErr, 'Field not found: ', Name);
     halt(1)
   end;
-  FindField := Ret
+  FindFieldType := TypeIndex
+end;
+
+function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;
+var 
+  Typ : TPsType;
+begin
+  Typ := EmptyType();
+  Typ.Name := Name;
+  Typ.Cls := Cls;
+  MakeType := Typ
+end;
+
+function MakeVariable(Name : string; TypeIndex : TPsTypeIndex; IsRef : boolean)
+: TPsVariable;
+var 
+  VarDef : TPsVariable;
+begin
+  VarDef.Name := Name;
+  VarDef.TypeIndex := TypeIndex;
+  VarDef.IsReference := IsRef;
+  MakeVariable := VarDef
 end;
 
 procedure StartGlobalScope;
 var 
-  Proc : TPsProcedure;
   Fun : TPsFunction;
-  Def : TPsNamedType;
 begin
-  Proc.Name := 'DELETE';
-  Proc.ArgCount := 3;
-  Proc.Args[1].Name := 'STR';
-  Proc.Args[1].Typ := StringType();
-  Proc.Args[1].Typ.IsRef := True;
-  Proc.Args[2].Name := 'FIRST';
-  Proc.Args[2].Typ := IntegerType();
-  Proc.Args[3].Name := 'NUM';
-  Proc.Args[3].Typ := IntegerType();
-  AddProcedure(Proc);
+  ClearDefs();
+  GlobalScope := GetCurrentScope();
 
+  PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean),
+                              GlobalScope);
+  PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger),
+                              GlobalScope);
+  PrimitiveTypes.PtChar := AddType(MakeType('CHAR', TtcChar), GlobalScope);
+  PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString),
+                             GlobalScope);
+  PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText), GlobalScope);
+
+  AddVariable(MakeVariable('FALSE', PrimitiveTypes.PtBoolean, false),
+  GlobalScope);
+  AddVariable(MakeVariable('TRUE', PrimitiveTypes.PtBoolean, false),
+  GlobalScope);
+  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false), GlobalScope);
+  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false),
+  GlobalScope);
+  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false),
+  GlobalScope);
+
+  Fun.Name := 'DELETE';
+  Fun.ArgCount := 3;
+  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, true);
+  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
+  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypeIndex := 0;
+  AddFunction(Fun);
   Fun.Name := 'COPY';
   Fun.ArgCount := 3;
-  Fun.Args[1].Name := 'STR';
-  Fun.Args[1].Typ := StringType();
-  Fun.Args[2].Name := 'FIRST';
-  Fun.Args[2].Typ := IntegerType();
-  Fun.Args[3].Name := 'NUM';
-  Fun.Args[3].Typ := IntegerType();
-  Fun.Ret := StringType();
+  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
+  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
+  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtString;
   AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
-  Fun.Args[1].Name := 'F';
-  Fun.Args[1].Typ := TextType();
-  Fun.Ret := BooleanType();
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtBoolean;
   AddFunction(Fun);
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
-  Fun.Args[1].Name := 'STR';
-  Fun.Args[1].Typ := StringType();
-  Fun.Ret := IntegerType();
+  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
-
-  Def.Name := 'FALSE';
-  Def.Typ := BooleanType();
-  AddVar(Def, Global);
-  Def.Name := 'TRUE';
-  Def.Typ := BooleanType();
-  AddVar(Def, Global);
-  Def.Name := 'INPUT';
-  Def.Typ := TextType();
-  AddVar(Def, Global);
-  Def.Name := 'OUTPUT';
-  Def.Typ := TextType();
-  AddVar(Def, Global);
-  Def.Name := 'STDERR';
-  Def.Typ := TextType();
-  AddVar(Def, Global);
 end;
 
-procedure ResetLocalScope;
-begin
-  Defs.NumEnums.Local := 0;
-  Defs.NumTypes.Local := 0;
-  Defs.NumVars.Local := 0
-end;
-
-function PsTypeDenoter(Scope : TPsScope) : TPsType;
+function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 var 
-  Def : TPsType;
+  TypeIndex : TPsTypeIndex;
+  Typ : TPsType;
+  Enum : TPsEnumDef;
+  Rec : TPsRecordDef;
 begin
-  Def := EmptyType();
+  TypeIndex := 0;
   if LxToken.Id = TkIdentifier then
   begin
-    Def.Typ := LxToken.Value;
+    TypeIndex := FindType(LxToken.Value);
+    if TypeIndex = 0 then
+    begin
+      writeln('Unknown type: ', LxToken.Value);
+      halt(1)
+    end;
     ReadToken()
   end
   else if LxToken.Id = TkLparen then
   begin
     SkipToken(TkLparen);
-    if Scope = Global then
-      Defs.NumEnums.Global := Defs.NumEnums.Global + 1
-    else
-      Defs.NumEnums.Local := Defs.NumEnums.Local + 1;
-    Def.Enum := Defs.NumEnums.Global + Defs.NumEnums.Local;
+    Enum.Size := 0;
     repeat
       WantToken(TkIdentifier);
-      Defs.Enums[Def.Enum].Size := Defs.Enums[Def.Enum].Size + 1;
-      Defs.Enums[Def.Enum].Values[Defs.Enums[Def.Enum].Size] := LxToken.Value;
+      Enum.Size := Enum.Size + 1;
+      Enum.Values[Enum.Size] := LxToken.Value;
       ReadToken();
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
     until LxToken.Id = TkRparen;
-    SkipToken(TkRparen);
+    Typ := EmptyType();
+    Typ.Cls := TtcEnum;
+    Typ.EnumIndex := AddEnum(Enum);
+    TypeIndex := AddType(Typ, Scope);
+    SkipToken(TkRparen)
   end
   else if LxToken.Id = TkRecord then
   begin
     SkipToken(TkRecord);
+    Rec.Size := 0;
     repeat
       WantToken(TkIdentifier);
-      Def.Rec.Size := Def.Rec.Size + 1;
-      Def.Rec.Fields[Def.Rec.Size].Name := LxToken.Value;
+      Rec.Size := Rec.Size + 1;
+      Rec.Fields[Rec.Size].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
       WantToken(TkIdentifier);
-      Def.Rec.Fields[Def.Rec.Size].Typ := LxToken.Value;
-      ReadToken();
+      Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon);
     until LxToken.Id = TkEnd;
-    SkipToken(TkEnd);
+    Typ := EmptyType();
+    Typ.Cls := TtcRecord;
+    Typ.RecordIndex := AddRecord(Rec);
+    TypeIndex := AddType(Typ, Scope);
+    SkipToken(TkEnd)
   end
   else
   begin
@@ -784,7 +773,7 @@ begin
             LxToken.Value);
     halt(1)
   end;
-  PsTypeDenoter := Def;
+  PsTypeDenoter := TypeIndex;
 end;
 
 procedure OutEnumValues(Pos : TPsEnumIndex);
@@ -800,178 +789,178 @@ begin
   writeln(Output, ' };')
 end;
 
-procedure OutLocalEnumValues;
+procedure OutEnumValuesInScope(Scope : TPsScope);
 var 
   Pos : TPsEnumIndex;
 begin
-  for Pos := Defs.NumEnums.Global + 1
-      to Defs.NumEnums.Global + Defs.NumEnums.Local do
+  for Pos := Scope.NumEnums + 1 to Defs.Scope.NumEnums do
     OutEnumValues(Pos)
 end;
 
-procedure OutNameAndType(Name : string; Def : TPsType);
-var 
-  Pos : integer;
-  SubDef : TPsType;
+function OutVariableName(Name : string; IsReference : boolean) : string;
 begin
-  if Def.IsRef then
-    Name := '*' + Name;
-  if Def.Enum <> 0 then
+  if IsReference then OutVariableName := '*' + Name
+  else OutVariableName := Name
+end;
+
+procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
+var 
+  Typ : TPsType;
+  Enum : TPsEnumDef;
+  Rec : TPsRecordDef;
+  Pos : integer;
+begin
+  if TypeIndex <> 0 then
+    Typ := Defs.Types[TypeIndex];
+  if TypeIndex = 0 then write(Output, 'void ', Name)
+  else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then write(Output, Typ.Name,
+                                                              ' ', Name)
+  else if Typ.Cls = TtcBoolean then write(Output, 'PBoolean ', Name)
+  else if Typ.Cls = TtcInteger then write(Output, 'int ', Name)
+  else if Typ.Cls = TtcChar then write(Output, 'char ', Name)
+  else if Typ.Cls = TtcString then write(Output, 'STRING ', Name)
+  else if Typ.Cls = TtcText then write(Output, 'PFile ', Name)
+  else if Typ.Cls = TtcEnum then
   begin
+    Enum := Defs.Enums[Typ.EnumIndex];
     write(Output, 'enum { ');
-    for Pos := 1 to Defs.Enums[Def.Enum].Size do
+    for Pos := 1 to Enum.Size do
     begin
       if Pos > 1 then
         write(Output, ', ');
-      write(Output, Defs.Enums[Def.Enum].Values[Pos])
+      write(Output, Enum.Values[Pos])
     end;
-    write(Output, '} ', Name);
+    write(Output, '} ', Name)
   end
-  else if Def.Rec.Size > 0 then
+  else if Typ.Cls = TtcRecord then
   begin
-    SubDef := EmptyType();
+    Rec := Defs.Records[Typ.RecordIndex];
     write(Output, 'struct { ');
-    for Pos := 1 to Def.Rec.Size do
+    for Pos := 1 to Rec.Size do
     begin
-      SubDef.Typ := Def.Rec.Fields[Pos].Typ;
-      OutNameAndType(Def.Rec.Fields[Pos].Name, SubDef);
-      write(Output, '; ');
+      OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
+      write(Output, '; ')
     end;
-    write(Output, '} ', Name);
+    write(Output, '} ', Name)
   end
-  else if Def.Typ = 'BOOLEAN' then
-         write(Output, 'PBoolean ', Name)
-  else if Def.Typ = 'CHAR' then
-         write(Output, 'char ', Name)
-  else if Def.Typ = 'INTEGER' then
-         write(Output, 'int ', Name)
   else
-    write(Output, Def.Typ, ' ', Name);
+  begin
+    writeln(StdErr, 'Error writing name and type: ', Name, ', ',
+            TypeName(TypeIndex));
+    halt(1)
+  end
 end;
 
-procedure OutVar(Def : TPsNamedType);
+procedure OutTypeDefinition(TypeIndex : TPsTypeIndex);
+var 
+  Name : string;
 begin
-  OutNameAndType(Def.Name, Def.Typ)
-end;
-
-procedure OutTypeDefinition(Def : TPsNamedType);
-begin
+  Name := Defs.Types[TypeIndex].Name;
+  if Defs.Types[TypeIndex].AliasFor = 0 then
+  begin
+    writeln(StdErr, 'Type ', Name, ' is not an alias');
+    halt(1)
+  end;
   write(Output, 'typedef ');
-  OutNameAndType(Def.Name, Def.Typ);
+  OutNameAndType(Name, Defs.Types[TypeIndex].AliasFor);
   writeln(Output, ';');
 end;
 
 procedure PsTypeDefinitions(Scope : TPsScope);
 var 
-  Def : TPsNamedType;
-  Enum : TPsEnumIndex;
+  Name : string;
+  TypeIndex : TPsTypeIndex;
+  NewType : TPsType;
+  PreviousScope : TPsScope;
 begin
-  Enum := Defs.NumEnums.Global;
+  PreviousScope := GetCurrentScope();
   WantTokenAndRead(TkType);
   repeat
     WantToken(TkIdentifier);
-    Def.Name := LxToken.Value;
+    Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkEquals);
-    Def.Typ := PsTypeDenoter(Scope);
+    TypeIndex := PsTypeDenoter(Scope);
+    NewType := Defs.Types[TypeIndex];
+    NewType.Name := Name;
+    NewType.AliasFor := TypeIndex;
+    TypeIndex := AddType(NewType, Scope);
     WantTokenAndRead(TkSemicolon);
-    OutTypeDefinition(Def);
-    AddType(Def, Scope)
+    OutTypeDefinition(TypeIndex);
   until LxToken.Id <> TkIdentifier;
-  for Enum := Enum + 1 to Defs.NumEnums.Global do
-    OutEnumValues(Enum)
+  OutEnumValuesInScope(PreviousScope)
 end;
 
-procedure OutVarDefinition(Def : TPsNamedType);
+procedure OutVariableDeclaration(VarDef : TPsVariable);
 begin
-  OutNameAndType(Def.Name, Def.Typ);
+  OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
+  VarDef.TypeIndex)
+end;
+
+procedure OutVariableDefinition(VarIndex : TPsVariableIndex);
+begin
+  OutVariableDeclaration(Defs.Variables[VarIndex]);
   writeln(Output, ';');
 end;
 
 procedure PsVarDefinitions(Scope : TPsScope);
 var 
-  Def : TPsNamedType;
-  Enum : TPsEnumIndex;
+  VarDef : TPsVariable;
+  PreviousScope : TPsScope;
 begin
-  Enum := Defs.NumEnums.Global;
+  PreviousScope := GetCurrentScope();
   WantTokenAndRead(TkVar);
   repeat
     WantToken(TkIdentifier);
-    Def.Name := LxToken.Value;
+    VarDef.Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkColon);
-    Def.Typ := PsTypeDenoter(Scope);
+    VarDef.TypeIndex := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
-    OutVarDefinition(Def);
-    AddVar(Def, Scope)
+    OutVariableDefinition(AddVariable(VarDef, Scope));
   until LxToken.Id <> TkIdentifier;
-  for Enum := Enum + 1 to Defs.NumEnums.Global do
-    OutEnumValues(Enum)
-end;
-
-procedure OutProcedurePrototype(Def : TPsProcedure);
-var 
-  Pos : integer;
-begin
-  write(Output, 'void ', Def.Name, '(');
-  for Pos := 1 to Def.ArgCount do
-  begin
-    OutVar(def.Args[Pos]);
-    if Pos <> Def.ArgCount then
-      write(Output, ', ')
-  end;
-  write(Output, ')')
-end;
-
-procedure OutProcedureDeclaration(Def : TPsProcedure);
-begin
-  OutProcedurePrototype(Def);
-  writeln(Output, ';')
-end;
-
-procedure OutProcedureDefinition(Def : TPsProcedure);
-begin
-  OutProcedurePrototype(Def);
-  writeln(Output, ' {')
-end;
-
-procedure OutProcedureEnd(Def : TPsProcedure);
-begin
-  writeln(Output, '}')
+  OutEnumValuesInScope(PreviousScope)
 end;
 
 procedure OutFunctionPrototype(Def : TPsFunction);
 var 
   Pos : integer;
 begin
-  OutNameAndType(Def.Name, Def.Ret);
+  OutNameAndType(Def.Name, Def.ReturnTypeIndex);
   write(Output, '(');
   for Pos := 1 to Def.ArgCount do
   begin
-    OutVar(def.Args[Pos]);
+    OutVariableDeclaration(def.Args[Pos]);
     if Pos <> Def.ArgCount then
       write(Output, ', ')
   end;
   write(Output, ')')
 end;
 
-procedure OutFunctionDeclaration(Def : TPsFunction);
+procedure OutFunctionDeclaration(FnIndex : TPsFunctionIndex);
 begin
-  OutFunctionPrototype(Def);
+  OutFunctionPrototype(Defs.Functions[FnIndex]);
   writeln(Output, ';')
 end;
 
-procedure OutFunctionDefinition(Def : TPsFunction);
+procedure OutFunctionDefinition(FnIndex : TPsFunctionIndex);
+var 
+  Fun : TPsFunction;
 begin
-  OutFunctionPrototype(Def);
+  Fun := Defs.Functions[FnIndex];
+  OutFunctionPrototype(Fun);
   writeln(Output, ' {');
-  OutNameAndType(Def.Name, Def.Ret);
-  writeln(Output, ';')
+  if Fun.ReturnTypeIndex <> 0 then
+  begin
+    OutNameAndType(Fun.Name, Fun.ReturnTypeIndex);
+    writeln(Output, ';')
+  end
 end;
 
-procedure OutFunctionEnd(Def : TPsFunction);
+procedure OutFunctionEnd(FnIndex : TPsFunctionIndex);
 begin
-  writeln(Output, 'return ', Def.Name, ';');
+  if Defs.Functions[FnIndex].ReturnTypeIndex <> 0 then
+    writeln(Output, 'return ', Defs.Functions[FnIndex].Name, ';');
   writeln(Output, '}')
 end;
 
@@ -981,114 +970,81 @@ forward;
 procedure PsDefinitions(Scope : TPsScope);
 forward;
 
-procedure PsProcedureDefinition;
+procedure AddFuncArgsToScope(FnIndex : TPsFunctionIndex; Scope : TPsScope);
 var 
-  Def : TPsProcedure;
-  IsRef : boolean;
+  Pos : integer;
 begin
-  WantTokenAndRead(TkProcedure);
-  WantToken(TkIdentifier);
-  Def.Name := LxToken.Value;
-  Def.ArgCount := 0;
-  ReadToken();
-  WantToken2(TkLparen, TkSemicolon);
-  if LxToken.Id = TkLparen then
-  begin
-    WantTokenAndRead(TkLparen);
-    repeat
-      Def.ArgCount := Def.ArgCount + 1;
-      IsRef := LxToken.Id = TkVar;
-      SkipToken(TkVar);
-      WantToken(TkIdentifier);
-      Def.Args[Def.ArgCount].Name := LxToken.Value;
-      ReadToken();
-      WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].Typ := PsTypeDenoter(Local);
-      Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
-      WantToken2(TkSemicolon, TkRparen);
-      SkipToken(TkSemicolon);
-    until LxToken.Id = TkRparen;
-    SkipToken(TkRparen)
-  end;
-  WantTokenAndRead(TkSemicolon);
-  AddProcedure(Def);
+  for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
+    AddVariable(Defs.Functions[FnIndex].Args[Pos], Scope)
+end;
 
+procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
+var 
+  PreviousScope : TPsScope;
+begin
   if LxToken.Id = TkForward then
   begin
     SkipToken(TkForward);
     WantTokenAndRead(TkSemicolon);
-    OutProcedureDeclaration(Def);
+    OutFunctionDeclaration(FnIndex);
   end
   else
   begin
-    ResetLocalScope();
-    AddProcArgsToLocalScope(Def);
-    OutProcedureDefinition(Def);
-    PsDefinitions(Local);
-    OutLocalEnumValues();
+    PreviousScope := GetCurrentScope();
+    AddFuncArgsToScope(FnIndex, PreviousScope);
+    OutFunctionDefinition(FnIndex);
+    OutEnumValuesInScope(PreviousScope);
+    PsDefinitions(PreviousScope);
     WantTokenAndRead(TkBegin);
     while LxToken.Id <> TkEnd do
       PsStatement();
     WantTokenAndRead(TkEnd);
     WantTokenAndRead(TkSemicolon);
-    OutProcedureEnd(Def);
+    OutFunctionEnd(FnIndex);
+    SetCurrentScope(PreviousScope);
   end
 end;
 
 procedure PsFunctionDefinition;
 var 
+  IsProcedure : boolean;
   Def : TPsFunction;
-  IsRef : boolean;
 begin
-  WantTokenAndRead(TkFunction);
+  WantToken2(TkFunction, TkProcedure);
+  IsProcedure := LxToken.Id = TkProcedure;
+  ReadToken();
   WantToken(TkIdentifier);
   Def.Name := LxToken.Value;
   Def.ArgCount := 0;
   ReadToken();
-  WantToken2(TkLparen, TkColon);
+  if IsProcedure then WantToken2(TkLparen, TkSemicolon)
+  else WantToken2(TkLparen, TkColon);
   if LxToken.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
     repeat
       Def.ArgCount := Def.ArgCount + 1;
-      IsRef := LxToken.Id = TkVar;
+      Def.Args[Def.ArgCount].IsReference := LxToken.Id = TkVar;
       SkipToken(TkVar);
       WantToken(TkIdentifier);
       Def.Args[Def.ArgCount].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].Typ := PsTypeDenoter(Local);
-      Def.Args[Def.ArgCount].Typ.IsRef := IsRef;
+      Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
     until LxToken.Id = TkRparen;
     SkipToken(TkRparen)
   end;
-  WantTokenAndRead(TkColon);
-  Def.Ret := PsTypeDenoter(Local);
-  WantTokenAndRead(TkSemicolon);
-  AddFunction(Def);
-
-  if LxToken.Id = TkForward then
-  begin
-    SkipToken(TkForward);
-    WantTokenAndRead(TkSemicolon);
-    OutFunctionDeclaration(Def);
-  end
+  if IsProcedure then
+    Def.ReturnTypeIndex := 0
   else
   begin
-    ResetLocalScope();
-    AddFuncArgsToLocalScope(Def);
-    OutFunctionDefinition(Def);
-    PsDefinitions(Local);
-    OutLocalEnumValues();
-    WantTokenAndRead(TkBegin);
-    while LxToken.Id <> TkEnd do
-      PsStatement();
-    WantTokenAndRead(TkEnd);
-    WantTokenAndRead(TkSemicolon);
-    OutFunctionEnd(Def);
-  end
+    WantTokenAndRead(TkColon);
+    Def.ReturnTypeIndex := PsTypeDenoter(GlobalScope);
+  end;
+  WantTokenAndRead(TkSemicolon);
+  PsFunctionBody(AddFunction(Def));
 end;
 
 procedure PsDefinitions(Scope : TPsScope);
@@ -1101,9 +1057,8 @@ begin
       PsTypeDefinitions(Scope)
     else if LxToken.Id = TkVar then
            PsVarDefinitions(Scope)
-    else if LxToken.Id = TkProcedure then
-           PsProcedureDefinition()
-    else if LxToken.Id = TkFunction then
+    else if (LxToken.Id = TkProcedure)
+            or (LxToken.Id = TkFunction) then
            PsFunctionDefinition()
     else
       Done := true;
@@ -1146,78 +1101,60 @@ begin
 end;
 
 type 
-  TPsIdClass = (IdcVariable, IdcProcedure, IdcFunction,
+  TPsIdClass = (IdcVariable, IdcFunction,
                 IdcRead, IdcReadln, IdcWrite, IdcWriteln);
   TPsIdentifier = record
+    Value : string;
     Cls : TPsIdClass;
-    Proc : TPsProcedure;
-    Fn : TPsFunction;
-    Typ : TPsType;
-    Name : string
+    TypeIndex : TPsTypeIndex;
+    FunctionIndex : TPsFunctionIndex
   end;
   TPsExpression = record
     Value : string;
-    Typ : TPsType;
+    TypeIndex : TPsTypeIndex
   end;
-
-function SetIdentifier(Name : string; Id : TPsIdentifier) : TPsIdentifier;
-begin
-  Id.Name := Name;
-  if (Id.Cls = IdcVariable) and Id.Typ.IsRef then
-    Id.Name := '(*' + Id.Name + ')';
-  SetIdentifier := Id
-end;
-
-function AddField(Name : string; Id : TPsIdentifier) : TPsIdentifier;
-begin
-  Id.Name := Id.Name + '.' + Name;
-  AddField := Id
-end;
-
-function SetStringIndex(Idx : TPsExpression; Id : TPsIdentifier)
-: TPsIdentifier;
-begin
-  Id.Name := Id.Name + '.chr[' + Idx.Value + ']';
-  Id.Typ := CharType();
-  SetStringIndex := Id
-end;
-
-function CoerceType(Expr : TPsExpression; Typ : TPsType) : TPsExpression;
-begin
-  if IsCharType(Expr.Typ) and IsStringType(Typ) then
-  begin
-    Expr.Typ := StringType();
-    Expr.Value := 'str_of(' + Expr.Value + ')';
-  end
-  else if not IsSameType(Expr.Typ, Typ) then
-  begin
-    writeln(StdErr, 'Cannot assign ', TypeName(Expr.Typ), ' to ',
-    TypeName(Typ));
-    halt(1)
-  end;
-  CoerceType := Expr
-end;
 
 function PsExpression : TPsExpression;
 forward;
 
+function OutFieldName(Base : string; Name : string) : string;
+begin
+  if Base[1] = '*' then OutFieldName := '(' + Base + ').' + Name
+  else OutFieldName := Base + '.' + Name
+end;
+
+function OutStringIndex(Base : string; Expr : TPsExpression) : string;
+begin
+  if not IsIntegerType(Expr.TypeIndex) then
+  begin
+    writeln(StdErr, 'Subscripts must be integers');
+    halt(1)
+  end;
+  OutStringIndex := Base + '.chr[' + Expr.Value + ']'
+end;
+
 procedure OutIdentifier(Id : TPsIdentifier);
 begin
-  write(Output, Id.Name)
+  write(Output, Id.Value)
 end;
 
 function PsIdentifier : TPsIdentifier;
 var 
   Name : string;
+  FullName : string;
   Ident : TPsIdentifier;
-  Proc : TPsProcedure;
-  Fn : TPsFunction;
+  VarIndex : TPsVariableIndex;
+  FnIndex : TPsFunctionIndex;
+  EnumTypeIndex : TPsTypeIndex;
   Expr : TPsExpression;
 begin
+  WantToken(TkIdentifier);
   Name := LxToken.Value;
-  Proc := FindProcedure(Name);
-  Fn := FindFunction(Name);
+  VarIndex := FindVariable(Name);
+  FnIndex := FindFunction(Name);
+  EnumTypeIndex := FindTypeOfEnumValue(Name);
   ReadToken();
+
   if LxToken.Id = TkLparen then
   begin
     if Name = 'READ' then
@@ -1228,55 +1165,82 @@ begin
            Ident.Cls := IdcWrite
     else if Name = 'WRITELN' then
            Ident.Cls := IdcWriteln
-    else if not IsEmptyProcedure(Proc) then
+    else
     begin
-      Ident.Cls := IdcProcedure;
-      Ident := SetIdentifier(Name, Ident);
-      Ident.Proc := Proc;
-    end
-    else if not IsEmptyFunction(Fn) then
-    begin
+      if FnIndex = 0 then
+      begin
+        writeln(StdErr, 'Unknown function or procedure: ', Name);
+        halt(1)
+      end;
+      Ident.Value := Name;
       Ident.Cls := IdcFunction;
-      Ident := SetIdentifier(Name, Ident);
-      Ident.Fn := Fn;
+      Ident.FunctionIndex := FnIndex;
     end
   end
   else
   begin
     Ident.Cls := IdcVariable;
-    Ident.Typ := ResolveVarType(Name);
-    Ident := SetIdentifier(Name, Ident);
-    if IsEmptyType(Ident.Typ) then
-      Ident.Typ := Fn.Ret;
-    if IsEmptyType(Ident.Typ) then
+    if EnumTypeIndex <> 0 then
     begin
-      writeln(StdErr, 'Unknown variable: ', Name);
+      Ident.Value := OutVariableName(Name, false);
+      Ident.TypeIndex := EnumTypeIndex
+    end
+    else if FnIndex <> 0 then
+    begin
+      Ident.Value := OutVariableName(Name, false);
+      Ident.TypeIndex := Defs.Functions[FnIndex].ReturnTypeIndex
+    end
+    else if VarIndex <> 0 then
+    begin
+      Ident.Value := OutVariableName(Name,
+                     Defs.Variables[VarIndex].IsReference);
+      Ident.TypeIndex := Defs.Variables[VarIndex].TypeIndex
+    end
+    else
+    begin
+      writeln(StdErr, 'Unknown variable or argument: ', Name);
       halt(1)
     end;
+
+    FullName := Name;
     while (LxToken.Id = TkDot) or (LxToken.Id = TkLbracket) do
     begin
       if LxToken.Id = TkDot then
       begin
         WantTokenAndRead(TkDot);
+        if Defs.Types[Ident.TypeIndex].Cls <> TtcRecord then
+        begin
+          writeln(StdErr, 'Variable ', FullName, ' is not a record');
+          halt(1)
+        end;
+        WantToken(TkIdentifier);
         Name := LxToken.Value;
-        Ident := AddField(Name, Ident);
-        Ident.Typ := FindField(Ident.Typ, Name);
+        ReadToken();
+        Ident.TypeIndex := FindFieldType(Ident.TypeIndex, Name);
+        if Ident.TypeIndex = 0 then
+        begin
+          writeln(StdErr, 'Could not find field ', Name, ' of ', FullName);
+          halt(1)
+        end;
+        FullName := FullName + '.' + Name;
+        Ident.Value := OutFieldName(Ident.Value, Name);
       end
-      else
+      else if LxToken.Id = TkLbracket then
       begin
         WantTokenAndRead(TkLbracket);
         Expr := PsExpression();
-        WantToken(TkRbracket);
-        if IsStringyType(Ident.Typ) then
-          Ident := SetStringIndex(Expr, Ident)
+        WantTokenAndRead(TkRbracket);
+        if IsStringyType(Ident.TypeIndex) then
+        begin
+          Ident.Value := OutStringIndex(Ident.Value, Expr);
+          Ident.TypeIndex := PrimitiveTypes.PtChar
+        end
         else
         begin
-          writeln(StdErr, 'Specified index for variable ', Ident.Name,
-                  ', which is not an array');
+          writeln(StdErr, 'Variable ', FullName, ' is not a string');
           halt(1)
         end
-      end;
-      ReadToken()
+      end
     end
   end;
   PsIdentifier := Ident
@@ -1332,13 +1296,13 @@ begin
   if Length(Expr.Value) = 1 then
   begin
     Expr.Value := '''' + Expr.Value + '''';
-    Expr.Typ := CharType()
+    Expr.TypeIndex := PrimitiveTypes.PtChar;
   end
   else
   begin
     Str(Length(Expr.Value), Size);
     Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
-    Expr.Typ := StringType()
+    Expr.TypeIndex := PrimitiveTypes.PtString;
   end;
   GenStringConstant := Expr
 end;
@@ -1347,7 +1311,7 @@ function GenNumberConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  Expr.Typ := IntegerType();
+  Expr.TypeIndex := PrimitiveTypes.PtInteger;
   Expr.Value := Value;
   GenNumberConstant := Expr
 end;
@@ -1381,9 +1345,9 @@ begin
     halt(1)
   end;
   if Cmp = '' then
-    Expr.Typ := IntegerType()
+    Expr.TypeIndex := PrimitiveTypes.PtInteger
   else
-    Expr.Typ := BooleanType();
+    Expr.TypeIndex := PrimitiveTypes.PtBoolean;
   Expr.Value := Left.Value + ' ' + Oper + Cmp + ' ' + Right.Value;
   IntegerBinaryExpression := Expr
 end;
@@ -1407,7 +1371,7 @@ begin
     writeln(StdErr, 'Expected binary operator, found ', Op);
     halt(1)
   end;
-  Expr.Typ := BooleanType();
+  Expr.TypeIndex := PrimitiveTypes.PtBoolean;
   Expr.Value := Left.Value + ' ' + Oper + ' ' + Right.Value;
   BooleanBinaryExpression := Expr
 end;
@@ -1435,14 +1399,15 @@ begin
     halt(1)
   end;
 
-  FName := FName + '_' + Left.Typ.Typ + '_' + Right.Typ.Typ;
+  FName := FName + '_' + TypeName(Left.TypeIndex) + '_' +
+           TypeName(Right.TypeIndex);
 
-  Expr.Typ := StringType();
+  Expr.TypeIndex := PrimitiveTypes.PtString;
   Expr.Value := FName + '(' + Left.Value + ', ' + Right.Value + ')';
   if Cmp <> '' then
   begin
-    Expr.Typ := BooleanType();
-    Expr.Value := '(' + Expr.Value + ' ' + Cmp + ' 0)'
+    Expr.TypeIndex := PrimitiveTypes.PtBoolean;
+    Expr.Value := Expr.Value + ' ' + Cmp + ' 0'
   end;
   StringyBinaryExpression := Expr
 end;
@@ -1450,16 +1415,16 @@ end;
 function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
                           TPsExpression) : TPsExpression;
 begin
-  if IsBooleanType(Left.Typ) and IsBooleanType(Right.Typ) then
+  if IsBooleanType(Left.TypeIndex) and IsBooleanType(Right.TypeIndex) then
     BinaryExpression := BooleanBinaryExpression(Left, Op, Right)
-  else if IsIntegerType(Left.Typ) and IsIntegerType(Right.Typ) then
+  else if IsIntegerType(Left.TypeIndex) and IsIntegerType(Right.TypeIndex) then
          BinaryExpression := IntegerBinaryExpression(Left, Op, Right)
-  else if IsStringyType(Left.Typ) and IsStringyType(Right.Typ) then
+  else if IsStringyType(Left.TypeIndex) and IsStringyType(Right.TypeIndex) then
          BinaryExpression := StringyBinaryExpression(Left, Op, Right)
   else
   begin
     writeln(StdErr, 'Type mismatch for operator ', Op,
-            ': ', TypeName(Left.Typ), ' and ', TypeName(Right.Typ));
+            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex));
     halt(1)
   end
 end;
@@ -1472,14 +1437,31 @@ begin
     writeln('Expected unary operator, found ', Op);
     halt(1)
   end
-  else if not IsBooleanType(Expr.Typ) then
+  else if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
     halt(1)
   end
   else
     Expr.Value := '!' + Expr.Value;
   UnaryExpression := Expr
+end;
+
+function CoerceType(Expr : TPsExpression; TypeIndex : TPsTypeIndex)
+: TPsExpression;
+begin
+  if IsCharType(Expr.TypeIndex) and IsStringType(TypeIndex) then
+  begin
+    Expr.TypeIndex := PrimitiveTypes.PtString;
+    Expr.Value := 'str_of(' + Expr.Value + ')';
+  end
+  else if not IsSameType(Expr.TypeIndex, TypeIndex) then
+  begin
+    writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
+    TypeName(TypeIndex));
+    halt(1)
+  end;
+  CoerceType := Expr
 end;
 
 function GenFunctionCallStart(FnProc : TPsExpression) : TPsExpression;
@@ -1495,14 +1477,14 @@ begin
 end;
 
 function GenFunctionCallArgument(FnProc : TPsExpression; Arg : TPsExpression;
-                                 Def: TPsNamedType; First : boolean)
+                                 Def: TPsVariable; First : boolean)
 : TPsExpression;
 begin
   if not First then
     FnProc.Value := FnProc.Value + ', ';
-  if Def.Typ.IsRef then
+  if Def.IsReference then
     FnProc.Value := FnProc.Value + '&';
-  FnProc.Value := FnProc.Value + CoerceType(Arg, Def.Typ).Value;
+  FnProc.Value := FnProc.Value + CoerceType(Arg, Def.TypeIndex).Value;
   GenFunctionCallArgument := FnProc
 end;
 
@@ -1517,16 +1499,16 @@ var
   Expr : TPsExpression;
   ArgNum : integer;
 begin
-  Expr.Typ := Id.Fn.Ret;
-  Expr.Value := Id.Name;
+  Expr.TypeIndex := Defs.Functions[Id.FunctionIndex].ReturnTypeIndex;
+  Expr.Value := Id.Value;
   WantTokenAndRead(TkLparen);
   Expr := GenFunctionCallStart(Expr);
-  for ArgNum := 1 to Id.Fn.ArgCount do
+  for ArgNum := 1 to Defs.Functions[Id.FunctionIndex].ArgCount do
   begin
+    if ArgNum <> 1 then
+      WantTokenAndRead(TkComma);
     Expr := GenFunctionCallArgument(Expr, PsExpression(),
-            Id.Fn.Args[ArgNum], ArgNum = 1);
-    if ArgNum < Id.Fn.ArgCount then
-      WantTokenAndRead(TkComma)
+            Defs.Functions[Id.FunctionIndex].Args[ArgNum], ArgNum = 1);
   end;
   WantTokenAndRead(TkRparen);
   PsFunctionCall := GenFunctionCallEnd(Expr)
@@ -1536,17 +1518,17 @@ procedure OutRead(Src : string; OutVar : TPsIdentifier);
 begin
   if OutVar.Cls <> IdcVariable then
   begin
-    writeln(StdErr, 'Expected variable for read argument, got ', OutVar.Name);
+    writeln(StdErr, 'Expected variable for read argument, got ', OutVar.Value);
     halt(1)
   end;
-  if not IsStringyType(OutVar.Typ) then
+  if not IsStringyType(OutVar.TypeIndex) then
   begin
-    writeln(StdErr, 'Invalid type for read argument ', OutVar.Name, ' got ',
-            TypeName(OutVar.Typ));
+    writeln(StdErr, 'Invalid type for read argument ', OutVar.Value, ' got ',
+            TypeName(OutVar.TypeIndex));
     halt(1)
   end;
-  writeln(Output, 'read_', TypeName(OutVar.Typ), '(', Src, ', &', OutVar.Name,
-  ');')
+  writeln(Output, 'read_', DeepTypeName(OutVar.TypeIndex, true), '(', Src,
+  ', &', OutVar.Value, ');')
 end;
 
 procedure OutReadln(Src : string);
@@ -1564,8 +1546,8 @@ begin
   if LxToken.Id <> TkRparen then
   begin
     OutVar := PsIdentifier();
-    if IsTextType(OutVar.Typ) then
-      Src := OutVar.Name
+    if IsTextType(OutVar.TypeIndex) then
+      Src := OutVar.Value
     else
       OutRead(Src, OutVar);
     WantToken2(TkComma, TkRparen);
@@ -1586,11 +1568,11 @@ end;
 
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
-  if Expr.Typ.Enum <> 0 then
+  if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
     writeln(Output, 'write_enum(', Dst, ', ', Expr.Value, ', EnumValues',
-            Expr.Typ.Enum, ');')
+            Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(Output, 'write_', TypeName(Expr.Typ),
+    writeln(Output, 'write_', DeepTypeName(Expr.TypeIndex, true),
     '(', Dst, ', ', Expr.Value, ');')
 end;
 
@@ -1609,7 +1591,7 @@ begin
   if LxToken.Id <> TkRparen then
   begin
     Expr := PsExpression();
-    if IsTextType(Expr.Typ) then
+    if IsTextType(Expr.TypeIndex) then
       Dst := Expr.Value
     else
       OutWrite(Dst, Expr);
@@ -1631,8 +1613,8 @@ function GenVariable(Id : TPsIdentifier) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  Expr.Typ := Id.Typ;
-  Expr.Value := Id.Name;
+  Expr.TypeIndex := Id.TypeIndex;
+  Expr.Value := Id.Value;
   GenVariable := Expr
 end;
 
@@ -1738,45 +1720,8 @@ procedure OutAssign(Id : TPsIdentifier; Expr : TPsExpression);
 begin
   OutIdentifier(Id);
   write(Output, ' = ');
-  OutExpression(CoerceType(Expr, Id.Typ));
+  OutExpression(CoerceType(Expr, Id.TypeIndex));
   writeln(Output, ';')
-end;
-
-procedure OutProcedureCallStart(Id : TPsIdentifier);
-begin
-  write(Output, Id.Name, '(')
-end;
-
-procedure OutProcedureCallEnd;
-begin
-  writeln(Output, ');')
-end;
-
-procedure OutProcedureCallArgument(Arg : TPsExpression; Def : TPsNamedType;
-                                   First : boolean);
-begin
-  if not First then
-    write(Output, ', ');
-  if Def.Typ.IsRef then
-    write(Output, '&');
-  write(Output, CoerceType(Arg, Def.Typ).Value)
-end;
-
-procedure PsProcedureCall(Id : TPsIdentifier);
-var 
-  ArgNum : integer;
-begin
-  ArgNum := 1;
-  WantTokenAndRead(TkLparen);
-  OutProcedureCallStart(Id);
-  for ArgNum := 1 to Id.Proc.ArgCount do
-  begin
-    OutProcedureCallArgument(PsExpression, Id.Proc.Args[ArgNum], ArgNum = 1);
-    if ArgNum < Id.Proc.ArgCount then
-      WantTokenAndRead(TkComma)
-  end;
-  WantTokenAndRead(TkRparen);
-  OutProcedureCallEnd()
 end;
 
 procedure OutIf(Expr : TPsExpression);
@@ -1796,9 +1741,9 @@ end;
 
 procedure OutRepeatEnd(Expr : TPsExpression);
 begin
-  if not IsBooleanType(Expr.Typ) then
+  if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
     halt(1)
   end;
   writeln(Output, '} while (!(', Expr.Value, '));')
@@ -1806,9 +1751,9 @@ end;
 
 procedure OutWhileBegin(Expr : TPsExpression);
 begin
-  if not IsBooleanType(Expr.Typ) then
+  if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.Typ));
+    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
     halt(1)
   end;
   write(Output, 'while (', Expr.Value, ') ')
@@ -1821,20 +1766,20 @@ end;
 procedure OutForBegin(Id : TPsIdentifier; First : TPsExpression; Last :
                       TPsExpression; Ascending : boolean);
 var 
-  Tmp1 : TPsNamedType;
-  Tmp2 : TPsNamedType;
-  Iter : TPsNamedType;
+  Tmp1 : TPsVariable;
+  Tmp2 : TPsVariable;
+  Iter : TPsVariable;
 begin
   Tmp1.Name := 'tmp1';
-  Tmp1.Typ := Id.Typ;
+  Tmp1.TypeIndex := Id.TypeIndex;
   Tmp2.Name := 'tmp2';
-  Tmp2.Typ := Id.Typ;
+  Tmp2.TypeIndex := Id.TypeIndex;
   writeln(Output, '{');
-  Iter.Name := Id.Name;
-  Iter.Typ := Id.Typ;
-  OutVar(Tmp1);
+  Iter.Name := Id.Value;
+  Iter.TypeIndex := Id.TypeIndex;
+  OutVariableDeclaration(Tmp1);
   writeln(Output, ' = ', First.Value, ';');
-  OutVar(Tmp2);
+  OutVariableDeclaration(Tmp2);
   writeln(Output, ' = ', Last.Value, ';');
   write(Output, 'if (tmp1 ');
   if Ascending then
@@ -1843,7 +1788,7 @@ begin
     write(Output, '>');
   writeln(Output, ' tmp2)');
   write(Output, 'for (');
-  OutVar(Iter);
+  OutVariableDeclaration(Iter);
   write(Output, ' = tmp1; ', Iter.Name, ' != tmp2; ');
   if Ascending then
     write(Output, '++')
@@ -1868,7 +1813,7 @@ begin
   Id := PsIdentifier();
   if Id.Cls <> IdcVariable then
   begin
-    writeln('Expected variable: ', Id.Name);
+    writeln('Expected variable: ', Id.Value);
     halt(1)
   end;
   WantTokenAndRead(TkAssign);
@@ -1881,6 +1826,16 @@ begin
   OutForBegin(Id, First, Last, Ascending);
   PsStatement();
   OutForEnd()
+end;
+
+procedure OutProcedureCall(Expr : TPsExpression);
+begin
+  writeln(Output, Expr.Value, ';')
+end;
+
+procedure PsProcedureCall(Id : TPsIdentifier);
+begin
+  OutProcedureCall(PsFunctionCall(Id))
 end;
 
 procedure PsStatement;
@@ -1907,7 +1862,7 @@ begin
       PsRead(Id)
     else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then
            PsWrite(Id)
-    else if Id.Cls = IdcProcedure then
+    else if Id.Cls = IdcFunction then
            PsProcedureCall(Id)
     else if LxToken.Id = TkAssign then
     begin
@@ -1963,8 +1918,7 @@ end;
 
 procedure PsProgramBlock;
 begin
-  PsDefinitions(Global);
-  ResetLocalScope();
+  PsDefinitions(GlobalScope);
   WantTokenAndRead(TkBegin);
   OutProgramBegin();
   while LxToken.Id <> TkEnd do
