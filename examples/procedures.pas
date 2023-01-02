@@ -3,6 +3,9 @@ program procedures;
 var Num : integer;
 
 procedure Display(Num : integer);
+forward;
+
+procedure Display(Num : integer);
 begin
   writeln(Num)
 end;

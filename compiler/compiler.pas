@@ -268,7 +268,8 @@ type
     Name : string;
     ArgCount : integer;
     Args : array[1..4] of TPsVariable;
-    ReturnTypeIndex : TPsTypeIndex
+    ReturnTypeIndex : TPsTypeIndex;
+    IsDeclaration : boolean;
   end;
   TPsScope = record
     NumTypes : integer;
@@ -370,6 +371,7 @@ begin
   Ret.Cls := TtcBoolean;
   Ret.EnumIndex := 0;
   Ret.RecordIndex := 0;
+  Ret.AliasFor := 0;
   EmptyType := Ret
 end;
 
@@ -475,7 +477,8 @@ begin
     Pos := FindType(Typ.Name);
     if Pos > Scope.NumTypes then
     begin
-      writeln('Variable ', Typ.Name, ' already defined as ', TypeName(Pos));
+      writeln(StdErr, 'Variable ', Typ.Name, ' already defined as ', TypeName(
+              Pos));
       halt(1)
     end
   end;
@@ -508,7 +511,7 @@ begin
   Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
   if Defs.Scope.NumEnums > 16 then
   begin
-    writeln('Too many enums');
+    writeln(StdErr, 'Too many enums');
     halt(1)
   end;
   Defs.Enums[Defs.Scope.NumEnums] := Enum;
@@ -520,7 +523,7 @@ begin
   Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
   if Defs.Scope.NumRecords > 32 then
   begin
-    writeln('Too many records');
+    writeln(StdErr, 'Too many records');
     halt(1)
   end;
   Defs.Records[Defs.Scope.NumRecords] := Rec;
@@ -548,7 +551,7 @@ begin
     Pos := FindVariable(VarDef.Name);
     if Pos > Scope.NumVariables then
     begin
-      writeln('Variable ', VarDef.Name, ' already defined as ',
+      writeln(StdErr, 'Variable ', VarDef.Name, ' already defined as ',
               TypeName(Defs.Variables[Pos].TypeIndex));
       halt(1)
     end
@@ -571,6 +574,7 @@ begin
   Ret.Name := '';
   Ret.ArgCount := 0;
   Ret.ReturnTypeIndex := 0;
+  Ret.IsDeclaration := false;
   EmptyFunction := Ret
 end;
 
@@ -591,6 +595,23 @@ begin
   end
 end;
 
+function IsSameFunctionDefinition(DeclIndex : TPsFunctionIndex; Fun :
+                                  TPsFunction) : boolean;
+var 
+  Decl : TPsFunction;
+  Same : boolean;
+  Pos : integer;
+begin
+  Decl := Defs.Functions[DeclIndex];
+  Same := IsSameType(Decl.ReturnTypeIndex, Fun.ReturnTypeIndex)
+          and (Decl.ArgCount = Fun.ArgCount);
+  for Pos := 1 to Decl.ArgCount do
+    Same := Same
+            and IsSameType(Decl.Args[Pos].TypeIndex, Fun.Args[Pos].TypeIndex)
+            and (Decl.Args[Pos].IsReference = Fun.Args[Pos].IsReference);
+  IsSameFunctionDefinition := Same
+end;
+
 function AddFunction(Fun : TPsFunction) : TPsFunctionIndex;
 var 
   Pos : integer;
@@ -598,17 +619,39 @@ begin
   Pos := FindFunction(Fun.Name);
   if Pos <> 0 then
   begin
-    writeln('Function ', Fun.Name, ' already defined');
-    halt(1)
-  end;
-  Pos := Defs.Scope.NumFunctions + 1;
-  if Pos > 128 then
+    if Defs.Functions[Pos].IsDeclaration then
+    begin
+      if not IsSameFunctionDefinition(Pos, Fun) then
+      begin
+        if Fun.ReturnTypeIndex = 0 then
+          writeln(StdErr, 'Procedure ', Fun.Name,
+                  ' has been forward declared with a different signature')
+        else
+          writeln(StdErr, 'Function ', Fun.Name,
+                  ' has been forward declared with a different signature');
+        halt(1)
+      end
+    end
+    else
+    begin
+      if Fun.ReturnTypeIndex = 0 then
+        writeln(StdErr, 'Procedure ', Fun.Name, ' already defined')
+      else
+        writeln(StdErr, 'Function ', Fun.Name, ' already defined');
+      halt(1)
+    end
+  end
+  else
   begin
-    writeln(StdErr, 'Too many variables');
-    halt(1)
+    Pos := Defs.Scope.NumFunctions + 1;
+    if Pos > 128 then
+    begin
+      writeln(StdErr, 'Too many variables');
+      halt(1)
+    end;
+    Defs.Scope.NumFunctions := Pos
   end;
   Defs.Functions[Pos] := Fun;
-  Defs.Scope.NumFunctions := Pos;
   AddFunction := Pos
 end;
 
@@ -723,7 +766,7 @@ begin
     TypeIndex := FindType(LxToken.Value);
     if TypeIndex = 0 then
     begin
-      writeln('Unknown type: ', LxToken.Value);
+      writeln(StdErr, 'Unknown type: ', LxToken.Value);
       halt(1)
     end;
     ReadToken()
@@ -986,6 +1029,7 @@ begin
   begin
     SkipToken(TkForward);
     WantTokenAndRead(TkSemicolon);
+    Defs.Functions[FnIndex].IsDeclaration := true;
     OutFunctionDeclaration(FnIndex);
   end
   else
@@ -1088,16 +1132,6 @@ begin
     SkipToken(TkRparen);
   end;
   WantTokenAndRead(TkSemicolon);
-end;
-
-procedure OutBegin;
-begin
-  writeln(Output, '{')
-end;
-
-procedure OutEnd;
-begin
-  writeln(Output, '}')
 end;
 
 type 
@@ -1434,12 +1468,13 @@ function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
 begin
   if Op <> TkNot then
   begin
-    writeln('Expected unary operator, found ', Op);
+    writeln(StdErr, 'Expected unary operator, found ', Op);
     halt(1)
   end
   else if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
+    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
+    ));
     halt(1)
   end
   else
@@ -1743,7 +1778,8 @@ procedure OutRepeatEnd(Expr : TPsExpression);
 begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
+    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
+    ));
     halt(1)
   end;
   writeln(Output, '} while (!(', Expr.Value, '));')
@@ -1753,7 +1789,8 @@ procedure OutWhileBegin(Expr : TPsExpression);
 begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln('Expected boolean expression, got ', TypeName(Expr.TypeIndex));
+    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
+    ));
     halt(1)
   end;
   write(Output, 'while (', Expr.Value, ') ')
@@ -1813,7 +1850,7 @@ begin
   Id := PsIdentifier();
   if Id.Cls <> IdcVariable then
   begin
-    writeln('Expected variable: ', Id.Value);
+    writeln(StdErr, 'Expected variable: ', Id.Value);
     halt(1)
   end;
   WantTokenAndRead(TkAssign);
@@ -1836,6 +1873,16 @@ end;
 procedure PsProcedureCall(Id : TPsIdentifier);
 begin
   OutProcedureCall(PsFunctionCall(Id))
+end;
+
+procedure OutBegin;
+begin
+  writeln(Output, '{')
+end;
+
+procedure OutEnd;
+begin
+  writeln(Output, '}')
 end;
 
 procedure PsStatement;
@@ -1908,12 +1955,12 @@ end;
 
 procedure OutProgramBegin;
 begin
-  writeln('void pascual_main() {');
+  writeln(Output, 'void pascual_main() {');
 end;
 
 procedure OutProgramEnd;
 begin
-  writeln('}')
+  writeln(Output, '}')
 end;
 
 procedure PsProgramBlock;
