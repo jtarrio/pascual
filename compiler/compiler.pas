@@ -409,49 +409,48 @@ begin
   EmptyType := Ret
 end;
 
-function PrimitiveType(Cls : TPsTypeClass) : TPsType;
+function TypeOfClass(Cls : TPsTypeClass) : TPsType;
 var 
   Ret : TPsType;
 begin
   Ret := EmptyType();
   Ret.Cls := Cls;
-  PrimitiveType := Ret
+  TypeOfClass := Ret
 end;
 
-function IsPrimitiveType(TypeIndex : TPsTypeIndex; Cls : TPsTypeClass)
-: boolean;
+function TypeHasClass(TypeIndex : TPsTypeIndex; Cls : TPsTypeClass) : boolean;
 begin
-  IsPrimitiveType := Defs.Types[TypeIndex].Cls = Cls
+  TypeHasClass := Defs.Types[TypeIndex].Cls = Cls
 end;
 
 function IntegerType : TPsType;
 begin
-  IntegerType := PrimitiveType(TtcInteger)
+  IntegerType := TypeOfClass(TtcInteger)
 end;
 
 function IsIntegerType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsIntegerType := IsPrimitiveType(TypeIndex, TtcInteger)
+  IsIntegerType := TypeHasClass(TypeIndex, TtcInteger)
 end;
 
 function StringType : TPsType;
 begin
-  StringType := PrimitiveType(TtcString)
+  StringType := TypeOfClass(TtcString)
 end;
 
 function CharType : TPsType;
 begin
-  CharType := PrimitiveType(TtcChar)
+  CharType := TypeOfClass(TtcChar)
 end;
 
 function IsStringType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsStringType := IsPrimitiveType(TypeIndex, TtcString)
+  IsStringType := TypeHasClass(TypeIndex, TtcString)
 end;
 
 function IsCharType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsCharType := IsPrimitiveType(TypeIndex, TtcChar)
+  IsCharType := TypeHasClass(TypeIndex, TtcChar)
 end;
 
 function IsStringyType(TypeIndex : TPsTypeIndex) : boolean;
@@ -461,22 +460,32 @@ end;
 
 function BooleanType : TPsType;
 begin
-  BooleanType := PrimitiveType(TtcBoolean)
+  BooleanType := TypeOfClass(TtcBoolean)
 end;
 
 function IsBooleanType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsBooleanType := IsPrimitiveType(TypeIndex, TtcBoolean)
+  IsBooleanType := TypeHasClass(TypeIndex, TtcBoolean)
 end;
 
 function TextType : TPsType;
 begin
-  TextType := PrimitiveType(TtcText)
+  TextType := TypeOfClass(TtcText)
 end;
 
 function IsTextType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsTextType := IsPrimitiveType(TypeIndex, TtcText)
+  IsTextType := TypeHasClass(TypeIndex, TtcText)
+end;
+
+function IsEnumType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsEnumType := TypeHasClass(TypeIndex, TtcEnum)
+end;
+
+function IsRecordType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsRecordType := TypeHasClass(TypeIndex, TtcRecord)
 end;
 
 function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
@@ -781,6 +790,11 @@ begin
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtBoolean;
+  AddFunction(Fun);
+  Fun.Name := 'HALT';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('CODE', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypeIndex := 0;
   AddFunction(Fun);
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
@@ -1498,6 +1512,29 @@ begin
   StringyBinaryExpression := Expr
 end;
 
+function EnumBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
+                              Right : TPsExpression) : TPsExpression;
+var 
+  Cmp : string;
+  Expr : TPsExpression;
+begin
+  Cmp := '';
+  if Op = TkEquals then Cmp := '=='
+  else if Op = TkNotEquals then Cmp := '!='
+  else if Op = TkLessthan then Cmp := '<'
+  else if Op = TkMorethan then Cmp := '>'
+  else if Op = TkLessOrEquals then Cmp := '<='
+  else if Op = TkMoreOrEquals then Cmp := '>='
+  else
+  begin
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
+    halt(1)
+  end;
+  Expr.TypeIndex := PrimitiveTypes.PtBoolean;
+  Expr.Value := Left.Value + ' ' + Cmp + ' ' + Right.Value;
+  EnumBinaryExpression := Expr
+end;
+
 function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
                           TPsExpression) : TPsExpression;
 begin
@@ -1507,6 +1544,9 @@ begin
          BinaryExpression := IntegerBinaryExpression(Left, Op, Right)
   else if IsStringyType(Left.TypeIndex) and IsStringyType(Right.TypeIndex) then
          BinaryExpression := StringyBinaryExpression(Left, Op, Right)
+  else if IsEnumType(Left.TypeIndex)
+          and IsSameType(Left.TypeIndex, Right.TypeIndex) then
+         BinaryExpression := EnumBinaryExpression(Left, Op, Right)
   else
   begin
     writeln(StdErr, 'Type mismatch for operator ', Op,

@@ -12,6 +12,10 @@ void rt_error(RtError err) {
   exit(1);
 }
 
+void HALT(int code) {
+  exit(code);  
+}
+
 void ClampStringBounds(STRING* src, int* pos, int* len) {
   if (*pos < 1) rt_error(reOutOfBounds);
   if (*pos > src->len) *pos = src->len + 1;

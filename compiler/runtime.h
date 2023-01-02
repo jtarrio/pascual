@@ -8,6 +8,8 @@
 #undef EOF
 #endif
 
+void HALT(int code);
+
 typedef int PBoolean;
 extern const PBoolean FALSE;
 extern const PBoolean TRUE;
