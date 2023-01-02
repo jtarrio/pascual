@@ -3,6 +3,11 @@
 
 #include <stdio.h>
 
+#ifdef EOF
+#define X_XEOF EOF
+#undef EOF
+#endif
+
 typedef int PBoolean;
 extern const PBoolean FALSE;
 extern const PBoolean TRUE;
@@ -20,6 +25,7 @@ typedef struct {
 int LENGTH(STRING s);
 STRING COPY(STRING src, int pos, int num);
 void DELETE(STRING* src, int pos, int num);
+char UPCASE(char src);
 STRING str_of(char chr);
 STRING str_make(int len, const char* str);
 STRING str_concat_CHAR_CHAR(char a, char b);
@@ -45,6 +51,8 @@ extern PFile INPUT;
 extern PFile OUTPUT;
 extern PFile STDERR;
 
+PBoolean EOF(PFile file);
+
 void readln(PFile file);
 void read_STRING(PFile file, STRING* str);
 
@@ -54,5 +62,10 @@ void write_INTEGER(PFile file, int num);
 void write_CHAR(PFile file, char chr);
 void write_STRING(PFile file, STRING str);
 void write_enum(PFile file, int value, const char** names);
+
+#ifdef X_XEOF
+#define EOF X_XEOF
+#undef X_XEOF
+#endif
 
 #endif  // __RUNTIME_H

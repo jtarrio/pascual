@@ -787,6 +787,11 @@ begin
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
+  Fun.Name := 'UPCASE';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtChar;
+  AddFunction(Fun);
 end;
 
 function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;

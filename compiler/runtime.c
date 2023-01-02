@@ -40,6 +40,11 @@ void DELETE(STRING* str, int pos, int num) {
   str->len = str->len - num;
 }
 
+char UPCASE(char src) {
+  if ((src >= 'a') && (src <= 'z')) return src - ('a' - 'A');
+  return src;
+}
+
 STRING str_of(char chr) {
   STRING ret;
   ret.len = 1;
@@ -110,8 +115,10 @@ int str_compare_STRING_STRING(STRING a, STRING b) {
 }
 
 STRING to_str_BOOLEAN(PBoolean val) {
-  if (val) return str_make(4, "TRUE");
-  else return str_make(5, "FALSE");
+  if (val)
+    return str_make(4, "TRUE");
+  else
+    return str_make(5, "FALSE");
 }
 
 STRING to_str_INTEGER(int num) {
@@ -120,17 +127,25 @@ STRING to_str_INTEGER(int num) {
   return ret;
 }
 
-STRING to_str_CHAR(char chr) {
-  return str_of(chr);
-}
+STRING to_str_CHAR(char chr) { return str_of(chr); }
 
-STRING to_str_STRING(STRING str) {
-  return str;
-}
+STRING to_str_STRING(STRING str) { return str; }
 
 STRING to_str_enum(int value, const char** names) {
   return str_make(strlen(names[value]), names[value]);
 }
+
+#ifdef EOF
+#define X_XEOF EOF
+#undef EOF
+#endif
+
+PBoolean EOF(PFile file) { return feof(file.file); }
+
+#ifdef X_XEOF
+#define EOF X_XEOF
+#undef X_XEOF
+#endif
 
 void readln(PFile file) {
   int chr;
