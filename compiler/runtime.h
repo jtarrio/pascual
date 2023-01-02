@@ -31,6 +31,12 @@ int str_compare_CHAR_STRING(char a, STRING b);
 int str_compare_STRING_CHAR(STRING a, char b);
 int str_compare_STRING_STRING(STRING a, STRING b);
 
+STRING to_str_BOOLEAN(PBoolean val);
+STRING to_str_INTEGER(int num);
+STRING to_str_CHAR(char chr);
+STRING to_str_STRING(STRING str);
+STRING to_str_enum(int value, const char** names);
+
 typedef struct {
   FILE* file;
 } PFile;

@@ -109,6 +109,29 @@ int str_compare_STRING_STRING(STRING a, STRING b) {
   return a.len - b.len;
 }
 
+STRING to_str_BOOLEAN(PBoolean val) {
+  if (val) return str_make(4, "TRUE");
+  else return str_make(5, "FALSE");
+}
+
+STRING to_str_INTEGER(int num) {
+  STRING ret;
+  ret.len = snprintf(ret.value, 255, "%d", num);
+  return ret;
+}
+
+STRING to_str_CHAR(char chr) {
+  return str_of(chr);
+}
+
+STRING to_str_STRING(STRING str) {
+  return str;
+}
+
+STRING to_str_enum(int value, const char** names) {
+  return str_make(strlen(names[value]), names[value]);
+}
+
 void readln(PFile file) {
   int chr;
   do {

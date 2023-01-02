@@ -77,9 +77,27 @@ begin
   writeln(s)
 end;
 
+procedure Conversion;
+var
+  e : (One, Two, Three);
+  s : string;
+begin
+  Str(One, s);
+  writeln(s);
+  Str(123, s);
+  writeln(s);
+  Str(True, s);
+  writeln(s);
+  Str('a', s);
+  writeln(s);
+  Str('abc', s);
+  writeln(s)
+end;
+
 begin
   Literals();
   Variables();
   Manipulation();
-  Arguments()
+  Arguments();
+  Conversion()
 end.

@@ -11,13 +11,37 @@ type
                 TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
                 TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo,
                 TkType, TkUntil, TkVar, TkWhile, TkWith);
+  TLxPos = record
+    Row : integer;
+    Col : integer
+  end;
   TLxToken = record
     Id : TLxTokenId;
-    Value : string
+    Value : string;
+    Pos : TLxPos
   end;
 var 
   LxLine : string;
   LxToken : TLxToken;
+  LxPos : TLxPos;
+
+function LxWhereStr : string;
+var 
+  Row : string;
+  Col : string;
+begin
+  Str(LxToken.Pos.Row, Row);
+  Str(LxToken.Pos.Col, Col);
+  LxWhereStr := ' near row ' + Row + ' col ' + Col
+end;
+
+function LxTokenStr : string;
+var 
+  Id : string;
+begin
+  Str(LxToken.Id, Id);
+  LxTokenStr := Id + ' [' + LxToken.Value + ']'
+end;
 
 function LxIsAlpha(Chr : char) : boolean;
 begin
@@ -39,9 +63,16 @@ function LxIsTokenWaiting : boolean;
 begin
   repeat
     while (Length(LxLine) = 0) and not Eof(Input) do
-      readln(Input, LxLine);
+    begin
+      LxPos.Row := LxPos.Row + 1;
+      LxPos.Col := 1;
+      readln(Input, LxLine)
+    end;
     while (Length(LxLine) > 0) and (LxLine[1] = ' ') do
-      delete(LxLine, 1, 1);
+    begin
+      LxPos.Col := LxPos.Col + 1;
+      delete(LxLine, 1, 1)
+    end;
   until Eof(Input) or (Length(LxLine) > 0);
   LxIsTokenWaiting := Length(LxLine) > 0
 end;
@@ -49,8 +80,10 @@ end;
 procedure LxGetSymbol(Id : TLxTokenId; Length : integer);
 begin
   LxToken.Id := Id;
-  LxToken.Value := copy(LxLine, 1, length);
-  delete(LxLine, 1, length)
+  LxToken.Value := copy(LxLine, 1, Length);
+  LxToken.Pos := LxPos;
+  delete(LxLine, 1, Length);
+  LxPos.Col := LxPos.Col + Length
 end;
 
 procedure LxGetIdentifier;
@@ -204,8 +237,8 @@ procedure WantToken(Id : TLxTokenId);
 begin
   if LxToken.Id <> Id then
   begin
-    writeln(StdErr, 'Wanted token ', Id, ', found ', LxToken.Id, ': ',
-            LxToken.Value);
+    writeln(StdErr, 'Wanted token ', Id, ', found ', LxTokenStr(),
+    LxWhereStr());
     halt(1)
   end
 end;
@@ -214,8 +247,8 @@ procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
 begin
   if (LxToken.Id <> Id1) and (LxToken.Id <> Id2) then
   begin
-    writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxToken.Id,
-            ': ', LxToken.Value);
+    writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxTokenStr(),
+    LxWhereStr());
     halt(1)
   end
 end;
@@ -353,7 +386,8 @@ begin
   end
   else
   begin
-    writeln(StdErr, 'Could not get name for type of class ', Typ.Cls);
+    writeln(StdErr, 'Could not get name for type of class ', Typ.Cls, LxWhereStr
+            ());
     halt(1)
   end
 end;
@@ -478,14 +512,14 @@ begin
     if Pos > Scope.NumTypes then
     begin
       writeln(StdErr, 'Variable ', Typ.Name, ' already defined as ', TypeName(
-              Pos));
+              Pos), LxWhereStr());
       halt(1)
     end
   end;
   Pos := Defs.Scope.NumTypes + 1;
   if Pos > 32 then
   begin
-    writeln(StdErr, 'Too many types');
+    writeln(StdErr, 'Too many types have been defined', LxWhereStr());
     halt(1)
   end;
   Defs.Types[Pos] := Typ;
@@ -511,7 +545,7 @@ begin
   Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
   if Defs.Scope.NumEnums > 16 then
   begin
-    writeln(StdErr, 'Too many enums');
+    writeln(StdErr, 'Too many enums have been defined', LxWhereStr());
     halt(1)
   end;
   Defs.Enums[Defs.Scope.NumEnums] := Enum;
@@ -523,7 +557,7 @@ begin
   Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
   if Defs.Scope.NumRecords > 32 then
   begin
-    writeln(StdErr, 'Too many records');
+    writeln(StdErr, 'Too many records have been defined', LxWhereStr());
     halt(1)
   end;
   Defs.Records[Defs.Scope.NumRecords] := Rec;
@@ -552,14 +586,14 @@ begin
     if Pos > Scope.NumVariables then
     begin
       writeln(StdErr, 'Variable ', VarDef.Name, ' already defined as ',
-              TypeName(Defs.Variables[Pos].TypeIndex));
+              TypeName(Defs.Variables[Pos].TypeIndex), LxWhereStr());
       halt(1)
     end
   end;
   Pos := Defs.Scope.NumVariables + 1;
   if Pos > 32 then
   begin
-    writeln(StdErr, 'Too many variables');
+    writeln(StdErr, 'Too many variables have been defined', LxWhereStr());
     halt(1)
   end;
   Defs.Variables[Pos] := VarDef;
@@ -625,19 +659,21 @@ begin
       begin
         if Fun.ReturnTypeIndex = 0 then
           writeln(StdErr, 'Procedure ', Fun.Name,
-                  ' has been forward declared with a different signature')
+                  ' incompatible with its forward declaration', LxWhereStr())
         else
           writeln(StdErr, 'Function ', Fun.Name,
-                  ' has been forward declared with a different signature');
+                  ' incompatible with its forward declaration', LxWhereStr());
         halt(1)
       end
     end
     else
     begin
       if Fun.ReturnTypeIndex = 0 then
-        writeln(StdErr, 'Procedure ', Fun.Name, ' already defined')
+        writeln(StdErr, 'Procedure ', Fun.Name, ' already defined',
+                LxWhereStr())
       else
-        writeln(StdErr, 'Function ', Fun.Name, ' already defined');
+        writeln(StdErr, 'Function ', Fun.Name, ' already defined',
+                LxWhereStr());
       halt(1)
     end
   end
@@ -646,7 +682,7 @@ begin
     Pos := Defs.Scope.NumFunctions + 1;
     if Pos > 128 then
     begin
-      writeln(StdErr, 'Too many variables');
+      writeln(StdErr, 'Too many functions have been defined', LxWhereStr());
       halt(1)
     end;
     Defs.Scope.NumFunctions := Pos
@@ -664,7 +700,7 @@ begin
   Typ := Defs.Types[TypeIndex];
   if Typ.Cls <> TtcRecord then
   begin
-    writeln(StdErr, 'Not a record: ', Typ.Name);
+    writeln(StdErr, 'Not a record: ', Typ.Name, LxWhereStr());
     halt(1)
   end;
   TypeIndex := 0;
@@ -674,7 +710,7 @@ begin
       TypeIndex := Rec.Fields[Pos].TypeIndex;
   if TypeIndex = 0 then
   begin
-    writeln(StdErr, 'Field not found: ', Name);
+    writeln(StdErr, 'Field not found: ', Name, LxWhereStr());
     halt(1)
   end;
   FindFieldType := TypeIndex
@@ -727,19 +763,19 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false),
   GlobalScope);
 
-  Fun.Name := 'DELETE';
-  Fun.ArgCount := 3;
-  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, true);
-  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
-  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypeIndex := 0;
-  AddFunction(Fun);
   Fun.Name := 'COPY';
   Fun.ArgCount := 3;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
   Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
   Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtString;
+  AddFunction(Fun);
+  Fun.Name := 'DELETE';
+  Fun.ArgCount := 3;
+  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, true);
+  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
+  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypeIndex := 0;
   AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
@@ -766,7 +802,7 @@ begin
     TypeIndex := FindType(LxToken.Value);
     if TypeIndex = 0 then
     begin
-      writeln(StdErr, 'Unknown type: ', LxToken.Value);
+      writeln(StdErr, 'Unknown type: ', LxToken.Value, LxWhereStr());
       halt(1)
     end;
     ReadToken()
@@ -812,8 +848,8 @@ begin
   end
   else
   begin
-    writeln(StdErr, 'Wanted type definition, found ', LxToken.Id, ': ',
-            LxToken.Value);
+    writeln(StdErr, 'Wanted type definition, found ', LxTokenStr(),
+    LxWhereStr());
     halt(1)
   end;
   PsTypeDenoter := TypeIndex;
@@ -889,7 +925,7 @@ begin
   else
   begin
     writeln(StdErr, 'Error writing name and type: ', Name, ', ',
-            TypeName(TypeIndex));
+            TypeName(TypeIndex), LxWhereStr());
     halt(1)
   end
 end;
@@ -901,7 +937,7 @@ begin
   Name := Defs.Types[TypeIndex].Name;
   if Defs.Types[TypeIndex].AliasFor = 0 then
   begin
-    writeln(StdErr, 'Type ', Name, ' is not an alias');
+    writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr());
     halt(1)
   end;
   write(Output, 'typedef ');
@@ -948,19 +984,21 @@ end;
 
 procedure PsVarDefinitions(Scope : TPsScope);
 var 
-  VarDef : TPsVariable;
+  Name : string;
+  TypeIndex : TPsTypeIndex;
   PreviousScope : TPsScope;
 begin
   PreviousScope := GetCurrentScope();
   WantTokenAndRead(TkVar);
   repeat
     WantToken(TkIdentifier);
-    VarDef.Name := LxToken.Value;
+    Name := LxToken.Value;
     ReadToken();
     WantTokenAndRead(TkColon);
-    VarDef.TypeIndex := PsTypeDenoter(Scope);
+    TypeIndex := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
-    OutVariableDefinition(AddVariable(VarDef, Scope));
+    OutVariableDefinition(AddVariable(MakeVariable(Name, TypeIndex, false),
+    Scope));
   until LxToken.Id <> TkIdentifier;
   OutEnumValuesInScope(PreviousScope)
 end;
@@ -1136,8 +1174,9 @@ end;
 
 type 
   TPsIdClass = (IdcVariable, IdcFunction,
-                IdcRead, IdcReadln, IdcWrite, IdcWriteln);
+                IdcRead, IdcReadln, IdcWrite, IdcWriteln, IdcStr);
   TPsIdentifier = record
+    Name : string;
     Value : string;
     Cls : TPsIdClass;
     TypeIndex : TPsTypeIndex;
@@ -1161,7 +1200,7 @@ function OutStringIndex(Base : string; Expr : TPsExpression) : string;
 begin
   if not IsIntegerType(Expr.TypeIndex) then
   begin
-    writeln(StdErr, 'Subscripts must be integers');
+    writeln(StdErr, 'Subscripts must be integers', LxWhereStr());
     halt(1)
   end;
   OutStringIndex := Base + '.chr[' + Expr.Value + ']'
@@ -1184,6 +1223,7 @@ var
 begin
   WantToken(TkIdentifier);
   Name := LxToken.Value;
+  Ident.Name := Name;
   VarIndex := FindVariable(Name);
   FnIndex := FindFunction(Name);
   EnumTypeIndex := FindTypeOfEnumValue(Name);
@@ -1199,11 +1239,13 @@ begin
            Ident.Cls := IdcWrite
     else if Name = 'WRITELN' then
            Ident.Cls := IdcWriteln
+    else if Name = 'STR' then
+           Ident.Cls := IdcStr
     else
     begin
       if FnIndex = 0 then
       begin
-        writeln(StdErr, 'Unknown function or procedure: ', Name);
+        writeln(StdErr, 'Unknown function or procedure: ', Name, LxWhereStr());
         halt(1)
       end;
       Ident.Value := Name;
@@ -1232,7 +1274,7 @@ begin
     end
     else
     begin
-      writeln(StdErr, 'Unknown variable or argument: ', Name);
+      writeln(StdErr, 'Unknown variable or argument: ', Name, LxWhereStr());
       halt(1)
     end;
 
@@ -1244,16 +1286,19 @@ begin
         WantTokenAndRead(TkDot);
         if Defs.Types[Ident.TypeIndex].Cls <> TtcRecord then
         begin
-          writeln(StdErr, 'Variable ', FullName, ' is not a record');
+          writeln(StdErr, 'Variable ', FullName, ' is not a record',
+                  LxWhereStr());
           halt(1)
         end;
         WantToken(TkIdentifier);
         Name := LxToken.Value;
         ReadToken();
+        Ident.Name := Ident.Name + '.' + Name;
         Ident.TypeIndex := FindFieldType(Ident.TypeIndex, Name);
         if Ident.TypeIndex = 0 then
         begin
-          writeln(StdErr, 'Could not find field ', Name, ' of ', FullName);
+          writeln(StdErr, 'Could not find field ', Name, ' of ', FullName,
+                  LxWhereStr());
           halt(1)
         end;
         FullName := FullName + '.' + Name;
@@ -1264,6 +1309,7 @@ begin
         WantTokenAndRead(TkLbracket);
         Expr := PsExpression();
         WantTokenAndRead(TkRbracket);
+        Ident.Name := Ident.Name + '[...]';
         if IsStringyType(Ident.TypeIndex) then
         begin
           Ident.Value := OutStringIndex(Ident.Value, Expr);
@@ -1271,7 +1317,8 @@ begin
         end
         else
         begin
-          writeln(StdErr, 'Variable ', FullName, ' is not a string');
+          writeln(StdErr, 'Variable ', FullName, ' is not a string',
+                  LxWhereStr());
           halt(1)
         end
       end
@@ -1375,7 +1422,7 @@ begin
   else if Op = TkMoreOrEquals then Cmp := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op);
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
     halt(1)
   end;
   if Cmp = '' then
@@ -1402,7 +1449,7 @@ begin
   else if Op = TkMoreOrEquals then Oper := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op);
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
@@ -1429,7 +1476,7 @@ begin
   else if Op = TkMoreOrEquals then Cmp := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op);
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
     halt(1)
   end;
 
@@ -1458,7 +1505,8 @@ begin
   else
   begin
     writeln(StdErr, 'Type mismatch for operator ', Op,
-            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex));
+            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex),
+    LxWhereStr());
     halt(1)
   end
 end;
@@ -1468,13 +1516,13 @@ function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
 begin
   if Op <> TkNot then
   begin
-    writeln(StdErr, 'Expected unary operator, found ', Op);
+    writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr());
     halt(1)
   end
   else if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
-    ));
+    writeln(StdErr, 'Expected boolean expression, got ',
+            TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end
   else
@@ -1493,7 +1541,7 @@ begin
   else if not IsSameType(Expr.TypeIndex, TypeIndex) then
   begin
     writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
-    TypeName(TypeIndex));
+    TypeName(TypeIndex), LxWhereStr());
     halt(1)
   end;
   CoerceType := Expr
@@ -1553,13 +1601,14 @@ procedure OutRead(Src : string; OutVar : TPsIdentifier);
 begin
   if OutVar.Cls <> IdcVariable then
   begin
-    writeln(StdErr, 'Expected variable for read argument, got ', OutVar.Value);
+    writeln(StdErr, 'Expected variable for read argument, got ', OutVar.Value,
+            LxWhereStr());
     halt(1)
   end;
   if not IsStringyType(OutVar.TypeIndex) then
   begin
     writeln(StdErr, 'Invalid type for read argument ', OutVar.Value, ' got ',
-            TypeName(OutVar.TypeIndex));
+            TypeName(OutVar.TypeIndex), LxWhereStr());
     halt(1)
   end;
   writeln(Output, 'read_', DeepTypeName(OutVar.TypeIndex, true), '(', Src,
@@ -1644,6 +1693,35 @@ begin
     OutWriteln(Dst)
 end;
 
+procedure OutStr(Dst : string; Expr : TPsExpression);
+begin
+  if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
+    writeln(Output, Dst, ' = to_str_enum(', Expr.Value, ', EnumValues',
+            Defs.Types[Expr.TypeIndex].EnumIndex, ');')
+  else
+    writeln(Output, Dst, ' = to_str_', DeepTypeName(Expr.TypeIndex, true),
+    '(', Expr.Value, ');')
+end;
+
+procedure PsStr;
+var 
+  Expr : TPsExpression;
+  Dest : TPsIdentifier;
+begin
+  WantTokenAndRead(TkLparen);
+  Expr := PsExpression();
+  WantTokenAndRead(TkComma);
+  Dest := PsIdentifier();
+  if not IsStringType(Dest.TypeIndex) then
+  begin
+    writeln(StdErr, 'Destination argument is not a string variable: ',
+            Dest.Name, LxWhereStr());
+    halt(1)
+  end;
+  WantTokenAndRead(TkRparen);
+  OutStr(Dest.Value, Expr)
+end;
+
 function GenVariable(Id : TPsIdentifier) : TPsExpression;
 var 
   Expr : TPsExpression;
@@ -1677,7 +1755,8 @@ begin
            Expr := GenVariable(Id)
     else
     begin
-      writeln(StdErr, 'Expected variable or function, got ', Id.Cls);
+      writeln(StdErr, 'Expected variable or function, got ', Id.Cls,
+              LxWhereStr());
       halt(1)
     end
   end
@@ -1694,8 +1773,8 @@ begin
   end
   else
   begin
-    writeln(StdErr, 'Invalid token in expression: ', LxToken.Id, ': ',
-            LxToken.Value);
+    writeln(StdErr, 'Invalid token in expression: ', LxTokenStr(),
+    LxWhereStr());
     halt(1)
   end;
   PsFactor := Expr
@@ -1778,8 +1857,8 @@ procedure OutRepeatEnd(Expr : TPsExpression);
 begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
-    ));
+    writeln(StdErr, 'Expected boolean expression, got ',
+            TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
   writeln(Output, '} while (!(', Expr.Value, '));')
@@ -1789,8 +1868,8 @@ procedure OutWhileBegin(Expr : TPsExpression);
 begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
-    writeln(StdErr, 'Expected boolean expression, got ', TypeName(Expr.TypeIndex
-    ));
+    writeln(StdErr, 'Expected boolean expression, got ',
+            TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
   write(Output, 'while (', Expr.Value, ') ')
@@ -1807,13 +1886,10 @@ var
   Tmp2 : TPsVariable;
   Iter : TPsVariable;
 begin
-  Tmp1.Name := 'tmp1';
-  Tmp1.TypeIndex := Id.TypeIndex;
-  Tmp2.Name := 'tmp2';
-  Tmp2.TypeIndex := Id.TypeIndex;
+  Tmp1 := MakeVariable('tmp1', Id.TypeIndex, false);
+  Tmp2 := MakeVariable('tmp2', Id.TypeIndex, false);
+  Iter := MakeVariable(Id.Value, Id.TypeIndex, false);
   writeln(Output, '{');
-  Iter.Name := Id.Value;
-  Iter.TypeIndex := Id.TypeIndex;
   OutVariableDeclaration(Tmp1);
   writeln(Output, ' = ', First.Value, ';');
   OutVariableDeclaration(Tmp2);
@@ -1850,7 +1926,7 @@ begin
   Id := PsIdentifier();
   if Id.Cls <> IdcVariable then
   begin
-    writeln(StdErr, 'Expected variable: ', Id.Value);
+    writeln(StdErr, 'Expected variable: ', Id.Value, LxWhereStr());
     halt(1)
   end;
   WantTokenAndRead(TkAssign);
@@ -1905,12 +1981,10 @@ begin
   else if LxToken.Id = TkIdentifier then
   begin
     Id := PsIdentifier();
-    if (Id.Cls = IdcRead) or (Id.Cls = IdcReadln) then
-      PsRead(Id)
-    else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then
-           PsWrite(Id)
-    else if Id.Cls = IdcFunction then
-           PsProcedureCall(Id)
+    if (Id.Cls = IdcRead) or (Id.Cls = IdcReadln) then PsRead(Id)
+    else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then PsWrite(Id)
+    else if Id.Cls = IdcStr then PsStr()
+    else if Id.Cls = IdcFunction then PsProcedureCall(Id)
     else if LxToken.Id = TkAssign then
     begin
       WantTokenAndRead(TkAssign);
@@ -1947,8 +2021,7 @@ begin
     PsStatement();
     OutWhileEnd()
   end
-  else if LxToken.Id = TkFor then
-         PsFor()
+  else if LxToken.Id = TkFor then PsFor()
   else
     WantToken(TkUnknown);
 end;
@@ -1976,6 +2049,8 @@ end;
 
 procedure ParseProgram;
 begin
+  LxPos.Row := 0;
+  LxPos.Col := 0;
   StartGlobalScope();
   ReadToken();
   PsProgramHeading();
