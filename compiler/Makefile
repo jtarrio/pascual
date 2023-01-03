@@ -7,10 +7,10 @@ pascual.c: bootstrap
 	./bootstrap < compiler.pas > pascual.c
 
 pascual: pascual.c libpascual.a
-	gcc -I. -L. -o pascual pascual.c -lpascual
+	gcc -I. -L. $(COPTS) -o pascual pascual.c -lpascual
 
 runtime.o: runtime.h runtime.c
-	gcc -c -o runtime.o runtime.c
+	gcc -c $(COPTS) -o runtime.o runtime.c
 
 libpascual.a: runtime.o
 	ar rcs libpascual.a runtime.o

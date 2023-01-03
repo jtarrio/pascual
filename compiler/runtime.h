@@ -28,15 +28,16 @@ STRING COPY(STRING src, int pos, int num);
 void DELETE(STRING* src, int pos, int num);
 char UPCASE(char src);
 STRING str_of(char chr);
-STRING str_make(int len, const char* str);
-STRING str_concat_cc(char a, char b);
-STRING str_concat_cs(char a, STRING b);
-STRING str_concat_sc(STRING a, char b);
-STRING str_concat_ss(STRING a, STRING b);
-int str_compare_cc(char a, char b);
-int str_compare_cs(char a, STRING b);
-int str_compare_sc(STRING a, char b);
-int str_compare_ss(STRING a, STRING b);
+#define str_make(str) _str_make(sizeof(str) - 1, (str))
+STRING _str_make(int len, const char* str);
+STRING cat_cc(char a, char b);
+STRING cat_cs(char a, STRING b);
+STRING cat_sc(STRING a, char b);
+STRING cat_ss(STRING a, STRING b);
+int cmp_cc(char a, char b);
+int cmp_cs(char a, STRING b);
+int cmp_sc(STRING a, char b);
+int cmp_ss(STRING a, STRING b);
 
 STRING to_str_b(PBoolean val);
 STRING to_str_i(int num);

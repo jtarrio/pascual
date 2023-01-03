@@ -52,9 +52,9 @@ var
 begin
   s := '12345';
   t := copy(s, 2, 3);
-  writeln(t);
-  delete(s, 2, 3);
-  writeln(s)
+  writeln('Expect 234 ', t);
+  delete(s, 1, 3);
+  writeln('Expect 45 ', s)
 end;
 
 function Concat(A : string; B : string) : string;

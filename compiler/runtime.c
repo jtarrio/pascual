@@ -12,9 +12,7 @@ void rt_error(RtError err) {
   exit(1);
 }
 
-void HALT(int code) {
-  exit(code);  
-}
+void HALT(int code) { exit(code); }
 
 void ClampStringBounds(STRING* src, int* pos, int* len) {
   if (*pos < 1) rt_error(reOutOfBounds);
@@ -39,7 +37,7 @@ STRING COPY(STRING src, int pos, int num) {
 void DELETE(STRING* str, int pos, int num) {
   ClampStringBounds(str, &pos, &num);
   if ((pos <= str->len) && (num > 0)) {
-    memmove(str->value + pos - 1, str->value + pos + num - 1, num);
+    memmove(str->value + pos - 1, str->value + pos + num - 1, 255 - num);
   }
   str->len = str->len - num;
 }
@@ -56,14 +54,14 @@ STRING str_of(char chr) {
   return ret;
 }
 
-STRING str_make(int len, const char* str) {
+STRING _str_make(int len, const char* str) {
   STRING ret;
   ret.len = len;
   memcpy(ret.value, str, len);
   return ret;
 }
 
-STRING str_concat_cc(char a, char b) {
+STRING cat_cc(char a, char b) {
   STRING ret;
   ret.len = 2;
   ret.value[0] = a;
@@ -71,14 +69,14 @@ STRING str_concat_cc(char a, char b) {
   return ret;
 }
 
-STRING str_concat_cs(char a, STRING b) {
+STRING cat_cs(char a, STRING b) {
   memmove(b.value + 1, b.value, 254);
   b.value[0] = a;
   if (b.len < 255) ++b.len;
   return b;
 }
 
-STRING str_concat_sc(STRING a, char b) {
+STRING cat_sc(STRING a, char b) {
   if (a.len < 255) {
     a.value[a.len] = b;
     ++a.len;
@@ -86,7 +84,7 @@ STRING str_concat_sc(STRING a, char b) {
   return a;
 }
 
-STRING str_concat_ss(STRING a, STRING b) {
+STRING cat_ss(STRING a, STRING b) {
   int cp = b.len;
   if (cp > (255 - a.len)) cp = 255 - a.len;
   memcpy(a.value + a.len, b.value, cp);
@@ -94,25 +92,23 @@ STRING str_concat_ss(STRING a, STRING b) {
   return a;
 }
 
-int str_compare_cc(char a, char b) {
-  return (unsigned char)(a) - (unsigned char)(b);
-}
+int cmp_cc(char a, char b) { return (unsigned char)(a) - (unsigned char)(b); }
 
-int str_compare_cs(char a, STRING b) {
-  int c = str_compare_cc(a, b.value[0]);
+int cmp_cs(char a, STRING b) {
+  int c = cmp_cc(a, b.value[0]);
   if (c != 0) return c;
   return 1 - b.len;
 }
 
-int str_compare_sc(STRING a, char b) {
+int cmp_sc(STRING a, char b) {
   if (a.len == 0) return -1;
-  if (a.len == 1) return str_compare_cc(a.value[0], b);
+  if (a.len == 1) return cmp_cc(a.value[0], b);
   return 1;
 }
 
-int str_compare_ss(STRING a, STRING b) {
+int cmp_ss(STRING a, STRING b) {
   for (int i = 0; (i < a.len) && (i < b.len); ++i) {
-    int c = str_compare_cc(a.value[i], b.value[i]);
+    int c = cmp_cc(a.value[i], b.value[i]);
     if (c != 0) return c;
   }
   return a.len - b.len;
@@ -120,9 +116,9 @@ int str_compare_ss(STRING a, STRING b) {
 
 STRING to_str_b(PBoolean val) {
   if (val)
-    return str_make(4, "TRUE");
+    return str_make("TRUE");
   else
-    return str_make(5, "FALSE");
+    return str_make("FALSE");
 }
 
 STRING to_str_i(int num) {
@@ -136,7 +132,7 @@ STRING to_str_c(char chr) { return str_of(chr); }
 STRING to_str_s(STRING str) { return str; }
 
 STRING to_str_e(int value, const char** names) {
-  return str_make(strlen(names[value]), names[value]);
+  return _str_make(strlen(names[value]), names[value]);
 }
 
 PBoolean EOF(PFile file) { return feof(file.file); }
@@ -145,7 +141,6 @@ void readln(PFile file) {
   int chr;
   do {
     chr = fgetc(file.file);
-    if (chr == '\n') ungetc(chr, file.file);
   } while (chr != '\n');
 }
 

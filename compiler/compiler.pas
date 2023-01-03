@@ -1500,7 +1500,7 @@ begin
   else
   begin
     Str(Length(Expr.Value), Size);
-    Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
+    Expr.Value := 'str_make("' + Expr.Value + '")';
     Expr.TypeIndex := PrimitiveTypes.PtString;
   end;
   GenStringConstant := Expr
@@ -1595,9 +1595,9 @@ var
   Cmp : string;
   Expr : TPsExpression;
 begin
-  FName := 'str_compare';
+  FName := 'cmp';
   Cmp := '';
-  if Op = TkPlus then FName := 'str_concat'
+  if Op = TkPlus then FName := 'cat'
   else if Op = TkEquals then Cmp := '=='
   else if Op = TkNotEquals then Cmp := '!='
   else if Op = TkLessthan then Cmp := '<'
