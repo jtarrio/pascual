@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #ifdef EOF
-#define X_XEOF EOF
 #undef EOF
 #endif
 
@@ -64,10 +63,5 @@ void write_INTEGER(PFile file, int num);
 void write_CHAR(PFile file, char chr);
 void write_STRING(PFile file, STRING str);
 void write_enum(PFile file, int value, const char** names);
-
-#ifdef X_XEOF
-#define EOF X_XEOF
-#undef X_XEOF
-#endif
 
 #endif  // __RUNTIME_H

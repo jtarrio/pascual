@@ -139,17 +139,7 @@ STRING to_str_enum(int value, const char** names) {
   return str_make(strlen(names[value]), names[value]);
 }
 
-#ifdef EOF
-#define X_XEOF EOF
-#undef EOF
-#endif
-
 PBoolean EOF(PFile file) { return feof(file.file); }
-
-#ifdef X_XEOF
-#define EOF X_XEOF
-#undef X_XEOF
-#endif
 
 void readln(PFile file) {
   int chr;

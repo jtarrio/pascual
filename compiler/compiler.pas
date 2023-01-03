@@ -326,7 +326,7 @@ type
     Records : array[1..32] of TPsRecordDef;
     Arrays : array[1..32] of TPsArrayDef;
     Variables : array[1..32] of TPsVariable;
-    Functions : array[1..128] of TPsFunction;
+    Functions : array[1..256] of TPsFunction;
   end;
 var 
   Defs : TPsDefs;
@@ -722,7 +722,7 @@ begin
   else
   begin
     Pos := Defs.Scope.NumFunctions + 1;
-    if Pos > 128 then
+    if Pos > 256 then
     begin
       writeln(StdErr, 'Too many functions have been defined', LxWhereStr());
       halt(1)
@@ -1696,12 +1696,15 @@ end;
 function GenFunctionCallArgument(FnProc : TPsExpression; Arg : TPsExpression;
                                  Def: TPsVariable; First : boolean)
 : TPsExpression;
+var
+  Coerced : TPsExpression;
 begin
   if not First then
     FnProc.Value := FnProc.Value + ', ';
   if Def.IsReference then
     FnProc.Value := FnProc.Value + '&';
-  FnProc.Value := FnProc.Value + CoerceType(Arg, Def.TypeIndex).Value;
+  Coerced := CoerceType(Arg, Def.TypeIndex);
+  FnProc.Value := FnProc.Value + Coerced.Value;
   GenFunctionCallArgument := FnProc
 end;
 
@@ -2157,7 +2160,7 @@ begin
   else if LxToken.Id = TkWhile then
   begin
     WantTokenAndRead(TkWhile);
-    OutWhileBegin(PsExpression);
+    OutWhileBegin(PsExpression());
     WantTokenAndRead(TkDo);
     PsStatement();
     OutWhileEnd()
