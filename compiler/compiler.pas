@@ -313,6 +313,13 @@ begin
   ReadToken()
 end;
 
+function GetTokenValueAndRead(Id : TLxTokenId) : string;
+begin
+  WantToken(Id);
+  GetTokenValueAndRead := LxToken.Value;
+  ReadToken()
+end;
+
 procedure SkipToken(Id : TLxTokenId);
 begin
   if LxToken.Id = Id then
@@ -921,10 +928,8 @@ begin
     SkipToken(TkLparen);
     Enum.Size := 0;
     repeat
-      WantToken(TkIdentifier);
       Enum.Size := Enum.Size + 1;
-      Enum.Values[Enum.Size] := LxToken.Value;
-      ReadToken();
+      Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
     until LxToken.Id = TkRparen;
@@ -939,10 +944,8 @@ begin
     SkipToken(TkRecord);
     Rec.Size := 0;
     repeat
-      WantToken(TkIdentifier);
       Rec.Size := Rec.Size + 1;
-      Rec.Fields[Rec.Size].Name := LxToken.Value;
-      ReadToken();
+      Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
       WantTokenAndRead(TkColon);
       Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
       WantToken2(TkSemicolon, TkEnd);
@@ -957,13 +960,9 @@ begin
   begin
     SkipToken(TkArray);
     WantTokenAndRead(TkLbracket);
-    WantToken(TkNumber);
-    Arr.LowBound := LxToken.Value;
-    ReadToken();
+    Arr.LowBound := GetTokenValueAndRead(TkNumber);
     WantTokenAndRead(TkRange);
-    WantToken(TkNumber);
-    Arr.HighBound := LxToken.Value;
-    ReadToken();
+    Arr.HighBound := GetTokenValueAndRead(TkNumber);
     WantTokenAndRead(TkRbracket);
     WantTokenAndRead(TkOf);
     Arr.TypeIndex := PsTypeDenoter(Scope);
@@ -1102,9 +1101,7 @@ begin
   PreviousScope := GetCurrentScope();
   WantTokenAndRead(TkType);
   repeat
-    WantToken(TkIdentifier);
-    Name := LxToken.Value;
-    ReadToken();
+    Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkEquals);
     TypeIndex := PsTypeDenoter(Scope);
     NewType := Defs.Types[TypeIndex];
@@ -1138,9 +1135,7 @@ begin
   PreviousScope := GetCurrentScope();
   WantTokenAndRead(TkVar);
   repeat
-    WantToken(TkIdentifier);
-    Name := LxToken.Value;
-    ReadToken();
+    Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkColon);
     TypeIndex := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
@@ -1247,10 +1242,8 @@ begin
   WantToken2(TkFunction, TkProcedure);
   IsProcedure := LxToken.Id = TkProcedure;
   ReadToken();
-  WantToken(TkIdentifier);
-  Def.Name := LxToken.Value;
+  Def.Name := GetTokenValueAndRead(TkIdentifier);
   Def.ArgCount := 0;
-  ReadToken();
   if IsProcedure then WantToken2(TkLparen, TkSemicolon)
   else WantToken2(TkLparen, TkColon);
   if LxToken.Id = TkLparen then
@@ -1260,9 +1253,7 @@ begin
       Def.ArgCount := Def.ArgCount + 1;
       Def.Args[Def.ArgCount].IsReference := LxToken.Id = TkVar;
       SkipToken(TkVar);
-      WantToken(TkIdentifier);
-      Def.Args[Def.ArgCount].Name := LxToken.Value;
-      ReadToken();
+      Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
       WantTokenAndRead(TkColon);
       Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
       WantToken2(TkSemicolon, TkRparen);
@@ -1308,9 +1299,7 @@ end;
 procedure PsProgramHeading;
 begin
   WantTokenAndRead(TkProgram);
-  WantToken(TkIdentifier);
-  OutProgramHeading(LxToken.Value);
-  ReadToken();
+  OutProgramHeading(GetTokenValueAndRead(TkIdentifier));
   if LxToken.Id = TkLparen then
   begin
     repeat
@@ -1385,13 +1374,11 @@ var
   EnumTypeIndex : TPsTypeIndex;
   Expr : TPsExpression;
 begin
-  WantToken(TkIdentifier);
-  Name := LxToken.Value;
+  Name := GetTokenValueAndRead(TkIdentifier);
   Ident.Name := Name;
   VarIndex := FindVariable(Name);
   FnIndex := FindFunction(Name);
   EnumTypeIndex := FindTypeOfEnumValue(Name);
-  ReadToken();
 
   if LxToken.Id = TkLparen then
   begin
@@ -1454,9 +1441,7 @@ begin
                   LxWhereStr());
           halt(1)
         end;
-        WantToken(TkIdentifier);
-        Name := LxToken.Value;
-        ReadToken();
+        Name := GetTokenValueAndRead(TkIdentifier);
         Ident.Name := Ident.Name + '.' + Name;
         Ident.TypeIndex := FindFieldType(Ident.TypeIndex, Name);
         if Ident.TypeIndex = 0 then
@@ -1961,13 +1946,11 @@ var
 begin
   if LxToken.Id = TkString then
   begin
-    Expr := GenStringConstant(LxToken.Value);
-    ReadToken()
+    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
   end
   else if LxToken.Id = TkNumber then
   begin
-    Expr := GenNumberConstant(LxToken.Value);
-    ReadToken()
+    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber));
   end
   else if LxToken.Id = TkIdentifier then
   begin
