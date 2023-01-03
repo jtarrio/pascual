@@ -63,7 +63,7 @@ STRING str_make(int len, const char* str) {
   return ret;
 }
 
-STRING str_concat_CHAR_CHAR(char a, char b) {
+STRING str_concat_cc(char a, char b) {
   STRING ret;
   ret.len = 2;
   ret.value[0] = a;
@@ -71,14 +71,14 @@ STRING str_concat_CHAR_CHAR(char a, char b) {
   return ret;
 }
 
-STRING str_concat_CHAR_STRING(char a, STRING b) {
+STRING str_concat_cs(char a, STRING b) {
   memmove(b.value + 1, b.value, 254);
   b.value[0] = a;
   if (b.len < 255) ++b.len;
   return b;
 }
 
-STRING str_concat_STRING_CHAR(STRING a, char b) {
+STRING str_concat_sc(STRING a, char b) {
   if (a.len < 255) {
     a.value[a.len] = b;
     ++a.len;
@@ -86,7 +86,7 @@ STRING str_concat_STRING_CHAR(STRING a, char b) {
   return a;
 }
 
-STRING str_concat_STRING_STRING(STRING a, STRING b) {
+STRING str_concat_ss(STRING a, STRING b) {
   int cp = b.len;
   if (cp > (255 - a.len)) cp = 255 - a.len;
   memcpy(a.value + a.len, b.value, cp);
@@ -94,48 +94,48 @@ STRING str_concat_STRING_STRING(STRING a, STRING b) {
   return a;
 }
 
-int str_compare_CHAR_CHAR(char a, char b) {
+int str_compare_cc(char a, char b) {
   return (unsigned char)(a) - (unsigned char)(b);
 }
 
-int str_compare_CHAR_STRING(char a, STRING b) {
-  int c = str_compare_CHAR_CHAR(a, b.value[0]);
+int str_compare_cs(char a, STRING b) {
+  int c = str_compare_cc(a, b.value[0]);
   if (c != 0) return c;
   return 1 - b.len;
 }
 
-int str_compare_STRING_CHAR(STRING a, char b) {
+int str_compare_sc(STRING a, char b) {
   if (a.len == 0) return -1;
-  if (a.len == 1) return str_compare_CHAR_CHAR(a.value[0], b);
+  if (a.len == 1) return str_compare_cc(a.value[0], b);
   return 1;
 }
 
-int str_compare_STRING_STRING(STRING a, STRING b) {
+int str_compare_ss(STRING a, STRING b) {
   for (int i = 0; (i < a.len) && (i < b.len); ++i) {
-    int c = str_compare_CHAR_CHAR(a.value[i], b.value[i]);
+    int c = str_compare_cc(a.value[i], b.value[i]);
     if (c != 0) return c;
   }
   return a.len - b.len;
 }
 
-STRING to_str_BOOLEAN(PBoolean val) {
+STRING to_str_b(PBoolean val) {
   if (val)
     return str_make(4, "TRUE");
   else
     return str_make(5, "FALSE");
 }
 
-STRING to_str_INTEGER(int num) {
+STRING to_str_i(int num) {
   STRING ret;
   ret.len = snprintf(ret.value, 255, "%d", num);
   return ret;
 }
 
-STRING to_str_CHAR(char chr) { return str_of(chr); }
+STRING to_str_c(char chr) { return str_of(chr); }
 
-STRING to_str_STRING(STRING str) { return str; }
+STRING to_str_s(STRING str) { return str; }
 
-STRING to_str_enum(int value, const char** names) {
+STRING to_str_e(int value, const char** names) {
   return str_make(strlen(names[value]), names[value]);
 }
 
@@ -149,7 +149,7 @@ void readln(PFile file) {
   } while (chr != '\n');
 }
 
-void read_STRING(PFile file, STRING* str) {
+void read_s(PFile file, STRING* str) {
   int chr = 0;
   int len = 0;
   while ((len < 255) && (chr != '\n')) {
@@ -165,19 +165,19 @@ void read_STRING(PFile file, STRING* str) {
 
 void writeln(PFile file) { fputc('\n', file.file); }
 
-void write_BOOLEAN(PFile file, PBoolean val) {
+void write_b(PFile file, PBoolean val) {
   fputs(val ? "TRUE" : "FALSE", file.file);
 }
 
-void write_INTEGER(PFile file, int num) { fprintf(file.file, "%d", num); }
+void write_i(PFile file, int num) { fprintf(file.file, "%d", num); }
 
-void write_CHAR(PFile file, char chr) { fputc(chr, file.file); }
+void write_c(PFile file, char chr) { fputc(chr, file.file); }
 
-void write_STRING(PFile file, STRING str) {
+void write_s(PFile file, STRING str) {
   for (int pos = 0; pos < str.len; ++pos) fputc(str.value[pos], file.file);
 }
 
-void write_enum(PFile file, int value, const char** names) {
+void write_e(PFile file, int value, const char** names) {
   fputs(names[value], file.file);
 }
 

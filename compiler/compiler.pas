@@ -389,16 +389,18 @@ begin
       if Pos <> 1 then Ret := Ret + ',';
       Ret := Ret +
              DeepTypeName(Defs.Records[Typ.RecordIndex].Fields[Pos].TypeIndex,
-             true) +
-             ':' + Defs.Records[Typ.RecordIndex].Fields[Pos].Name
+             true);
+      Ret := Ret + ':' + Defs.Records[Typ.RecordIndex].Fields[Pos].Name
     end;
     DeepTypeName := Ret + ' end'
   end
   else if Typ.Cls = TtcArray then
   begin
-    DeepTypeName := 'array [' + Defs.Arrays[Typ.ArrayIndex].LowBound + '..' +
-                    Defs.Arrays[Typ.ArrayIndex].HighBound + '] of ' +
-                    DeepTypeName(Defs.Arrays[Typ.ArrayIndex].TypeIndex, true)
+    Ret := 'array [' + Defs.Arrays[Typ.ArrayIndex].LowBound;
+    Ret := Ret + '..' + Defs.Arrays[Typ.ArrayIndex].HighBound;
+    Ret := Ret + '] of ' + DeepTypeName(Defs.Arrays[Typ.ArrayIndex].TypeIndex,
+           true);
+    DeepTypeName := Ret
   end
   else
   begin
@@ -1364,21 +1366,21 @@ begin
   else
   begin
     Ident.Cls := IdcVariable;
-    if EnumTypeIndex <> 0 then
+    if VarIndex <> 0 then
     begin
-      Ident.Value := OutVariableName(Name, false);
-      Ident.TypeIndex := EnumTypeIndex
+      Ident.Value := OutVariableName(Name,
+                     Defs.Variables[VarIndex].IsReference);
+      Ident.TypeIndex := Defs.Variables[VarIndex].TypeIndex
     end
     else if FnIndex <> 0 then
     begin
       Ident.Value := OutReturnVariableName(Name);
       Ident.TypeIndex := Defs.Functions[FnIndex].ReturnTypeIndex
     end
-    else if VarIndex <> 0 then
+    else if EnumTypeIndex <> 0 then
     begin
-      Ident.Value := OutVariableName(Name,
-                     Defs.Variables[VarIndex].IsReference);
-      Ident.TypeIndex := Defs.Variables[VarIndex].TypeIndex
+      Ident.Value := OutVariableName(Name, false);
+      Ident.TypeIndex := EnumTypeIndex
     end
     else
     begin
@@ -1485,7 +1487,9 @@ begin
     else
     begin
       LastQuote := false;
-      Expr.Value := Expr.Value + Value[Pos];
+      if Value[Pos] = '"' then Expr.Value := Expr.Value + '\"'
+      else if Value[Pos] = '\' then Expr.Value := Expr.Value + '\\'
+      else Expr.Value := Expr.Value + Value[Pos];
     end
   end;
   if Length(Expr.Value) = 1 then
@@ -1509,6 +1513,18 @@ begin
   Expr.TypeIndex := PrimitiveTypes.PtInteger;
   Expr.Value := Value;
   GenNumberConstant := Expr
+end;
+
+function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
+begin
+  if IsBooleanType(TypeIndex) then ShortTypeName := 'b'
+  else if IsIntegerType(TypeIndex) then ShortTypeName := 'i'
+  else if IsCharType(TypeIndex) then ShortTypeName := 'c'
+  else if IsStringType(TypeIndex) then ShortTypeName := 's'
+  else if IsEnumType(TypeIndex) then ShortTypeName := 'e'
+  else
+    writeln(StdErr, 'No short type name exists for ', TypeName(TypeIndex),
+    LxWhereStr())
 end;
 
 function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
@@ -1594,8 +1610,8 @@ begin
     halt(1)
   end;
 
-  FName := FName + '_' + TypeName(Left.TypeIndex) + '_' +
-           TypeName(Right.TypeIndex);
+  FName := FName + '_' + ShortTypeName(Left.TypeIndex) +
+           ShortTypeName(Right.TypeIndex);
 
   Expr.TypeIndex := PrimitiveTypes.PtString;
   Expr.Value := FName + '(' + Left.Value + ', ' + Right.Value + ')';
@@ -1754,7 +1770,7 @@ begin
             TypeName(OutVar.TypeIndex), LxWhereStr());
     halt(1)
   end;
-  writeln(Output, 'read_', DeepTypeName(OutVar.TypeIndex, true), '(', Src,
+  writeln(Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(', Src,
   ', &', OutVar.Value, ');')
 end;
 
@@ -1798,10 +1814,10 @@ end;
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Output, 'write_enum(', Dst, ', ', Expr.Value, ', EnumValues',
+    writeln(Output, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(Output, 'write_', DeepTypeName(Expr.TypeIndex, true),
+    writeln(Output, 'write_', ShortTypeName(Expr.TypeIndex),
     '(', Dst, ', ', Expr.Value, ');')
 end;
 
@@ -1843,10 +1859,10 @@ end;
 procedure OutStr(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Output, Dst, ' = to_str_enum(', Expr.Value, ', EnumValues',
+    writeln(Output, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(Output, Dst, ' = to_str_', DeepTypeName(Expr.TypeIndex, true),
+    writeln(Output, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
     '(', Expr.Value, ');')
 end;
 
