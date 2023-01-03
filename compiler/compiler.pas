@@ -2071,11 +2071,11 @@ begin
   writeln(Output, ' = ', FirstExpr.Value, ';');
   OutVariableDeclaration(Last);
   writeln(Output, ' = ', LastExpr.Value, ';');
-  writeln(Output, 'if (first ');
+  write(Output, 'if (first ');
   if Ascending then
-    write(Output, '<')
+    write(Output, '<=')
   else
-    write(Output, '>');
+    write(Output, '=>');
   writeln(Output, ' last) {');
   writeln(Output, Id.Value, ' = first;');
   writeln(Output, 'while (1) {');
