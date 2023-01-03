@@ -1,7 +1,7 @@
 all: pascual libpascual.a
 
-bootstrap: compiler.pas
-	fpc -Mtp -g compiler.pas -obootstrap
+bootstrap: stage0.c libpascual.a
+	gcc -o bootstrap -I. -L. stage0.c -lpascual
 
 pascual: bootstrap libpascual.a
 	PC=./bootstrap ./pascualc compiler.pas -o pascual
