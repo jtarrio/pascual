@@ -159,7 +159,38 @@ if ((LENGTH(LXLINE) > POS + 1) && (cmp_cc(LXLINE.chr[POS + 1], '\'') == 0)) POS 
 }
 LXGETSYMBOL(TKSTRING, POS);
 }
-void READTOKEN() {
+void LXGETCOMMENT() {
+char CHR;
+PBoolean SHORTCOMMENT;
+char DELIM;
+PBoolean CANEND;
+CHR = LXLINE.chr[1];
+SHORTCOMMENT = cmp_cc(CHR, '{') == 0;
+if (SHORTCOMMENT) {
+DELIM = '}';
+LXGETSYMBOL(TKCOMMENT, 1);
+}
+ else {
+DELIM = ')';
+LXGETSYMBOL(TKCOMMENT, 2);
+}
+do {
+if (!LXISTOKENWAITING()) {
+{
+write_s(STDERR, str_make(22, "End of file in comment"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+CANEND = SHORTCOMMENT || (cmp_cc(CHR, '*') == 0);
+CHR = LXLINE.chr[1];
+DELETE(&LXLINE, 1, 1);
+LXPOS.COL = LXPOS.COL + 1;
+} while (!(CANEND && (cmp_cc(CHR, DELIM) == 0)));
+LXTOKEN.VALUE = str_make(0, "");
+}
+void LXREADTOKEN() {
 char CHR;
 char NXT;
 LXTOKEN.VALUE = str_make(0, "");
@@ -177,6 +208,7 @@ if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '=') ==
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKMOREOREQUALS, 2);
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKASSIGN, 2);
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0) && (cmp_cc(NXT, '.') == 0)) LXGETSYMBOL(TKRANGE, 2);
+if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0) && (cmp_cc(NXT, '*') == 0)) LXGETCOMMENT();
 }
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '+') == 0)) LXGETSYMBOL(TKPLUS, 1);
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '-') == 0)) LXGETSYMBOL(TKMINUS, 1);
@@ -194,6 +226,7 @@ if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ';') == 0)) LXGETSYMBOL(TKSEMICOLO
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '^') == 0)) LXGETSYMBOL(TKCARET, 1);
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0)) LXGETSYMBOL(TKLPAREN, 1);
 if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ')') == 0)) LXGETSYMBOL(TKRPAREN, 1);
+if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '{') == 0)) LXGETCOMMENT();
 if (LXTOKEN.ID == TKUNKNOWN) {
 {
 write_s(STDERR, str_make(17, "Could not parse ["));
@@ -205,6 +238,11 @@ writeln(STDERR);
 HALT(1);
 }
 }
+}
+void READTOKEN() {
+do {
+LXREADTOKEN();
+} while (!(LXTOKEN.ID != TKCOMMENT));
 }
 void WANTTOKEN(TLXTOKENID ID) {
 if (LXTOKEN.ID != ID) {
