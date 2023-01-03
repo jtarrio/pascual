@@ -54,7 +54,7 @@ STRING str_of(char chr) {
   return ret;
 }
 
-STRING _str_make(int len, const char* str) {
+STRING str_make(int len, const char* str) {
   STRING ret;
   ret.len = len;
   memcpy(ret.value, str, len);
@@ -116,9 +116,9 @@ int cmp_ss(STRING a, STRING b) {
 
 STRING to_str_b(PBoolean val) {
   if (val)
-    return str_make("TRUE");
+    return str_make(4, "TRUE");
   else
-    return str_make("FALSE");
+    return str_make(5, "FALSE");
 }
 
 STRING to_str_i(int num) {
@@ -132,7 +132,7 @@ STRING to_str_c(char chr) { return str_of(chr); }
 STRING to_str_s(STRING str) { return str; }
 
 STRING to_str_e(int value, const char** names) {
-  return _str_make(strlen(names[value]), names[value]);
+  return str_make(strlen(names[value]), names[value]);
 }
 
 PBoolean EOF(PFile file) { return feof(file.file); }

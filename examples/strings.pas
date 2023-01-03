@@ -2,6 +2,8 @@ program strings;
 
 procedure Literals;
 begin
+  writeln('''');
+  writeln('foo''bar');
   writeln('a');
   writeln('ab');
   writeln('a' + 'b');

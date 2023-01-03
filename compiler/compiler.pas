@@ -25,14 +25,19 @@ var
   LxToken : TLxToken;
   LxPos : TLxPos;
 
-function LxWhereStr : string;
+function LxPosStr(Pos : TLxPos) : string;
 var 
   Row : string;
   Col : string;
 begin
-  Str(LxToken.Pos.Row, Row);
-  Str(LxToken.Pos.Col, Col);
-  LxWhereStr := ' near row ' + Row + ' col ' + Col
+  Str(Pos.Row, Row);
+  Str(Pos.Col, Col);
+  LxPosStr := 'row ' + Row + ' col ' + Col
+end;
+
+function LxWhereStr : string;
+begin
+  LxWhereStr := ' near ' + LxPosStr(LxToken.Pos)
 end;
 
 function LxTokenStr : string;
@@ -229,7 +234,12 @@ begin
       LxGetSymbol(TkSemicolon, 1);
     if (LxToken.Id = TkUnknown) and (Chr = '^') then LxGetSymbol(TkCaret, 1);
     if (LxToken.Id = TkUnknown) and (Chr = '(') then LxGetSymbol(TkLparen, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ')') then LxGetSymbol(TkRparen, 1)
+    if (LxToken.Id = TkUnknown) and (Chr = ')') then LxGetSymbol(TkRparen, 1);
+    if LxToken.Id = TkUnknown then
+    begin
+      writeln(StdErr, 'Could not parse [', LxLine, '] at ', LxPosStr(LxPos));
+      halt(1)
+    end
   end
 end;
 
@@ -1470,19 +1480,24 @@ var
   Pos : integer;
   InStr : boolean;
   LastQuote : boolean;
+  Len : integer;
 begin
   InStr := false;
   LastQuote := false;
   Expr.Value := '';
+  Len := 0;
   for Pos := 1 to Length(Value) do
   begin
     if Value[Pos] = '''' then
     begin
       InStr := not InStr;
       if InStr and LastQuote then
-        Expr.Value := Expr.Value + ''''
+      begin
+        Expr.Value := Expr.Value + '\''';
+        Len := Len + 1
+      end
       else
-        LastQuote := InStr
+        LastQuote := not InStr
     end
     else
     begin
@@ -1490,17 +1505,18 @@ begin
       if Value[Pos] = '"' then Expr.Value := Expr.Value + '\"'
       else if Value[Pos] = '\' then Expr.Value := Expr.Value + '\\'
       else Expr.Value := Expr.Value + Value[Pos];
+      Len := Len + 1
     end
   end;
-  if Length(Expr.Value) = 1 then
+  if Len = 1 then
   begin
     Expr.Value := '''' + Expr.Value + '''';
     Expr.TypeIndex := PrimitiveTypes.PtChar;
   end
   else
   begin
-    Str(Length(Expr.Value), Size);
-    Expr.Value := 'str_make("' + Expr.Value + '")';
+    Str(Len, Size);
+    Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
     Expr.TypeIndex := PrimitiveTypes.PtString;
   end;
   GenStringConstant := Expr
@@ -2189,7 +2205,10 @@ begin
   end
   else if LxToken.Id = TkFor then PsFor()
   else
-    WantToken(TkUnknown);
+  begin
+    writeln(StdErr, 'Unexpected token ', LxTokenStr(), LxWhereStr());
+    halt(1)
+  end
 end;
 
 procedure OutProgramBegin;
