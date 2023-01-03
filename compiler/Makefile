@@ -3,19 +3,16 @@ all: pascual libpascual.a
 bootstrap: compiler.pas
 	fpc -Mtp -g compiler.pas -obootstrap
 
-pascual.c: bootstrap
-	./bootstrap < compiler.pas > pascual.c
+pascual: bootstrap libpascual.a
+	PC=./bootstrap ./pascualc compiler.pas -o pascual
 
-pascual: pascual.c libpascual.a
-	gcc -I. -L. $(COPTS) -o pascual pascual.c -lpascual
+pascual.o: pascual.h pascual.c
+	gcc -c $(COPTS) -o pascual.o pascual.c
 
-runtime.o: runtime.h runtime.c
-	gcc -c $(COPTS) -o runtime.o runtime.c
-
-libpascual.a: runtime.o
-	ar rcs libpascual.a runtime.o
+libpascual.a: pascual.o
+	ar rcs libpascual.a pascual.o
 
 .PHONY: clean
 
 clean:
-	rm -f *~ *.o bootstrap pascual pascual.c runtime.o libpascual.a
+	rm -f *~ *.o bootstrap pascual runtime.o libpascual.a

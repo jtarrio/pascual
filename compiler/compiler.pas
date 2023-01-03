@@ -1258,7 +1258,7 @@ end;
 procedure OutProgramHeading(Name : string);
 begin
   writeln(Output, '/* Program: ', Name, ' */');
-  writeln(Output, '#include "runtime.h"')
+  writeln(Output, '#include "pascual.h"')
 end;
 
 procedure PsProgramHeading;

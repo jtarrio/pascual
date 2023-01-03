@@ -1,5 +1,5 @@
-#ifndef __RUNTIME_H
-#define __RUNTIME_H
+#ifndef __PASCUAL_H
+#define __PASCUAL_H
 
 #include <stdio.h>
 
@@ -64,4 +64,4 @@ void write_c(PFile file, char chr);
 void write_s(PFile file, STRING str);
 void write_e(PFile file, int value, const char** names);
 
-#endif  // __RUNTIME_H
+#endif  // __PASCUAL_H
