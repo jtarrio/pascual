@@ -1,5 +1,5 @@
+(* Tests for flow control *)
 program flowcontrol;
-
 
 procedure TestIf;
 begin

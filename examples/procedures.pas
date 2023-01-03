@@ -1,3 +1,4 @@
+(* Test for procedures and functions *)
 program procedures;
 
 var Num : integer;

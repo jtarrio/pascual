@@ -187,7 +187,41 @@ begin
   LxGetSymbol(TkString, Pos)
 end;
 
-procedure ReadToken;
+procedure LxGetComment;
+var 
+  Chr : char;
+  ShortComment : boolean;
+  Delim : char;
+  CanEnd : boolean;
+begin
+  Chr := LxLine[1];
+  ShortComment := Chr = '{';
+  if ShortComment then
+  begin
+    Delim := '}';
+    LxGetSymbol(TkComment, 1);
+  end
+  else
+  begin
+    Delim := ')';
+    LxGetSymbol(TkComment, 2);
+  end;
+
+  repeat
+    if not LxIsTokenWaiting() then
+    begin
+      writeln(StdErr, 'End of file in comment', LxWhereStr());
+      halt(1)
+    end;
+    CanEnd := ShortComment or (Chr = '*');
+    Chr := LxLine[1];
+    delete(LxLine, 1, 1);
+    LxPos.Col := LxPos.Col + 1;
+  until CanEnd and (Chr = Delim);
+  LxToken.Value := ''
+end;
+
+procedure LxReadToken;
 var 
   Chr : char;
   Nxt : char;
@@ -216,7 +250,9 @@ begin
       if (LxToken.Id = TkUnknown) and (Chr = ':') and (Nxt = '=') then
         LxGetSymbol(TkAssign, 2);
       if (LxToken.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
-        LxGetSymbol(TkRange, 2)
+        LxGetSymbol(TkRange, 2);
+      if (LxToken.Id = TkUnknown) and (Chr = '(') and (Nxt = '*') then
+        LxGetComment()
     end;
     if (LxToken.Id = TkUnknown) and (Chr = '+') then LxGetSymbol(TkPlus, 1);
     if (LxToken.Id = TkUnknown) and (Chr = '-') then LxGetSymbol(TkMinus, 1);
@@ -235,12 +271,20 @@ begin
     if (LxToken.Id = TkUnknown) and (Chr = '^') then LxGetSymbol(TkCaret, 1);
     if (LxToken.Id = TkUnknown) and (Chr = '(') then LxGetSymbol(TkLparen, 1);
     if (LxToken.Id = TkUnknown) and (Chr = ')') then LxGetSymbol(TkRparen, 1);
+    if (LxToken.Id = TkUnknown) and (Chr = '{') then LxGetComment();
     if LxToken.Id = TkUnknown then
     begin
       writeln(StdErr, 'Could not parse [', LxLine, '] at ', LxPosStr(LxPos));
       halt(1)
     end
   end
+end;
+
+procedure ReadToken;
+begin
+  repeat
+    LxReadToken()
+  until LxToken.Id <> TkComment
 end;
 
 procedure WantToken(Id : TLxTokenId);

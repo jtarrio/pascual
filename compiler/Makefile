@@ -3,7 +3,7 @@ all: pascual libpascual.a
 bootstrap: stage0.c libpascual.a
 	gcc -o bootstrap -I. -L. stage0.c -lpascual
 
-pascual: bootstrap libpascual.a
+pascual: bootstrap compiler.pas libpascual.a
 	PC=./bootstrap ./pascualc compiler.pas -o pascual
 
 pascual.o: pascual.h pascual.c

@@ -1,3 +1,4 @@
+(* Tests for strings *)
 program strings;
 
 procedure Literals;
