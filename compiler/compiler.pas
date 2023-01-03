@@ -268,14 +268,16 @@ end;
 type 
   TPsEnumIndex = integer;
   TPsRecordIndex = integer;
+  TPsArrayIndex = integer;
   TPsTypeIndex = integer;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
-                  TtcEnum, TtcRecord);
+                  TtcEnum, TtcRecord, TtcArray);
   TPsType = record
     Name : string;
     Cls : TPsTypeClass;
     EnumIndex : TPsEnumIndex;
     RecordIndex : TPsRecordIndex;
+    ArrayIndex : TPsArrayIndex;
     AliasFor : TPsTypeIndex;
   end;
   TPsEnumDef = record
@@ -289,6 +291,11 @@ type
   TPsRecordDef = record
     Size : integer;
     Fields : array[1..16] of TPsRecordField
+  end;
+  TPsArrayDef = record
+    LowBound : string;
+    HighBound : string;
+    TypeIndex : TPsTypeIndex
   end;
   TPsVariableIndex = integer;
   TPsVariable = record
@@ -308,14 +315,16 @@ type
     NumTypes : integer;
     NumEnums : integer;
     NumRecords : integer;
+    NumArrays : integer;
     NumVariables : integer;
     NumFunctions : integer
   end;
   TPsDefs = record
     Scope : TPsScope;
-    Types : array[1..32] of TPsType;
+    Types : array[1..64] of TPsType;
     Enums : array[1..16] of TPsEnumDef;
     Records : array[1..32] of TPsRecordDef;
+    Arrays : array[1..32] of TPsArrayDef;
     Variables : array[1..32] of TPsVariable;
     Functions : array[1..128] of TPsFunction;
   end;
@@ -335,6 +344,7 @@ begin
   Defs.Scope.NumTypes := 0;
   Defs.Scope.NumEnums := 0;
   Defs.Scope.NumRecords := 0;
+  Defs.Scope.NumArrays := 0;
   Defs.Scope.NumVariables := 0;
   Defs.Scope.NumFunctions := 0;
 end;
@@ -383,6 +393,12 @@ begin
              ':' + Defs.Records[Typ.RecordIndex].Fields[Pos].Name
     end;
     DeepTypeName := Ret + ' end'
+  end
+  else if Typ.Cls = TtcArray then
+  begin
+    DeepTypeName := 'array [' + Defs.Arrays[Typ.ArrayIndex].LowBound + '..' +
+                    Defs.Arrays[Typ.ArrayIndex].HighBound + '] of ' +
+                    DeepTypeName(Defs.Arrays[Typ.ArrayIndex].TypeIndex, true)
   end
   else
   begin
@@ -488,6 +504,11 @@ begin
   IsRecordType := TypeHasClass(TypeIndex, TtcRecord)
 end;
 
+function IsArrayType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsArrayType := TypeHasClass(TypeIndex, TtcArray)
+end;
+
 function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
 var 
   A : TPsType;
@@ -526,7 +547,7 @@ begin
     end
   end;
   Pos := Defs.Scope.NumTypes + 1;
-  if Pos > 32 then
+  if Pos > 64 then
   begin
     writeln(StdErr, 'Too many types have been defined', LxWhereStr());
     halt(1)
@@ -571,6 +592,18 @@ begin
   end;
   Defs.Records[Defs.Scope.NumRecords] := Rec;
   AddRecord := Defs.Scope.NumRecords
+end;
+
+function AddArray(Arr : TPsArrayDef) : TPsArrayIndex;
+begin
+  Defs.Scope.NumArrays := Defs.Scope.NumArrays + 1;
+  if Defs.Scope.NumArrays > 32 then
+  begin
+    writeln(StdErr, 'Too many arrays have been defined', LxWhereStr());
+    halt(1)
+  end;
+  Defs.Arrays[Defs.Scope.NumArrays] := Arr;
+  AddArray := Defs.Scope.NumArrays
 end;
 
 function FindVariable(Name : string) : TPsVariableIndex;
@@ -814,6 +847,7 @@ var
   Typ : TPsType;
   Enum : TPsEnumDef;
   Rec : TPsRecordDef;
+  Arr : TPsArrayDef;
 begin
   TypeIndex := 0;
   if LxToken.Id = TkIdentifier then
@@ -854,16 +888,32 @@ begin
       Rec.Fields[Rec.Size].Name := LxToken.Value;
       ReadToken();
       WantTokenAndRead(TkColon);
-      WantToken(TkIdentifier);
       Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon);
     until LxToken.Id = TkEnd;
-    Typ := EmptyType();
-    Typ.Cls := TtcRecord;
+    Typ := TypeOfClass(TtcRecord);
     Typ.RecordIndex := AddRecord(Rec);
     TypeIndex := AddType(Typ, Scope);
     SkipToken(TkEnd)
+  end
+  else if LxToken.Id = TkArray then
+  begin
+    SkipToken(TkArray);
+    WantTokenAndRead(TkLbracket);
+    WantToken(TkNumber);
+    Arr.LowBound := LxToken.Value;
+    ReadToken();
+    WantTokenAndRead(TkRange);
+    WantToken(TkNumber);
+    Arr.HighBound := LxToken.Value;
+    ReadToken();
+    WantTokenAndRead(TkRbracket);
+    WantTokenAndRead(TkOf);
+    Arr.TypeIndex := PsTypeDenoter(Scope);
+    Typ := TypeOfClass(TtcArray);
+    Typ.ArrayIndex := AddArray(Arr);
+    TypeIndex := AddType(Typ, Scope)
   end
   else
   begin
@@ -916,6 +966,7 @@ var
   Typ : TPsType;
   Enum : TPsEnumDef;
   Rec : TPsRecordDef;
+  Arr : TPsArrayDef;
   Pos : integer;
 begin
   if TypeIndex <> 0 then
@@ -950,6 +1001,12 @@ begin
       write(Output, '; ')
     end;
     write(Output, '} ', Name)
+  end
+  else if Typ.Cls = TtcArray then
+  begin
+    Arr := Defs.Arrays[Typ.ArrayIndex];
+    OutNameAndType(Name, Arr.TypeIndex);
+    write(Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
   else
   begin
@@ -1233,10 +1290,22 @@ function OutStringIndex(Base : string; Expr : TPsExpression) : string;
 begin
   if not IsIntegerType(Expr.TypeIndex) then
   begin
-    writeln(StdErr, 'Subscripts must be integers', LxWhereStr());
+    writeln(StdErr, 'Subscript must be an integer', LxWhereStr());
     halt(1)
   end;
   OutStringIndex := Base + '.chr[' + Expr.Value + ']'
+end;
+
+function OutArrayIndex(Base : string; Expr : TPsExpression;
+                       TypeIndex : TPsTypeIndex) : string;
+begin
+  if not IsIntegerType(Expr.TypeIndex) then
+  begin
+    writeln(StdErr, 'Subscript must be an integer', LxWhereStr());
+    halt(1)
+  end;
+  OutArrayIndex := Base + '[(' + Expr.Value + ') - ' +
+                   Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].LowBound + ']'
 end;
 
 procedure OutIdentifier(Id : TPsIdentifier);
@@ -1348,9 +1417,15 @@ begin
           Ident.Value := OutStringIndex(Ident.Value, Expr);
           Ident.TypeIndex := PrimitiveTypes.PtChar
         end
+        else if IsArrayType(Ident.TypeIndex) then
+        begin
+          Ident.Value := OutArrayIndex(Ident.Value, Expr, Ident.TypeIndex);
+          Ident.TypeIndex := Defs.Arrays[Defs.Types[Ident.TypeIndex].ArrayIndex]
+                             .TypeIndex
+        end
         else
         begin
-          writeln(StdErr, 'Variable ', FullName, ' is not a string',
+          writeln(StdErr, 'Variable ', FullName, ' is not an array or a string',
                   LxWhereStr());
           halt(1)
         end
@@ -1943,7 +2018,7 @@ begin
 end;
 
 procedure OutForBegin(Id : TPsIdentifier; FirstExpr : TPsExpression;
-LastExpr : TPsExpression; Ascending : boolean);
+                      LastExpr : TPsExpression; Ascending : boolean);
 var 
   First : TPsVariable;
   Last : TPsVariable;
