@@ -961,6 +961,11 @@ begin
   else OutVariableName := Name
 end;
 
+function OutReturnVariableName(Name : string) : string;
+begin
+  OutReturnVariableName := 'return_' + Name
+end;
+
 procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
 var 
   Typ : TPsType;
@@ -1119,7 +1124,7 @@ begin
   writeln(Output, ' {');
   if Fun.ReturnTypeIndex <> 0 then
   begin
-    OutNameAndType(Fun.Name, Fun.ReturnTypeIndex);
+    OutNameAndType(OutReturnVariableName(Fun.Name), Fun.ReturnTypeIndex);
     writeln(Output, ';')
   end
 end;
@@ -1127,7 +1132,8 @@ end;
 procedure OutFunctionEnd(FnIndex : TPsFunctionIndex);
 begin
   if Defs.Functions[FnIndex].ReturnTypeIndex <> 0 then
-    writeln(Output, 'return ', Defs.Functions[FnIndex].Name, ';');
+    writeln(Output, 'return ',
+            OutReturnVariableName(Defs.Functions[FnIndex].Name), ';');
   writeln(Output, '}')
 end;
 
@@ -1365,7 +1371,7 @@ begin
     end
     else if FnIndex <> 0 then
     begin
-      Ident.Value := OutVariableName(Name, false);
+      Ident.Value := OutReturnVariableName(Name);
       Ident.TypeIndex := Defs.Functions[FnIndex].ReturnTypeIndex
     end
     else if VarIndex <> 0 then
@@ -1696,7 +1702,7 @@ end;
 function GenFunctionCallArgument(FnProc : TPsExpression; Arg : TPsExpression;
                                  Def: TPsVariable; First : boolean)
 : TPsExpression;
-var
+var 
   Coerced : TPsExpression;
 begin
   if not First then

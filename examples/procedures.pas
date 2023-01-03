@@ -26,6 +26,14 @@ begin
   SumInPlace := N1
 end;
 
+function Fibonacci(N : integer) : integer;
+begin
+  if N <= 1 then
+    Fibonacci := 1
+  else
+    Fibonacci := Fibonacci(N - 1) + Fibonacci(N - 2)
+end;
+
 begin
   Num := 1;
   Display(Num);
@@ -34,4 +42,5 @@ begin
   Display(Sum(Num, 1));
   Display(SumInPlace(Num, 2));
   Display(Num);
+  for Num := 1 to 5 do Display(Fibonacci(Num))
 end.
