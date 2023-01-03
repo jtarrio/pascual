@@ -141,7 +141,7 @@ void readln(PFile file) {
   int chr;
   do {
     chr = fgetc(file.file);
-  } while (chr != '\n');
+  } while ((chr != '\n') && (chr != -1));
 }
 
 void read_s(PFile file, STRING* str) {
@@ -149,11 +149,12 @@ void read_s(PFile file, STRING* str) {
   int len = 0;
   while ((len < 255) && (chr != '\n')) {
     chr = fgetc(file.file);
-    if (chr == '\n') {
+    if (chr == -1)
+      break;
+    else if (chr == '\n')
       ungetc(chr, file.file);
-    } else {
+    else
       str->value[len++] = chr;
-    }
   }
   str->len = len;
 }
