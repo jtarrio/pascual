@@ -281,11 +281,7 @@ begin
 end;
 
 procedure ReadToken;
-begin
-  repeat
-    LxReadToken()
-  until LxToken.Id <> TkComment
-end;
+forward;
 
 procedure WantToken(Id : TLxTokenId);
 begin
@@ -878,7 +874,7 @@ end;
 
 function MakeConstant(Name : string; TokenId : TLxTokenId; TokenValue : string)
 : TPsConstant;
-var
+var 
   Constant : TPsConstant;
 begin
   Constant.Name := Name;
@@ -2052,26 +2048,15 @@ var
   ConstIndex : TPsConstantIndex;
   Pos : TLxPos;
 begin
-  if LxToken.Id = TkIdentifier then
-  begin
-    ConstIndex := FindConstant(LxToken.Value);
-    if ConstIndex <> 0 then
-    begin
-      Pos := LxToken.Pos;
-      LxToken := Defs.Constants[ConstIndex].Replacement;
-      LxToken.Pos := Pos
-    end
-  end;
-
   if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) then
   begin
     Expr := GenBooleanConstant(LxToken.Id = TkTrue);
     ReadToken()
   end
   else if LxToken.Id = TkString then
-    Expr := GenStringConstant(GetTokenValueAndRead(TkString))
+         Expr := GenStringConstant(GetTokenValueAndRead(TkString))
   else if LxToken.Id = TkNumber then
-    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber))
+         Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber))
   else if LxToken.Id = TkIdentifier then
   begin
     Id := PsIdentifier();
@@ -2393,6 +2378,26 @@ begin
   PsProgramBlock();
   WantTokenAndRead(TkDot);
   WantToken(TkEof);
+end;
+
+procedure ReadToken;
+var 
+  ConstIndex : TPsConstantIndex;
+  TokenPos : TLxPos;
+begin
+  repeat
+    LxReadToken();
+    if LxToken.Id = TkIdentifier then
+    begin
+      ConstIndex := FindConstant(LxToken.Value);
+      if ConstIndex <> 0 then
+      begin
+        TokenPos := LxToken.Pos;
+        LxToken := Defs.Constants[ConstIndex].Replacement;
+        LxToken.Pos := TokenPos
+      end
+    end
+  until LxToken.Id <> TkComment
 end;
 
 begin
