@@ -1,5 +1,17 @@
 program compiler(Input, Output, StdErr);
 
+const 
+  MaxTypes = 64;
+  MaxEnums = 16;
+  MaxEnumValues = 128;
+  MaxRecords = 32;
+  MaxRecordFields = 16;
+  MaxArrays = 32;
+  MaxConstants = 32;
+  MaxVariables = 32;
+  MaxFunctions = 256;
+  MaxFunctionArguments = 4;
+
 type 
   TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkNumber, TkString,
                 TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals, TkLessthan,
@@ -339,7 +351,7 @@ type
   end;
   TPsEnumDef = record
     Size : integer;
-    Values : array[1..128] of string;
+    Values : array[1..MaxEnumValues] of string;
   end;
   TPsRecordField = record
     Name : string;
@@ -347,7 +359,7 @@ type
   end;
   TPsRecordDef = record
     Size : integer;
-    Fields : array[1..16] of TPsRecordField
+    Fields : array[1..MaxRecordFields] of TPsRecordField
   end;
   TPsArrayDef = record
     LowBound : string;
@@ -369,7 +381,7 @@ type
   TPsFunction = record
     Name : string;
     ArgCount : integer;
-    Args : array[1..4] of TPsVariable;
+    Args : array[1..MaxFunctionArguments] of TPsVariable;
     ReturnTypeIndex : TPsTypeIndex;
     IsDeclaration : boolean;
   end;
@@ -384,13 +396,13 @@ type
   end;
   TPsDefs = record
     Scope : TPsScope;
-    Types : array[1..64] of TPsType;
-    Enums : array[1..16] of TPsEnumDef;
-    Records : array[1..32] of TPsRecordDef;
-    Arrays : array[1..32] of TPsArrayDef;
-    Constants : array[1..32] of TPsConstant;
-    Variables : array[1..32] of TPsVariable;
-    Functions : array[1..256] of TPsFunction;
+    Types : array[1..MaxTypes] of TPsType;
+    Enums : array[1..MaxEnums] of TPsEnumDef;
+    Records : array[1..MaxRecords] of TPsRecordDef;
+    Arrays : array[1..MaxArrays] of TPsArrayDef;
+    Constants : array[1..MaxConstants] of TPsConstant;
+    Variables : array[1..MaxVariables] of TPsVariable;
+    Functions : array[1..MaxFunctions] of TPsFunction;
   end;
 var 
   Defs : TPsDefs;
@@ -614,7 +626,7 @@ begin
     end
   end;
   Pos := Defs.Scope.NumTypes + 1;
-  if Pos > 64 then
+  if Pos > MaxTypes then
   begin
     writeln(StdErr, 'Too many types have been defined', LxWhereStr());
     halt(1)
@@ -640,7 +652,7 @@ end;
 function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;
 begin
   Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
-  if Defs.Scope.NumEnums > 16 then
+  if Defs.Scope.NumEnums > MaxEnums then
   begin
     writeln(StdErr, 'Too many enums have been defined', LxWhereStr());
     halt(1)
@@ -652,7 +664,7 @@ end;
 function AddRecord(Rec : TPsRecordDef) : TPsRecordIndex;
 begin
   Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
-  if Defs.Scope.NumRecords > 32 then
+  if Defs.Scope.NumRecords > MaxRecords then
   begin
     writeln(StdErr, 'Too many records have been defined', LxWhereStr());
     halt(1)
@@ -664,7 +676,7 @@ end;
 function AddArray(Arr : TPsArrayDef) : TPsArrayIndex;
 begin
   Defs.Scope.NumArrays := Defs.Scope.NumArrays + 1;
-  if Defs.Scope.NumArrays > 32 then
+  if Defs.Scope.NumArrays > MaxArrays then
   begin
     writeln(StdErr, 'Too many arrays have been defined', LxWhereStr());
     halt(1)
@@ -700,7 +712,7 @@ begin
     end
   end;
   Pos := Defs.Scope.NumConstants + 1;
-  if Pos > 32 then
+  if Pos > MaxConstants then
   begin
     writeln(StdErr, 'Too many constants have been defined', LxWhereStr());
     halt(1)
@@ -737,7 +749,7 @@ begin
     end
   end;
   Pos := Defs.Scope.NumVariables + 1;
-  if Pos > 32 then
+  if Pos > MaxVariables then
   begin
     writeln(StdErr, 'Too many variables have been defined', LxWhereStr());
     halt(1)
@@ -826,7 +838,7 @@ begin
   else
   begin
     Pos := Defs.Scope.NumFunctions + 1;
-    if Pos > 256 then
+    if Pos > MaxFunctions then
     begin
       writeln(StdErr, 'Too many functions have been defined', LxWhereStr());
       halt(1)
@@ -980,7 +992,7 @@ begin
     Enum.Size := 0;
     repeat
       Enum.Size := Enum.Size + 1;
-      if Enum.Size > 128 then
+      if Enum.Size > MaxEnumValues then
       begin
         writeln(StdErr, 'Too many values in enum', LxWhereStr());
         halt(1)
@@ -1001,6 +1013,11 @@ begin
     Rec.Size := 0;
     repeat
       Rec.Size := Rec.Size + 1;
+      if Rec.Size > MaxRecordFields then
+      begin
+        writeln(StdErr, 'Too many fields in record', LxWhereStr());
+        halt(1)
+      end;
       Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
       WantTokenAndRead(TkColon);
       Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
@@ -1342,6 +1359,12 @@ begin
     WantTokenAndRead(TkLparen);
     repeat
       Def.ArgCount := Def.ArgCount + 1;
+      if Def.ArgCount > MaxFunctionArguments then
+      begin
+        writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
+                LxWhereStr());
+        halt(1)
+      end;
       Def.Args[Def.ArgCount].IsReference := LxToken.Id = TkVar;
       SkipToken(TkVar);
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
