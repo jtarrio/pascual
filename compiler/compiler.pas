@@ -6,11 +6,11 @@ type
                 TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma, TkColon,
                 TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
                 TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAnd,
-                TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
-                TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
-                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo,
-                TkType, TkUntil, TkVar, TkWhile, TkWith);
+                TkFalse, TkTrue, TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo,
+                TkDownto, TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction,
+                TkGoto, TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr,
+                TkPacked, TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet,
+                TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith);
   TLxPos = record
     Row : integer;
     Col : integer
@@ -343,7 +343,7 @@ type
   end;
   TPsEnumDef = record
     Size : integer;
-    Values : array[1..64] of string;
+    Values : array[1..128] of string;
   end;
   TPsRecordField = record
     Name : string;
@@ -357,6 +357,11 @@ type
     LowBound : string;
     HighBound : string;
     TypeIndex : TPsTypeIndex
+  end;
+  TPsConstantIndex = integer;
+  TPsConstant = record
+    Name : string;
+    Replacement : TLxToken
   end;
   TPsVariableIndex = integer;
   TPsVariable = record
@@ -377,6 +382,7 @@ type
     NumEnums : integer;
     NumRecords : integer;
     NumArrays : integer;
+    NumConstants : integer;
     NumVariables : integer;
     NumFunctions : integer
   end;
@@ -386,6 +392,7 @@ type
     Enums : array[1..16] of TPsEnumDef;
     Records : array[1..32] of TPsRecordDef;
     Arrays : array[1..32] of TPsArrayDef;
+    Constants : array[1..32] of TPsConstant;
     Variables : array[1..32] of TPsVariable;
     Functions : array[1..256] of TPsFunction;
   end;
@@ -406,6 +413,7 @@ begin
   Defs.Scope.NumEnums := 0;
   Defs.Scope.NumRecords := 0;
   Defs.Scope.NumArrays := 0;
+  Defs.Scope.NumConstants := 0;
   Defs.Scope.NumVariables := 0;
   Defs.Scope.NumFunctions := 0;
 end;
@@ -669,6 +677,43 @@ begin
   AddArray := Defs.Scope.NumArrays
 end;
 
+function FindConstant(Name : string) : TPsConstantIndex;
+var 
+  Pos : integer;
+  Ret : TPsConstantIndex;
+begin
+  Ret := 0;
+  for Pos := 1 to Defs.Scope.NumConstants do
+    if Name = Defs.Constants[Pos].Name then Ret := Pos;
+  FindConstant := Ret
+end;
+
+function AddConstant(Constant : TPsConstant; Scope : TPsScope)
+: TPsConstantIndex;
+var 
+  Pos : integer;
+begin
+  if Constant.Name <> '' then
+  begin
+    Pos := FindConstant(Constant.Name);
+    if Pos > Scope.NumConstants then
+    begin
+      writeln(StdErr, 'Constant ', Constant.Name, ' already defined',
+              LxWhereStr());
+      halt(1)
+    end
+  end;
+  Pos := Defs.Scope.NumConstants + 1;
+  if Pos > 32 then
+  begin
+    writeln(StdErr, 'Too many constants have been defined', LxWhereStr());
+    halt(1)
+  end;
+  Defs.Constants[Pos] := Constant;
+  Defs.Scope.NumConstants := Pos;
+  AddConstant := Pos
+end;
+
 function FindVariable(Name : string) : TPsVariableIndex;
 var 
   Pos : integer;
@@ -831,6 +876,17 @@ begin
   MakeType := Typ
 end;
 
+function MakeConstant(Name : string; TokenId : TLxTokenId; TokenValue : string)
+: TPsConstant;
+var
+  Constant : TPsConstant;
+begin
+  Constant.Name := Name;
+  Constant.Replacement.Id := TokenId;
+  Constant.Replacement.Value := TokenValue;
+  MakeConstant := Constant
+end;
+
 function MakeVariable(Name : string; TypeIndex : TPsTypeIndex; IsRef : boolean)
 : TPsVariable;
 var 
@@ -858,10 +914,9 @@ begin
                              GlobalScope);
   PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText), GlobalScope);
 
-  AddVariable(MakeVariable('FALSE', PrimitiveTypes.PtBoolean, false),
-  GlobalScope);
-  AddVariable(MakeVariable('TRUE', PrimitiveTypes.PtBoolean, false),
-  GlobalScope);
+  AddConstant(MakeConstant('FALSE', TkFalse, 'FALSE'), GlobalScope);
+  AddConstant(MakeConstant('TRUE', TkTrue, 'TRUE'), GlobalScope);
+
   AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false), GlobalScope);
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false),
   GlobalScope);
@@ -929,6 +984,11 @@ begin
     Enum.Size := 0;
     repeat
       Enum.Size := Enum.Size + 1;
+      if Enum.Size > 128 then
+      begin
+        writeln(StdErr, 'Too many values in enum', LxWhereStr());
+        halt(1)
+      end;
       Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
@@ -1114,6 +1174,41 @@ begin
   OutEnumValuesInScope(PreviousScope)
 end;
 
+procedure PsConstDefinitions(Scope : TPsScope);
+var 
+  Replacement : TLxToken;
+  ConstIndex : TPsConstantIndex;
+  Constant : TPsConstant;
+begin
+  WantTokenAndRead(TkConst);
+  repeat
+    Constant.Name := GetTokenValueAndRead(TkIdentifier);
+    WantTokenAndRead(TkEquals);
+    if (LxToken.Id = TkNumber) or (LxToken.Id = TkString) then
+      Constant.Replacement := LxToken
+    else if LxToken.Id = TkIdentifier then
+    begin
+      ConstIndex := FindConstant(LxToken.Value);
+      if ConstIndex = 0 then
+      begin
+        writeln(StdErr, 'Expected constant, found ', LxTokenStr(),
+        LxWhereStr());
+        halt(1)
+      end;
+      Constant.Replacement := Defs.Constants[ConstIndex].Replacement
+    end
+    else
+    begin
+      writeln(Stderr, 'Expected constant value, found ', LxTokenStr(),
+      LxWhereStr());
+      halt(1)
+    end;
+    AddConstant(Constant, Scope);
+    ReadToken();
+    WantTokenAndRead(TkSemicolon);
+  until LxToken.Id <> TkIdentifier;
+end;
+
 procedure OutVariableDeclaration(VarDef : TPsVariable);
 begin
   OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
@@ -1280,10 +1375,9 @@ begin
   repeat
     if LxToken.Id = TkType then
       PsTypeDefinitions(Scope)
-    else if LxToken.Id = TkVar then
-           PsVarDefinitions(Scope)
-    else if (LxToken.Id = TkProcedure)
-            or (LxToken.Id = TkFunction) then
+    else if LxToken.Id = TkConst then PsConstDefinitions(Scope)
+    else if LxToken.Id = TkVar then PsVarDefinitions(Scope)
+    else if (LxToken.Id = TkProcedure) or (LxToken.Id = TkFunction) then
            PsFunctionDefinition()
     else
       Done := true;
@@ -1500,6 +1594,18 @@ begin
                     or (Tok.Id = TkLessthan) or (Tok.Id = TkMorethan)
                     or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
                     or (Tok.Id = TkIn);
+end;
+
+function GenBooleanConstant(Value : boolean) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.TypeIndex := PrimitiveTypes.PtBoolean;
+  if Value then
+    Expr.Value := '1'
+  else
+    Expr.Value := '0';
+  GenBooleanConstant := Expr
 end;
 
 function GenStringConstant(Value : string) : TPsExpression;
@@ -1943,15 +2049,29 @@ function PsFactor : TPsExpression;
 var 
   Expr : TPsExpression;
   Id : TPsIdentifier;
+  ConstIndex : TPsConstantIndex;
+  Pos : TLxPos;
 begin
-  if LxToken.Id = TkString then
+  if LxToken.Id = TkIdentifier then
   begin
-    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
+    ConstIndex := FindConstant(LxToken.Value);
+    if ConstIndex <> 0 then
+    begin
+      Pos := LxToken.Pos;
+      LxToken := Defs.Constants[ConstIndex].Replacement;
+      LxToken.Pos := Pos
+    end
+  end;
+
+  if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) then
+  begin
+    Expr := GenBooleanConstant(LxToken.Id = TkTrue);
+    ReadToken()
   end
+  else if LxToken.Id = TkString then
+    Expr := GenStringConstant(GetTokenValueAndRead(TkString))
   else if LxToken.Id = TkNumber then
-  begin
-    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber));
-  end
+    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber))
   else if LxToken.Id = TkIdentifier then
   begin
     Id := PsIdentifier();
