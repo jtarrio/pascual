@@ -1187,38 +1187,37 @@ begin
   OutEnumValuesInScope(PreviousScope)
 end;
 
-procedure PsConstDefinitions(Scope : TPsScope);
+procedure PsConstant(Name : string; Scope : TPsScope);
 var 
   Replacement : TLxToken;
   ConstIndex : TPsConstantIndex;
   Constant : TPsConstant;
 begin
+  WantTokenAndRead(TkEquals);
+  Constant.Name := Name;
+  if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) or
+     (LxToken.Id = TkNumber) or (LxToken.Id = TkString) then
+    Constant.Replacement := LxToken
+  else
+  begin
+    writeln(Stderr, 'Expected constant value, found ', LxTokenStr(),
+    LxWhereStr());
+    halt(1)
+  end;
+  AddConstant(Constant, Scope);
+  ReadToken();
+end;
+
+procedure PsConstDefinitions(Scope : TPsScope);
+var 
+  Name : string;
+begin
   WantTokenAndRead(TkConst);
   repeat
-    Constant.Name := GetTokenValueAndRead(TkIdentifier);
-    WantTokenAndRead(TkEquals);
-    if (LxToken.Id = TkNumber) or (LxToken.Id = TkString) then
-      Constant.Replacement := LxToken
-    else if LxToken.Id = TkIdentifier then
-    begin
-      ConstIndex := FindConstant(LxToken.Value);
-      if ConstIndex = 0 then
-      begin
-        writeln(StdErr, 'Expected constant, found ', LxTokenStr(),
-        LxWhereStr());
-        halt(1)
-      end;
-      Constant.Replacement := Defs.Constants[ConstIndex].Replacement
-    end
-    else
-    begin
-      writeln(Stderr, 'Expected constant value, found ', LxTokenStr(),
-      LxWhereStr());
-      halt(1)
-    end;
-    AddConstant(Constant, Scope);
-    ReadToken();
-    WantTokenAndRead(TkSemicolon);
+    Name := GetTokenValueAndRead(TkIdentifier);
+    WantToken(TkEquals);
+    PsConstant(Name, Scope);
+    WantTokenAndRead(TkSemicolon)
   until LxToken.Id <> TkIdentifier;
 end;
 
