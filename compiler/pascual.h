@@ -28,7 +28,7 @@ STRING COPY(STRING src, int pos, int num);
 void DELETE(STRING* src, int pos, int num);
 char UPCASE(char src);
 STRING str_of(char chr);
-STRING str_make(int len, const char* str);
+#define str_make(l,s) (STRING){.len=l, .value=s}
 STRING cat_cc(char a, char b);
 STRING cat_cs(char a, STRING b);
 STRING cat_sc(STRING a, char b);

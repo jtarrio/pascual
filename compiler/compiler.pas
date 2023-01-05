@@ -375,7 +375,8 @@ type
   TPsVariable = record
     Name : string;
     TypeIndex : TPsTypeIndex;
-    IsReference : boolean
+    IsReference : boolean;
+    IsConstant : boolean
   end;
   TPsFunctionIndex = integer;
   TPsFunction = record
@@ -403,6 +404,19 @@ type
     Constants : array[1..MaxConstants] of TPsConstant;
     Variables : array[1..MaxVariables] of TPsVariable;
     Functions : array[1..MaxFunctions] of TPsFunction;
+  end;
+  TPsIdClass = (IdcVariable, IdcFunction,
+                IdcRead, IdcReadln, IdcWrite, IdcWriteln, IdcStr);
+  TPsIdentifier = record
+    Name : string;
+    Value : string;
+    Cls : TPsIdClass;
+    TypeIndex : TPsTypeIndex;
+    FunctionIndex : TPsFunctionIndex
+  end;
+  TPsExpression = record
+    Value : string;
+    TypeIndex : TPsTypeIndex
   end;
 var 
   Defs : TPsDefs;
@@ -895,6 +909,18 @@ begin
   MakeConstant := Constant
 end;
 
+function MakeTypedConstant(Name : string; TypeIndex : TPsTypeIndex)
+: TPsVariable;
+var 
+  VarDef : TPsVariable;
+begin
+  VarDef.Name := Name;
+  VarDef.TypeIndex := TypeIndex;
+  VarDef.IsReference := false;
+  VarDef.IsConstant := true;
+  MakeTypedConstant := VarDef
+end;
+
 function MakeVariable(Name : string; TypeIndex : TPsTypeIndex; IsRef : boolean)
 : TPsVariable;
 var 
@@ -903,6 +929,7 @@ begin
   VarDef.Name := Name;
   VarDef.TypeIndex := TypeIndex;
   VarDef.IsReference := IsRef;
+  VarDef.IsConstant := false;
   MakeVariable := VarDef
 end;
 
@@ -1208,17 +1235,149 @@ begin
   ReadToken();
 end;
 
-procedure PsConstDefinitions(Scope : TPsScope);
+function GenBooleanConstant(Value : boolean) : TPsExpression;
 var 
-  Name : string;
+  Expr : TPsExpression;
 begin
-  WantTokenAndRead(TkConst);
-  repeat
-    Name := GetTokenValueAndRead(TkIdentifier);
-    WantToken(TkEquals);
-    PsConstant(Name, Scope);
-    WantTokenAndRead(TkSemicolon)
-  until LxToken.Id <> TkIdentifier;
+  Expr.TypeIndex := PrimitiveTypes.PtBoolean;
+  if Value then
+    Expr.Value := '1'
+  else
+    Expr.Value := '0';
+  GenBooleanConstant := Expr
+end;
+
+function GenStringConstant(Value : string) : TPsExpression;
+var 
+  Expr : TPsExpression;
+  Size : string;
+  Pos : integer;
+  InStr : boolean;
+  LastQuote : boolean;
+  Len : integer;
+begin
+  InStr := false;
+  LastQuote := false;
+  Expr.Value := '';
+  Len := 0;
+  for Pos := 1 to Length(Value) do
+  begin
+    if Value[Pos] = '''' then
+    begin
+      InStr := not InStr;
+      if InStr and LastQuote then
+      begin
+        Expr.Value := Expr.Value + '\''';
+        Len := Len + 1
+      end
+      else
+        LastQuote := not InStr
+    end
+    else
+    begin
+      LastQuote := false;
+      if Value[Pos] = '"' then Expr.Value := Expr.Value + '\"'
+      else if Value[Pos] = '\' then Expr.Value := Expr.Value + '\\'
+      else Expr.Value := Expr.Value + Value[Pos];
+      Len := Len + 1
+    end
+  end;
+  if Len = 1 then
+  begin
+    Expr.Value := '''' + Expr.Value + '''';
+    Expr.TypeIndex := PrimitiveTypes.PtChar;
+  end
+  else
+  begin
+    Str(Len, Size);
+    Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
+    Expr.TypeIndex := PrimitiveTypes.PtString;
+  end;
+  GenStringConstant := Expr
+end;
+
+function GenNumberConstant(Value : string) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.TypeIndex := PrimitiveTypes.PtInteger;
+  Expr.Value := Value;
+  GenNumberConstant := Expr
+end;
+
+procedure OutConstantValue(Value : string);
+begin
+  write(Output, Value)
+end;
+
+procedure OutConstantArrayBegin;
+begin
+  write(Output, '{ ')
+end;
+
+procedure OutConstantArraySeparator;
+begin
+  write(Output, ', ')
+end;
+
+procedure OutConstantArrayEnd;
+begin
+  write(Output, ' }')
+end;
+
+procedure PsConstantValue(TypeIndex : TPsTypeIndex);
+var 
+  Expr : TPsExpression;
+begin
+  if IsBooleanType(TypeIndex) then
+  begin
+    WantToken2(TkFalse, TkTrue);
+    Expr := GenBooleanConstant(LxToken.Id = TkTrue);
+    ReadToken();
+    OutConstantValue(Expr.Value)
+  end
+  else if IsIntegerType(TypeIndex) then
+  begin
+    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber));
+    OutConstantValue(Expr.Value)
+  end
+  else if IsCharType(TypeIndex) then
+  begin
+    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
+    if not IsCharType(Expr.TypeIndex) then
+    begin
+      writeln(StdErr, 'Expected char constant, got ',
+              TypeName(Expr.TypeIndex), LxWhereStr());
+      halt(1)
+    end;
+    OutConstantValue(Expr.Value)
+  end
+  else if IsStringType(TypeIndex) then
+  begin
+    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
+    OutConstantValue(Expr.Value)
+  end
+  else if IsArrayType(TypeIndex) then
+  begin
+    WantTokenAndRead(TkLparen);
+    TypeIndex := Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].TypeIndex;
+    OutConstantArrayBegin();
+    while LxToken.Id <> TkRparen do
+    begin
+      PsConstantValue(TypeIndex);
+      WantToken2(TkComma, TkRparen);
+      if LxToken.Id = TkComma then OutConstantArraySeparator();
+      SkipToken(TkComma)
+    end;
+    OutConstantArrayEnd();
+    WantTokenAndRead(TkRparen);
+  end
+  else
+  begin
+    writeln(StdErr, 'Invalid type for constant: ', TypeName(TypeIndex),
+    LxWhereStr());
+    halt(1)
+  end
 end;
 
 procedure OutVariableDeclaration(VarDef : TPsVariable);
@@ -1229,8 +1388,51 @@ end;
 
 procedure OutVariableDefinition(VarIndex : TPsVariableIndex);
 begin
+  if Defs.Variables[VarIndex].IsConstant then
+    write(Output, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
   writeln(Output, ';');
+end;
+
+procedure OutConstantDefinitionBegin(VarIndex : TPsVariableIndex);
+begin
+  write(Output, 'const ');
+  OutVariableDeclaration(Defs.Variables[VarIndex]);
+  write(Output, ' = ');
+end;
+
+procedure OutConstantDefinitionEnd;
+begin
+  writeln(Output, ';')
+end;
+
+procedure PsTypedConstant(Name : string; Scope : TPsScope);
+var 
+  TypeIndex : TPsTypeIndex;
+begin
+  WantTokenAndRead(TkColon);
+  TypeIndex := PsTypeDenoter(Scope);
+  WantTokenAndRead(TkEquals);
+  OutConstantDefinitionBegin(AddVariable(MakeTypedConstant(Name, TypeIndex),
+  Scope));
+  PsConstantValue(TypeIndex);
+  OutConstantDefinitionEnd()
+end;
+
+procedure PsConstDefinitions(Scope : TPsScope);
+var 
+  Name : string;
+begin
+  WantTokenAndRead(TkConst);
+  repeat
+    Name := GetTokenValueAndRead(TkIdentifier);
+    WantToken2(TkEquals, TkColon);
+    if LxToken.Id = TkEquals then
+      PsConstant(Name, Scope)
+    else
+      PsTypedConstant(Name, Scope);
+    WantTokenAndRead(TkSemicolon)
+  until LxToken.Id <> TkIdentifier;
 end;
 
 procedure PsVarDefinitions(Scope : TPsScope);
@@ -1425,21 +1627,6 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
-type 
-  TPsIdClass = (IdcVariable, IdcFunction,
-                IdcRead, IdcReadln, IdcWrite, IdcWriteln, IdcStr);
-  TPsIdentifier = record
-    Name : string;
-    Value : string;
-    Cls : TPsIdClass;
-    TypeIndex : TPsTypeIndex;
-    FunctionIndex : TPsFunctionIndex
-  end;
-  TPsExpression = record
-    Value : string;
-    TypeIndex : TPsTypeIndex
-  end;
-
 function PsExpression : TPsExpression;
 forward;
 
@@ -1468,7 +1655,8 @@ begin
     halt(1)
   end;
   OutArrayIndex := Base + '[(' + Expr.Value + ') - ' +
-                   Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].LowBound + ']'
+                   Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].LowBound +
+                   ']'
 end;
 
 procedure OutIdentifier(Id : TPsIdentifier);
@@ -1508,7 +1696,8 @@ begin
     begin
       if FnIndex = 0 then
       begin
-        writeln(StdErr, 'Unknown function or procedure: ', Name, LxWhereStr());
+        writeln(StdErr, 'Unknown function or procedure: ', Name, LxWhereStr())
+        ;
         halt(1)
       end;
       Ident.Value := Name;
@@ -1579,12 +1768,14 @@ begin
         else if IsArrayType(Ident.TypeIndex) then
         begin
           Ident.Value := OutArrayIndex(Ident.Value, Expr, Ident.TypeIndex);
-          Ident.TypeIndex := Defs.Arrays[Defs.Types[Ident.TypeIndex].ArrayIndex]
+          Ident.TypeIndex := Defs.Arrays[Defs.Types[Ident.TypeIndex].
+                             ArrayIndex]
                              .TypeIndex
         end
         else
         begin
-          writeln(StdErr, 'Variable ', FullName, ' is not an array or a string',
+          writeln(StdErr, 'Variable ', FullName,
+                  ' is not an array or a string',
                   LxWhereStr());
           halt(1)
         end
@@ -1612,76 +1803,6 @@ begin
                     or (Tok.Id = TkLessthan) or (Tok.Id = TkMorethan)
                     or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
                     or (Tok.Id = TkIn);
-end;
-
-function GenBooleanConstant(Value : boolean) : TPsExpression;
-var 
-  Expr : TPsExpression;
-begin
-  Expr.TypeIndex := PrimitiveTypes.PtBoolean;
-  if Value then
-    Expr.Value := '1'
-  else
-    Expr.Value := '0';
-  GenBooleanConstant := Expr
-end;
-
-function GenStringConstant(Value : string) : TPsExpression;
-var 
-  Expr : TPsExpression;
-  Size : string;
-  Pos : integer;
-  InStr : boolean;
-  LastQuote : boolean;
-  Len : integer;
-begin
-  InStr := false;
-  LastQuote := false;
-  Expr.Value := '';
-  Len := 0;
-  for Pos := 1 to Length(Value) do
-  begin
-    if Value[Pos] = '''' then
-    begin
-      InStr := not InStr;
-      if InStr and LastQuote then
-      begin
-        Expr.Value := Expr.Value + '\''';
-        Len := Len + 1
-      end
-      else
-        LastQuote := not InStr
-    end
-    else
-    begin
-      LastQuote := false;
-      if Value[Pos] = '"' then Expr.Value := Expr.Value + '\"'
-      else if Value[Pos] = '\' then Expr.Value := Expr.Value + '\\'
-      else Expr.Value := Expr.Value + Value[Pos];
-      Len := Len + 1
-    end
-  end;
-  if Len = 1 then
-  begin
-    Expr.Value := '''' + Expr.Value + '''';
-    Expr.TypeIndex := PrimitiveTypes.PtChar;
-  end
-  else
-  begin
-    Str(Len, Size);
-    Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
-    Expr.TypeIndex := PrimitiveTypes.PtString;
-  end;
-  GenStringConstant := Expr
-end;
-
-function GenNumberConstant(Value : string) : TPsExpression;
-var 
-  Expr : TPsExpression;
-begin
-  Expr.TypeIndex := PrimitiveTypes.PtInteger;
-  Expr.Value := Value;
-  GenNumberConstant := Expr
 end;
 
 function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
@@ -1820,9 +1941,11 @@ function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
 begin
   if IsBooleanType(Left.TypeIndex) and IsBooleanType(Right.TypeIndex) then
     BinaryExpression := BooleanBinaryExpression(Left, Op, Right)
-  else if IsIntegerType(Left.TypeIndex) and IsIntegerType(Right.TypeIndex) then
+  else if IsIntegerType(Left.TypeIndex) and IsIntegerType(Right.TypeIndex)
+         then
          BinaryExpression := IntegerBinaryExpression(Left, Op, Right)
-  else if IsStringyType(Left.TypeIndex) and IsStringyType(Right.TypeIndex) then
+  else if IsStringyType(Left.TypeIndex) and IsStringyType(Right.TypeIndex)
+         then
          BinaryExpression := StringyBinaryExpression(Left, Op, Right)
   else if IsEnumType(Left.TypeIndex)
           and IsSameType(Left.TypeIndex, Right.TypeIndex) then
@@ -1830,7 +1953,8 @@ begin
   else
   begin
     writeln(StdErr, 'Type mismatch for operator ', Op,
-            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex),
+            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex)
+    ,
     LxWhereStr());
     halt(1)
   end

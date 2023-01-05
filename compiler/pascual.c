@@ -54,13 +54,6 @@ STRING str_of(char chr) {
   return ret;
 }
 
-STRING str_make(int len, const char* str) {
-  STRING ret;
-  ret.len = len;
-  memcpy(ret.value, str, len);
-  return ret;
-}
-
 STRING cat_cc(char a, char b) {
   STRING ret;
   ret.len = 2;
@@ -132,7 +125,9 @@ STRING to_str_c(char chr) { return str_of(chr); }
 STRING to_str_s(STRING str) { return str; }
 
 STRING to_str_e(int value, const char** names) {
-  return str_make(strlen(names[value]), names[value]);
+  STRING ret;
+  ret.len = stpncpy(ret.value, names[value], 255) - names[value];
+  return ret;
 }
 
 PBoolean EOF(PFile file) { return feof(file.file); }
