@@ -21,8 +21,9 @@ type
                 TkFalse, TkTrue, TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo,
                 TkDownto, TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction,
                 TkGoto, TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr,
-                TkPacked, TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet,
-                TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith);
+                TkPacked, TkProcedure, TkProgram, TkRead, TkReadln, TkRecord,
+                TkRepeat, TkSet, TkStr, TkThen, TkTo, TkType, TkUntil, TkVar,
+                TkWhile, TkWith, TkWrite, TkWriteln);
   TLxPos = record
     Row : integer;
     Col : integer
@@ -147,9 +148,12 @@ begin
   else if LxToken.Value = 'PACKED' then LxToken.Id := TkPacked
   else if LxToken.Value = 'PROCEDURE' then LxToken.Id := TkProcedure
   else if LxToken.Value = 'PROGRAM' then LxToken.Id := TkProgram
+  else if LxToken.Value = 'READ' then LxToken.Id := TkRead
+  else if LxToken.Value = 'READLN' then LxToken.Id := TkReadln
   else if LxToken.Value = 'RECORD' then LxToken.Id := TkRecord
   else if LxToken.Value = 'REPEAT' then LxToken.Id := TkRepeat
   else if LxToken.Value = 'SET' then LxToken.Id := TkSet
+  else if LxToken.Value = 'STR' then LxToken.Id := TkStr
   else if LxToken.Value = 'THEN' then LxToken.Id := TkThen
   else if LxToken.Value = 'TO' then LxToken.Id := TkTo
   else if LxToken.Value = 'TYPE' then LxToken.Id := TkType
@@ -157,6 +161,8 @@ begin
   else if LxToken.Value = 'VAR' then LxToken.Id := TkVar
   else if LxToken.Value = 'WHILE' then LxToken.Id := TkWhile
   else if LxToken.Value = 'WITH' then LxToken.Id := TkWith
+  else if LxToken.Value = 'WRITE' then LxToken.Id := TkWrite
+  else if LxToken.Value = 'WRITELN' then LxToken.Id := TkWriteln
 end;
 
 procedure LxGetNumber;
@@ -2072,13 +2078,16 @@ begin
   writeln(Output, 'readln(', Src, ');')
 end;
 
-procedure PsRead(Id : TPsIdentifier);
+procedure PsRead;
 var 
   Src : string;
+  LineFeed : boolean;
   OutVar : TPsIdentifier;
 begin
+  LineFeed := LxToken.Id = TkReadln;
   OutBegin();
   Src := 'INPUT';
+  ReadToken();
   WantTokenAndRead(TkLparen);
   if LxToken.Id <> TkRparen then
   begin
@@ -2099,7 +2108,7 @@ begin
     end;
   end;
   WantTokenAndRead(TkRparen);
-  if Id.Cls = IdcReadln then
+  if LineFeed then
     OutReadln(Src);
   OutEnd()
 end;
@@ -2119,13 +2128,16 @@ begin
   writeln(Output, 'writeln(', Src, ');')
 end;
 
-procedure PsWrite(Id : TPsIdentifier);
+procedure PsWrite;
 var 
   Dst : string;
+  LineFeed : boolean;
   Expr : TPsExpression;
 begin
+  LineFeed := LxToken.Id = TkWriteln;
   OutBegin();
   Dst := 'OUTPUT';
+  ReadToken();
   WantTokenAndRead(TkLparen);
   if LxToken.Id <> TkRparen then
   begin
@@ -2144,7 +2156,7 @@ begin
     end;
   end;
   WantTokenAndRead(TkRparen);
-  if Id.Cls = IdcWriteln then
+  if LineFeed then
     OutWriteln(Dst);
   OutEnd()
 end;
@@ -2164,6 +2176,7 @@ var
   Expr : TPsExpression;
   Dest : TPsIdentifier;
 begin
+  ReadToken();
   WantTokenAndRead(TkLparen);
   Expr := PsExpression();
   WantTokenAndRead(TkComma);
@@ -2371,7 +2384,89 @@ begin
   writeln(Output, '}');
 end;
 
-procedure PsFor;
+procedure OutProcedureCall(Expr : TPsExpression);
+begin
+  writeln(Output, Expr.Value, ';')
+end;
+
+procedure PsProcedureCall(Id : TPsIdentifier);
+begin
+  OutProcedureCall(PsFunctionCall(Id))
+end;
+
+procedure OutEmptyStatement;
+begin
+  writeln(Output, ';')
+end;
+
+procedure PsStatementSequence;
+begin
+  OutBegin();
+  SkipToken(TkBegin);
+  while LxToken.Id <> TkEnd do
+  begin
+    PsStatement();
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon);
+  end;
+  OutEnd();
+  SkipToken(TkEnd)
+end;
+
+procedure PsIdentifierStatement;
+var
+  Id : TPsIdentifier;
+begin
+  Id := PsIdentifier();
+  if Id.Cls = IdcFunction then PsProcedureCall(Id)
+  else if LxToken.Id = TkAssign then
+  begin
+    WantTokenAndRead(TkAssign);
+    OutAssign(Id, PsExpression());
+  end
+end;
+
+procedure PsIfStatement;
+begin
+  WantTokenAndRead(TkIf);
+  OutIf(PsExpression());
+  WantTokenAndRead(TkThen);
+  if LxToken.Id = TkElse then
+    OutEmptyStatement()
+  else
+    PsStatement();
+  if LxToken.Id = TkElse then
+  begin
+    WantTokenAndRead(TkElse);
+    OutElse();
+    PsStatement();
+  end
+end;
+
+procedure PsRepeatStatement;
+begin
+  WantTokenAndRead(TkRepeat);
+  OutRepeatBegin();
+  while LxToken.Id <> TkUntil do
+  begin
+    PsStatement();
+    WantToken2(TkSemicolon, TkUntil);
+    SkipToken(TkSemicolon)
+  end;
+  WantTokenAndRead(TkUntil);
+  OutRepeatEnd(PsExpression());
+end;
+
+procedure PsWhileStatement;
+begin
+  WantTokenAndRead(TkWhile);
+  OutWhileBegin(PsExpression());
+  WantTokenAndRead(TkDo);
+  PsStatement();
+  OutWhileEnd()
+end;
+
+procedure PsForStatement;
 var 
   Id : TPsIdentifier;
   First : TPsExpression;
@@ -2397,91 +2492,20 @@ begin
   OutForEnd(Id, Ascending)
 end;
 
-procedure OutProcedureCall(Expr : TPsExpression);
-begin
-  writeln(Output, Expr.Value, ';')
-end;
-
-procedure PsProcedureCall(Id : TPsIdentifier);
-begin
-  OutProcedureCall(PsFunctionCall(Id))
-end;
-
-procedure OutEmptyStatement;
-begin
-  writeln(Output, ';')
-end;
-
 procedure PsStatement;
 var 
   Id : TPsIdentifier;
 begin
-  if LxToken.Id = TkSemicolon then
-    OutEmptyStatement()
-  else if LxToken.Id = TkBegin then
-  begin
-    OutBegin();
-    SkipToken(TkBegin);
-    while LxToken.Id <> TkEnd do
-    begin
-      PsStatement();
-      WantToken2(TkSemicolon, TkEnd);
-      SkipToken(TkSemicolon);
-    end;
-    OutEnd();
-    SkipToken(TkEnd);
-  end
-  else if LxToken.Id = TkIdentifier then
-  begin
-    Id := PsIdentifier();
-    if (Id.Cls = IdcRead) or (Id.Cls = IdcReadln) then PsRead(Id)
-    else if (Id.Cls = IdcWrite) or (Id.Cls = IdcWriteln) then PsWrite(Id)
-    else if Id.Cls = IdcStr then PsStr()
-    else if Id.Cls = IdcFunction then PsProcedureCall(Id)
-    else if LxToken.Id = TkAssign then
-    begin
-      WantTokenAndRead(TkAssign);
-      OutAssign(Id, PsExpression());
-    end
-  end
-  else if LxToken.Id = TkIf then
-  begin
-    WantTokenAndRead(TkIf);
-    OutIf(PsExpression());
-    WantTokenAndRead(TkThen);
-    if LxToken.Id = TkElse then
-      OutEmptyStatement()
-    else
-      PsStatement();
-    if LxToken.Id = TkElse then
-    begin
-      WantTokenAndRead(TkElse);
-      OutElse();
-      PsStatement();
-    end
-  end
-  else if LxToken.Id = TkRepeat then
-  begin
-    WantTokenAndRead(TkRepeat);
-    OutRepeatBegin();
-    while LxToken.Id <> TkUntil do
-    begin
-      PsStatement();
-      WantToken2(TkSemicolon, TkUntil);
-      SkipToken(TkSemicolon)
-    end;
-    WantTokenAndRead(TkUntil);
-    OutRepeatEnd(PsExpression());
-  end
-  else if LxToken.Id = TkWhile then
-  begin
-    WantTokenAndRead(TkWhile);
-    OutWhileBegin(PsExpression());
-    WantTokenAndRead(TkDo);
-    PsStatement();
-    OutWhileEnd()
-  end
-  else if LxToken.Id = TkFor then PsFor()
+  if LxToken.Id = TkSemicolon then OutEmptyStatement()
+  else if (LxToken.Id = TkRead) or (LxToken.Id = TkReadln) then PsRead()
+  else if (LxToken.Id = TkWrite) or (LxToken.Id = TkWriteln) then PsWrite()
+  else if LxToken.Id = TkStr then PsStr()
+  else if LxToken.Id = TkBegin then PsStatementSequence()
+  else if LxToken.Id = TkIdentifier then PsIdentifierStatement()
+  else if LxToken.Id = TkIf then PsIfStatement()
+  else if LxToken.Id = TkRepeat then PsRepeatStatement()
+  else if LxToken.Id = TkWhile then PsWhileStatement()
+  else if LxToken.Id = TkFor then PsForStatement()
   else
   begin
     writeln(StdErr, 'Unexpected token ', LxTokenStr(), LxWhereStr());
