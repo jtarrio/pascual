@@ -57,7 +57,7 @@ compile_to_c() {
 }
 
 compile_to_out() {
-  "$CC" -I"$PINCDIR" "$1" -o "$2" -L"$PLIBDIR" -lpascual
+  "$CC" $COPTS -I"$PINCDIR" "$1" -o "$2" -L"$PLIBDIR" -lpascual
 }
 
 parse_cmd "$@"
