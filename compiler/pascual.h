@@ -28,7 +28,8 @@ STRING COPY(STRING src, int pos, int num);
 void DELETE(STRING* src, int pos, int num);
 char UPCASE(char src);
 STRING str_of(char chr);
-#define str_make(l,s) (STRING){.len=l, .value=s}
+#define str_make(l, s) \
+  (STRING) { .len = l, .value = s }
 STRING cat_cc(char a, char b);
 STRING cat_cs(char a, STRING b);
 STRING cat_sc(STRING a, char b);
@@ -44,7 +45,11 @@ STRING to_str_c(char chr);
 STRING to_str_s(STRING str);
 STRING to_str_e(int value, const char** names);
 
+int PARAMCOUNT();
+STRING PARAMSTR(int i);
+
 typedef struct {
+  STRING name;
   FILE* file;
 } PFile;
 
@@ -52,7 +57,10 @@ extern PFile INPUT;
 extern PFile OUTPUT;
 extern PFile STDERR;
 
-PBoolean EOF(PFile file);
+void ASSIGN(PFile* file, STRING name);
+void CLOSE(PFile* file);
+void RESET(PFile* file);
+PBoolean EOF(PFile* file);
 
 void readln(PFile file);
 void read_s(PFile file, STRING* str);

@@ -47,6 +47,12 @@ char UPCASE(char src) {
   return src;
 }
 
+STRING _str_from_pchar(const char* str) {
+  STRING ret;
+  ret.len = stpncpy(ret.value, str, 255) - str;
+  return ret;
+}
+
 STRING str_of(char chr) {
   STRING ret;
   ret.len = 1;
@@ -125,12 +131,36 @@ STRING to_str_c(char chr) { return str_of(chr); }
 STRING to_str_s(STRING str) { return str; }
 
 STRING to_str_e(int value, const char** names) {
-  STRING ret;
-  ret.len = stpncpy(ret.value, names[value], 255) - names[value];
-  return ret;
+  return _str_from_pchar(names[value]);
 }
 
-PBoolean EOF(PFile file) { return feof(file.file); }
+int param_count;
+const char** param_str;
+
+int PARAMCOUNT() {
+  return param_count;
+}
+
+STRING PARAMSTR(int i) {
+  if ((i < 1) || (i > param_count)) return (STRING){.len = 0};
+  return _str_from_pchar(param_str[i - 1]);
+}
+
+void ASSIGN(PFile* file, STRING name) {
+  file->name = name;
+  if (file->name.len < 255) file->name.value[file->name.len] = 0;
+}
+
+void CLOSE(PFile* file) { fclose(file->file); }
+
+PBoolean EOF(PFile* file) {
+  int ch = fgetc(file->file);
+  if (ch == -1) return TRUE;
+  ungetc(ch, file->file);
+  return FALSE;
+}
+
+void RESET(PFile* file) { file->file = fopen(file->name.value, "r"); }
 
 void readln(PFile file) {
   int chr;
@@ -181,10 +211,12 @@ PFile STDERR = {};
 
 extern void pascual_main();
 
-int main() {
+int main(int argc, const char** argv) {
   INPUT.file = stdin;
   OUTPUT.file = stdout;
   STDERR.file = stderr;
+  param_count = argc - 1;
+  param_str = argv + 1;
   pascual_main();
   return 0;
 }

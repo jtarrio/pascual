@@ -964,6 +964,17 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false),
   GlobalScope);
 
+  Fun.Name := 'ASSIGN';
+  Fun.ArgCount := 2;
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
+  Fun.Args[2] := MakeVariable('NAME', PrimitiveTypes.PtString, false);
+  Fun.ReturnTypeIndex := 0;
+  AddFunction(Fun);
+  Fun.Name := 'CLOSE';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
+  Fun.ReturnTypeIndex := 0;
+  AddFunction(Fun);
   Fun.Name := 'COPY';
   Fun.ArgCount := 3;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
@@ -980,7 +991,7 @@ begin
   AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, false);
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtBoolean;
   AddFunction(Fun);
   Fun.Name := 'HALT';
@@ -992,6 +1003,20 @@ begin
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
+  AddFunction(Fun);
+  Fun.Name := 'PARAMCOUNT';
+  Fun.ArgCount := 0;
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
+  AddFunction(Fun);
+  Fun.Name := 'PARAMSTR';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('I', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtString;
+  AddFunction(Fun);
+  Fun.Name := 'RESET';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
+  Fun.ReturnTypeIndex := 0;
   AddFunction(Fun);
   Fun.Name := 'UPCASE';
   Fun.ArgCount := 1;
