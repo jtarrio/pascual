@@ -1247,8 +1247,6 @@ end;
 
 procedure PsConstant(Name : string; Scope : TPsScope);
 var 
-  Replacement : TLxToken;
-  ConstIndex : TPsConstantIndex;
   Constant : TPsConstant;
 begin
   WantTokenAndRead(TkEquals);
@@ -1972,7 +1970,6 @@ var
   Src : string;
   LineFeed : boolean;
   OutVar : TPsExpression;
-  VarIndex : TPsVariableIndex;
 begin
   LineFeed := Id.Name = 'READLN';
   OutBegin();
@@ -2226,9 +2223,6 @@ end;
 function PsFactor : TPsExpression;
 var 
   Expr : TPsExpression;
-  Id : TPsIdentifier;
-  ConstIndex : TPsConstantIndex;
-  Pos : TLxPos;
 begin
   if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) then
   begin
@@ -2521,8 +2515,6 @@ begin
 end;
 
 procedure PsStatement;
-var 
-  Id : TPsIdentifier;
 begin
   if LxToken.Id = TkSemicolon then OutEmptyStatement()
   else if LxToken.Id = TkBegin then PsStatementSequence()
