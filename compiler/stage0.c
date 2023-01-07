@@ -7,6 +7,7 @@ const char* EnumValues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER",
 STRING LXLINE;
 TLXTOKEN LXTOKEN;
 TLXPOS LXPOS;
+PFile LXINPUT;
 STRING LXPOSSTR(TLXPOS POS) {
 STRING return_LXPOSSTR;
 STRING ROW;
@@ -46,19 +47,19 @@ return return_LXISALPHANUM;
 PBoolean LXISTOKENWAITING() {
 PBoolean return_LXISTOKENWAITING;
 do {
-while ((LENGTH(LXLINE) == 0) && !EOF(&INPUT)) {
+while ((LENGTH(LXLINE) == 0) && !EOF(&LXINPUT)) {
 LXPOS.ROW = LXPOS.ROW + 1;
 LXPOS.COL = 1;
 {
-read_s(INPUT, &LXLINE);
-readln(INPUT);
+read_s(LXINPUT, &LXLINE);
+readln(LXINPUT);
 }
 }
 while ((LENGTH(LXLINE) > 0) && (cmp_cc(LXLINE.chr[1], ' ') == 0)) {
 LXPOS.COL = LXPOS.COL + 1;
 DELETE(&LXLINE, 1, 1);
 }
-} while (!(EOF(&INPUT) || (LENGTH(LXLINE) > 0)));
+} while (!(EOF(&LXINPUT) || (LENGTH(LXLINE) > 0)));
 return_LXISTOKENWAITING = LENGTH(LXLINE) > 0;
 return return_LXISTOKENWAITING;
 }
@@ -301,13 +302,16 @@ typedef struct { STRING NAME; int ARGCOUNT; TPSVARIABLE ARGS[1 + 4 - 1]; TPSTYPE
 typedef struct { int NUMTYPES; int NUMENUMS; int NUMRECORDS; int NUMARRAYS; int NUMCONSTANTS; int NUMVARIABLES; int NUMFUNCTIONS; } TPSSCOPE;
 typedef struct { TPSSCOPE SCOPE; TPSTYPE TYPES[1 + 64 - 1]; TPSENUMDEF ENUMS[1 + 16 - 1]; TPSRECORDDEF RECORDS[1 + 32 - 1]; TPSARRAYDEF ARRAYS[1 + 32 - 1]; TPSCONSTANT CONSTANTS[1 + 32 - 1]; TPSVARIABLE VARIABLES[1 + 32 - 1]; TPSFUNCTION FUNCTIONS[1 + 256 - 1]; } TPSDEFS;
 typedef enum { IDCVARIABLE, IDCFUNCTION, IDCREAD, IDCREADLN, IDCWRITE, IDCWRITELN, IDCSTR} TPSIDCLASS;
-typedef struct { STRING NAME; STRING VALUE; TPSIDCLASS CLS; TPSTYPEINDEX TYPEINDEX; TPSFUNCTIONINDEX FUNCTIONINDEX; } TPSIDENTIFIER;
-typedef struct { STRING VALUE; TPSTYPEINDEX TYPEINDEX; } TPSEXPRESSION;
+typedef struct { STRING NAME; } TPSIDENTIFIER;
+typedef enum { TECVALUE, TECFUNCTION, TECSTATEMENT} TPSEXPRESSIONCLASS;
+typedef struct { STRING VALUE; TPSEXPRESSIONCLASS CLS; PBoolean ISCONSTANT; TPSTYPEINDEX TYPEINDEX; TPSFUNCTIONINDEX FUNCTIONINDEX; } TPSEXPRESSION;
 const char* EnumValues2[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRECORD", "TTCARRAY" };
 const char* EnumValues3[] = { "IDCVARIABLE", "IDCFUNCTION", "IDCREAD", "IDCREADLN", "IDCWRITE", "IDCWRITELN", "IDCSTR" };
+const char* EnumValues4[] = { "TECVALUE", "TECFUNCTION", "TECSTATEMENT" };
 TPSDEFS DEFS;
 struct { TPSTYPEINDEX PTBOOLEAN; TPSTYPEINDEX PTINTEGER; TPSTYPEINDEX PTCHAR; TPSTYPEINDEX PTSTRING; TPSTYPEINDEX PTTEXT; } PRIMITIVETYPES;
 TPSSCOPE GLOBALSCOPE;
+PFile CPOUTPUT;
 void CLEARDEFS() {
 DEFS.SCOPE.NUMTYPES = 0;
 DEFS.SCOPE.NUMENUMS = 0;
@@ -920,6 +924,11 @@ VARDEF.ISCONSTANT = 0;
 return_MAKEVARIABLE = VARDEF;
 return return_MAKEVARIABLE;
 }
+PBoolean ISVARIABLEEXPRESSION(TPSEXPRESSION EXPR) {
+PBoolean return_ISVARIABLEEXPRESSION;
+return_ISVARIABLEEXPRESSION = (EXPR.CLS == TECVALUE) && (EXPR.TYPEINDEX != 0) && !EXPR.ISCONSTANT;
+return return_ISVARIABLEEXPRESSION;
+}
 void STARTGLOBALSCOPE() {
 TPSFUNCTION FUN;
 CLEARDEFS();
@@ -934,6 +943,12 @@ ADDCONSTANT(MAKECONSTANT(str_make(4, "TRUE"), TKTRUE, str_make(4, "TRUE")), GLOB
 ADDVARIABLE(MAKEVARIABLE(str_make(5, "INPUT"), PRIMITIVETYPES.PTTEXT, 0), GLOBALSCOPE);
 ADDVARIABLE(MAKEVARIABLE(str_make(6, "OUTPUT"), PRIMITIVETYPES.PTTEXT, 0), GLOBALSCOPE);
 ADDVARIABLE(MAKEVARIABLE(str_make(6, "STDERR"), PRIMITIVETYPES.PTTEXT, 0), GLOBALSCOPE);
+FUN.NAME = str_make(6, "ASSIGN");
+FUN.ARGCOUNT = 2;
+FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_of('F'), PRIMITIVETYPES.PTTEXT, 1);
+FUN.ARGS[(2) - 1] = MAKEVARIABLE(str_make(4, "NAME"), PRIMITIVETYPES.PTSTRING, 0);
+FUN.RETURNTYPEINDEX = 0;
+ADDFUNCTION(FUN);
 FUN.NAME = str_make(5, "CLOSE");
 FUN.ARGCOUNT = 1;
 FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_of('F'), PRIMITIVETYPES.PTTEXT, 1);
@@ -967,6 +982,20 @@ FUN.NAME = str_make(6, "LENGTH");
 FUN.ARGCOUNT = 1;
 FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_make(3, "STR"), PRIMITIVETYPES.PTSTRING, 0);
 FUN.RETURNTYPEINDEX = PRIMITIVETYPES.PTINTEGER;
+ADDFUNCTION(FUN);
+FUN.NAME = str_make(10, "PARAMCOUNT");
+FUN.ARGCOUNT = 0;
+FUN.RETURNTYPEINDEX = PRIMITIVETYPES.PTINTEGER;
+ADDFUNCTION(FUN);
+FUN.NAME = str_make(8, "PARAMSTR");
+FUN.ARGCOUNT = 1;
+FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_of('I'), PRIMITIVETYPES.PTINTEGER, 0);
+FUN.RETURNTYPEINDEX = PRIMITIVETYPES.PTSTRING;
+ADDFUNCTION(FUN);
+FUN.NAME = str_make(5, "RESET");
+FUN.ARGCOUNT = 1;
+FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_of('F'), PRIMITIVETYPES.PTTEXT, 1);
+FUN.RETURNTYPEINDEX = 0;
 ADDFUNCTION(FUN);
 FUN.NAME = str_make(6, "UPCASE");
 FUN.ARGCOUNT = 1;
@@ -1069,22 +1098,22 @@ return return_PSTYPEDENOTER;
 }
 void OUTBEGIN() {
 {
-write_c(OUTPUT, '{');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '{');
+writeln(CPOUTPUT);
 }
 }
 void OUTEND() {
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 }
 void OUTENUMVALUES(TPSENUMINDEX POS) {
 int POSINENUM;
 {
-write_s(OUTPUT, str_make(22, "const char* EnumValues"));
-write_i(OUTPUT, POS);
-write_s(OUTPUT, str_make(7, "[] = { "));
+write_s(CPOUTPUT, str_make(22, "const char* EnumValues"));
+write_i(CPOUTPUT, POS);
+write_s(CPOUTPUT, str_make(7, "[] = { "));
 }
 {
 int first = 1;
@@ -1094,12 +1123,12 @@ POSINENUM = first;
 while (1) {
 {
 if (POSINENUM != 1) {
-write_s(OUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, str_make(2, ", "));
 }
 {
-write_c(OUTPUT, '\"');
-write_s(OUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
-write_c(OUTPUT, '\"');
+write_c(CPOUTPUT, '\"');
+write_s(CPOUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
+write_c(CPOUTPUT, '\"');
 }
 }
 if (POSINENUM == last) break;
@@ -1108,8 +1137,8 @@ if (POSINENUM == last) break;
 }
 }
 {
-write_s(OUTPUT, str_make(3, " };"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(3, " };"));
+writeln(CPOUTPUT);
 }
 }
 void OUTENUMVALUESINSCOPE(TPSSCOPE SCOPE) {
@@ -1146,38 +1175,38 @@ TPSARRAYDEF ARR;
 int POS;
 if (TYPEINDEX != 0) TYP = DEFS.TYPES[(TYPEINDEX) - 1];
 if (TYPEINDEX == 0) {
-write_s(OUTPUT, str_make(5, "void "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(5, "void "));
+write_s(CPOUTPUT, NAME);
 }
  else if ((TYP.ALIASFOR != 0) && (cmp_ss(TYP.NAME, str_make(0, "")) != 0)) {
-write_s(OUTPUT, TYP.NAME);
-write_c(OUTPUT, ' ');
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, TYP.NAME);
+write_c(CPOUTPUT, ' ');
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCBOOLEAN) {
-write_s(OUTPUT, str_make(9, "PBoolean "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(9, "PBoolean "));
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCINTEGER) {
-write_s(OUTPUT, str_make(4, "int "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(4, "int "));
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCCHAR) {
-write_s(OUTPUT, str_make(5, "char "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(5, "char "));
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCSTRING) {
-write_s(OUTPUT, str_make(7, "STRING "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(7, "STRING "));
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCTEXT) {
-write_s(OUTPUT, str_make(6, "PFile "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(6, "PFile "));
+write_s(CPOUTPUT, NAME);
 }
  else if (TYP.CLS == TTCENUM) {
 ENUM = DEFS.ENUMS[(TYP.ENUMINDEX) - 1];
 {
-write_s(OUTPUT, str_make(7, "enum { "));
+write_s(CPOUTPUT, str_make(7, "enum { "));
 }
 {
 int first = 1;
@@ -1187,10 +1216,10 @@ POS = first;
 while (1) {
 {
 if (POS > 1) {
-write_s(OUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, str_make(2, ", "));
 }
 {
-write_s(OUTPUT, ENUM.VALUES[(POS) - 1]);
+write_s(CPOUTPUT, ENUM.VALUES[(POS) - 1]);
 }
 }
 if (POS == last) break;
@@ -1199,14 +1228,14 @@ if (POS == last) break;
 }
 }
 {
-write_s(OUTPUT, str_make(2, "} "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(2, "} "));
+write_s(CPOUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCRECORD) {
 REC = DEFS.RECORDS[(TYP.RECORDINDEX) - 1];
 {
-write_s(OUTPUT, str_make(9, "struct { "));
+write_s(CPOUTPUT, str_make(9, "struct { "));
 }
 {
 int first = 1;
@@ -1217,7 +1246,7 @@ while (1) {
 {
 OUTNAMEANDTYPE(REC.FIELDS[(POS) - 1].NAME, REC.FIELDS[(POS) - 1].TYPEINDEX);
 {
-write_s(OUTPUT, str_make(2, "; "));
+write_s(CPOUTPUT, str_make(2, "; "));
 }
 }
 if (POS == last) break;
@@ -1226,19 +1255,19 @@ if (POS == last) break;
 }
 }
 {
-write_s(OUTPUT, str_make(2, "} "));
-write_s(OUTPUT, NAME);
+write_s(CPOUTPUT, str_make(2, "} "));
+write_s(CPOUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCARRAY) {
 ARR = DEFS.ARRAYS[(TYP.ARRAYINDEX) - 1];
 OUTNAMEANDTYPE(NAME, ARR.TYPEINDEX);
 {
-write_s(OUTPUT, str_make(5, "[1 + "));
-write_s(OUTPUT, ARR.HIGHBOUND);
-write_s(OUTPUT, str_make(3, " - "));
-write_s(OUTPUT, ARR.LOWBOUND);
-write_c(OUTPUT, ']');
+write_s(CPOUTPUT, str_make(5, "[1 + "));
+write_s(CPOUTPUT, ARR.HIGHBOUND);
+write_s(CPOUTPUT, str_make(3, " - "));
+write_s(CPOUTPUT, ARR.LOWBOUND);
+write_c(CPOUTPUT, ']');
 }
 }
  else {
@@ -1267,12 +1296,12 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(OUTPUT, str_make(8, "typedef "));
+write_s(CPOUTPUT, str_make(8, "typedef "));
 }
 OUTNAMEANDTYPE(NAME, DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR);
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 }
 void PSTYPEDEFINITIONS(TPSSCOPE SCOPE) {
@@ -1296,8 +1325,6 @@ OUTTYPEDEFINITION(TYPEINDEX);
 OUTENUMVALUESINSCOPE(PREVIOUSSCOPE);
 }
 void PSCONSTANT(STRING NAME, TPSSCOPE SCOPE) {
-TLXTOKEN REPLACEMENT;
-TPSCONSTANTINDEX CONSTINDEX;
 TPSCONSTANT CONSTANT;
 WANTTOKENANDREAD(TKEQUALS);
 CONSTANT.NAME = NAME;
@@ -1318,6 +1345,8 @@ TPSEXPRESSION GENBOOLEANCONSTANT(PBoolean VALUE) {
 TPSEXPRESSION return_GENBOOLEANCONSTANT;
 TPSEXPRESSION EXPR;
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 if (VALUE) EXPR.VALUE = str_of('1');
  else EXPR.VALUE = str_of('0');
 return_GENBOOLEANCONSTANT = EXPR;
@@ -1334,6 +1363,8 @@ int LEN;
 INSTR = 0;
 LASTQUOTE = 0;
 EXPR.VALUE = str_make(0, "");
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 LEN = 0;
 {
 int first = 1;
@@ -1380,27 +1411,29 @@ TPSEXPRESSION return_GENNUMBERCONSTANT;
 TPSEXPRESSION EXPR;
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
 EXPR.VALUE = VALUE;
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 return_GENNUMBERCONSTANT = EXPR;
 return return_GENNUMBERCONSTANT;
 }
 void OUTCONSTANTVALUE(STRING VALUE) {
 {
-write_s(OUTPUT, VALUE);
+write_s(CPOUTPUT, VALUE);
 }
 }
 void OUTCONSTANTARRAYBEGIN() {
 {
-write_s(OUTPUT, str_make(2, "{ "));
+write_s(CPOUTPUT, str_make(2, "{ "));
 }
 }
 void OUTCONSTANTARRAYSEPARATOR() {
 {
-write_s(OUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, str_make(2, ", "));
 }
 }
 void OUTCONSTANTARRAYEND() {
 {
-write_s(OUTPUT, str_make(2, " }"));
+write_s(CPOUTPUT, str_make(2, " }"));
 }
 }
 void PSCONSTANTVALUE(TPSTYPEINDEX TYPEINDEX) {
@@ -1460,27 +1493,27 @@ OUTNAMEANDTYPE(OUTVARIABLENAME(VARDEF.NAME, VARDEF.ISREFERENCE), VARDEF.TYPEINDE
 }
 void OUTVARIABLEDEFINITION(TPSVARIABLEINDEX VARINDEX) {
 if (DEFS.VARIABLES[(VARINDEX) - 1].ISCONSTANT) {
-write_s(OUTPUT, str_make(6, "const "));
+write_s(CPOUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 }
 void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLEINDEX VARINDEX) {
 {
-write_s(OUTPUT, str_make(6, "const "));
+write_s(CPOUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_s(OUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, str_make(3, " = "));
 }
 }
 void OUTCONSTANTDEFINITIONEND() {
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 }
 void PSTYPEDCONSTANT(STRING NAME, TPSSCOPE SCOPE) {
@@ -1522,7 +1555,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
 int POS;
 OUTNAMEANDTYPE(DEF.NAME, DEF.RETURNTYPEINDEX);
 {
-write_c(OUTPUT, '(');
+write_c(CPOUTPUT, '(');
 }
 {
 int first = 1;
@@ -1533,7 +1566,7 @@ while (1) {
 {
 OUTVARIABLEDECLARATION(DEF.ARGS[(POS) - 1]);
 if (POS != DEF.ARGCOUNT) {
-write_s(OUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, str_make(2, ", "));
 }
 }
 if (POS == last) break;
@@ -1542,14 +1575,14 @@ if (POS == last) break;
 }
 }
 {
-write_c(OUTPUT, ')');
+write_c(CPOUTPUT, ')');
 }
 }
 void OUTFUNCTIONDECLARATION(TPSFUNCTIONINDEX FNINDEX) {
 OUTFUNCTIONPROTOTYPE(DEFS.FUNCTIONS[(FNINDEX) - 1]);
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 }
 void OUTFUNCTIONDEFINITION(TPSFUNCTIONINDEX FNINDEX) {
@@ -1557,27 +1590,27 @@ TPSFUNCTION FUN;
 FUN = DEFS.FUNCTIONS[(FNINDEX) - 1];
 OUTFUNCTIONPROTOTYPE(FUN);
 {
-write_s(OUTPUT, str_make(2, " {"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(2, " {"));
+writeln(CPOUTPUT);
 }
 if (FUN.RETURNTYPEINDEX != 0) {
 OUTNAMEANDTYPE(OUTRETURNVARIABLENAME(FUN.NAME), FUN.RETURNTYPEINDEX);
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 }
 }
 void OUTFUNCTIONEND(TPSFUNCTIONINDEX FNINDEX) {
 if (DEFS.FUNCTIONS[(FNINDEX) - 1].RETURNTYPEINDEX != 0) {
-write_s(OUTPUT, str_make(7, "return "));
-write_s(OUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(7, "return "));
+write_s(CPOUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 }
 void PSSTATEMENT();
@@ -1677,14 +1710,14 @@ if (LXTOKEN.ID == TKTYPE) PSTYPEDEFINITIONS(SCOPE);
 }
 void OUTPROGRAMHEADING(STRING NAME) {
 {
-write_s(OUTPUT, str_make(12, "/* Program: "));
-write_s(OUTPUT, NAME);
-write_s(OUTPUT, str_make(3, " */"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(12, "/* Program: "));
+write_s(CPOUTPUT, NAME);
+write_s(CPOUTPUT, str_make(3, " */"));
+writeln(CPOUTPUT);
 }
 {
-write_s(OUTPUT, str_make(20, "#include \"pascual.h\""));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(20, "#include \"pascual.h\""));
+writeln(CPOUTPUT);
 }
 }
 void PSPROGRAMHEADING() {
@@ -1702,158 +1735,10 @@ SKIPTOKEN(TKRPAREN);
 WANTTOKENANDREAD(TKSEMICOLON);
 }
 TPSEXPRESSION PSEXPRESSION();
-STRING OUTFIELDNAME(STRING BASE, STRING NAME) {
-STRING return_OUTFIELDNAME;
-if (cmp_cc(BASE.chr[1], '*') == 0) return_OUTFIELDNAME = cat_ss(cat_ss(cat_cs('(', BASE), str_make(2, ").")), NAME);
- else return_OUTFIELDNAME = cat_ss(cat_sc(BASE, '.'), NAME);
-return return_OUTFIELDNAME;
-}
-STRING OUTSTRINGINDEX(STRING BASE, TPSEXPRESSION EXPR) {
-STRING return_OUTSTRINGINDEX;
-if (!ISINTEGERTYPE(EXPR.TYPEINDEX)) {
-{
-write_s(STDERR, str_make(28, "Subscript must be an integer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-return_OUTSTRINGINDEX = cat_sc(cat_ss(cat_ss(BASE, str_make(5, ".chr[")), EXPR.VALUE), ']');
-return return_OUTSTRINGINDEX;
-}
-STRING OUTARRAYINDEX(STRING BASE, TPSEXPRESSION EXPR, TPSTYPEINDEX TYPEINDEX) {
-STRING return_OUTARRAYINDEX;
-if (!ISINTEGERTYPE(EXPR.TYPEINDEX)) {
-{
-write_s(STDERR, str_make(28, "Subscript must be an integer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-return_OUTARRAYINDEX = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(BASE, str_make(2, "[(")), EXPR.VALUE), str_make(4, ") - ")), DEFS.ARRAYS[(DEFS.TYPES[(TYPEINDEX) - 1].ARRAYINDEX) - 1].LOWBOUND), ']');
-return return_OUTARRAYINDEX;
-}
-void OUTIDENTIFIER(TPSIDENTIFIER ID) {
-{
-write_s(OUTPUT, ID.VALUE);
-}
-}
 TPSIDENTIFIER PSIDENTIFIER() {
 TPSIDENTIFIER return_PSIDENTIFIER;
-STRING NAME;
-STRING FULLNAME;
 TPSIDENTIFIER IDENT;
-TPSVARIABLEINDEX VARINDEX;
-TPSFUNCTIONINDEX FNINDEX;
-TPSTYPEINDEX ENUMTYPEINDEX;
-TPSEXPRESSION EXPR;
-NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-IDENT.NAME = NAME;
-VARINDEX = FINDVARIABLE(NAME);
-FNINDEX = FINDFUNCTION(NAME);
-ENUMTYPEINDEX = FINDTYPEOFENUMVALUE(NAME);
-if (LXTOKEN.ID == TKLPAREN) {
-if (cmp_ss(NAME, str_make(4, "READ")) == 0) IDENT.CLS = IDCREAD;
- else if (cmp_ss(NAME, str_make(6, "READLN")) == 0) IDENT.CLS = IDCREADLN;
- else if (cmp_ss(NAME, str_make(5, "WRITE")) == 0) IDENT.CLS = IDCWRITE;
- else if (cmp_ss(NAME, str_make(7, "WRITELN")) == 0) IDENT.CLS = IDCWRITELN;
- else if (cmp_ss(NAME, str_make(3, "STR")) == 0) IDENT.CLS = IDCSTR;
- else {
-if (FNINDEX == 0) {
-{
-write_s(STDERR, str_make(31, "Unknown function or procedure: "));
-write_s(STDERR, NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-IDENT.VALUE = NAME;
-IDENT.CLS = IDCFUNCTION;
-IDENT.FUNCTIONINDEX = FNINDEX;
-}
-}
- else {
-IDENT.CLS = IDCVARIABLE;
-if (VARINDEX != 0) {
-IDENT.VALUE = OUTVARIABLENAME(NAME, DEFS.VARIABLES[(VARINDEX) - 1].ISREFERENCE);
-IDENT.TYPEINDEX = DEFS.VARIABLES[(VARINDEX) - 1].TYPEINDEX;
-}
- else if (FNINDEX != 0) {
-IDENT.VALUE = OUTRETURNVARIABLENAME(NAME);
-IDENT.TYPEINDEX = DEFS.FUNCTIONS[(FNINDEX) - 1].RETURNTYPEINDEX;
-}
- else if (ENUMTYPEINDEX != 0) {
-IDENT.VALUE = OUTVARIABLENAME(NAME, 0);
-IDENT.TYPEINDEX = ENUMTYPEINDEX;
-}
- else {
-{
-write_s(STDERR, str_make(30, "Unknown variable or argument: "));
-write_s(STDERR, NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-FULLNAME = NAME;
-while ((LXTOKEN.ID == TKDOT) || (LXTOKEN.ID == TKLBRACKET)) {
-if (LXTOKEN.ID == TKDOT) {
-WANTTOKENANDREAD(TKDOT);
-if (DEFS.TYPES[(IDENT.TYPEINDEX) - 1].CLS != TTCRECORD) {
-{
-write_s(STDERR, str_make(9, "Variable "));
-write_s(STDERR, FULLNAME);
-write_s(STDERR, str_make(16, " is not a record"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-IDENT.NAME = cat_ss(cat_sc(IDENT.NAME, '.'), NAME);
-IDENT.TYPEINDEX = FINDFIELDTYPE(IDENT.TYPEINDEX, NAME);
-if (IDENT.TYPEINDEX == 0) {
-{
-write_s(STDERR, str_make(21, "Could not find field "));
-write_s(STDERR, NAME);
-write_s(STDERR, str_make(4, " of "));
-write_s(STDERR, FULLNAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-FULLNAME = cat_ss(cat_sc(FULLNAME, '.'), NAME);
-IDENT.VALUE = OUTFIELDNAME(IDENT.VALUE, NAME);
-}
- else if (LXTOKEN.ID == TKLBRACKET) {
-WANTTOKENANDREAD(TKLBRACKET);
-EXPR = PSEXPRESSION();
-WANTTOKENANDREAD(TKRBRACKET);
-IDENT.NAME = cat_ss(IDENT.NAME, str_make(5, "[...]"));
-if (ISSTRINGYTYPE(IDENT.TYPEINDEX)) {
-IDENT.VALUE = OUTSTRINGINDEX(IDENT.VALUE, EXPR);
-IDENT.TYPEINDEX = PRIMITIVETYPES.PTCHAR;
-}
- else if (ISARRAYTYPE(IDENT.TYPEINDEX)) {
-IDENT.VALUE = OUTARRAYINDEX(IDENT.VALUE, EXPR, IDENT.TYPEINDEX);
-IDENT.TYPEINDEX = DEFS.ARRAYS[(DEFS.TYPES[(IDENT.TYPEINDEX) - 1].ARRAYINDEX) - 1].TYPEINDEX;
-}
- else {
-{
-write_s(STDERR, str_make(9, "Variable "));
-write_s(STDERR, FULLNAME);
-write_s(STDERR, str_make(28, " is not an array or a string"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-}
-}
-}
+IDENT.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 return_PSIDENTIFIER = IDENT;
 return return_PSIDENTIFIER;
 }
@@ -1920,6 +1805,8 @@ HALT(1);
 if (cmp_ss(CMP, str_make(0, "")) == 0) EXPR.TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
  else EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_ss(cat_sc(LEFT.VALUE, ' '), OPER), CMP), ' '), RIGHT.VALUE);
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 return_INTEGERBINARYEXPRESSION = EXPR;
 return return_INTEGERBINARYEXPRESSION;
 }
@@ -1946,6 +1833,8 @@ HALT(1);
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_sc(LEFT.VALUE, ' '), OPER), ' '), RIGHT.VALUE);
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 return_BOOLEANBINARYEXPRESSION = EXPR;
 return return_BOOLEANBINARYEXPRESSION;
 }
@@ -1979,6 +1868,8 @@ if (cmp_ss(CMP, str_make(0, "")) != 0) {
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_ss(cat_sc(EXPR.VALUE, ' '), CMP), str_make(2, " 0"));
 }
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 return_STRINGYBINARYEXPRESSION = EXPR;
 return return_STRINGYBINARYEXPRESSION;
 }
@@ -2004,6 +1895,8 @@ HALT(1);
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_sc(LEFT.VALUE, ' '), CMP), ' '), RIGHT.VALUE);
+EXPR.CLS = TECVALUE;
+EXPR.ISCONSTANT = 1;
 return_ENUMBINARYEXPRESSION = EXPR;
 return return_ENUMBINARYEXPRESSION;
 }
@@ -2049,11 +1942,21 @@ writeln(STDERR);
 HALT(1);
 }
  else EXPR.VALUE = cat_cs('!', EXPR.VALUE);
+EXPR.ISCONSTANT = 1;
 return_UNARYEXPRESSION = EXPR;
 return return_UNARYEXPRESSION;
 }
 TPSEXPRESSION COERCETYPE(TPSEXPRESSION EXPR, TPSTYPEINDEX TYPEINDEX) {
 TPSEXPRESSION return_COERCETYPE;
+if (EXPR.CLS != TECVALUE) {
+{
+write_s(STDERR, str_make(26, "Cannot assign function to "));
+write_s(STDERR, TYPENAME(TYPEINDEX));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
 if (ISCHARTYPE(EXPR.TYPEINDEX) && ISSTRINGTYPE(TYPEINDEX)) {
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTSTRING;
 EXPR.VALUE = cat_sc(cat_ss(str_make(7, "str_of("), EXPR.VALUE), ')');
@@ -2072,26 +1975,22 @@ HALT(1);
 return_COERCETYPE = EXPR;
 return return_COERCETYPE;
 }
-TPSEXPRESSION GENFUNCTIONCALLSTART(TPSEXPRESSION FNPROC) {
-TPSEXPRESSION return_GENFUNCTIONCALLSTART;
-FNPROC.VALUE = cat_sc(FNPROC.VALUE, '(');
-return_GENFUNCTIONCALLSTART = FNPROC;
+STRING GENFUNCTIONCALLSTART(STRING FN) {
+STRING return_GENFUNCTIONCALLSTART;
+return_GENFUNCTIONCALLSTART = cat_sc(FN, '(');
 return return_GENFUNCTIONCALLSTART;
 }
-TPSEXPRESSION GENFUNCTIONCALLEND(TPSEXPRESSION FNPROC) {
-TPSEXPRESSION return_GENFUNCTIONCALLEND;
-FNPROC.VALUE = cat_sc(FNPROC.VALUE, ')');
-return_GENFUNCTIONCALLEND = FNPROC;
+STRING GENFUNCTIONCALLEND(STRING FN) {
+STRING return_GENFUNCTIONCALLEND;
+return_GENFUNCTIONCALLEND = cat_sc(FN, ')');
 return return_GENFUNCTIONCALLEND;
 }
-TPSEXPRESSION GENFUNCTIONCALLARGUMENT(TPSEXPRESSION FNPROC, TPSEXPRESSION ARG, TPSVARIABLE DEF, PBoolean FIRST) {
-TPSEXPRESSION return_GENFUNCTIONCALLARGUMENT;
-TPSEXPRESSION COERCED;
-if (!FIRST) FNPROC.VALUE = cat_ss(FNPROC.VALUE, str_make(2, ", "));
-if (DEF.ISREFERENCE) FNPROC.VALUE = cat_sc(FNPROC.VALUE, '&');
-COERCED = COERCETYPE(ARG, DEF.TYPEINDEX);
-FNPROC.VALUE = cat_ss(FNPROC.VALUE, COERCED.VALUE);
-return_GENFUNCTIONCALLARGUMENT = FNPROC;
+STRING GENFUNCTIONCALLARGUMENT(STRING FN, TPSEXPRESSION EXPR, PBoolean ISREFERENCE, int ARGNUM) {
+STRING return_GENFUNCTIONCALLARGUMENT;
+if (ARGNUM != 1) FN = cat_ss(FN, str_make(2, ", "));
+if (ISREFERENCE) FN = cat_ss(cat_sc(FN, '&'), EXPR.VALUE);
+ else FN = cat_ss(FN, EXPR.VALUE);
+return_GENFUNCTIONCALLARGUMENT = FN;
 return return_GENFUNCTIONCALLARGUMENT;
 }
 TPSEXPRESSION GENPARENS(TPSEXPRESSION EXPR) {
@@ -2100,23 +1999,32 @@ EXPR.VALUE = cat_sc(cat_cs('(', EXPR.VALUE), ')');
 return_GENPARENS = EXPR;
 return return_GENPARENS;
 }
-TPSEXPRESSION PSFUNCTIONCALL(TPSIDENTIFIER ID) {
+TPSEXPRESSION PSFUNCTIONCALL(TPSEXPRESSION FN) {
 TPSEXPRESSION return_PSFUNCTIONCALL;
+TPSFUNCTION FUN;
 TPSEXPRESSION EXPR;
 int ARGNUM;
-EXPR.TYPEINDEX = DEFS.FUNCTIONS[(ID.FUNCTIONINDEX) - 1].RETURNTYPEINDEX;
-EXPR.VALUE = ID.VALUE;
+if (FN.CLS != TECFUNCTION) {
+{
+write_s(STDERR, str_make(14, "Not a function"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+FUN = DEFS.FUNCTIONS[(FN.FUNCTIONINDEX) - 1];
+FN.VALUE = GENFUNCTIONCALLSTART(FN.VALUE);
 WANTTOKENANDREAD(TKLPAREN);
-EXPR = GENFUNCTIONCALLSTART(EXPR);
 {
 int first = 1;
-int last = DEFS.FUNCTIONS[(ID.FUNCTIONINDEX) - 1].ARGCOUNT;
+int last = FUN.ARGCOUNT;
 if (first <= last) {
 ARGNUM = first;
 while (1) {
 {
 if (ARGNUM != 1) WANTTOKENANDREAD(TKCOMMA);
-EXPR = GENFUNCTIONCALLARGUMENT(EXPR, PSEXPRESSION(), DEFS.FUNCTIONS[(ID.FUNCTIONINDEX) - 1].ARGS[(ARGNUM) - 1], ARGNUM == 1);
+EXPR = COERCETYPE(PSEXPRESSION(), FUN.ARGS[(ARGNUM) - 1].TYPEINDEX);
+FN.VALUE = GENFUNCTIONCALLARGUMENT(FN.VALUE, EXPR, FUN.ARGS[(ARGNUM) - 1].ISREFERENCE, ARGNUM);
 }
 if (ARGNUM == last) break;
 ++ARGNUM;
@@ -2124,112 +2032,117 @@ if (ARGNUM == last) break;
 }
 }
 WANTTOKENANDREAD(TKRPAREN);
-return_PSFUNCTIONCALL = GENFUNCTIONCALLEND(EXPR);
+FN.VALUE = GENFUNCTIONCALLEND(FN.VALUE);
+FN.CLS = TECVALUE;
+FN.TYPEINDEX = FUN.RETURNTYPEINDEX;
+FN.ISCONSTANT = 1;
+return_PSFUNCTIONCALL = FN;
 return return_PSFUNCTIONCALL;
 }
-void OUTREAD(STRING SRC, TPSIDENTIFIER OUTVAR) {
-if (OUTVAR.CLS != IDCVARIABLE) {
+void OUTREAD(STRING SRC, TPSEXPRESSION OUTVAR) {
 {
-write_s(STDERR, str_make(41, "Expected variable for read argument, got "));
-write_s(STDERR, OUTVAR.VALUE);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-if (!ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
-{
-write_s(STDERR, str_make(31, "Invalid type for read argument "));
-write_s(STDERR, OUTVAR.VALUE);
-write_s(STDERR, str_make(5, " got "));
-write_s(STDERR, TYPENAME(OUTVAR.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
-}
-HALT(1);
-}
-{
-write_s(OUTPUT, str_make(5, "read_"));
-write_c(OUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
-write_c(OUTPUT, '(');
-write_s(OUTPUT, SRC);
-write_s(OUTPUT, str_make(3, ", &"));
-write_s(OUTPUT, OUTVAR.VALUE);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(5, "read_"));
+write_c(CPOUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
+write_c(CPOUTPUT, '(');
+write_s(CPOUTPUT, SRC);
+write_s(CPOUTPUT, str_make(3, ", &"));
+write_s(CPOUTPUT, OUTVAR.VALUE);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
 }
 void OUTREADLN(STRING SRC) {
 {
-write_s(OUTPUT, str_make(7, "readln("));
-write_s(OUTPUT, SRC);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(7, "readln("));
+write_s(CPOUTPUT, SRC);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
 }
 void PSREAD(TPSIDENTIFIER ID) {
 STRING SRC;
-TPSIDENTIFIER OUTVAR;
+PBoolean LINEFEED;
+TPSEXPRESSION OUTVAR;
+LINEFEED = cmp_ss(ID.NAME, str_make(6, "READLN")) == 0;
 OUTBEGIN();
 SRC = str_make(5, "INPUT");
 WANTTOKENANDREAD(TKLPAREN);
 if (LXTOKEN.ID != TKRPAREN) {
-OUTVAR = PSIDENTIFIER();
-if (ISTEXTTYPE(OUTVAR.TYPEINDEX)) SRC = OUTVAR.VALUE;
- else OUTREAD(SRC, OUTVAR);
+OUTVAR = PSEXPRESSION();
+if (ISVARIABLEEXPRESSION(OUTVAR) && ISTEXTTYPE(OUTVAR.TYPEINDEX)) SRC = OUTVAR.VALUE;
+ else {
+if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
+{
+write_s(STDERR, str_make(36, "Invalid expression for read argument"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+OUTREAD(SRC, OUTVAR);
+}
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
 while (LXTOKEN.ID != TKRPAREN) {
-WANTTOKEN(TKIDENTIFIER);
-OUTVAR = PSIDENTIFIER();
+OUTVAR = PSEXPRESSION();
+if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
+{
+write_s(STDERR, str_make(36, "Invalid expression for read argument"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
 OUTREAD(SRC, OUTVAR);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
 }
 }
 WANTTOKENANDREAD(TKRPAREN);
-if (ID.CLS == IDCREADLN) OUTREADLN(SRC);
+if (LINEFEED) OUTREADLN(SRC);
 OUTEND();
 }
 void OUTWRITE(STRING DST, TPSEXPRESSION EXPR) {
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(OUTPUT, str_make(8, "write_e("));
-write_s(OUTPUT, DST);
-write_s(OUTPUT, str_make(2, ", "));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(12, ", EnumValues"));
-write_i(OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(8, "write_e("));
+write_s(CPOUTPUT, DST);
+write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(12, ", EnumValues"));
+write_i(CPOUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
  else {
-write_s(OUTPUT, str_make(6, "write_"));
-write_c(OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(OUTPUT, '(');
-write_s(OUTPUT, DST);
-write_s(OUTPUT, str_make(2, ", "));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(6, "write_"));
+write_c(CPOUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_c(CPOUTPUT, '(');
+write_s(CPOUTPUT, DST);
+write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
 }
 void OUTWRITELN(STRING SRC) {
 {
-write_s(OUTPUT, str_make(8, "writeln("));
-write_s(OUTPUT, SRC);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(8, "writeln("));
+write_s(CPOUTPUT, SRC);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
 }
 void PSWRITE(TPSIDENTIFIER ID) {
 STRING DST;
+PBoolean LINEFEED;
 TPSEXPRESSION EXPR;
+LINEFEED = cmp_ss(ID.NAME, str_make(7, "WRITELN")) == 0;
 OUTBEGIN();
 DST = str_make(6, "OUTPUT");
 WANTTOKENANDREAD(TKLPAREN);
 if (LXTOKEN.ID != TKRPAREN) {
 EXPR = PSEXPRESSION();
-if (ISTEXTTYPE(EXPR.TYPEINDEX)) DST = EXPR.VALUE;
+if (ISVARIABLEEXPRESSION(EXPR) && ISTEXTTYPE(EXPR.TYPEINDEX)) DST = EXPR.VALUE;
  else OUTWRITE(DST, EXPR);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
@@ -2240,40 +2153,39 @@ SKIPTOKEN(TKCOMMA);
 }
 }
 WANTTOKENANDREAD(TKRPAREN);
-if (ID.CLS == IDCWRITELN) OUTWRITELN(DST);
+if (LINEFEED) OUTWRITELN(DST);
 OUTEND();
 }
 void OUTSTR(STRING DST, TPSEXPRESSION EXPR) {
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(OUTPUT, DST);
-write_s(OUTPUT, str_make(12, " = to_str_e("));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(12, ", EnumValues"));
-write_i(OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, DST);
+write_s(CPOUTPUT, str_make(12, " = to_str_e("));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(12, ", EnumValues"));
+write_i(CPOUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
  else {
-write_s(OUTPUT, DST);
-write_s(OUTPUT, str_make(10, " = to_str_"));
-write_c(OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(OUTPUT, '(');
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(2, ");"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, DST);
+write_s(CPOUTPUT, str_make(10, " = to_str_"));
+write_c(CPOUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_c(CPOUTPUT, '(');
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(2, ");"));
+writeln(CPOUTPUT);
 }
 }
 void PSSTR() {
 TPSEXPRESSION EXPR;
-TPSIDENTIFIER DEST;
+TPSEXPRESSION DEST;
 WANTTOKENANDREAD(TKLPAREN);
 EXPR = PSEXPRESSION();
 WANTTOKENANDREAD(TKCOMMA);
-DEST = PSIDENTIFIER();
-if (!ISSTRINGTYPE(DEST.TYPEINDEX)) {
+DEST = PSEXPRESSION();
+if (!ISVARIABLEEXPRESSION(DEST) || !ISSTRINGTYPE(DEST.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(47, "Destination argument is not a string variable: "));
-write_s(STDERR, DEST.NAME);
+write_s(STDERR, str_make(45, "Destination argument is not a string variable"));
 write_s(STDERR, LXWHERESTR());
 writeln(STDERR);
 }
@@ -2282,40 +2194,146 @@ HALT(1);
 WANTTOKENANDREAD(TKRPAREN);
 OUTSTR(DEST.VALUE, EXPR);
 }
-TPSEXPRESSION GENVARIABLE(TPSIDENTIFIER ID) {
-TPSEXPRESSION return_GENVARIABLE;
-TPSEXPRESSION EXPR;
-EXPR.TYPEINDEX = ID.TYPEINDEX;
-EXPR.VALUE = ID.VALUE;
-return_GENVARIABLE = EXPR;
-return return_GENVARIABLE;
+void SETSTRINGINDEX(TPSEXPRESSION *STR, TPSEXPRESSION IDX) {
+(*STR).VALUE = cat_sc(cat_ss(cat_ss((*STR).VALUE, str_make(5, ".chr[")), IDX.VALUE), ']');
 }
-TPSEXPRESSION PSFACTOR() {
-TPSEXPRESSION return_PSFACTOR;
-TPSEXPRESSION EXPR;
-TPSIDENTIFIER ID;
-TPSCONSTANTINDEX CONSTINDEX;
-TLXPOS POS;
-if ((LXTOKEN.ID == TKFALSE) || (LXTOKEN.ID == TKTRUE)) {
-EXPR = GENBOOLEANCONSTANT(LXTOKEN.ID == TKTRUE);
-READTOKEN();
+void SETARRAYINDEX(TPSEXPRESSION *ARR, TPSEXPRESSION IDX) {
+(*ARR).VALUE = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss((*ARR).VALUE, str_make(2, "[(")), IDX.VALUE), str_make(4, ") - ")), DEFS.ARRAYS[(DEFS.TYPES[((*ARR).TYPEINDEX) - 1].ARRAYINDEX) - 1].LOWBOUND), ']');
 }
- else if (LXTOKEN.ID == TKSTRING) EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
- else if (LXTOKEN.ID == TKNUMBER) EXPR = GENNUMBERCONSTANT(GETTOKENVALUEANDREAD(TKNUMBER));
- else if (LXTOKEN.ID == TKIDENTIFIER) {
-ID = PSIDENTIFIER();
-if (ID.CLS == IDCFUNCTION) EXPR = PSFUNCTIONCALL(ID);
- else if (ID.CLS == IDCVARIABLE) EXPR = GENVARIABLE(ID);
+TPSEXPRESSION PSARRAYACCESS(TPSEXPRESSION ARR) {
+TPSEXPRESSION return_PSARRAYACCESS;
+TPSEXPRESSION IDX;
+WANTTOKENANDREAD(TKLBRACKET);
+IDX = PSEXPRESSION();
+WANTTOKENANDREAD(TKRBRACKET);
+if ((IDX.CLS != TECVALUE) || !ISINTEGERTYPE(IDX.TYPEINDEX)) {
+{
+write_s(STDERR, str_make(28, "Subscript must be an integer"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+if ((ARR.CLS == TECVALUE) && ISSTRINGTYPE(ARR.TYPEINDEX)) {
+SETSTRINGINDEX(&ARR, IDX);
+ARR.TYPEINDEX = PRIMITIVETYPES.PTCHAR;
+}
+ else if ((ARR.CLS == TECVALUE) && ISARRAYTYPE(ARR.TYPEINDEX)) {
+SETARRAYINDEX(&ARR, IDX);
+ARR.TYPEINDEX = DEFS.ARRAYS[(DEFS.TYPES[(ARR.TYPEINDEX) - 1].ARRAYINDEX) - 1].TYPEINDEX;
+}
  else {
 {
-write_s(STDERR, str_make(35, "Expected variable or function, got "));
-write_e(STDERR, ID.CLS, EnumValues3);
+write_s(STDERR, str_make(21, "Not a string or array"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+return_PSARRAYACCESS = ARR;
+return return_PSARRAYACCESS;
+}
+void SETFIELDACCESS(TPSEXPRESSION *REC, STRING FLD) {
+if (cmp_cc((*REC).VALUE.chr[1], '*') == 0) (*REC).VALUE = cat_sc(cat_cs('(', (*REC).VALUE), ')');
+(*REC).VALUE = cat_ss(cat_sc((*REC).VALUE, '.'), FLD);
+}
+TPSEXPRESSION PSFIELDACCESS(TPSEXPRESSION REC) {
+TPSEXPRESSION return_PSFIELDACCESS;
+TPSIDENTIFIER FLD;
+TPSTYPEINDEX FLDTYPE;
+if ((REC.CLS != TECVALUE) || (DEFS.TYPES[(REC.TYPEINDEX) - 1].CLS != TTCRECORD)) {
+{
+write_s(STDERR, str_make(12, "Not a record"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+WANTTOKENANDREAD(TKDOT);
+FLD = PSIDENTIFIER();
+FLDTYPE = FINDFIELDTYPE(REC.TYPEINDEX, FLD.NAME);
+if (FLDTYPE == 0) {
+{
+write_s(STDERR, str_make(6, "Field "));
+write_s(STDERR, FLD.NAME);
+write_s(STDERR, str_make(20, " not found in record"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+SETFIELDACCESS(&REC, FLD.NAME);
+REC.TYPEINDEX = FLDTYPE;
+return_PSFIELDACCESS = REC;
+return return_PSFIELDACCESS;
+}
+TPSEXPRESSION PSVARIABLEORFUNCTIONCALL() {
+TPSEXPRESSION return_PSVARIABLEORFUNCTIONCALL;
+TPSIDENTIFIER ID;
+TPSVARIABLEINDEX VARINDEX;
+TPSFUNCTIONINDEX FNINDEX;
+TPSTYPEINDEX ENUMTYPEINDEX;
+TPSEXPRESSION EXPR;
+PBoolean DONE;
+DONE = 0;
+EXPR.VALUE = str_make(0, "");
+EXPR.ISCONSTANT = 0;
+ID = PSIDENTIFIER();
+VARINDEX = FINDVARIABLE(ID.NAME);
+FNINDEX = FINDFUNCTION(ID.NAME);
+ENUMTYPEINDEX = FINDTYPEOFENUMVALUE(ID.NAME);
+if (VARINDEX != 0) {
+if (DEFS.VARIABLES[(VARINDEX) - 1].ISREFERENCE) EXPR.VALUE = cat_cs('*', ID.NAME);
+ else EXPR.VALUE = ID.NAME;
+EXPR.CLS = TECVALUE;
+EXPR.TYPEINDEX = DEFS.VARIABLES[(VARINDEX) - 1].TYPEINDEX;
+}
+ else if (FNINDEX != 0) {
+EXPR.VALUE = ID.NAME;
+EXPR.CLS = TECFUNCTION;
+EXPR.FUNCTIONINDEX = FNINDEX;
+}
+ else if (ENUMTYPEINDEX != 0) {
+EXPR.VALUE = ID.NAME;
+EXPR.CLS = TECVALUE;
+EXPR.TYPEINDEX = ENUMTYPEINDEX;
+EXPR.ISCONSTANT = 1;
+}
+ else {
+EXPR.CLS = TECSTATEMENT;
+EXPR.TYPEINDEX = 0;
+if ((cmp_ss(ID.NAME, str_make(4, "READ")) == 0) || (cmp_ss(ID.NAME, str_make(6, "READLN")) == 0)) PSREAD(ID);
+ else if ((cmp_ss(ID.NAME, str_make(5, "WRITE")) == 0) || (cmp_ss(ID.NAME, str_make(7, "WRITELN")) == 0)) PSWRITE(ID);
+ else if (cmp_ss(ID.NAME, str_make(3, "STR")) == 0) PSSTR();
+ else {
+{
+write_s(STDERR, str_make(30, "Unknown variable or function: "));
+write_s(STDERR, ID.NAME);
 write_s(STDERR, LXWHERESTR());
 writeln(STDERR);
 }
 HALT(1);
 }
 }
+do {
+if (LXTOKEN.ID == TKDOT) EXPR = PSFIELDACCESS(EXPR);
+ else if (LXTOKEN.ID == TKLBRACKET) EXPR = PSARRAYACCESS(EXPR);
+ else if (LXTOKEN.ID == TKLPAREN) EXPR = PSFUNCTIONCALL(EXPR);
+ else DONE = 1;
+} while (!(DONE));
+return_PSVARIABLEORFUNCTIONCALL = EXPR;
+return return_PSVARIABLEORFUNCTIONCALL;
+}
+TPSEXPRESSION PSFACTOR() {
+TPSEXPRESSION return_PSFACTOR;
+TPSEXPRESSION EXPR;
+if ((LXTOKEN.ID == TKFALSE) || (LXTOKEN.ID == TKTRUE)) {
+EXPR = GENBOOLEANCONSTANT(LXTOKEN.ID == TKTRUE);
+READTOKEN();
+}
+ else if (LXTOKEN.ID == TKSTRING) EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
+ else if (LXTOKEN.ID == TKNUMBER) EXPR = GENNUMBERCONSTANT(GETTOKENVALUEANDREAD(TKNUMBER));
+ else if (LXTOKEN.ID == TKIDENTIFIER) EXPR = PSVARIABLEORFUNCTIONCALL();
  else if (LXTOKEN.ID == TKLPAREN) {
 WANTTOKENANDREAD(TKLPAREN);
 EXPR = GENPARENS(PSEXPRESSION());
@@ -2378,36 +2396,64 @@ return return_PSEXPRESSION;
 }
 void OUTEXPRESSION(TPSEXPRESSION EXPR) {
 {
-write_s(OUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, EXPR.VALUE);
 }
 }
-void OUTASSIGN(TPSIDENTIFIER ID, TPSEXPRESSION EXPR) {
-OUTIDENTIFIER(ID);
+void OUTASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_s(OUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, LHS.VALUE);
+write_s(CPOUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, RHS.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
-OUTEXPRESSION(COERCETYPE(EXPR, ID.TYPEINDEX));
+}
+void OUTASSIGNRETURNVALUE(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(7, "return_"));
+write_s(CPOUTPUT, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].NAME);
+write_s(CPOUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, RHS.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
+}
+}
+void PSASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
+if (LHS.ISCONSTANT) {
+{
+write_s(STDERR, str_make(33, "Cannot assign to a constant value"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+if (LHS.CLS == TECFUNCTION) OUTASSIGNRETURNVALUE(LHS, COERCETYPE(RHS, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].RETURNTYPEINDEX));
+ else if (LHS.CLS == TECVALUE) OUTASSIGN(LHS, COERCETYPE(RHS, LHS.TYPEINDEX));
+ else {
+{
+write_s(STDERR, str_make(36, "Cannot assign to result of statement"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
 }
 }
 void OUTIF(TPSEXPRESSION EXPR) {
 {
-write_s(OUTPUT, str_make(4, "if ("));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(2, ") "));
+write_s(CPOUTPUT, str_make(4, "if ("));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(2, ") "));
 }
 }
 void OUTELSE() {
 {
-write_s(OUTPUT, str_make(6, " else "));
+write_s(CPOUTPUT, str_make(6, " else "));
 }
 }
 void OUTREPEATBEGIN() {
 {
-write_s(OUTPUT, str_make(4, "do {"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(4, "do {"));
+writeln(CPOUTPUT);
 }
 }
 void OUTREPEATEND(TPSEXPRESSION EXPR) {
@@ -2421,10 +2467,10 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(OUTPUT, str_make(11, "} while (!("));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(3, "));"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(11, "} while (!("));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(3, "));"));
+writeln(CPOUTPUT);
 }
 }
 void OUTWHILEBEGIN(TPSEXPRESSION EXPR) {
@@ -2438,101 +2484,163 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(OUTPUT, str_make(7, "while ("));
-write_s(OUTPUT, EXPR.VALUE);
-write_s(OUTPUT, str_make(2, ") "));
+write_s(CPOUTPUT, str_make(7, "while ("));
+write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CPOUTPUT, str_make(2, ") "));
 }
 }
 void OUTWHILEEND() {
 }
-void OUTFORBEGIN(TPSIDENTIFIER ID, TPSEXPRESSION FIRSTEXPR, TPSEXPRESSION LASTEXPR, PBoolean ASCENDING) {
+void OUTFORBEGIN(TPSEXPRESSION ITER, TPSEXPRESSION FIRSTEXPR, TPSEXPRESSION LASTEXPR, PBoolean ASCENDING) {
 TPSVARIABLE FIRST;
 TPSVARIABLE LAST;
-FIRST = MAKEVARIABLE(str_make(5, "first"), ID.TYPEINDEX, 0);
-LAST = MAKEVARIABLE(str_make(4, "last"), ID.TYPEINDEX, 0);
+FIRST = MAKEVARIABLE(str_make(5, "first"), ITER.TYPEINDEX, 0);
+LAST = MAKEVARIABLE(str_make(4, "last"), ITER.TYPEINDEX, 0);
 {
-write_c(OUTPUT, '{');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '{');
+writeln(CPOUTPUT);
 }
 OUTVARIABLEDECLARATION(FIRST);
 {
-write_s(OUTPUT, str_make(3, " = "));
-write_s(OUTPUT, FIRSTEXPR.VALUE);
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, FIRSTEXPR.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 OUTVARIABLEDECLARATION(LAST);
 {
-write_s(OUTPUT, str_make(3, " = "));
-write_s(OUTPUT, LASTEXPR.VALUE);
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(3, " = "));
+write_s(CPOUTPUT, LASTEXPR.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
 {
-write_s(OUTPUT, str_make(10, "if (first "));
+write_s(CPOUTPUT, str_make(10, "if (first "));
 }
 if (ASCENDING) {
-write_s(OUTPUT, str_make(2, "<="));
+write_s(CPOUTPUT, str_make(2, "<="));
 }
  else {
-write_s(OUTPUT, str_make(2, "=>"));
+write_s(CPOUTPUT, str_make(2, "=>"));
 }
 {
-write_s(OUTPUT, str_make(8, " last) {"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(8, " last) {"));
+writeln(CPOUTPUT);
 }
 {
-write_s(OUTPUT, ID.VALUE);
-write_s(OUTPUT, str_make(9, " = first;"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, ITER.VALUE);
+write_s(CPOUTPUT, str_make(9, " = first;"));
+writeln(CPOUTPUT);
 }
 {
-write_s(OUTPUT, str_make(11, "while (1) {"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(11, "while (1) {"));
+writeln(CPOUTPUT);
 }
 }
-void OUTFOREND(TPSIDENTIFIER ID, PBoolean ASCENDING) {
+void OUTFOREND(TPSEXPRESSION ITER, PBoolean ASCENDING) {
 {
-write_s(OUTPUT, str_make(4, "if ("));
-write_s(OUTPUT, ID.VALUE);
-write_s(OUTPUT, str_make(16, " == last) break;"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(4, "if ("));
+write_s(CPOUTPUT, ITER.VALUE);
+write_s(CPOUTPUT, str_make(16, " == last) break;"));
+writeln(CPOUTPUT);
 }
 if (ASCENDING) {
-write_s(OUTPUT, str_make(2, "++"));
-write_s(OUTPUT, ID.VALUE);
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(2, "++"));
+write_s(CPOUTPUT, ITER.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
 }
  else {
-write_s(OUTPUT, str_make(2, "--"));
-write_s(OUTPUT, ID.VALUE);
-write_c(OUTPUT, ';');
+write_s(CPOUTPUT, str_make(2, "--"));
+write_s(CPOUTPUT, ITER.VALUE);
+write_c(CPOUTPUT, ';');
 }
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 }
-void PSFOR() {
-TPSIDENTIFIER ID;
+void OUTPROCEDURECALL(TPSEXPRESSION EXPR) {
+{
+write_s(CPOUTPUT, EXPR.VALUE);
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
+}
+}
+void OUTEMPTYSTATEMENT() {
+{
+write_c(CPOUTPUT, ';');
+writeln(CPOUTPUT);
+}
+}
+void PSSTATEMENTSEQUENCE() {
+OUTBEGIN();
+SKIPTOKEN(TKBEGIN);
+while (LXTOKEN.ID != TKEND) {
+PSSTATEMENT();
+WANTTOKEN2(TKSEMICOLON, TKEND);
+SKIPTOKEN(TKSEMICOLON);
+}
+OUTEND();
+SKIPTOKEN(TKEND);
+}
+void PSIDENTIFIERSTATEMENT() {
+TPSEXPRESSION LHS;
+LHS = PSEXPRESSION();
+if (LXTOKEN.ID == TKASSIGN) {
+WANTTOKENANDREAD(TKASSIGN);
+PSASSIGN(LHS, PSEXPRESSION());
+}
+ else if (LHS.CLS != TECSTATEMENT) OUTPROCEDURECALL(LHS);
+}
+void PSIFSTATEMENT() {
+WANTTOKENANDREAD(TKIF);
+OUTIF(PSEXPRESSION());
+WANTTOKENANDREAD(TKTHEN);
+if (LXTOKEN.ID == TKELSE) OUTEMPTYSTATEMENT();
+ else PSSTATEMENT();
+if (LXTOKEN.ID == TKELSE) {
+WANTTOKENANDREAD(TKELSE);
+OUTELSE();
+PSSTATEMENT();
+}
+}
+void PSREPEATSTATEMENT() {
+WANTTOKENANDREAD(TKREPEAT);
+OUTREPEATBEGIN();
+while (LXTOKEN.ID != TKUNTIL) {
+PSSTATEMENT();
+WANTTOKEN2(TKSEMICOLON, TKUNTIL);
+SKIPTOKEN(TKSEMICOLON);
+}
+WANTTOKENANDREAD(TKUNTIL);
+OUTREPEATEND(PSEXPRESSION());
+}
+void PSWHILESTATEMENT() {
+WANTTOKENANDREAD(TKWHILE);
+OUTWHILEBEGIN(PSEXPRESSION());
+WANTTOKENANDREAD(TKDO);
+PSSTATEMENT();
+OUTWHILEEND();
+}
+void PSFORSTATEMENT() {
+TPSEXPRESSION ITER;
 TPSEXPRESSION FIRST;
 TPSEXPRESSION LAST;
 PBoolean ASCENDING;
 WANTTOKENANDREAD(TKFOR);
-ID = PSIDENTIFIER();
-if (ID.CLS != IDCVARIABLE) {
+ITER = PSEXPRESSION();
+if (!ISVARIABLEEXPRESSION(ITER)) {
 {
-write_s(STDERR, str_make(19, "Expected variable: "));
-write_s(STDERR, ID.VALUE);
+write_s(STDERR, str_make(17, "Expected variable"));
 write_s(STDERR, LXWHERESTR());
 writeln(STDERR);
 }
@@ -2545,82 +2653,18 @@ ASCENDING = LXTOKEN.ID == TKTO;
 READTOKEN();
 LAST = PSEXPRESSION();
 WANTTOKENANDREAD(TKDO);
-OUTFORBEGIN(ID, FIRST, LAST, ASCENDING);
+OUTFORBEGIN(ITER, FIRST, LAST, ASCENDING);
 PSSTATEMENT();
-OUTFOREND(ID, ASCENDING);
-}
-void OUTPROCEDURECALL(TPSEXPRESSION EXPR) {
-{
-write_s(OUTPUT, EXPR.VALUE);
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
-}
-}
-void PSPROCEDURECALL(TPSIDENTIFIER ID) {
-OUTPROCEDURECALL(PSFUNCTIONCALL(ID));
-}
-void OUTEMPTYSTATEMENT() {
-{
-write_c(OUTPUT, ';');
-writeln(OUTPUT);
-}
+OUTFOREND(ITER, ASCENDING);
 }
 void PSSTATEMENT() {
-TPSIDENTIFIER ID;
 if (LXTOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
- else if (LXTOKEN.ID == TKBEGIN) {
-OUTBEGIN();
-SKIPTOKEN(TKBEGIN);
-while (LXTOKEN.ID != TKEND) {
-PSSTATEMENT();
-WANTTOKEN2(TKSEMICOLON, TKEND);
-SKIPTOKEN(TKSEMICOLON);
-}
-OUTEND();
-SKIPTOKEN(TKEND);
-}
- else if (LXTOKEN.ID == TKIDENTIFIER) {
-ID = PSIDENTIFIER();
-if ((ID.CLS == IDCREAD) || (ID.CLS == IDCREADLN)) PSREAD(ID);
- else if ((ID.CLS == IDCWRITE) || (ID.CLS == IDCWRITELN)) PSWRITE(ID);
- else if (ID.CLS == IDCSTR) PSSTR();
- else if (ID.CLS == IDCFUNCTION) PSPROCEDURECALL(ID);
- else if (LXTOKEN.ID == TKASSIGN) {
-WANTTOKENANDREAD(TKASSIGN);
-OUTASSIGN(ID, PSEXPRESSION());
-}
-}
- else if (LXTOKEN.ID == TKIF) {
-WANTTOKENANDREAD(TKIF);
-OUTIF(PSEXPRESSION());
-WANTTOKENANDREAD(TKTHEN);
-if (LXTOKEN.ID == TKELSE) OUTEMPTYSTATEMENT();
- else PSSTATEMENT();
-if (LXTOKEN.ID == TKELSE) {
-WANTTOKENANDREAD(TKELSE);
-OUTELSE();
-PSSTATEMENT();
-}
-}
- else if (LXTOKEN.ID == TKREPEAT) {
-WANTTOKENANDREAD(TKREPEAT);
-OUTREPEATBEGIN();
-while (LXTOKEN.ID != TKUNTIL) {
-PSSTATEMENT();
-WANTTOKEN2(TKSEMICOLON, TKUNTIL);
-SKIPTOKEN(TKSEMICOLON);
-}
-WANTTOKENANDREAD(TKUNTIL);
-OUTREPEATEND(PSEXPRESSION());
-}
- else if (LXTOKEN.ID == TKWHILE) {
-WANTTOKENANDREAD(TKWHILE);
-OUTWHILEBEGIN(PSEXPRESSION());
-WANTTOKENANDREAD(TKDO);
-PSSTATEMENT();
-OUTWHILEEND();
-}
- else if (LXTOKEN.ID == TKFOR) PSFOR();
+ else if (LXTOKEN.ID == TKBEGIN) PSSTATEMENTSEQUENCE();
+ else if (LXTOKEN.ID == TKIDENTIFIER) PSIDENTIFIERSTATEMENT();
+ else if (LXTOKEN.ID == TKIF) PSIFSTATEMENT();
+ else if (LXTOKEN.ID == TKREPEAT) PSREPEATSTATEMENT();
+ else if (LXTOKEN.ID == TKWHILE) PSWHILESTATEMENT();
+ else if (LXTOKEN.ID == TKFOR) PSFORSTATEMENT();
  else {
 {
 write_s(STDERR, str_make(17, "Unexpected token "));
@@ -2633,14 +2677,14 @@ HALT(1);
 }
 void OUTPROGRAMBEGIN() {
 {
-write_s(OUTPUT, str_make(21, "void pascual_main() {"));
-writeln(OUTPUT);
+write_s(CPOUTPUT, str_make(21, "void pascual_main() {"));
+writeln(CPOUTPUT);
 }
 }
 void OUTPROGRAMEND() {
 {
-write_c(OUTPUT, '}');
-writeln(OUTPUT);
+write_c(CPOUTPUT, '}');
+writeln(CPOUTPUT);
 }
 }
 void PSPROGRAMBLOCK() {
@@ -2681,5 +2725,9 @@ LXTOKEN.POS = TOKENPOS;
 } while (!(LXTOKEN.ID != TKCOMMENT));
 }
 void pascual_main() {
+LXINPUT = INPUT;
+CPOUTPUT = OUTPUT;
 PARSEPROGRAM();
+CLOSE(&LXINPUT);
+CLOSE(&CPOUTPUT);
 }
