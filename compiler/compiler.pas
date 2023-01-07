@@ -1,4 +1,4 @@
-program compiler(Input, Output, StdErr);
+program compiler;
 
 const 
   MaxTypes = 64;
@@ -36,6 +36,7 @@ var
   LxLine : string;
   LxToken : TLxToken;
   LxPos : TLxPos;
+  LxIiii : text;
 
 function LxPosStr(Pos : TLxPos) : string;
 var 
@@ -79,18 +80,18 @@ end;
 function LxIsTokenWaiting : boolean;
 begin
   repeat
-    while (Length(LxLine) = 0) and not Eof(Input) do
+    while (Length(LxLine) = 0) and not Eof(LxIiii) do
     begin
       LxPos.Row := LxPos.Row + 1;
       LxPos.Col := 1;
-      readln(Input, LxLine)
+      readln(LxIiii, LxLine)
     end;
     while (Length(LxLine) > 0) and (LxLine[1] = ' ') do
     begin
       LxPos.Col := LxPos.Col + 1;
       delete(LxLine, 1, 1)
     end;
-  until Eof(Input) or (Length(LxLine) > 0);
+  until Eof(LxIiii) or (Length(LxLine) > 0);
   LxIsTokenWaiting := Length(LxLine) > 0
 end;
 
@@ -428,6 +429,7 @@ var
     PtText : TPsTypeIndex
   end;
   GlobalScope : TPsScope;
+  CpOooo : text;
 
 procedure ClearDefs;
 begin
@@ -1112,25 +1114,25 @@ end;
 
 procedure OutBegin;
 begin
-  writeln(Output, '{')
+  writeln(CpOooo, '{')
 end;
 
 procedure OutEnd;
 begin
-  writeln(Output, '}')
+  writeln(CpOooo, '}')
 end;
 
 procedure OutEnumValues(Pos : TPsEnumIndex);
 var 
   PosInEnum : integer;
 begin
-  write(Output, 'const char* EnumValues', Pos, '[] = { ');
+  write(CpOooo, 'const char* EnumValues', Pos, '[] = { ');
   for PosInEnum := 1 to Defs.Enums[Pos].Size do
   begin
-    if PosInEnum <> 1 then write(Output, ', ');
-    write(Output, '"', Defs.Enums[Pos].Values[PosInEnum], '"')
+    if PosInEnum <> 1 then write(CpOooo, ', ');
+    write(CpOooo, '"', Defs.Enums[Pos].Values[PosInEnum], '"')
   end;
-  writeln(Output, ' };')
+  writeln(CpOooo, ' };')
 end;
 
 procedure OutEnumValuesInScope(Scope : TPsScope);
@@ -1162,42 +1164,42 @@ var
 begin
   if TypeIndex <> 0 then
     Typ := Defs.Types[TypeIndex];
-  if TypeIndex = 0 then write(Output, 'void ', Name)
-  else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then write(Output, Typ.Name,
+  if TypeIndex = 0 then write(CpOooo, 'void ', Name)
+  else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then write(CpOooo, Typ.Name,
                                                               ' ', Name)
-  else if Typ.Cls = TtcBoolean then write(Output, 'PBoolean ', Name)
-  else if Typ.Cls = TtcInteger then write(Output, 'int ', Name)
-  else if Typ.Cls = TtcChar then write(Output, 'char ', Name)
-  else if Typ.Cls = TtcString then write(Output, 'STRING ', Name)
-  else if Typ.Cls = TtcText then write(Output, 'PFile ', Name)
+  else if Typ.Cls = TtcBoolean then write(CpOooo, 'PBoolean ', Name)
+  else if Typ.Cls = TtcInteger then write(CpOooo, 'int ', Name)
+  else if Typ.Cls = TtcChar then write(CpOooo, 'char ', Name)
+  else if Typ.Cls = TtcString then write(CpOooo, 'STRING ', Name)
+  else if Typ.Cls = TtcText then write(CpOooo, 'PFile ', Name)
   else if Typ.Cls = TtcEnum then
   begin
     Enum := Defs.Enums[Typ.EnumIndex];
-    write(Output, 'enum { ');
+    write(CpOooo, 'enum { ');
     for Pos := 1 to Enum.Size do
     begin
       if Pos > 1 then
-        write(Output, ', ');
-      write(Output, Enum.Values[Pos])
+        write(CpOooo, ', ');
+      write(CpOooo, Enum.Values[Pos])
     end;
-    write(Output, '} ', Name)
+    write(CpOooo, '} ', Name)
   end
   else if Typ.Cls = TtcRecord then
   begin
     Rec := Defs.Records[Typ.RecordIndex];
-    write(Output, 'struct { ');
+    write(CpOooo, 'struct { ');
     for Pos := 1 to Rec.Size do
     begin
       OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
-      write(Output, '; ')
+      write(CpOooo, '; ')
     end;
-    write(Output, '} ', Name)
+    write(CpOooo, '} ', Name)
   end
   else if Typ.Cls = TtcArray then
   begin
     Arr := Defs.Arrays[Typ.ArrayIndex];
     OutNameAndType(Name, Arr.TypeIndex);
-    write(Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
+    write(CpOooo, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
   else
   begin
@@ -1217,9 +1219,9 @@ begin
     writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr());
     halt(1)
   end;
-  write(Output, 'typedef ');
+  write(CpOooo, 'typedef ');
   OutNameAndType(Name, Defs.Types[TypeIndex].AliasFor);
-  writeln(Output, ';');
+  writeln(CpOooo, ';');
 end;
 
 procedure PsTypeDefinitions(Scope : TPsScope);
@@ -1342,22 +1344,22 @@ end;
 
 procedure OutConstantValue(Value : string);
 begin
-  write(Output, Value)
+  write(CpOooo, Value)
 end;
 
 procedure OutConstantArrayBegin;
 begin
-  write(Output, '{ ')
+  write(CpOooo, '{ ')
 end;
 
 procedure OutConstantArraySeparator;
 begin
-  write(Output, ', ')
+  write(CpOooo, ', ')
 end;
 
 procedure OutConstantArrayEnd;
 begin
-  write(Output, ' }')
+  write(CpOooo, ' }')
 end;
 
 procedure PsConstantValue(TypeIndex : TPsTypeIndex);
@@ -1424,21 +1426,21 @@ end;
 procedure OutVariableDefinition(VarIndex : TPsVariableIndex);
 begin
   if Defs.Variables[VarIndex].IsConstant then
-    write(Output, 'const ');
+    write(CpOooo, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
-  writeln(Output, ';');
+  writeln(CpOooo, ';');
 end;
 
 procedure OutConstantDefinitionBegin(VarIndex : TPsVariableIndex);
 begin
-  write(Output, 'const ');
+  write(CpOooo, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
-  write(Output, ' = ');
+  write(CpOooo, ' = ');
 end;
 
 procedure OutConstantDefinitionEnd;
 begin
-  writeln(Output, ';')
+  writeln(CpOooo, ';')
 end;
 
 procedure PsTypedConstant(Name : string; Scope : TPsScope);
@@ -1494,20 +1496,20 @@ var
   Pos : integer;
 begin
   OutNameAndType(Def.Name, Def.ReturnTypeIndex);
-  write(Output, '(');
+  write(CpOooo, '(');
   for Pos := 1 to Def.ArgCount do
   begin
     OutVariableDeclaration(def.Args[Pos]);
     if Pos <> Def.ArgCount then
-      write(Output, ', ')
+      write(CpOooo, ', ')
   end;
-  write(Output, ')')
+  write(CpOooo, ')')
 end;
 
 procedure OutFunctionDeclaration(FnIndex : TPsFunctionIndex);
 begin
   OutFunctionPrototype(Defs.Functions[FnIndex]);
-  writeln(Output, ';')
+  writeln(CpOooo, ';')
 end;
 
 procedure OutFunctionDefinition(FnIndex : TPsFunctionIndex);
@@ -1516,20 +1518,20 @@ var
 begin
   Fun := Defs.Functions[FnIndex];
   OutFunctionPrototype(Fun);
-  writeln(Output, ' {');
+  writeln(CpOooo, ' {');
   if Fun.ReturnTypeIndex <> 0 then
   begin
     OutNameAndType(OutReturnVariableName(Fun.Name), Fun.ReturnTypeIndex);
-    writeln(Output, ';')
+    writeln(CpOooo, ';')
   end
 end;
 
 procedure OutFunctionEnd(FnIndex : TPsFunctionIndex);
 begin
   if Defs.Functions[FnIndex].ReturnTypeIndex <> 0 then
-    writeln(Output, 'return ',
+    writeln(CpOooo, 'return ',
             OutReturnVariableName(Defs.Functions[FnIndex].Name), ';');
-  writeln(Output, '}')
+  writeln(CpOooo, '}')
 end;
 
 procedure PsStatement;
@@ -1641,8 +1643,8 @@ end;
 
 procedure OutProgramHeading(Name : string);
 begin
-  writeln(Output, '/* Program: ', Name, ' */');
-  writeln(Output, '#include "pascual.h"')
+  writeln(CpOooo, '/* Program: ', Name, ' */');
+  writeln(CpOooo, '#include "pascual.h"')
 end;
 
 procedure PsProgramHeading;
@@ -1956,13 +1958,13 @@ end;
 
 procedure OutRead(Src : string; OutVar : TPsExpression);
 begin
-  writeln(Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(', Src,
+  writeln(CpOooo, 'read_', ShortTypeName(OutVar.TypeIndex), '(', Src,
   ', &', OutVar.Value, ');')
 end;
 
 procedure OutReadln(Src : string);
 begin
-  writeln(Output, 'readln(', Src, ');')
+  writeln(CpOooo, 'readln(', Src, ');')
 end;
 
 procedure PsRead(Id : TPsIdentifier);
@@ -2015,16 +2017,16 @@ end;
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Output, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
+    writeln(CpOooo, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(Output, 'write_', ShortTypeName(Expr.TypeIndex),
+    writeln(CpOooo, 'write_', ShortTypeName(Expr.TypeIndex),
     '(', Dst, ', ', Expr.Value, ');')
 end;
 
 procedure OutWriteln(Src : string);
 begin
-  writeln(Output, 'writeln(', Src, ');')
+  writeln(CpOooo, 'writeln(', Src, ');')
 end;
 
 procedure PsWrite(Id : TPsIdentifier);
@@ -2062,10 +2064,10 @@ end;
 procedure OutStr(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Output, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
+    writeln(CpOooo, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(Output, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
+    writeln(CpOooo, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
     '(', Expr.Value, ');')
 end;
 
@@ -2301,17 +2303,17 @@ end;
 
 procedure OutExpression(Expr : TPsExpression);
 begin
-  write(Output, Expr.Value)
+  write(CpOooo, Expr.Value)
 end;
 
 procedure OutAssign(Lhs : TPsExpression; Rhs : TPsExpression);
 begin
-  writeln(Output, Lhs.Value, ' = ', Rhs.Value, ';')
+  writeln(CpOooo, Lhs.Value, ' = ', Rhs.Value, ';')
 end;
 
 procedure OutAssignReturnValue(Lhs : TPsExpression; Rhs : TPsExpression);
 begin
-  writeln(Output, 'return_', Defs.Functions[Lhs.FunctionIndex].Name, ' = ',
+  writeln(CpOooo, 'return_', Defs.Functions[Lhs.FunctionIndex].Name, ' = ',
           Rhs.Value, ';')
 end;
 
@@ -2336,17 +2338,17 @@ end;
 
 procedure OutIf(Expr : TPsExpression);
 begin
-  write(Output, 'if (', Expr.Value, ') ')
+  write(CpOooo, 'if (', Expr.Value, ') ')
 end;
 
 procedure OutElse;
 begin
-  write(Output, ' else ')
+  write(CpOooo, ' else ')
 end;
 
 procedure OutRepeatBegin;
 begin
-  writeln(Output, 'do {')
+  writeln(CpOooo, 'do {')
 end;
 
 procedure OutRepeatEnd(Expr : TPsExpression);
@@ -2357,7 +2359,7 @@ begin
             TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
-  writeln(Output, '} while (!(', Expr.Value, '));')
+  writeln(CpOooo, '} while (!(', Expr.Value, '));')
 end;
 
 procedure OutWhileBegin(Expr : TPsExpression);
@@ -2368,7 +2370,7 @@ begin
             TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
-  write(Output, 'while (', Expr.Value, ') ')
+  write(CpOooo, 'while (', Expr.Value, ') ')
 end;
 
 procedure OutWhileEnd;
@@ -2383,41 +2385,41 @@ var
 begin
   First := MakeVariable('first', Iter.TypeIndex, false);
   Last := MakeVariable('last', Iter.TypeIndex, false);
-  writeln(Output, '{');
+  writeln(CpOooo, '{');
   OutVariableDeclaration(First);
-  writeln(Output, ' = ', FirstExpr.Value, ';');
+  writeln(CpOooo, ' = ', FirstExpr.Value, ';');
   OutVariableDeclaration(Last);
-  writeln(Output, ' = ', LastExpr.Value, ';');
-  write(Output, 'if (first ');
+  writeln(CpOooo, ' = ', LastExpr.Value, ';');
+  write(CpOooo, 'if (first ');
   if Ascending then
-    write(Output, '<=')
+    write(CpOooo, '<=')
   else
-    write(Output, '=>');
-  writeln(Output, ' last) {');
-  writeln(Output, Iter.Value, ' = first;');
-  writeln(Output, 'while (1) {');
+    write(CpOooo, '=>');
+  writeln(CpOooo, ' last) {');
+  writeln(CpOooo, Iter.Value, ' = first;');
+  writeln(CpOooo, 'while (1) {');
 end;
 
 procedure OutForEnd(Iter : TPsExpression; Ascending : boolean);
 begin
-  writeln(Output, 'if (', Iter.Value, ' == last) break;');
+  writeln(CpOooo, 'if (', Iter.Value, ' == last) break;');
   if Ascending then
-    writeln(Output, '++', Iter.Value, ';')
+    writeln(CpOooo, '++', Iter.Value, ';')
   else
-    write(Output, '--', Iter.Value, ';');
-  writeln(Output, '}');
-  writeln(Output, '}');
-  writeln(Output, '}');
+    write(CpOooo, '--', Iter.Value, ';');
+  writeln(CpOooo, '}');
+  writeln(CpOooo, '}');
+  writeln(CpOooo, '}');
 end;
 
 procedure OutProcedureCall(Expr : TPsExpression);
 begin
-  writeln(Output, Expr.Value, ';')
+  writeln(CpOooo, Expr.Value, ';')
 end;
 
 procedure OutEmptyStatement;
 begin
-  writeln(Output, ';')
+  writeln(CpOooo, ';')
 end;
 
 procedure PsStatementSequence;
@@ -2532,12 +2534,12 @@ end;
 
 procedure OutProgramBegin;
 begin
-  writeln(Output, 'void pascual_main() {');
+  writeln(CpOooo, 'void pascual_main() {');
 end;
 
 procedure OutProgramEnd;
 begin
-  writeln(Output, '}')
+  writeln(CpOooo, '}')
 end;
 
 procedure PsProgramBlock;
@@ -2588,5 +2590,9 @@ begin
 end;
 
 begin
+  LxIiii := Input;
+  CpOooo := Output;
   ParseProgram();
+  Close(LxIiii);
+  Close(CpOooo)
 end.
