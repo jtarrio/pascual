@@ -291,7 +291,7 @@ begin
   begin
     PreviousScope := GetCurrentScope();
     for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
-      AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope)
+      AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope);
     OutFunctionDefinition(FnIndex);
     OutEnumValuesInScope(PreviousScope);
     PsDefinitions(PreviousScope);
@@ -761,7 +761,10 @@ begin
     PsAssign(Lhs, PsExpression());
   end
   else if Lhs.Cls <> TecStatement then
-         OutProcedureCall(Lhs)
+  begin
+    if Lhs.Cls = TecFunction then Lhs := Evaluate(Lhs);
+    OutProcedureCall(Lhs)
+  end
 end;
 
 procedure PsIfStatement;

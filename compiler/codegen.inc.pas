@@ -267,6 +267,7 @@ end;
 
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
+  Expr := Evaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
     writeln(Codegen.Output, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
@@ -282,6 +283,7 @@ end;
 
 procedure OutStr(Dst : string; Expr : TPsExpression);
 begin
+  Expr := Evaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
     writeln(Codegen.Output, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')

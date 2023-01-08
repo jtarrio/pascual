@@ -1,9 +1,11 @@
-dist:
-	mkdir dist/
-	make -C runtime libpascual.a && cp runtime/libpascual.a runtime/pascual.h dist
-	make -C compiler pascual && cp compiler/pascualc compiler/pascual dist
+dist: runtime compiler
+	make -C runtime libpascual.a
+	make -C compiler pascual
+	mkdir -p dist/
+	cp runtime/libpascual.a runtime/pascual.h dist
+	cp compiler/pascualc compiler/pascual dist
 
-.PHONY: clean
+.PHONY: clean dist
 
 clean:
 	rm -fR dist/

@@ -3,6 +3,11 @@ program procedures;
 
 var Num : integer;
 
+procedure SayHello;
+begin
+  writeln('Hello!')
+end;
+
 procedure Display(Num : integer);
 forward;
 
@@ -35,7 +40,14 @@ begin
     Fibonacci := Fibonacci(N - 1) + Fibonacci(N - 2)
 end;
 
+function Three : integer;
 begin
+  Three := 3
+end;
+
+begin
+  SayHello;
+  Display(Three);
   Num := 1;
   Display(Num);
   Sum1(Num);

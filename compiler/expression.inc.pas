@@ -1,3 +1,44 @@
+function Evaluate(Expr : TPsExpression) : TPsExpression;
+begin
+  if Expr.Cls = TecFunction then
+  begin
+    if Defs.Functions[Expr.FunctionIndex].ArgCount <> 0 then
+    begin
+      writeln(StdErr, 'Function requires arguments', LxWhereStr());
+      halt(1)
+    end;
+    Expr.Value := Expr.Value + '()';
+    Expr.TypeIndex := Defs.Functions[Expr.FunctionIndex].ReturnTypeIndex;
+    if Expr.TypeIndex = 0 then Expr.Cls := TecStatement
+    else Expr.Cls := TecValue
+  end;
+  Evaluate := Expr
+end;
+
+function CoerceType(Expr : TPsExpression; TypeIndex : TPsTypeIndex)
+: TPsExpression;
+begin
+  Expr := Evaluate(Expr);
+  if Expr.Cls <> TecValue then
+  begin
+    writeln(StdErr, 'Cannot assign function to ', TypeName(TypeIndex),
+    LxWhereStr());
+    halt(1)
+  end;
+  if IsCharType(Expr.TypeIndex) and IsStringType(TypeIndex) then
+  begin
+    Expr.TypeIndex := PrimitiveTypes.PtString;
+    Expr.Value := 'str_of(' + Expr.Value + ')';
+  end
+  else if not IsSameType(Expr.TypeIndex, TypeIndex) then
+  begin
+    writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
+    TypeName(TypeIndex), LxWhereStr());
+    halt(1)
+  end;
+  CoerceType := Expr
+end;
+
 function IsVariableExpression(Expr : TPsExpression) : boolean;
 begin
   IsVariableExpression := (Expr.Cls = TecValue) and (Expr.TypeIndex <> 0)
@@ -108,8 +149,11 @@ begin
   else if IsStringType(TypeIndex) then ShortTypeName := 's'
   else if IsEnumType(TypeIndex) then ShortTypeName := 'e'
   else
+  begin
     writeln(StdErr, 'No short type name exists for ', TypeName(TypeIndex),
-    LxWhereStr())
+    LxWhereStr());
+    halt(1)
+  end
 end;
 
 function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
@@ -242,6 +286,8 @@ end;
 function BinaryExpression(Left : TPsExpression; Op : TLxTokenId; Right :
                           TPsExpression) : TPsExpression;
 begin
+  Left := Evaluate(Left);
+  Right := Evaluate(Right);
   if IsBooleanType(Left.TypeIndex) and IsBooleanType(Right.TypeIndex) then
     BinaryExpression := BooleanBinaryExpression(Left, Op, Right)
   else if IsIntegerType(Left.TypeIndex) and IsIntegerType(Right.TypeIndex)
@@ -266,6 +312,7 @@ end;
 function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
 : TPsExpression;
 begin
+  Expr := Evaluate(Expr);
   if Op <> TkNot then
   begin
     writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr());
@@ -283,25 +330,3 @@ begin
   UnaryExpression := Expr
 end;
 
-function CoerceType(Expr : TPsExpression; TypeIndex : TPsTypeIndex)
-: TPsExpression;
-begin
-  if Expr.Cls <> TecValue then
-  begin
-    writeln(StdErr, 'Cannot assign function to ', TypeName(TypeIndex),
-    LxWhereStr());
-    halt(1)
-  end;
-  if IsCharType(Expr.TypeIndex) and IsStringType(TypeIndex) then
-  begin
-    Expr.TypeIndex := PrimitiveTypes.PtString;
-    Expr.Value := 'str_of(' + Expr.Value + ')';
-  end
-  else if not IsSameType(Expr.TypeIndex, TypeIndex) then
-  begin
-    writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
-    TypeName(TypeIndex), LxWhereStr());
-    halt(1)
-  end;
-  CoerceType := Expr
-end;
