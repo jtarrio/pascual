@@ -95,7 +95,7 @@ begin
   else
   begin
     writeln(StdErr, 'Error writing name and type: ', Name, ', ',
-            TypeName(TypeIndex), LxWhereStr());
+            TypeName(TypeIndex), LxWhereStr);
     halt(1)
   end
 end;
@@ -107,7 +107,7 @@ begin
   Name := Defs.Types[TypeIndex].Name;
   if Defs.Types[TypeIndex].AliasFor = 0 then
   begin
-    writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr());
+    writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr);
     halt(1)
   end;
   write(Codegen.Output, 'typedef ');
@@ -328,7 +328,7 @@ begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
     writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr());
+            TypeName(Expr.TypeIndex), LxWhereStr);
     halt(1)
   end;
   writeln(Codegen.Output, '} while (!(', Expr.Value, '));')
@@ -339,7 +339,7 @@ begin
   if not IsBooleanType(Expr.TypeIndex) then
   begin
     writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr());
+            TypeName(Expr.TypeIndex), LxWhereStr);
     halt(1)
   end;
   write(Codegen.Output, 'while (', Expr.Value, ') ')

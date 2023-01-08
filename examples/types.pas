@@ -95,8 +95,8 @@ begin
   writeln(AName.First);
   writeln(AName.Last);
 
-  Proc();
-  writeln(Fun());
+  Proc;
+  writeln(Fun);
 
-  Arrays()
+  Arrays
 end.

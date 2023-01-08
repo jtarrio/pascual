@@ -50,7 +50,7 @@ begin
   OutputFile := '';
   Flag := FlagNone;
 
-  for Pos := 1 to ParamCount() do
+  for Pos := 1 to ParamCount do
   begin
     Param := ParamStr(Pos);
     if (Param[1] = '-') and (Param <> '-') then
@@ -86,15 +86,15 @@ end;
 
 procedure ClearState;
 begin
-  LxReset();
-  CodegenReset();
+  LxReset;
+  CodegenReset;
 end;
 
 begin
-  ClearState();
-  ParseCmdline();
-  StartGlobalScope();
-  ParseProgram();
+  ClearState;
+  ParseCmdline;
+  StartGlobalScope;
+  ParseProgram;
   Close(Lexer.Input.Src);
   Close(Codegen.Output)
 end.

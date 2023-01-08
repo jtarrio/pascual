@@ -132,8 +132,8 @@ begin
 end;
 
 begin
-  TestIf();
-  TestRepeat();
-  TestWhile();
-  TestFor();
+  TestIf;
+  TestRepeat;
+  TestWhile;
+  TestFor;
 end.

@@ -3,5 +3,5 @@ program include;
 {$I include.inc}
 
 begin
-  Display()
+  Display
 end.

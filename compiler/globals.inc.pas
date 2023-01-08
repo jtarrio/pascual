@@ -2,8 +2,8 @@ procedure StartGlobalScope;
 var 
   Fun : TPsFunction;
 begin
-  ClearDefs();
-  GlobalScope := GetCurrentScope();
+  ClearDefs;
+  GlobalScope := GetCurrentScope;
 
   PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean),
                               GlobalScope);
@@ -88,4 +88,3 @@ begin
   Fun.ReturnTypeIndex := PrimitiveTypes.PtChar;
   AddFunction(Fun);
 end;
-

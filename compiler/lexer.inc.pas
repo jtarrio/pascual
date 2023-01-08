@@ -237,7 +237,7 @@ begin
   Lexer.Token.Value := '';
   Lexer.Token.Id := TkUnknown;
 
-  if not LxIsTokenWaiting() then
+  if not LxIsTokenWaiting then
     Lexer.Token.Id := TkEof
   else
   begin
@@ -245,15 +245,15 @@ begin
     if Length(Lexer.Line) >= 2 then Pfx := Lexer.Line[1] + Lexer.Line[2]
     else Pfx := '';
 
-    if LxIsAlpha(Chr) then LxGetIdentifier()
-    else if LxIsDigit(Chr) then LxGetNumber()
-    else if Chr = '''' then LxGetString()
+    if LxIsAlpha(Chr) then LxGetIdentifier
+    else if LxIsDigit(Chr) then LxGetNumber
+    else if Chr = '''' then LxGetString
     else if Pfx = '<>' then LxGetSymbol(TkNotEquals, 2)
     else if Pfx = '<=' then LxGetSymbol(TkLessOrEquals, 2)
     else if Pfx = '>=' then LxGetSymbol(TkMoreOrEquals, 2)
     else if Pfx = ':=' then LxGetSymbol(TkAssign, 2)
     else if Pfx = '..' then LxGetSymbol(TkRange, 2)
-    else if Pfx = '(*' then LxGetComment()
+    else if Pfx = '(*' then LxGetComment
     else if Chr = '+' then LxGetSymbol(TkPlus, 1)
     else if Chr = '-' then LxGetSymbol(TkMinus, 1)
     else if Chr = '*' then LxGetSymbol(TkAsterisk, 1)
@@ -270,7 +270,7 @@ begin
     else if Chr = '^' then LxGetSymbol(TkCaret, 1)
     else if Chr = '(' then LxGetSymbol(TkLparen, 1)
     else if Chr = ')' then LxGetSymbol(TkRparen, 1)
-    else if Chr = '{' then LxGetComment()
+    else if Chr = '{' then LxGetComment
     else
     begin
       writeln(StdErr, 'Could not parse [', Lexer.Line, '] at ',
@@ -301,7 +301,7 @@ procedure LxInclude(Filename : string);
 begin
   if Lexer.Prev.Exists then
   begin
-    writeln(StdErr, 'Include files cannot be recursive', LxWhereStr());
+    writeln(StdErr, 'Include files cannot be recursive', LxWhereStr);
     halt(1)
   end;
   Lexer.Prev.Exists := true;

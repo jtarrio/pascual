@@ -4,7 +4,7 @@ begin
   begin
     if Defs.Functions[Expr.FunctionIndex].ArgCount <> 0 then
     begin
-      writeln(StdErr, 'Function requires arguments', LxWhereStr());
+      writeln(StdErr, 'Function requires arguments', LxWhereStr);
       halt(1)
     end;
     Expr.Value := Expr.Value + '()';
@@ -22,7 +22,7 @@ begin
   if Expr.Cls <> TecValue then
   begin
     writeln(StdErr, 'Cannot assign function to ', TypeName(TypeIndex),
-    LxWhereStr());
+    LxWhereStr);
     halt(1)
   end;
   if IsCharType(Expr.TypeIndex) and IsStringType(TypeIndex) then
@@ -33,7 +33,7 @@ begin
   else if not IsSameType(Expr.TypeIndex, TypeIndex) then
   begin
     writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
-    TypeName(TypeIndex), LxWhereStr());
+    TypeName(TypeIndex), LxWhereStr);
     halt(1)
   end;
   CoerceType := Expr
@@ -151,7 +151,7 @@ begin
   else
   begin
     writeln(StdErr, 'No short type name exists for ', TypeName(TypeIndex),
-    LxWhereStr());
+    LxWhereStr);
     halt(1)
   end
 end;
@@ -181,7 +181,7 @@ begin
   else if Op = TkMoreOrEquals then Cmp := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr);
     halt(1)
   end;
   if Cmp = '' then
@@ -210,7 +210,7 @@ begin
   else if Op = TkMoreOrEquals then Oper := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr);
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
@@ -239,7 +239,7 @@ begin
   else if Op = TkMoreOrEquals then Cmp := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr);
     halt(1)
   end;
 
@@ -273,7 +273,7 @@ begin
   else if Op = TkMoreOrEquals then Cmp := '>='
   else
   begin
-    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr());
+    writeln(StdErr, 'Expected binary operator, found ', Op, LxWhereStr);
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
@@ -302,9 +302,8 @@ begin
   else
   begin
     writeln(StdErr, 'Type mismatch for operator ', Op,
-            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex)
-    ,
-    LxWhereStr());
+            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex),
+    LxWhereStr);
     halt(1)
   end
 end;
@@ -315,13 +314,13 @@ begin
   Expr := Evaluate(Expr);
   if Op <> TkNot then
   begin
-    writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr());
+    writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr);
     halt(1)
   end
   else if not IsBooleanType(Expr.TypeIndex) then
   begin
     writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr());
+            TypeName(Expr.TypeIndex), LxWhereStr);
     halt(1)
   end
   else
@@ -329,4 +328,3 @@ begin
   Expr.IsConstant := true;
   UnaryExpression := Expr
 end;
-

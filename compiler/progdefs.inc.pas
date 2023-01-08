@@ -190,7 +190,7 @@ function TypeOfClass(Cls : TPsTypeClass) : TPsType;
 var 
   Ret : TPsType;
 begin
-  Ret := EmptyType();
+  Ret := EmptyType;
   Ret.Cls := Cls;
   TypeOfClass := Ret
 end;
@@ -302,15 +302,15 @@ begin
     Pos := FindType(Typ.Name);
     if Pos > Scope.NumTypes then
     begin
-      writeln(StdErr, 'Variable ', Typ.Name, ' already defined as ', TypeName(
-              Pos), LxWhereStr());
+      writeln(StdErr, 'Variable ', Typ.Name, ' already defined as ',
+              TypeName(Pos), LxWhereStr);
       halt(1)
     end
   end;
   Pos := Defs.Scope.NumTypes + 1;
   if Pos > MaxTypes then
   begin
-    writeln(StdErr, 'Too many types have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many types have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Types[Pos] := Typ;
@@ -336,7 +336,7 @@ begin
   Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
   if Defs.Scope.NumEnums > MaxEnums then
   begin
-    writeln(StdErr, 'Too many enums have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many enums have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Enums[Defs.Scope.NumEnums] := Enum;
@@ -348,7 +348,7 @@ begin
   Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
   if Defs.Scope.NumRecords > MaxRecords then
   begin
-    writeln(StdErr, 'Too many records have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many records have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Records[Defs.Scope.NumRecords] := Rec;
@@ -360,7 +360,7 @@ begin
   Defs.Scope.NumArrays := Defs.Scope.NumArrays + 1;
   if Defs.Scope.NumArrays > MaxArrays then
   begin
-    writeln(StdErr, 'Too many arrays have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many arrays have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Arrays[Defs.Scope.NumArrays] := Arr;
@@ -389,14 +389,14 @@ begin
     if Pos > Scope.NumConstants then
     begin
       writeln(StdErr, 'Constant ', Constant.Name, ' already defined',
-              LxWhereStr());
+              LxWhereStr);
       halt(1)
     end
   end;
   Pos := Defs.Scope.NumConstants + 1;
   if Pos > MaxConstants then
   begin
-    writeln(StdErr, 'Too many constants have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many constants have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Constants[Pos] := Constant;
@@ -426,14 +426,14 @@ begin
     if Pos > Scope.NumVariables then
     begin
       writeln(StdErr, 'Variable ', VarDef.Name, ' already defined as ',
-              TypeName(Defs.Variables[Pos].TypeIndex), LxWhereStr());
+              TypeName(Defs.Variables[Pos].TypeIndex), LxWhereStr);
       halt(1)
     end
   end;
   Pos := Defs.Scope.NumVariables + 1;
   if Pos > MaxVariables then
   begin
-    writeln(StdErr, 'Too many variables have been defined', LxWhereStr());
+    writeln(StdErr, 'Too many variables have been defined', LxWhereStr);
     halt(1)
   end;
   Defs.Variables[Pos] := VarDef;
@@ -499,21 +499,19 @@ begin
       begin
         if Fun.ReturnTypeIndex = 0 then
           writeln(StdErr, 'Procedure ', Fun.Name,
-                  ' incompatible with its forward declaration', LxWhereStr())
+                  ' incompatible with its forward declaration', LxWhereStr)
         else
           writeln(StdErr, 'Function ', Fun.Name,
-                  ' incompatible with its forward declaration', LxWhereStr());
+                  ' incompatible with its forward declaration', LxWhereStr);
         halt(1)
       end
     end
     else
     begin
       if Fun.ReturnTypeIndex = 0 then
-        writeln(StdErr, 'Procedure ', Fun.Name, ' already defined',
-                LxWhereStr())
+        writeln(StdErr, 'Procedure ', Fun.Name, ' already defined', LxWhereStr)
       else
-        writeln(StdErr, 'Function ', Fun.Name, ' already defined',
-                LxWhereStr());
+        writeln(StdErr, 'Function ', Fun.Name, ' already defined', LxWhereStr);
       halt(1)
     end
   end
@@ -522,7 +520,7 @@ begin
     Pos := Defs.Scope.NumFunctions + 1;
     if Pos > MaxFunctions then
     begin
-      writeln(StdErr, 'Too many functions have been defined', LxWhereStr());
+      writeln(StdErr, 'Too many functions have been defined', LxWhereStr);
       halt(1)
     end;
     Defs.Scope.NumFunctions := Pos
@@ -540,7 +538,7 @@ begin
   Typ := Defs.Types[TypeIndex];
   if Typ.Cls <> TtcRecord then
   begin
-    writeln(StdErr, 'Not a record: ', Typ.Name, LxWhereStr());
+    writeln(StdErr, 'Not a record: ', Typ.Name, LxWhereStr);
     halt(1)
   end;
   TypeIndex := 0;
@@ -550,7 +548,7 @@ begin
       TypeIndex := Rec.Fields[Pos].TypeIndex;
   if TypeIndex = 0 then
   begin
-    writeln(StdErr, 'Field not found: ', Name, LxWhereStr());
+    writeln(StdErr, 'Field not found: ', Name, LxWhereStr);
     halt(1)
   end;
   FindFieldType := TypeIndex
@@ -560,7 +558,7 @@ function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;
 var 
   Typ : TPsType;
 begin
-  Typ := EmptyType();
+  Typ := EmptyType;
   Typ.Name := Name;
   Typ.Cls := Cls;
   MakeType := Typ
