@@ -80,14 +80,6 @@ begin
   GenNumberConstant := Expr
 end;
 
-procedure AddFuncArgsToScope(FnIndex : TPsFunctionIndex; Scope : TPsScope);
-var 
-  Pos : integer;
-begin
-  for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
-    AddVariable(Defs.Functions[FnIndex].Args[Pos], Scope)
-end;
-
 function IsOpAdding(Tok : TLxToken) : boolean;
 begin
   IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)

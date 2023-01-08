@@ -278,6 +278,7 @@ forward;
 procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
 var 
   PreviousScope : TPsScope;
+  Pos : integer;
 begin
   if Lexer.Token.Id = TkForward then
   begin
@@ -289,7 +290,8 @@ begin
   else
   begin
     PreviousScope := GetCurrentScope();
-    AddFuncArgsToScope(FnIndex, PreviousScope);
+    for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
+      AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope)
     OutFunctionDefinition(FnIndex);
     OutEnumValuesInScope(PreviousScope);
     PsDefinitions(PreviousScope);
