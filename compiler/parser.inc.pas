@@ -1,3 +1,44 @@
+procedure ReadToken;
+forward;
+
+procedure WantToken(Id : TLxTokenId);
+begin
+  if Lexer.Token.Id <> Id then
+  begin
+    writeln(StdErr, 'Wanted token ', Id, ', found ', LxTokenStr(),
+    LxWhereStr());
+    halt(1)
+  end
+end;
+
+procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
+begin
+  if (Lexer.Token.Id <> Id1) and (Lexer.Token.Id <> Id2) then
+  begin
+    writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxTokenStr(),
+    LxWhereStr());
+    halt(1)
+  end
+end;
+
+procedure WantTokenAndRead(Id : TLxTokenId);
+begin
+  WantToken(Id);
+  ReadToken()
+end;
+
+function GetTokenValueAndRead(Id : TLxTokenId) : string;
+begin
+  WantToken(Id);
+  GetTokenValueAndRead := Lexer.Token.Value;
+  ReadToken()
+end;
+
+procedure SkipToken(Id : TLxTokenId);
+begin
+  if Lexer.Token.Id = Id then ReadToken()
+end;
+
 function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 var 
   TypeIndex : TPsTypeIndex;
@@ -816,4 +857,50 @@ begin
   end;
   OutProgramEnd();
   WantTokenAndRead(TkEnd)
+end;
+
+procedure ExecuteDirective(Dir : string);
+begin
+  if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
+    LxInclude(Copy(Dir, 4, 255))
+end;
+
+procedure ReadToken;
+var 
+  ConstIndex : TPsConstantIndex;
+  TokenPos : TLxPos;
+  Stop : boolean;
+begin
+  repeat
+    LxReadToken();
+    Stop := Lexer.Token.Id <> TkComment;
+    if Lexer.Token.Id = TkIdentifier then
+    begin
+      ConstIndex := FindConstant(Lexer.Token.Value);
+      if ConstIndex <> 0 then
+      begin
+        TokenPos := Lexer.Token.Pos;
+        Lexer.Token := Defs.Constants[ConstIndex].Replacement;
+        Lexer.Token.Pos := TokenPos
+      end
+    end;
+    if Lexer.Token.Id = TkComment then
+      if (Length(Lexer.Token.Value) >= 2) and (Lexer.Token.Value[1] = '$') then
+        ExecuteDirective(Lexer.Token.Value);
+    if (Lexer.Token.Id = TkEof) and Lexer.Prev.Exists then
+    begin
+      Lexer.Input := Lexer.Prev.Input;
+      Lexer.Prev.Exists := false;
+      Stop := false
+    end
+  until Stop;
+end;
+
+procedure ParseProgram;
+begin
+  ReadToken();
+  PsProgramHeading();
+  PsProgramBlock();
+  WantTokenAndRead(TkDot);
+  WantToken(TkEof);
 end;
