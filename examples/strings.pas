@@ -44,7 +44,7 @@ begin
   write(s[1]);
   write(s[2]);
   write(s[3]);
-  writeln();
+  writeln;
   writeln(Length(s));
 end;
 

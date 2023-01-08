@@ -14,7 +14,7 @@ begin
   if Msg <> '' then writeln(Msg);
   writeln('Usage:');
   writeln(ParamStr(0), ' input.pas [-o output.c]');
-  writeln();
+  writeln;
   writeln('If you specify "-" as the input or output file, ',
           'stdin/stdout will be used.');
   halt(0)

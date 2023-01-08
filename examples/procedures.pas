@@ -47,7 +47,7 @@ end;
 
 begin
   SayHello;
-  writeln();
+  writeln;
   Display(Three);
   Num := 1;
   Display(Num);
