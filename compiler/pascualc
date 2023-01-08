@@ -42,9 +42,8 @@ parse_cmd() {
   if [ -z "$output" ]
   then
     output="${input%.pas}"
-    if [ "$input" = "$output" ]; then
-      output="a.out"
-    fi
+    if [ -n "$compile_only" ]; then output="${output}.c" ; fi
+    if [ "$input" = "$output" ]; then output="a.out" ; fi
   fi
   if [ "$input" = "$output" ]
   then
@@ -53,7 +52,7 @@ parse_cmd() {
 }
 
 compile_to_c() {
-  "$PC" < "$1" > "$2"
+  "$PC" "$1" -o "$2"
 }
 
 compile_to_out() {
