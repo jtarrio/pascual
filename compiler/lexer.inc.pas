@@ -202,6 +202,7 @@ var
   DelimiterLength : integer;
   Comment : string;
 begin
+  Comment := '';
   Done := false;
   if Lexer.Line[1] = '{' then DelimiterLength := 1
   else DelimiterLength := 2;
