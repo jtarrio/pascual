@@ -38,6 +38,8 @@ var
     Token : TLxToken;
     Pos : TLxPos;
     Input : text;
+    PrevInput : text;
+    HasPrevInput : boolean;
   end;
   Codegen : record
     Output : text;
@@ -326,8 +328,7 @@ end;
 
 procedure SkipToken(Id : TLxTokenId);
 begin
-  if Lexer.Token.Id = Id then
-    ReadToken()
+  if Lexer.Token.Id = Id then ReadToken()
 end;
 
 type 
@@ -2557,8 +2558,6 @@ end;
 
 procedure ParseProgram;
 begin
-  Lexer.Pos.Row := 0;
-  Lexer.Pos.Col := 0;
   StartGlobalScope();
   ReadToken();
   PsProgramHeading();
@@ -2567,13 +2566,31 @@ begin
   WantToken(TkEof);
 end;
 
+procedure ExecuteDirective(Dir : string);
+begin
+  if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
+  begin
+    if Lexer.HasPrevInput then
+    begin
+      writeln(StdErr, 'Include files cannot be recursive', LxWhereStr());
+      halt(1)
+    end;
+    Lexer.PrevInput := Lexer.Input;
+    Lexer.HasPrevInput := true;
+    Assign(Lexer.Input, Copy(Dir, 4, 255));
+    Reset(Lexer.Input)
+  end
+end;
+
 procedure ReadToken;
 var 
   ConstIndex : TPsConstantIndex;
   TokenPos : TLxPos;
+  Stop : boolean;
 begin
   repeat
     LxReadToken();
+    Stop := Lexer.Token.Id <> TkComment;
     if Lexer.Token.Id = TkIdentifier then
     begin
       ConstIndex := FindConstant(Lexer.Token.Value);
@@ -2583,8 +2600,17 @@ begin
         Lexer.Token := Defs.Constants[ConstIndex].Replacement;
         Lexer.Token.Pos := TokenPos
       end
+    end;
+    if Lexer.Token.Id = TkComment then
+      if (Length(Lexer.Token.Value) >= 2) and (Lexer.Token.Value[1] = '$') then
+        ExecuteDirective(Lexer.Token.Value);
+    if (Lexer.Token.Id = TkEof) and Lexer.HasPrevInput then
+    begin
+      Lexer.Input := Lexer.PrevInput;
+      Lexer.HasPrevInput := false;
+      Stop := false
     end
-  until Lexer.Token.Id <> TkComment
+  until Stop;
 end;
 
 procedure Usage(Msg : string);
@@ -2658,21 +2684,30 @@ begin
   end;
   if OutputFile = '' then Usage('Output file must be specified');
 
-  if InputFile = '-' then Lexer.Input := Input
-  else
+  if InputFile <> '-' then
   begin
     Assign(Lexer.Input, InputFile);
     Reset(Lexer.Input)
   end;
-  if OutputFile = '-' then Codegen.Output := Output
-  else
+  if OutputFile <> '-' then
   begin
     Assign(Codegen.Output, OutputFile);
     Rewrite(Codegen.Output)
   end
 end;
 
+procedure ClearState;
 begin
+  Lexer.Line := '';
+  Lexer.Pos.Row := 0;
+  Lexer.Pos.Col := 0;
+  Lexer.Input := Input;
+  Lexer.HasPrevInput := false;
+  Codegen.Output := Output
+end;
+
+begin
+  ClearState();
   ParseCmdline();
   ParseProgram();
   Close(Lexer.Input);
