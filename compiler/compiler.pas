@@ -38,8 +38,13 @@ var
     Token : TLxToken;
     Pos : TLxPos;
     Input : text;
-    PrevInput : text;
-    HasPrevInput : boolean;
+    Filename : string;
+    Prev : record
+      Exists : boolean;
+      Input : text;
+      Filename : string;
+      Pos : TLxPos
+    end
   end;
   Codegen : record
     Output : text;
@@ -52,7 +57,7 @@ var
 begin
   Str(Pos.Row, Row);
   Str(Pos.Col, Col);
-  LxPosStr := 'row ' + Row + ' col ' + Col
+  LxPosStr := 'row ' + Row + ' col ' + Col + ' in ' + Lexer.Filename;
 end;
 
 function LxWhereStr : string;
@@ -2570,14 +2575,19 @@ procedure ExecuteDirective(Dir : string);
 begin
   if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
   begin
-    if Lexer.HasPrevInput then
+    if Lexer.Prev.Exists then
     begin
       writeln(StdErr, 'Include files cannot be recursive', LxWhereStr());
       halt(1)
     end;
-    Lexer.PrevInput := Lexer.Input;
-    Lexer.HasPrevInput := true;
-    Assign(Lexer.Input, Copy(Dir, 4, 255));
+    Lexer.Prev.Exists := true;
+    Lexer.Prev.Input := Lexer.Input;
+    Lexer.Prev.Filename := Lexer.Filename;
+    Lexer.Prev.Pos := Lexer.Pos;
+    Lexer.Pos.Row := 0;
+    Lexer.Pos.Col := 0;
+    Lexer.Filename := Copy(Dir, 4, 255);
+    Assign(Lexer.Input, Lexer.Filename);
     Reset(Lexer.Input)
   end
 end;
@@ -2604,10 +2614,11 @@ begin
     if Lexer.Token.Id = TkComment then
       if (Length(Lexer.Token.Value) >= 2) and (Lexer.Token.Value[1] = '$') then
         ExecuteDirective(Lexer.Token.Value);
-    if (Lexer.Token.Id = TkEof) and Lexer.HasPrevInput then
+    if (Lexer.Token.Id = TkEof) and Lexer.Prev.Exists then
     begin
-      Lexer.Input := Lexer.PrevInput;
-      Lexer.HasPrevInput := false;
+      Lexer.Input := Lexer.Prev.Input;
+      Lexer.Pos := Lexer.Prev.Pos;
+      Lexer.Prev.Exists := false;
       Stop := false
     end
   until Stop;
@@ -2686,6 +2697,7 @@ begin
 
   if InputFile <> '-' then
   begin
+    Lexer.Filename := InputFile;
     Assign(Lexer.Input, InputFile);
     Reset(Lexer.Input)
   end;
@@ -2702,7 +2714,7 @@ begin
   Lexer.Pos.Row := 0;
   Lexer.Pos.Col := 0;
   Lexer.Input := Input;
-  Lexer.HasPrevInput := false;
+  Lexer.Prev.Exists := false;
   Codegen.Output := Output
 end;
 

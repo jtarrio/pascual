@@ -214,8 +214,11 @@ extern void pascual_main();
 
 int main(int argc, const char** argv) {
   INPUT.file = stdin;
+  INPUT.name.len = 0;
   OUTPUT.file = stdout;
+  OUTPUT.name.len = 0;
   STDERR.file = stderr;
+  STDERR.name.len = 0;
   param_count = argc - 1;
   param_str = argv;
   pascual_main();
