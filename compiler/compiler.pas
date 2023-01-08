@@ -207,42 +207,40 @@ end;
 
 procedure LxGetComment;
 var 
-  Chr : char;
-  ShortComment : boolean;
-  Delim : char;
-  CanEnd : boolean;
+  Done : boolean;
+  DelimiterLength : integer;
+  Comment : string;
 begin
-  Chr := Lexer.Line[1];
-  ShortComment := Chr = '{';
-  if ShortComment then
-  begin
-    Delim := '}';
-    LxGetSymbol(TkComment, 1);
-  end
-  else
-  begin
-    Delim := ')';
-    LxGetSymbol(TkComment, 2);
-  end;
-
+  Done := false;
+  if Lexer.Line[1] = '{' then DelimiterLength := 1
+  else DelimiterLength := 2;
+  LxGetSymbol(TkComment, DelimiterLength);
   repeat
-    if not LxIsTokenWaiting() then
+    while Lexer.Line = '' do
     begin
-      writeln(StdErr, 'End of file in comment', LxWhereStr());
-      halt(1)
+      Comment := Comment + ' ';
+      readln(Lexer.Input, Lexer.Line);
+      Lexer.Pos.Row := Lexer.Pos.Row + 1;
+      Lexer.Pos.Col := 1
     end;
-    CanEnd := ShortComment or (Chr = '*');
-    Chr := Lexer.Line[1];
-    delete(Lexer.Line, 1, 1);
-    Lexer.Pos.Col := Lexer.Pos.Col + 1;
-  until CanEnd and (Chr = Delim);
-  Lexer.Token.Value := ''
+    if DelimiterLength = 1 then Done := Lexer.Line[1] = '}'
+    else Done := (Lexer.Line[1] = '*') and (Lexer.Line[2] = ')');
+    if not Done then
+    begin
+      Comment := Comment + Lexer.Line[1];
+      delete(Lexer.Line, 1, 1);
+      Lexer.Pos.Col := Lexer.Pos.Col + 1
+    end
+  until Done;
+  delete(Lexer.Line, 1, DelimiterLength);
+  Lexer.Pos.Col := Lexer.Pos.Col + DelimiterLength;
+  Lexer.Token.Value := Comment
 end;
 
 procedure LxReadToken;
 var 
   Chr : char;
-  Nxt : char;
+  Pfx : string;
 begin
   Lexer.Token.Value := '';
   Lexer.Token.Id := TkUnknown;
@@ -252,58 +250,36 @@ begin
   else
   begin
     Chr := Lexer.Line[1];
+    if Length(Lexer.Line) >= 2 then Pfx := Lexer.Line[1] + Lexer.Line[2]
+    else Pfx := '';
 
-    if LxIsAlpha(Chr) then LxGetIdentifier();
-    if (Lexer.Token.Id = TkUnknown) and LxIsDigit(Chr) then LxGetNumber();
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '''') then LxGetString();
-    if (Lexer.Token.Id = TkUnknown) and (Length(Lexer.Line) > 1) then
-    begin
-      Nxt := Lexer.Line[2];
-      if (Lexer.Token.Id = TkUnknown) and (Chr = '<') and (Nxt = '>') then
-        LxGetSymbol(TkNotEquals, 2);
-      if (Lexer.Token.Id = TkUnknown) and (Chr = '<') and (Nxt = '=') then
-        LxGetSymbol(TkLessOrEquals, 2);
-      if (Lexer.Token.Id = TkUnknown) and (Chr = '>') and (Nxt = '=') then
-        LxGetSymbol(TkMoreOrEquals, 2);
-      if (Lexer.Token.Id = TkUnknown) and (Chr = ':') and (Nxt = '=') then
-        LxGetSymbol(TkAssign, 2);
-      if (Lexer.Token.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
-        LxGetSymbol(TkRange, 2);
-      if (Lexer.Token.Id = TkUnknown) and (Chr = '(') and (Nxt = '*') then
-        LxGetComment()
-    end;
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '+') then LxGetSymbol(TkPlus, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '-') then
-      LxGetSymbol(TkMinus, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '*') then
-      LxGetSymbol(TkAsterisk, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '/') then
-      LxGetSymbol(TkSlash, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '=') then
-      LxGetSymbol(TkEquals, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '<') then
-      LxGetSymbol(TkLessthan, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '>') then
-      LxGetSymbol(TkMorethan, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '[') then
-      LxGetSymbol(TkLbracket, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = ']') then
-      LxGetSymbol(TkRbracket, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '.') then LxGetSymbol(TkDot, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = ',') then
-      LxGetSymbol(TkComma, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = ':') then
-      LxGetSymbol(TkColon, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = ';') then
-      LxGetSymbol(TkSemicolon, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '^') then
-      LxGetSymbol(TkCaret, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '(') then
-      LxGetSymbol(TkLparen, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = ')') then
-      LxGetSymbol(TkRparen, 1);
-    if (Lexer.Token.Id = TkUnknown) and (Chr = '{') then LxGetComment();
-    if Lexer.Token.Id = TkUnknown then
+    if LxIsAlpha(Chr) then LxGetIdentifier()
+    else if LxIsDigit(Chr) then LxGetNumber()
+    else if Chr = '''' then LxGetString()
+    else if Pfx = '<>' then LxGetSymbol(TkNotEquals, 2)
+    else if Pfx = '<=' then LxGetSymbol(TkLessOrEquals, 2)
+    else if Pfx = '>=' then LxGetSymbol(TkMoreOrEquals, 2)
+    else if Pfx = ':=' then LxGetSymbol(TkAssign, 2)
+    else if Pfx = '..' then LxGetSymbol(TkRange, 2)
+    else if Pfx = '(*' then LxGetComment()
+    else if Chr = '+' then LxGetSymbol(TkPlus, 1)
+    else if Chr = '-' then LxGetSymbol(TkMinus, 1)
+    else if Chr = '*' then LxGetSymbol(TkAsterisk, 1)
+    else if Chr = '/' then LxGetSymbol(TkSlash, 1)
+    else if Chr = '=' then LxGetSymbol(TkEquals, 1)
+    else if Chr = '<' then LxGetSymbol(TkLessthan, 1)
+    else if Chr = '>' then LxGetSymbol(TkMorethan, 1)
+    else if Chr = '[' then LxGetSymbol(TkLbracket, 1)
+    else if Chr = ']' then LxGetSymbol(TkRbracket, 1)
+    else if Chr = '.' then LxGetSymbol(TkDot, 1)
+    else if Chr = ',' then LxGetSymbol(TkComma, 1)
+    else if Chr = ':' then LxGetSymbol(TkColon, 1)
+    else if Chr = ';' then LxGetSymbol(TkSemicolon, 1)
+    else if Chr = '^' then LxGetSymbol(TkCaret, 1)
+    else if Chr = '(' then LxGetSymbol(TkLparen, 1)
+    else if Chr = ')' then LxGetSymbol(TkRparen, 1)
+    else if Chr = '{' then LxGetComment()
+    else
     begin
       writeln(StdErr, 'Could not parse [', Lexer.Line, '] at ',
               LxPosStr(Lexer.Pos));
