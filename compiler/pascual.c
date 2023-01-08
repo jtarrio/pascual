@@ -49,7 +49,8 @@ char UPCASE(char src) {
 
 STRING _str_from_pchar(const char* str) {
   STRING ret;
-  ret.len = stpncpy(ret.value, str, 255) - str;
+  ret.len = strnlen(str, 255);
+  memcpy(ret.value, str, ret.len);
   return ret;
 }
 
@@ -137,13 +138,11 @@ STRING to_str_e(int value, const char** names) {
 int param_count;
 const char** param_str;
 
-int PARAMCOUNT() {
-  return param_count;
-}
+int PARAMCOUNT() { return param_count; }
 
 STRING PARAMSTR(int i) {
-  if ((i < 1) || (i > param_count)) return (STRING){.len = 0};
-  return _str_from_pchar(param_str[i - 1]);
+  if ((i < 0) || (i > param_count)) return (STRING){.len = 0};
+  return _str_from_pchar(param_str[i]);
 }
 
 void ASSIGN(PFile* file, STRING name) {
@@ -161,6 +160,8 @@ PBoolean EOF(PFile* file) {
 }
 
 void RESET(PFile* file) { file->file = fopen(file->name.value, "r"); }
+
+void REWRITE(PFile* file) { file->file = fopen(file->name.value, "w"); }
 
 void readln(PFile file) {
   int chr;
@@ -216,7 +217,7 @@ int main(int argc, const char** argv) {
   OUTPUT.file = stdout;
   STDERR.file = stderr;
   param_count = argc - 1;
-  param_str = argv + 1;
+  param_str = argv;
   pascual_main();
   return 0;
 }

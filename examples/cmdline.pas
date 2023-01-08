@@ -4,6 +4,6 @@ var
   i : integer;
 
 begin
-  for i := 1 to ParamCount() do
+  for i := 0 to ParamCount() do
     writeln(i, ': ', ParamStr(i))
 end.

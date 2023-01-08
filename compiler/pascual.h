@@ -60,6 +60,7 @@ extern PFile STDERR;
 void ASSIGN(PFile* file, STRING name);
 void CLOSE(PFile* file);
 void RESET(PFile* file);
+void REWRITE(PFile* file);
 PBoolean EOF(PFile* file);
 
 void readln(PFile file);

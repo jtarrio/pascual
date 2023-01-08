@@ -33,10 +33,15 @@ type
     Pos : TLxPos
   end;
 var 
-  LxLine : string;
-  LxToken : TLxToken;
-  LxPos : TLxPos;
-  LxInput : text;
+  Lexer : record
+    Line : string;
+    Token : TLxToken;
+    Pos : TLxPos;
+    Input : text;
+  end;
+  Codegen : record
+    Output : text;
+  end;
 
 function LxPosStr(Pos : TLxPos) : string;
 var 
@@ -50,15 +55,15 @@ end;
 
 function LxWhereStr : string;
 begin
-  LxWhereStr := ' near ' + LxPosStr(LxToken.Pos)
+  LxWhereStr := ' near ' + LxPosStr(Lexer.Token.Pos)
 end;
 
 function LxTokenStr : string;
 var 
   Id : string;
 begin
-  Str(LxToken.Id, Id);
-  LxTokenStr := Id + ' [' + LxToken.Value + ']'
+  Str(Lexer.Token.Id, Id);
+  LxTokenStr := Id + ' [' + Lexer.Token.Value + ']'
 end;
 
 function LxIsAlpha(Chr : char) : boolean;
@@ -80,28 +85,28 @@ end;
 function LxIsTokenWaiting : boolean;
 begin
   repeat
-    while (Length(LxLine) = 0) and not Eof(LxInput) do
+    while (Length(Lexer.Line) = 0) and not Eof(Lexer.Input) do
     begin
-      LxPos.Row := LxPos.Row + 1;
-      LxPos.Col := 1;
-      readln(LxInput, LxLine)
+      Lexer.Pos.Row := Lexer.Pos.Row + 1;
+      Lexer.Pos.Col := 1;
+      readln(Lexer.Input, Lexer.Line)
     end;
-    while (Length(LxLine) > 0) and (LxLine[1] = ' ') do
+    while (Length(Lexer.Line) > 0) and (Lexer.Line[1] = ' ') do
     begin
-      LxPos.Col := LxPos.Col + 1;
-      delete(LxLine, 1, 1)
+      Lexer.Pos.Col := Lexer.Pos.Col + 1;
+      delete(Lexer.Line, 1, 1)
     end;
-  until Eof(LxInput) or (Length(LxLine) > 0);
-  LxIsTokenWaiting := Length(LxLine) > 0
+  until Eof(Lexer.Input) or (Length(Lexer.Line) > 0);
+  LxIsTokenWaiting := Length(Lexer.Line) > 0
 end;
 
 procedure LxGetSymbol(Id : TLxTokenId; Length : integer);
 begin
-  LxToken.Id := Id;
-  LxToken.Value := copy(LxLine, 1, Length);
-  LxToken.Pos := LxPos;
-  delete(LxLine, 1, Length);
-  LxPos.Col := LxPos.Col + Length
+  Lexer.Token.Id := Id;
+  Lexer.Token.Value := copy(Lexer.Line, 1, Length);
+  Lexer.Token.Pos := Lexer.Pos;
+  delete(Lexer.Line, 1, Length);
+  Lexer.Pos.Col := Lexer.Pos.Col + Length
 end;
 
 procedure LxGetIdentifier;
@@ -112,52 +117,52 @@ var
 begin
   Pos := 0;
   InToken := true;
-  while (Pos < Length(LxLine)) and InToken do
+  while (Pos < Length(Lexer.Line)) and InToken do
   begin
-    Chr := LxLine[Pos + 1];
+    Chr := Lexer.Line[Pos + 1];
     InToken := LxIsAlphaNum(Chr);
     if InToken then Pos := Pos + 1
   end;
   LxGetSymbol(TkIdentifier, Pos);
-  for Pos := 1 to Length(LxToken.Value) do
-    LxToken.Value[Pos] := UpCase(LxToken.Value[Pos]);
+  for Pos := 1 to Length(Lexer.Token.Value) do
+    Lexer.Token.Value[Pos] := UpCase(Lexer.Token.Value[Pos]);
 
-  if LxToken.Value = 'AND' then LxToken.Id := TkAnd
-  else if LxToken.Value = 'ARRAY' then LxToken.Id := TkArray
-  else if LxToken.Value = 'BEGIN' then LxToken.Id := TkBegin
-  else if LxToken.Value = 'CASE' then LxToken.Id := TkCase
-  else if LxToken.Value = 'CONST' then LxToken.Id := TkConst
-  else if LxToken.Value = 'DIV' then LxToken.Id := TkDiv
-  else if LxToken.Value = 'DO' then LxToken.Id := TkDo
-  else if LxToken.Value = 'DOWNTO' then LxToken.Id := TkDownto
-  else if LxToken.Value = 'ELSE' then LxToken.Id := TkElse
-  else if LxToken.Value = 'END' then LxToken.Id := TkEnd
-  else if LxToken.Value = 'FILE' then LxToken.Id := TkFile
-  else if LxToken.Value = 'FOR' then LxToken.Id := TkFor
-  else if LxToken.Value = 'FORWARD' then LxToken.Id := TkForward
-  else if LxToken.Value = 'FUNCTION' then LxToken.Id := TkFunction
-  else if LxToken.Value = 'GOTO' then LxToken.Id := TkGoto
-  else if LxToken.Value = 'IF' then LxToken.Id := TkIf
-  else if LxToken.Value = 'IN' then LxToken.Id := TkIn
-  else if LxToken.Value = 'LABEL' then LxToken.Id := TkLabel
-  else if LxToken.Value = 'MOD' then LxToken.Id := TkMod
-  else if LxToken.Value = 'NIL' then LxToken.Id := TkNil
-  else if LxToken.Value = 'NOT' then LxToken.Id := TkNot
-  else if LxToken.Value = 'OF' then LxToken.Id := TkOf
-  else if LxToken.Value = 'OR' then LxToken.Id := TkOr
-  else if LxToken.Value = 'PACKED' then LxToken.Id := TkPacked
-  else if LxToken.Value = 'PROCEDURE' then LxToken.Id := TkProcedure
-  else if LxToken.Value = 'PROGRAM' then LxToken.Id := TkProgram
-  else if LxToken.Value = 'RECORD' then LxToken.Id := TkRecord
-  else if LxToken.Value = 'REPEAT' then LxToken.Id := TkRepeat
-  else if LxToken.Value = 'SET' then LxToken.Id := TkSet
-  else if LxToken.Value = 'THEN' then LxToken.Id := TkThen
-  else if LxToken.Value = 'TO' then LxToken.Id := TkTo
-  else if LxToken.Value = 'TYPE' then LxToken.Id := TkType
-  else if LxToken.Value = 'UNTIL' then LxToken.Id := TkUntil
-  else if LxToken.Value = 'VAR' then LxToken.Id := TkVar
-  else if LxToken.Value = 'WHILE' then LxToken.Id := TkWhile
-  else if LxToken.Value = 'WITH' then LxToken.Id := TkWith
+  if Lexer.Token.Value = 'AND' then Lexer.Token.Id := TkAnd
+  else if Lexer.Token.Value = 'ARRAY' then Lexer.Token.Id := TkArray
+  else if Lexer.Token.Value = 'BEGIN' then Lexer.Token.Id := TkBegin
+  else if Lexer.Token.Value = 'CASE' then Lexer.Token.Id := TkCase
+  else if Lexer.Token.Value = 'CONST' then Lexer.Token.Id := TkConst
+  else if Lexer.Token.Value = 'DIV' then Lexer.Token.Id := TkDiv
+  else if Lexer.Token.Value = 'DO' then Lexer.Token.Id := TkDo
+  else if Lexer.Token.Value = 'DOWNTO' then Lexer.Token.Id := TkDownto
+  else if Lexer.Token.Value = 'ELSE' then Lexer.Token.Id := TkElse
+  else if Lexer.Token.Value = 'END' then Lexer.Token.Id := TkEnd
+  else if Lexer.Token.Value = 'FILE' then Lexer.Token.Id := TkFile
+  else if Lexer.Token.Value = 'FOR' then Lexer.Token.Id := TkFor
+  else if Lexer.Token.Value = 'FORWARD' then Lexer.Token.Id := TkForward
+  else if Lexer.Token.Value = 'FUNCTION' then Lexer.Token.Id := TkFunction
+  else if Lexer.Token.Value = 'GOTO' then Lexer.Token.Id := TkGoto
+  else if Lexer.Token.Value = 'IF' then Lexer.Token.Id := TkIf
+  else if Lexer.Token.Value = 'IN' then Lexer.Token.Id := TkIn
+  else if Lexer.Token.Value = 'LABEL' then Lexer.Token.Id := TkLabel
+  else if Lexer.Token.Value = 'MOD' then Lexer.Token.Id := TkMod
+  else if Lexer.Token.Value = 'NIL' then Lexer.Token.Id := TkNil
+  else if Lexer.Token.Value = 'NOT' then Lexer.Token.Id := TkNot
+  else if Lexer.Token.Value = 'OF' then Lexer.Token.Id := TkOf
+  else if Lexer.Token.Value = 'OR' then Lexer.Token.Id := TkOr
+  else if Lexer.Token.Value = 'PACKED' then Lexer.Token.Id := TkPacked
+  else if Lexer.Token.Value = 'PROCEDURE' then Lexer.Token.Id := TkProcedure
+  else if Lexer.Token.Value = 'PROGRAM' then Lexer.Token.Id := TkProgram
+  else if Lexer.Token.Value = 'RECORD' then Lexer.Token.Id := TkRecord
+  else if Lexer.Token.Value = 'REPEAT' then Lexer.Token.Id := TkRepeat
+  else if Lexer.Token.Value = 'SET' then Lexer.Token.Id := TkSet
+  else if Lexer.Token.Value = 'THEN' then Lexer.Token.Id := TkThen
+  else if Lexer.Token.Value = 'TO' then Lexer.Token.Id := TkTo
+  else if Lexer.Token.Value = 'TYPE' then Lexer.Token.Id := TkType
+  else if Lexer.Token.Value = 'UNTIL' then Lexer.Token.Id := TkUntil
+  else if Lexer.Token.Value = 'VAR' then Lexer.Token.Id := TkVar
+  else if Lexer.Token.Value = 'WHILE' then Lexer.Token.Id := TkWhile
+  else if Lexer.Token.Value = 'WITH' then Lexer.Token.Id := TkWith
 end;
 
 procedure LxGetNumber;
@@ -168,9 +173,9 @@ var
 begin
   Pos := 0;
   InToken := true;
-  while (Pos < Length(LxLine)) and InToken do
+  while (Pos < Length(Lexer.Line)) and InToken do
   begin
-    Chr := LxLine[Pos + 1];
+    Chr := Lexer.Line[Pos + 1];
     InToken := LxIsDigit(Chr);
     if InToken then Pos := Pos + 1
   end;
@@ -188,10 +193,10 @@ begin
   while Instring do
   begin
     Pos := Pos + 1;
-    Chr := LxLine[Pos];
+    Chr := Lexer.Line[Pos];
     if Chr = '''' then
     begin
-      if (Length(LxLine) > Pos + 1) and (LxLine[Pos + 1] = '''') then
+      if (Length(Lexer.Line) > Pos + 1) and (Lexer.Line[Pos + 1] = '''') then
         Pos := Pos + 1
       else
         Instring := False;
@@ -207,7 +212,7 @@ var
   Delim : char;
   CanEnd : boolean;
 begin
-  Chr := LxLine[1];
+  Chr := Lexer.Line[1];
   ShortComment := Chr = '{';
   if ShortComment then
   begin
@@ -227,11 +232,11 @@ begin
       halt(1)
     end;
     CanEnd := ShortComment or (Chr = '*');
-    Chr := LxLine[1];
-    delete(LxLine, 1, 1);
-    LxPos.Col := LxPos.Col + 1;
+    Chr := Lexer.Line[1];
+    delete(Lexer.Line, 1, 1);
+    Lexer.Pos.Col := Lexer.Pos.Col + 1;
   until CanEnd and (Chr = Delim);
-  LxToken.Value := ''
+  Lexer.Token.Value := ''
 end;
 
 procedure LxReadToken;
@@ -239,55 +244,69 @@ var
   Chr : char;
   Nxt : char;
 begin
-  LxToken.Value := '';
-  LxToken.Id := TkUnknown;
+  Lexer.Token.Value := '';
+  Lexer.Token.Id := TkUnknown;
 
   if not LxIsTokenWaiting() then
-    LxToken.Id := TkEof
+    Lexer.Token.Id := TkEof
   else
   begin
-    Chr := LxLine[1];
+    Chr := Lexer.Line[1];
 
     if LxIsAlpha(Chr) then LxGetIdentifier();
-    if (LxToken.Id = TkUnknown) and LxIsDigit(Chr) then LxGetNumber();
-    if (LxToken.Id = TkUnknown) and (Chr = '''') then LxGetString();
-    if (LxToken.Id = TkUnknown) and (Length(LxLine) > 1) then
+    if (Lexer.Token.Id = TkUnknown) and LxIsDigit(Chr) then LxGetNumber();
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '''') then LxGetString();
+    if (Lexer.Token.Id = TkUnknown) and (Length(Lexer.Line) > 1) then
     begin
-      Nxt := LxLine[2];
-      if (LxToken.Id = TkUnknown) and (Chr = '<') and (Nxt = '>') then
+      Nxt := Lexer.Line[2];
+      if (Lexer.Token.Id = TkUnknown) and (Chr = '<') and (Nxt = '>') then
         LxGetSymbol(TkNotEquals, 2);
-      if (LxToken.Id = TkUnknown) and (Chr = '<') and (Nxt = '=') then
+      if (Lexer.Token.Id = TkUnknown) and (Chr = '<') and (Nxt = '=') then
         LxGetSymbol(TkLessOrEquals, 2);
-      if (LxToken.Id = TkUnknown) and (Chr = '>') and (Nxt = '=') then
+      if (Lexer.Token.Id = TkUnknown) and (Chr = '>') and (Nxt = '=') then
         LxGetSymbol(TkMoreOrEquals, 2);
-      if (LxToken.Id = TkUnknown) and (Chr = ':') and (Nxt = '=') then
+      if (Lexer.Token.Id = TkUnknown) and (Chr = ':') and (Nxt = '=') then
         LxGetSymbol(TkAssign, 2);
-      if (LxToken.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
+      if (Lexer.Token.Id = TkUnknown) and (Chr = '.') and (Nxt = '.') then
         LxGetSymbol(TkRange, 2);
-      if (LxToken.Id = TkUnknown) and (Chr = '(') and (Nxt = '*') then
+      if (Lexer.Token.Id = TkUnknown) and (Chr = '(') and (Nxt = '*') then
         LxGetComment()
     end;
-    if (LxToken.Id = TkUnknown) and (Chr = '+') then LxGetSymbol(TkPlus, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '-') then LxGetSymbol(TkMinus, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '*') then LxGetSymbol(TkAsterisk, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '/') then LxGetSymbol(TkSlash, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '=') then LxGetSymbol(TkEquals, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '<') then LxGetSymbol(TkLessthan, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '>') then LxGetSymbol(TkMorethan, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '[') then LxGetSymbol(TkLbracket, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ']') then LxGetSymbol(TkRbracket, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '.') then LxGetSymbol(TkDot, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ',') then LxGetSymbol(TkComma, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ':') then LxGetSymbol(TkColon, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ';') then
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '+') then LxGetSymbol(TkPlus, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '-') then
+      LxGetSymbol(TkMinus, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '*') then
+      LxGetSymbol(TkAsterisk, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '/') then
+      LxGetSymbol(TkSlash, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '=') then
+      LxGetSymbol(TkEquals, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '<') then
+      LxGetSymbol(TkLessthan, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '>') then
+      LxGetSymbol(TkMorethan, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '[') then
+      LxGetSymbol(TkLbracket, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = ']') then
+      LxGetSymbol(TkRbracket, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '.') then LxGetSymbol(TkDot, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = ',') then
+      LxGetSymbol(TkComma, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = ':') then
+      LxGetSymbol(TkColon, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = ';') then
       LxGetSymbol(TkSemicolon, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '^') then LxGetSymbol(TkCaret, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '(') then LxGetSymbol(TkLparen, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = ')') then LxGetSymbol(TkRparen, 1);
-    if (LxToken.Id = TkUnknown) and (Chr = '{') then LxGetComment();
-    if LxToken.Id = TkUnknown then
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '^') then
+      LxGetSymbol(TkCaret, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '(') then
+      LxGetSymbol(TkLparen, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = ')') then
+      LxGetSymbol(TkRparen, 1);
+    if (Lexer.Token.Id = TkUnknown) and (Chr = '{') then LxGetComment();
+    if Lexer.Token.Id = TkUnknown then
     begin
-      writeln(StdErr, 'Could not parse [', LxLine, '] at ', LxPosStr(LxPos));
+      writeln(StdErr, 'Could not parse [', Lexer.Line, '] at ',
+              LxPosStr(Lexer.Pos));
       halt(1)
     end
   end
@@ -298,7 +317,7 @@ forward;
 
 procedure WantToken(Id : TLxTokenId);
 begin
-  if LxToken.Id <> Id then
+  if Lexer.Token.Id <> Id then
   begin
     writeln(StdErr, 'Wanted token ', Id, ', found ', LxTokenStr(),
     LxWhereStr());
@@ -308,7 +327,7 @@ end;
 
 procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
 begin
-  if (LxToken.Id <> Id1) and (LxToken.Id <> Id2) then
+  if (Lexer.Token.Id <> Id1) and (Lexer.Token.Id <> Id2) then
   begin
     writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxTokenStr(),
     LxWhereStr());
@@ -325,13 +344,13 @@ end;
 function GetTokenValueAndRead(Id : TLxTokenId) : string;
 begin
   WantToken(Id);
-  GetTokenValueAndRead := LxToken.Value;
+  GetTokenValueAndRead := Lexer.Token.Value;
   ReadToken()
 end;
 
 procedure SkipToken(Id : TLxTokenId);
 begin
-  if LxToken.Id = Id then
+  if Lexer.Token.Id = Id then
     ReadToken()
 end;
 
@@ -429,7 +448,6 @@ var
     PtText : TPsTypeIndex
   end;
   GlobalScope : TPsScope;
-  CpOutput : text;
 
 procedure ClearDefs;
 begin
@@ -1020,6 +1038,11 @@ begin
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
   Fun.ReturnTypeIndex := 0;
   AddFunction(Fun);
+  Fun.Name := 'REWRITE';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
+  Fun.ReturnTypeIndex := 0;
+  AddFunction(Fun);
   Fun.Name := 'UPCASE';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
@@ -1036,17 +1059,17 @@ var
   Arr : TPsArrayDef;
 begin
   TypeIndex := 0;
-  if LxToken.Id = TkIdentifier then
+  if Lexer.Token.Id = TkIdentifier then
   begin
-    TypeIndex := FindType(LxToken.Value);
+    TypeIndex := FindType(Lexer.Token.Value);
     if TypeIndex = 0 then
     begin
-      writeln(StdErr, 'Unknown type: ', LxToken.Value, LxWhereStr());
+      writeln(StdErr, 'Unknown type: ', Lexer.Token.Value, LxWhereStr());
       halt(1)
     end;
     ReadToken()
   end
-  else if LxToken.Id = TkLparen then
+  else if Lexer.Token.Id = TkLparen then
   begin
     SkipToken(TkLparen);
     Enum.Size := 0;
@@ -1060,14 +1083,14 @@ begin
       Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
-    until LxToken.Id = TkRparen;
+    until Lexer.Token.Id = TkRparen;
     Typ := EmptyType();
     Typ.Cls := TtcEnum;
     Typ.EnumIndex := AddEnum(Enum);
     TypeIndex := AddType(Typ, Scope);
     SkipToken(TkRparen)
   end
-  else if LxToken.Id = TkRecord then
+  else if Lexer.Token.Id = TkRecord then
   begin
     SkipToken(TkRecord);
     Rec.Size := 0;
@@ -1083,13 +1106,13 @@ begin
       Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon);
-    until LxToken.Id = TkEnd;
+    until Lexer.Token.Id = TkEnd;
     Typ := TypeOfClass(TtcRecord);
     Typ.RecordIndex := AddRecord(Rec);
     TypeIndex := AddType(Typ, Scope);
     SkipToken(TkEnd)
   end
-  else if LxToken.Id = TkArray then
+  else if Lexer.Token.Id = TkArray then
   begin
     SkipToken(TkArray);
     WantTokenAndRead(TkLbracket);
@@ -1114,25 +1137,25 @@ end;
 
 procedure OutBegin;
 begin
-  writeln(CpOutput, '{')
+  writeln(Codegen.Output, '{')
 end;
 
 procedure OutEnd;
 begin
-  writeln(CpOutput, '}')
+  writeln(Codegen.Output, '}')
 end;
 
 procedure OutEnumValues(Pos : TPsEnumIndex);
 var 
   PosInEnum : integer;
 begin
-  write(CpOutput, 'const char* EnumValues', Pos, '[] = { ');
+  write(Codegen.Output, 'const char* EnumValues', Pos, '[] = { ');
   for PosInEnum := 1 to Defs.Enums[Pos].Size do
   begin
-    if PosInEnum <> 1 then write(CpOutput, ', ');
-    write(CpOutput, '"', Defs.Enums[Pos].Values[PosInEnum], '"')
+    if PosInEnum <> 1 then write(Codegen.Output, ', ');
+    write(Codegen.Output, '"', Defs.Enums[Pos].Values[PosInEnum], '"')
   end;
-  writeln(CpOutput, ' };')
+  writeln(Codegen.Output, ' };')
 end;
 
 procedure OutEnumValuesInScope(Scope : TPsScope);
@@ -1164,42 +1187,42 @@ var
 begin
   if TypeIndex <> 0 then
     Typ := Defs.Types[TypeIndex];
-  if TypeIndex = 0 then write(CpOutput, 'void ', Name)
-  else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then write(CpOutput, Typ.Name,
-                                                              ' ', Name)
-  else if Typ.Cls = TtcBoolean then write(CpOutput, 'PBoolean ', Name)
-  else if Typ.Cls = TtcInteger then write(CpOutput, 'int ', Name)
-  else if Typ.Cls = TtcChar then write(CpOutput, 'char ', Name)
-  else if Typ.Cls = TtcString then write(CpOutput, 'STRING ', Name)
-  else if Typ.Cls = TtcText then write(CpOutput, 'PFile ', Name)
+  if TypeIndex = 0 then write(Codegen.Output, 'void ', Name)
+  else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then
+         write(Codegen.Output, Typ.Name, ' ', Name)
+  else if Typ.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean ', Name)
+  else if Typ.Cls = TtcInteger then write(Codegen.Output, 'int ', Name)
+  else if Typ.Cls = TtcChar then write(Codegen.Output, 'char ', Name)
+  else if Typ.Cls = TtcString then write(Codegen.Output, 'STRING ', Name)
+  else if Typ.Cls = TtcText then write(Codegen.Output, 'PFile ', Name)
   else if Typ.Cls = TtcEnum then
   begin
     Enum := Defs.Enums[Typ.EnumIndex];
-    write(CpOutput, 'enum { ');
+    write(Codegen.Output, 'enum { ');
     for Pos := 1 to Enum.Size do
     begin
       if Pos > 1 then
-        write(CpOutput, ', ');
-      write(CpOutput, Enum.Values[Pos])
+        write(Codegen.Output, ', ');
+      write(Codegen.Output, Enum.Values[Pos])
     end;
-    write(CpOutput, '} ', Name)
+    write(Codegen.Output, '} ', Name)
   end
   else if Typ.Cls = TtcRecord then
   begin
     Rec := Defs.Records[Typ.RecordIndex];
-    write(CpOutput, 'struct { ');
+    write(Codegen.Output, 'struct { ');
     for Pos := 1 to Rec.Size do
     begin
       OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
-      write(CpOutput, '; ')
+      write(Codegen.Output, '; ')
     end;
-    write(CpOutput, '} ', Name)
+    write(Codegen.Output, '} ', Name)
   end
   else if Typ.Cls = TtcArray then
   begin
     Arr := Defs.Arrays[Typ.ArrayIndex];
     OutNameAndType(Name, Arr.TypeIndex);
-    write(CpOutput, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
+    write(Codegen.Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
   else
   begin
@@ -1219,9 +1242,9 @@ begin
     writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr());
     halt(1)
   end;
-  write(CpOutput, 'typedef ');
+  write(Codegen.Output, 'typedef ');
   OutNameAndType(Name, Defs.Types[TypeIndex].AliasFor);
-  writeln(CpOutput, ';');
+  writeln(Codegen.Output, ';');
 end;
 
 procedure PsTypeDefinitions(Scope : TPsScope);
@@ -1243,7 +1266,7 @@ begin
     TypeIndex := AddType(NewType, Scope);
     WantTokenAndRead(TkSemicolon);
     OutTypeDefinition(TypeIndex);
-  until LxToken.Id <> TkIdentifier;
+  until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesInScope(PreviousScope)
 end;
 
@@ -1253,9 +1276,9 @@ var
 begin
   WantTokenAndRead(TkEquals);
   Constant.Name := Name;
-  if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) or
-     (LxToken.Id = TkNumber) or (LxToken.Id = TkString) then
-    Constant.Replacement := LxToken
+  if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) or
+     (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString) then
+    Constant.Replacement := Lexer.Token
   else
   begin
     writeln(Stderr, 'Expected constant value, found ', LxTokenStr(),
@@ -1344,22 +1367,22 @@ end;
 
 procedure OutConstantValue(Value : string);
 begin
-  write(CpOutput, Value)
+  write(Codegen.Output, Value)
 end;
 
 procedure OutConstantArrayBegin;
 begin
-  write(CpOutput, '{ ')
+  write(Codegen.Output, '{ ')
 end;
 
 procedure OutConstantArraySeparator;
 begin
-  write(CpOutput, ', ')
+  write(Codegen.Output, ', ')
 end;
 
 procedure OutConstantArrayEnd;
 begin
-  write(CpOutput, ' }')
+  write(Codegen.Output, ' }')
 end;
 
 procedure PsConstantValue(TypeIndex : TPsTypeIndex);
@@ -1369,7 +1392,7 @@ begin
   if IsBooleanType(TypeIndex) then
   begin
     WantToken2(TkFalse, TkTrue);
-    Expr := GenBooleanConstant(LxToken.Id = TkTrue);
+    Expr := GenBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken();
     OutConstantValue(Expr.Value)
   end
@@ -1399,11 +1422,11 @@ begin
     WantTokenAndRead(TkLparen);
     TypeIndex := Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].TypeIndex;
     OutConstantArrayBegin();
-    while LxToken.Id <> TkRparen do
+    while Lexer.Token.Id <> TkRparen do
     begin
       PsConstantValue(TypeIndex);
       WantToken2(TkComma, TkRparen);
-      if LxToken.Id = TkComma then OutConstantArraySeparator();
+      if Lexer.Token.Id = TkComma then OutConstantArraySeparator();
       SkipToken(TkComma)
     end;
     OutConstantArrayEnd();
@@ -1426,21 +1449,21 @@ end;
 procedure OutVariableDefinition(VarIndex : TPsVariableIndex);
 begin
   if Defs.Variables[VarIndex].IsConstant then
-    write(CpOutput, 'const ');
+    write(Codegen.Output, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
-  writeln(CpOutput, ';');
+  writeln(Codegen.Output, ';');
 end;
 
 procedure OutConstantDefinitionBegin(VarIndex : TPsVariableIndex);
 begin
-  write(CpOutput, 'const ');
+  write(Codegen.Output, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
-  write(CpOutput, ' = ');
+  write(Codegen.Output, ' = ');
 end;
 
 procedure OutConstantDefinitionEnd;
 begin
-  writeln(CpOutput, ';')
+  writeln(Codegen.Output, ';')
 end;
 
 procedure PsTypedConstant(Name : string; Scope : TPsScope);
@@ -1464,12 +1487,12 @@ begin
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
     WantToken2(TkEquals, TkColon);
-    if LxToken.Id = TkEquals then
+    if Lexer.Token.Id = TkEquals then
       PsConstant(Name, Scope)
     else
       PsTypedConstant(Name, Scope);
     WantTokenAndRead(TkSemicolon)
-  until LxToken.Id <> TkIdentifier;
+  until Lexer.Token.Id <> TkIdentifier;
 end;
 
 procedure PsVarDefinitions(Scope : TPsScope);
@@ -1487,7 +1510,7 @@ begin
     WantTokenAndRead(TkSemicolon);
     OutVariableDefinition(AddVariable(MakeVariable(Name, TypeIndex, false),
     Scope));
-  until LxToken.Id <> TkIdentifier;
+  until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesInScope(PreviousScope)
 end;
 
@@ -1496,20 +1519,20 @@ var
   Pos : integer;
 begin
   OutNameAndType(Def.Name, Def.ReturnTypeIndex);
-  write(CpOutput, '(');
+  write(Codegen.Output, '(');
   for Pos := 1 to Def.ArgCount do
   begin
     OutVariableDeclaration(def.Args[Pos]);
     if Pos <> Def.ArgCount then
-      write(CpOutput, ', ')
+      write(Codegen.Output, ', ')
   end;
-  write(CpOutput, ')')
+  write(Codegen.Output, ')')
 end;
 
 procedure OutFunctionDeclaration(FnIndex : TPsFunctionIndex);
 begin
   OutFunctionPrototype(Defs.Functions[FnIndex]);
-  writeln(CpOutput, ';')
+  writeln(Codegen.Output, ';')
 end;
 
 procedure OutFunctionDefinition(FnIndex : TPsFunctionIndex);
@@ -1518,20 +1541,20 @@ var
 begin
   Fun := Defs.Functions[FnIndex];
   OutFunctionPrototype(Fun);
-  writeln(CpOutput, ' {');
+  writeln(Codegen.Output, ' {');
   if Fun.ReturnTypeIndex <> 0 then
   begin
     OutNameAndType(OutReturnVariableName(Fun.Name), Fun.ReturnTypeIndex);
-    writeln(CpOutput, ';')
+    writeln(Codegen.Output, ';')
   end
 end;
 
 procedure OutFunctionEnd(FnIndex : TPsFunctionIndex);
 begin
   if Defs.Functions[FnIndex].ReturnTypeIndex <> 0 then
-    writeln(CpOutput, 'return ',
+    writeln(Codegen.Output, 'return ',
             OutReturnVariableName(Defs.Functions[FnIndex].Name), ';');
-  writeln(CpOutput, '}')
+  writeln(Codegen.Output, '}')
 end;
 
 procedure PsStatement;
@@ -1552,7 +1575,7 @@ procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
 var 
   PreviousScope : TPsScope;
 begin
-  if LxToken.Id = TkForward then
+  if Lexer.Token.Id = TkForward then
   begin
     SkipToken(TkForward);
     WantTokenAndRead(TkSemicolon);
@@ -1567,7 +1590,7 @@ begin
     OutEnumValuesInScope(PreviousScope);
     PsDefinitions(PreviousScope);
     WantTokenAndRead(TkBegin);
-    while LxToken.Id <> TkEnd do
+    while Lexer.Token.Id <> TkEnd do
     begin
       PsStatement();
       WantToken2(TkSemicolon, TkEnd);
@@ -1586,13 +1609,13 @@ var
   Def : TPsFunction;
 begin
   WantToken2(TkFunction, TkProcedure);
-  IsProcedure := LxToken.Id = TkProcedure;
+  IsProcedure := Lexer.Token.Id = TkProcedure;
   ReadToken();
   Def.Name := GetTokenValueAndRead(TkIdentifier);
   Def.ArgCount := 0;
   if IsProcedure then WantToken2(TkLparen, TkSemicolon)
   else WantToken2(TkLparen, TkColon);
-  if LxToken.Id = TkLparen then
+  if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
     repeat
@@ -1603,14 +1626,14 @@ begin
                 LxWhereStr());
         halt(1)
       end;
-      Def.Args[Def.ArgCount].IsReference := LxToken.Id = TkVar;
+      Def.Args[Def.ArgCount].IsReference := Lexer.Token.Id = TkVar;
       SkipToken(TkVar);
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
       WantTokenAndRead(TkColon);
       Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
       WantToken2(TkSemicolon, TkRparen);
       SkipToken(TkSemicolon);
-    until LxToken.Id = TkRparen;
+    until Lexer.Token.Id = TkRparen;
     SkipToken(TkRparen)
   end;
   if IsProcedure then
@@ -1630,12 +1653,11 @@ var
 begin
   Done := false;
   repeat
-    if LxToken.Id = TkType then
-      PsTypeDefinitions(Scope)
-    else if LxToken.Id = TkConst then PsConstDefinitions(Scope)
-    else if LxToken.Id = TkVar then PsVarDefinitions(Scope)
-    else if (LxToken.Id = TkProcedure) or (LxToken.Id = TkFunction) then
-           PsFunctionDefinition()
+    if Lexer.Token.Id = TkType then PsTypeDefinitions(Scope)
+    else if Lexer.Token.Id = TkConst then PsConstDefinitions(Scope)
+    else if Lexer.Token.Id = TkVar then PsVarDefinitions(Scope)
+    else if (Lexer.Token.Id = TkProcedure)
+            or (Lexer.Token.Id = TkFunction) then PsFunctionDefinition()
     else
       Done := true;
   until Done;
@@ -1643,22 +1665,22 @@ end;
 
 procedure OutProgramHeading(Name : string);
 begin
-  writeln(CpOutput, '/* Program: ', Name, ' */');
-  writeln(CpOutput, '#include "pascual.h"')
+  writeln(Codegen.Output, '/* Program: ', Name, ' */');
+  writeln(Codegen.Output, '#include "pascual.h"')
 end;
 
 procedure PsProgramHeading;
 begin
   WantTokenAndRead(TkProgram);
   OutProgramHeading(GetTokenValueAndRead(TkIdentifier));
-  if LxToken.Id = TkLparen then
+  if Lexer.Token.Id = TkLparen then
   begin
     repeat
       ReadToken();
       WantToken2(TkIdentifier, TkRparen);
       SkipToken(TkIdentifier);
       WantToken2(TkComma, TkRparen)
-    until LxToken.Id = TkRparen;
+    until Lexer.Token.Id = TkRparen;
     SkipToken(TkRparen);
   end;
   WantTokenAndRead(TkSemicolon);
@@ -1958,13 +1980,13 @@ end;
 
 procedure OutRead(Src : string; OutVar : TPsExpression);
 begin
-  writeln(CpOutput, 'read_', ShortTypeName(OutVar.TypeIndex), '(', Src,
-  ', &', OutVar.Value, ');')
+  writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(',
+  Src, ', &', OutVar.Value, ');')
 end;
 
 procedure OutReadln(Src : string);
 begin
-  writeln(CpOutput, 'readln(', Src, ');')
+  writeln(Codegen.Output, 'readln(', Src, ');')
 end;
 
 procedure PsRead(Id : TPsIdentifier);
@@ -1977,7 +1999,7 @@ begin
   OutBegin();
   Src := 'INPUT';
   WantTokenAndRead(TkLparen);
-  if LxToken.Id <> TkRparen then
+  if Lexer.Token.Id <> TkRparen then
   begin
     OutVar := PsExpression();
     if IsVariableExpression(OutVar) and IsTextType(OutVar.TypeIndex) then
@@ -1994,7 +2016,7 @@ begin
     end;
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma);
-    while LxToken.Id <> TkRparen do
+    while Lexer.Token.Id <> TkRparen do
     begin
       OutVar := PsExpression();
       if not IsVariableExpression(OutVar)
@@ -2017,16 +2039,16 @@ end;
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(CpOutput, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
+    writeln(Codegen.Output, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(CpOutput, 'write_', ShortTypeName(Expr.TypeIndex),
+    writeln(Codegen.Output, 'write_', ShortTypeName(Expr.TypeIndex),
     '(', Dst, ', ', Expr.Value, ');')
 end;
 
 procedure OutWriteln(Src : string);
 begin
-  writeln(CpOutput, 'writeln(', Src, ');')
+  writeln(Codegen.Output, 'writeln(', Src, ');')
 end;
 
 procedure PsWrite(Id : TPsIdentifier);
@@ -2039,7 +2061,7 @@ begin
   OutBegin();
   Dst := 'OUTPUT';
   WantTokenAndRead(TkLparen);
-  if LxToken.Id <> TkRparen then
+  if Lexer.Token.Id <> TkRparen then
   begin
     Expr := PsExpression();
     if IsVariableExpression(Expr) and IsTextType(Expr.TypeIndex) then
@@ -2048,7 +2070,7 @@ begin
       OutWrite(Dst, Expr);
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma);
-    while LxToken.Id <> TkRParen do
+    while Lexer.Token.Id <> TkRParen do
     begin
       OutWrite(Dst, PsExpression());
       WantToken2(TkComma, TkRParen);
@@ -2064,10 +2086,10 @@ end;
 procedure OutStr(Dst : string; Expr : TPsExpression);
 begin
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(CpOutput, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
+    writeln(Codegen.Output, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
-    writeln(CpOutput, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
+    writeln(Codegen.Output, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
     '(', Expr.Value, ');')
 end;
 
@@ -2214,9 +2236,9 @@ begin
     end;
   end;
   repeat
-    if LxToken.Id = TkDot then Expr := PsFieldAccess(Expr)
-    else if LxToken.Id = TkLbracket then Expr := PsArrayAccess(Expr)
-    else if LxToken.Id = TkLparen then Expr := PsFunctionCall(Expr)
+    if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
+    else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
+    else if Lexer.Token.Id = TkLparen then Expr := PsFunctionCall(Expr)
     else Done := true
   until Done;
   PsVariableOrFunctionCall := Expr
@@ -2226,23 +2248,23 @@ function PsFactor : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  if (LxToken.Id = TkFalse) or (LxToken.Id = TkTrue) then
+  if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
   begin
-    Expr := GenBooleanConstant(LxToken.Id = TkTrue);
+    Expr := GenBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken()
   end
-  else if LxToken.Id = TkString then
+  else if Lexer.Token.Id = TkString then
          Expr := GenStringConstant(GetTokenValueAndRead(TkString))
-  else if LxToken.Id = TkNumber then
+  else if Lexer.Token.Id = TkNumber then
          Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber))
-  else if LxToken.Id = TkIdentifier then Expr := PsVariableOrFunctionCall()
-  else if LxToken.Id = TkLparen then
+  else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall()
+  else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
     Expr := GenParens(PsExpression());
     WantTokenAndRead(TkRparen)
   end
-  else if LxToken.Id = TkNot then
+  else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
     Expr := UnaryExpression(TkNot, PsFactor());
@@ -2262,9 +2284,9 @@ var
   Expr : TPsExpression;
 begin
   Expr := PsFactor();
-  while IsOpMultipying(LxToken) do
+  while IsOpMultipying(Lexer.Token) do
   begin
-    Op := LxToken.Id;
+    Op := Lexer.Token.Id;
     ReadToken();
     Expr := BinaryExpression(Expr, Op, PsFactor())
   end;
@@ -2277,9 +2299,9 @@ var
   Expr : TPsExpression;
 begin
   Expr := PsTerm();
-  while IsOpAdding(LxToken) do
+  while IsOpAdding(Lexer.Token) do
   begin
-    Op := LxToken.Id;
+    Op := Lexer.Token.Id;
     ReadToken();
     Expr := BinaryExpression(Expr, Op, PsTerm())
   end;
@@ -2292,9 +2314,9 @@ var
   Expr : TPsExpression;
 begin
   Expr := PsSimpleExpression();
-  while IsOpRelational(LxToken) do
+  while IsOpRelational(Lexer.Token) do
   begin
-    Op := LxToken.Id;
+    Op := Lexer.Token.Id;
     ReadToken();
     Expr := BinaryExpression(Expr, Op, PsSimpleExpression())
   end;
@@ -2303,18 +2325,18 @@ end;
 
 procedure OutExpression(Expr : TPsExpression);
 begin
-  write(CpOutput, Expr.Value)
+  write(Codegen.Output, Expr.Value)
 end;
 
 procedure OutAssign(Lhs : TPsExpression; Rhs : TPsExpression);
 begin
-  writeln(CpOutput, Lhs.Value, ' = ', Rhs.Value, ';')
+  writeln(Codegen.Output, Lhs.Value, ' = ', Rhs.Value, ';')
 end;
 
 procedure OutAssignReturnValue(Lhs : TPsExpression; Rhs : TPsExpression);
 begin
-  writeln(CpOutput, 'return_', Defs.Functions[Lhs.FunctionIndex].Name, ' = ',
-          Rhs.Value, ';')
+  writeln(Codegen.Output, 'return_', Defs.Functions[Lhs.FunctionIndex].Name,
+          ' = ', Rhs.Value, ';')
 end;
 
 procedure PsAssign(Lhs : TPsExpression; Rhs : TPsExpression);
@@ -2338,17 +2360,17 @@ end;
 
 procedure OutIf(Expr : TPsExpression);
 begin
-  write(CpOutput, 'if (', Expr.Value, ') ')
+  write(Codegen.Output, 'if (', Expr.Value, ') ')
 end;
 
 procedure OutElse;
 begin
-  write(CpOutput, ' else ')
+  write(Codegen.Output, ' else ')
 end;
 
 procedure OutRepeatBegin;
 begin
-  writeln(CpOutput, 'do {')
+  writeln(Codegen.Output, 'do {')
 end;
 
 procedure OutRepeatEnd(Expr : TPsExpression);
@@ -2359,7 +2381,7 @@ begin
             TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
-  writeln(CpOutput, '} while (!(', Expr.Value, '));')
+  writeln(Codegen.Output, '} while (!(', Expr.Value, '));')
 end;
 
 procedure OutWhileBegin(Expr : TPsExpression);
@@ -2370,7 +2392,7 @@ begin
             TypeName(Expr.TypeIndex), LxWhereStr());
     halt(1)
   end;
-  write(CpOutput, 'while (', Expr.Value, ') ')
+  write(Codegen.Output, 'while (', Expr.Value, ') ')
 end;
 
 procedure OutWhileEnd;
@@ -2385,48 +2407,48 @@ var
 begin
   First := MakeVariable('first', Iter.TypeIndex, false);
   Last := MakeVariable('last', Iter.TypeIndex, false);
-  writeln(CpOutput, '{');
+  writeln(Codegen.Output, '{');
   OutVariableDeclaration(First);
-  writeln(CpOutput, ' = ', FirstExpr.Value, ';');
+  writeln(Codegen.Output, ' = ', FirstExpr.Value, ';');
   OutVariableDeclaration(Last);
-  writeln(CpOutput, ' = ', LastExpr.Value, ';');
-  write(CpOutput, 'if (first ');
+  writeln(Codegen.Output, ' = ', LastExpr.Value, ';');
+  write(Codegen.Output, 'if (first ');
   if Ascending then
-    write(CpOutput, '<=')
+    write(Codegen.Output, '<=')
   else
-    write(CpOutput, '=>');
-  writeln(CpOutput, ' last) {');
-  writeln(CpOutput, Iter.Value, ' = first;');
-  writeln(CpOutput, 'while (1) {');
+    write(Codegen.Output, '=>');
+  writeln(Codegen.Output, ' last) {');
+  writeln(Codegen.Output, Iter.Value, ' = first;');
+  writeln(Codegen.Output, 'while (1) {');
 end;
 
 procedure OutForEnd(Iter : TPsExpression; Ascending : boolean);
 begin
-  writeln(CpOutput, 'if (', Iter.Value, ' == last) break;');
+  writeln(Codegen.Output, 'if (', Iter.Value, ' == last) break;');
   if Ascending then
-    writeln(CpOutput, '++', Iter.Value, ';')
+    writeln(Codegen.Output, '++', Iter.Value, ';')
   else
-    write(CpOutput, '--', Iter.Value, ';');
-  writeln(CpOutput, '}');
-  writeln(CpOutput, '}');
-  writeln(CpOutput, '}');
+    write(Codegen.Output, '--', Iter.Value, ';');
+  writeln(Codegen.Output, '}');
+  writeln(Codegen.Output, '}');
+  writeln(Codegen.Output, '}');
 end;
 
 procedure OutProcedureCall(Expr : TPsExpression);
 begin
-  writeln(CpOutput, Expr.Value, ';')
+  writeln(Codegen.Output, Expr.Value, ';')
 end;
 
 procedure OutEmptyStatement;
 begin
-  writeln(CpOutput, ';')
+  writeln(Codegen.Output, ';')
 end;
 
 procedure PsStatementSequence;
 begin
   OutBegin();
   SkipToken(TkBegin);
-  while LxToken.Id <> TkEnd do
+  while Lexer.Token.Id <> TkEnd do
   begin
     PsStatement();
     WantToken2(TkSemicolon, TkEnd);
@@ -2441,7 +2463,7 @@ var
   Lhs : TPsExpression;
 begin
   Lhs := PsExpression();
-  if LxToken.Id = TkAssign then
+  if Lexer.Token.Id = TkAssign then
   begin
     WantTokenAndRead(TkAssign);
     PsAssign(Lhs, PsExpression());
@@ -2455,11 +2477,11 @@ begin
   WantTokenAndRead(TkIf);
   OutIf(PsExpression());
   WantTokenAndRead(TkThen);
-  if LxToken.Id = TkElse then
+  if Lexer.Token.Id = TkElse then
     OutEmptyStatement()
   else
     PsStatement();
-  if LxToken.Id = TkElse then
+  if Lexer.Token.Id = TkElse then
   begin
     WantTokenAndRead(TkElse);
     OutElse();
@@ -2471,7 +2493,7 @@ procedure PsRepeatStatement;
 begin
   WantTokenAndRead(TkRepeat);
   OutRepeatBegin();
-  while LxToken.Id <> TkUntil do
+  while Lexer.Token.Id <> TkUntil do
   begin
     PsStatement();
     WantToken2(TkSemicolon, TkUntil);
@@ -2507,7 +2529,7 @@ begin
   WantTokenAndRead(TkAssign);
   First := PsExpression();
   WantToken2(TkTo, TkDownto);
-  Ascending := LxToken.Id = TkTo;
+  Ascending := Lexer.Token.Id = TkTo;
   ReadToken();
   Last := PsExpression();
   WantTokenAndRead(TkDo);
@@ -2518,13 +2540,13 @@ end;
 
 procedure PsStatement;
 begin
-  if LxToken.Id = TkSemicolon then OutEmptyStatement()
-  else if LxToken.Id = TkBegin then PsStatementSequence()
-  else if LxToken.Id = TkIdentifier then PsIdentifierStatement()
-  else if LxToken.Id = TkIf then PsIfStatement()
-  else if LxToken.Id = TkRepeat then PsRepeatStatement()
-  else if LxToken.Id = TkWhile then PsWhileStatement()
-  else if LxToken.Id = TkFor then PsForStatement()
+  if Lexer.Token.Id = TkSemicolon then OutEmptyStatement()
+  else if Lexer.Token.Id = TkBegin then PsStatementSequence()
+  else if Lexer.Token.Id = TkIdentifier then PsIdentifierStatement()
+  else if Lexer.Token.Id = TkIf then PsIfStatement()
+  else if Lexer.Token.Id = TkRepeat then PsRepeatStatement()
+  else if Lexer.Token.Id = TkWhile then PsWhileStatement()
+  else if Lexer.Token.Id = TkFor then PsForStatement()
   else
   begin
     writeln(StdErr, 'Unexpected token ', LxTokenStr(), LxWhereStr());
@@ -2534,12 +2556,12 @@ end;
 
 procedure OutProgramBegin;
 begin
-  writeln(CpOutput, 'void pascual_main() {');
+  writeln(Codegen.Output, 'void pascual_main() {');
 end;
 
 procedure OutProgramEnd;
 begin
-  writeln(CpOutput, '}')
+  writeln(Codegen.Output, '}')
 end;
 
 procedure PsProgramBlock;
@@ -2547,7 +2569,7 @@ begin
   PsDefinitions(GlobalScope);
   WantTokenAndRead(TkBegin);
   OutProgramBegin();
-  while LxToken.Id <> TkEnd do
+  while Lexer.Token.Id <> TkEnd do
   begin
     PsStatement();
     WantToken2(TkSemicolon, TkEnd);
@@ -2559,8 +2581,8 @@ end;
 
 procedure ParseProgram;
 begin
-  LxPos.Row := 0;
-  LxPos.Col := 0;
+  Lexer.Pos.Row := 0;
+  Lexer.Pos.Col := 0;
   StartGlobalScope();
   ReadToken();
   PsProgramHeading();
@@ -2576,23 +2598,100 @@ var
 begin
   repeat
     LxReadToken();
-    if LxToken.Id = TkIdentifier then
+    if Lexer.Token.Id = TkIdentifier then
     begin
-      ConstIndex := FindConstant(LxToken.Value);
+      ConstIndex := FindConstant(Lexer.Token.Value);
       if ConstIndex <> 0 then
       begin
-        TokenPos := LxToken.Pos;
-        LxToken := Defs.Constants[ConstIndex].Replacement;
-        LxToken.Pos := TokenPos
+        TokenPos := Lexer.Token.Pos;
+        Lexer.Token := Defs.Constants[ConstIndex].Replacement;
+        Lexer.Token.Pos := TokenPos
       end
     end
-  until LxToken.Id <> TkComment
+  until Lexer.Token.Id <> TkComment
+end;
+
+procedure Usage(Msg : string);
+begin
+  if Msg <> '' then writeln(Msg);
+  writeln(ParamStr(0), ' input [-o output]');
+  halt(0)
+end;
+
+function ReplaceExtension(Str : string; Old : string; New : string) : string;
+var 
+  BaseLen : integer;
+  Pos : integer;
+  Matches : boolean;
+begin
+  ReplaceExtension := '';
+  BaseLen := Length(Str) - Length(Old);
+  if BaseLen > 0 then
+  begin
+    Matches := true;
+    for Pos := 1 to Length(Old) do
+      Matches := Matches and (UpCase(Str[Pos + BaseLen]) = UpCase(Old[Pos]));
+    if Matches then
+      ReplaceExtension := Copy(Str, 1, BaseLen) + New
+  end
+end;
+
+procedure ParseCmdline;
+var 
+  Pos : integer;
+  InputFile : string;
+  OutputFile : string;
+  Flag : (FlagNone, FlagOutput);
+  Param : string;
+begin
+  InputFile := '';
+  OutputFile := '';
+  Flag := FlagNone;
+
+  for Pos := 1 to ParamCount() do
+  begin
+    Param := ParamStr(Pos);
+    if Param[1] = '-' then
+    begin
+      if Param = '-o' then Flag := FlagOutput
+      else if Param = '-h' then Usage('')
+      else Usage('Unknown option: ' + Param)
+    end
+    else if Flag = FlagOutput then
+    begin
+      if OutputFile <> '' then Usage('Output file must be specified only once')
+      else OutputFile := Param;
+      Flag := FlagNone
+    end
+    else
+    begin
+      if InputFile <> '' then Usage('Input file must be specified only once')
+      else InputFile := Param
+    end
+  end;
+
+  { if InputFile = '' then Usage('Input file must be specified'); }
+  if OutputFile = '' then
+    OutputFile := ReplaceExtension(InputFile, '.pas', '.c');
+  { if OutputFile = '' then Usage('Output file must be specified'); }
+
+  if InputFile = '' then Lexer.Input := Input
+  else
+  begin
+    Assign(Lexer.Input, InputFile);
+    Reset(Lexer.Input)
+  end;
+  if OutputFile = '' then Codegen.Output := Output
+  else
+  begin
+    Assign(Codegen.Output, OutputFile);
+    Rewrite(Codegen.Output)
+  end
 end;
 
 begin
-  LxInput := Input;
-  CpOutput := Output;
+  ParseCmdline();
   ParseProgram();
-  Close(LxInput);
-  Close(CpOutput)
+  Close(Lexer.Input);
+  Close(Codegen.Output)
 end.

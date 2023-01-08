@@ -1,22 +1,26 @@
 program textfiles;
 
 var
-  prog : text;
+  infile : text;
+  outfile : text;
 
-procedure outprog(var f : text);
+procedure copyfile(var filein : text; var fileout : text);
 var
   line : string;
 begin
-  while not eof(f) do
+  while not eof(filein) do
   begin
-    readln(f, line);
-    writeln(line)
+    readln(filein, line);
+    writeln(fileout, line)
   end;
-  close(f)
+  close(filein);
+  close(fileout)
 end;
 
 begin
-  assign(prog, 'textfiles.pas');
-  reset(prog);
-  outprog(prog)
+  assign(infile, 'textfiles.pas');
+  reset(infile);
+  assign(outfile, '/tmp/textfiles-copy.pas');
+  rewrite(outfile);
+  copyfile(infile, outfile)
 end.
