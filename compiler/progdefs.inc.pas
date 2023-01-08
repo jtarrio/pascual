@@ -16,13 +16,14 @@ type
   TPsArrayIndex = integer;
   TPsTypeIndex = integer;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
-                  TtcEnum, TtcRecord, TtcArray);
+                  TtcEnum, TtcRecord, TtcArray, TtcPointer);
   TPsType = record
     Name : string;
     Cls : TPsTypeClass;
     EnumIndex : TPsEnumIndex;
     RecordIndex : TPsRecordIndex;
     ArrayIndex : TPsArrayIndex;
+    PointedTypeIndex : TPsTypeIndex;
     AliasFor : TPsTypeIndex;
   end;
   TPsEnumDef = record
@@ -161,6 +162,8 @@ begin
            true);
     DeepTypeName := Ret
   end
+  else if Typ.Cls = TtcPointer then
+    DeepTypeName := '^' + DeepTypeName(Typ.PointedTypeIndex, true)
   else
   begin
     writeln(StdErr, 'Could not get name for type of class ', Typ.Cls, LxWhereStr
@@ -268,6 +271,20 @@ end;
 function IsArrayType(TypeIndex : TPsTypeIndex) : boolean;
 begin
   IsArrayType := TypeHasClass(TypeIndex, TtcArray)
+end;
+
+function PointerType(TypeIndex : TPsTypeIndex) : TPsType;
+var
+  Typ : TPsType;
+begin
+  Typ := TypeOfClass(TtcPointer);
+  Typ.PointedTypeIndex := TypeIndex;
+  PointerType := Typ
+end;
+
+function IsPointerType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsPointerType := TypeHasClass(TypeIndex, TtcPointer)
 end;
 
 function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;

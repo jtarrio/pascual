@@ -114,6 +114,12 @@ begin
     Typ.ArrayIndex := AddArray(Arr);
     TypeIndex := AddType(Typ, Scope)
   end
+  else if Lexer.Token.Id = TkCaret then
+  begin
+    SkipToken(TkCaret);
+    Typ := PointerType(PsTypeDenoter(Scope));
+    TypeIndex := AddType(Typ, Scope)
+  end
   else
   begin
     writeln(StdErr, 'Wanted type definition, found ', LxTokenStr, LxWhereStr);
@@ -423,6 +429,20 @@ begin
   PsFunctionCall := Fn
 end;
 
+function PsPointerDeref(Ptr : TPsExpression) : TPsExpression;
+begin
+  Ptr := Evaluate(Ptr);
+  if (Ptr.Cls <> TecValue) or not IsPointerType(Ptr.TypeIndex) then
+  begin
+    writeln(StdErr, 'Not a pointer', LxWhereStr);
+    halt(1)
+  end;
+  WantTokenAndRead(TkCaret);
+  Ptr.Value := '*(' + Ptr.Value + ')';
+  Ptr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
+  PsPointerDeref := Ptr
+end;
+
 procedure PsRead(Id : TPsIdentifier);
 var 
   Src : string;
@@ -535,6 +555,36 @@ begin
   OutStr(Dest.Value, Expr)
 end;
 
+procedure PsNew;
+var
+  Dest : TPsExpression;
+begin
+  WantTokenAndRead(TkLparen);
+  Dest := PsExpression;
+  WantTokenAndRead(TkRparen);
+  if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
+  begin
+    writeln(StdErr, 'Argument is not a pointer', LxWhereStr);
+    halt(1)
+  end;
+  OutNew(Dest)
+end;
+
+procedure PsDispose;
+var
+  Dest : TPsExpression;
+begin
+  WantTokenAndRead(TkLparen);
+  Dest := PsExpression;
+  WantTokenAndRead(TkRparen);
+  if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
+  begin
+    writeln(StdErr, 'Argument is not a pointer', LxWhereStr);
+    halt(1)
+  end;
+  OutDispose(Dest)
+end;
+
 function PsArrayAccess(Arr : TPsExpression) : TPsExpression;
 var 
   Idx : TPsExpression;
@@ -633,6 +683,8 @@ begin
     if (Id.Name = 'READ') or (Id.Name = 'READLN') then PsRead(Id)
     else if (Id.Name = 'WRITE') or (Id.Name = 'WRITELN') then PsWrite(Id)
     else if Id.Name = 'STR' then PsStr
+    else if Id.Name = 'NEW' then PsNew
+    else if Id.Name = 'DISPOSE' then PsDispose
     else
     begin
       writeln(StdErr, 'Unknown variable or function: ', Id.Name, LxWhereStr);
@@ -643,6 +695,7 @@ begin
     if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkLparen then Expr := PsFunctionCall(Expr)
+    else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
     else Done := true
   until Done;
   PsVariableOrFunctionCall := Expr

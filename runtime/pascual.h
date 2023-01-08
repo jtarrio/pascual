@@ -2,6 +2,7 @@
 #define __PASCUAL_H
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef EOF
 #undef EOF

@@ -92,6 +92,8 @@ begin
     OutNameAndType(Name, Arr.TypeIndex);
     write(Codegen.Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
+  else if Typ.Cls = TtcPointer then
+         OutNameAndType('*' + Name, Typ.PointedTypeIndex)
   else
   begin
     writeln(StdErr, 'Error writing name and type: ', Name, ', ',
@@ -290,6 +292,18 @@ begin
   else
     writeln(Codegen.Output, Dst, ' = to_str_', ShortTypeName(Expr.TypeIndex),
     '(', Expr.Value, ');')
+end;
+
+procedure OutNew(Dst : TPsExpression);
+begin
+  write(Codegen.Output, Dst.Value, ' = malloc(sizeof(');
+  OutNameAndType('', Defs.Types[Dst.TypeIndex].PointedTypeIndex);
+  writeln(Codegen.Output, '));')
+end;
+
+procedure OutDispose(Dst : TPsExpression);
+begin
+  writeln(Codegen.Output, 'free(', Dst.Value, ');')
 end;
 
 procedure OutExpression(Expr : TPsExpression);

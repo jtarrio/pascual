@@ -2871,9 +2871,7 @@ write_s(OUTPUT, PARAMSTR(0));
 write_s(OUTPUT, str_make(24, " input.pas [-o output.c]"));
 writeln(OUTPUT);
 }
-{
 writeln(OUTPUT);
-}
 {
 write_s(OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "));
 write_s(OUTPUT, str_make(26, "stdin/stdout will be used."));
