@@ -1,18 +1,14 @@
-all: pascual libpascual.a
+RTDIR=../runtime
 
-bootstrap: stage0.c libpascual.a
-	gcc -o bootstrap -I. -L. stage0.c -lpascual
+all: pascual
 
-pascual: bootstrap compiler.pas lexer.inc.pas parser.inc.pas expression.defs.inc.pas expression.inc.pas codegen.defs.inc.pas codegen.inc.pas globals.inc.pas libpascual.a
-	PC=./bootstrap ./pascualc compiler.pas -o pascual
+bootstrap: stage0.c
+	gcc -o bootstrap -I$(RTDIR) -L$(RTDIR) stage0.c -lpascual
 
-pascual.o: pascual.h pascual.c
-	gcc -c $(COPTS) -o pascual.o pascual.c
-
-libpascual.a: pascual.o
-	ar rcs libpascual.a pascual.o
+pascual: bootstrap compiler.pas lexer.inc.pas parser.inc.pas expression.defs.inc.pas expression.inc.pas codegen.defs.inc.pas codegen.inc.pas globals.inc.pas
+	PC=./bootstrap PINCDIR=$(RTDIR) PLIBDIR=$(RTDIR) ./pascualc compiler.pas -o pascual
 
 .PHONY: clean
 
 clean:
-	rm -f *~ *.o bootstrap pascual runtime.o libpascual.a
+	rm -f *~ *.o bootstrap pascual
