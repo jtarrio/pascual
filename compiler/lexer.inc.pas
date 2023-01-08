@@ -278,3 +278,34 @@ begin
     end
   end
 end;
+
+procedure LxReset;
+begin
+  Lexer.Line := '';
+  Lexer.Input.Src := Input;
+  Lexer.Input.Name := '-';
+  Lexer.Input.Pos.Row := 0;
+  Lexer.Input.Pos.Col := 0;
+  Lexer.Prev.Exists := false;
+end;
+
+procedure LxOpen(Filename : string);
+begin
+  Lexer.Input.Name := Filename;
+  Assign(Lexer.Input.Src, Lexer.Input.Name);
+  Reset(Lexer.Input.Src)
+end;
+
+procedure LxInclude(Filename : string);
+begin
+  if Lexer.Prev.Exists then
+  begin
+    writeln(StdErr, 'Include files cannot be recursive', LxWhereStr());
+    halt(1)
+  end;
+  Lexer.Prev.Exists := true;
+  Lexer.Prev.Input := Lexer.Input;
+  Lexer.Input.Pos.Row := 0;
+  Lexer.Input.Pos.Col := 0;
+  LxOpen(Filename);
+end;
