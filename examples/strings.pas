@@ -98,9 +98,9 @@ begin
 end;
 
 begin
-  Literals();
-  Variables();
-  Manipulation();
-  Arguments();
-  Conversion()
+  Literals;
+  Variables;
+  Manipulation;
+  Arguments;
+  Conversion
 end.
