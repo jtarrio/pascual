@@ -1,7 +1,7 @@
 program compiler;
 
 const 
-  MaxTypes = 64;
+  MaxTypes = 128;
   MaxEnums = 16;
   MaxEnumValues = 128;
   MaxRecords = 32;
@@ -32,18 +32,19 @@ type
     Value : string;
     Pos : TLxPos
   end;
+  TLxInputFile = record
+    Src : text;
+    Name : string;
+    Pos : TLxPos
+  end;
 var 
   Lexer : record
     Line : string;
     Token : TLxToken;
-    Pos : TLxPos;
-    Input : text;
-    Filename : string;
+    Input : TLxInputFile;
     Prev : record
       Exists : boolean;
-      Input : text;
-      Filename : string;
-      Pos : TLxPos
+      Input : TLxInputFile
     end
   end;
   Codegen : record
@@ -57,7 +58,7 @@ var
 begin
   Str(Pos.Row, Row);
   Str(Pos.Col, Col);
-  LxPosStr := 'row ' + Row + ' col ' + Col + ' in ' + Lexer.Filename;
+  LxPosStr := 'row ' + Row + ' col ' + Col + ' in ' + Lexer.Input.Name;
 end;
 
 function LxWhereStr : string;
@@ -92,18 +93,18 @@ end;
 function LxIsTokenWaiting : boolean;
 begin
   repeat
-    while (Length(Lexer.Line) = 0) and not Eof(Lexer.Input) do
+    while (Length(Lexer.Line) = 0) and not Eof(Lexer.Input.Src) do
     begin
-      Lexer.Pos.Row := Lexer.Pos.Row + 1;
-      Lexer.Pos.Col := 1;
-      readln(Lexer.Input, Lexer.Line)
+      Lexer.Input.Pos.Row := Lexer.Input.Pos.Row + 1;
+      Lexer.Input.Pos.Col := 1;
+      readln(Lexer.Input.Src, Lexer.Line)
     end;
     while (Length(Lexer.Line) > 0) and (Lexer.Line[1] = ' ') do
     begin
-      Lexer.Pos.Col := Lexer.Pos.Col + 1;
+      Lexer.Input.Pos.Col := Lexer.Input.Pos.Col + 1;
       delete(Lexer.Line, 1, 1)
     end;
-  until Eof(Lexer.Input) or (Length(Lexer.Line) > 0);
+  until Eof(Lexer.Input.Src) or (Length(Lexer.Line) > 0);
   LxIsTokenWaiting := Length(Lexer.Line) > 0
 end;
 
@@ -111,9 +112,9 @@ procedure LxGetSymbol(Id : TLxTokenId; Length : integer);
 begin
   Lexer.Token.Id := Id;
   Lexer.Token.Value := copy(Lexer.Line, 1, Length);
-  Lexer.Token.Pos := Lexer.Pos;
+  Lexer.Token.Pos := Lexer.Input.Pos;
   delete(Lexer.Line, 1, Length);
-  Lexer.Pos.Col := Lexer.Pos.Col + Length
+  Lexer.Input.Pos.Col := Lexer.Input.Pos.Col + Length
 end;
 
 procedure LxGetIdentifier;
@@ -226,9 +227,9 @@ begin
     while Lexer.Line = '' do
     begin
       Comment := Comment + ' ';
-      readln(Lexer.Input, Lexer.Line);
-      Lexer.Pos.Row := Lexer.Pos.Row + 1;
-      Lexer.Pos.Col := 1
+      readln(Lexer.Input.Src, Lexer.Line);
+      Lexer.Input.Pos.Row := Lexer.Input.Pos.Row + 1;
+      Lexer.Input.Pos.Col := 1
     end;
     if DelimiterLength = 1 then Done := Lexer.Line[1] = '}'
     else Done := (Lexer.Line[1] = '*') and (Lexer.Line[2] = ')');
@@ -236,11 +237,11 @@ begin
     begin
       Comment := Comment + Lexer.Line[1];
       delete(Lexer.Line, 1, 1);
-      Lexer.Pos.Col := Lexer.Pos.Col + 1
+      Lexer.Input.Pos.Col := Lexer.Input.Pos.Col + 1
     end
   until Done;
   delete(Lexer.Line, 1, DelimiterLength);
-  Lexer.Pos.Col := Lexer.Pos.Col + DelimiterLength;
+  Lexer.Input.Pos.Col := Lexer.Input.Pos.Col + DelimiterLength;
   Lexer.Token.Value := Comment
 end;
 
@@ -289,7 +290,7 @@ begin
     else
     begin
       writeln(StdErr, 'Could not parse [', Lexer.Line, '] at ',
-              LxPosStr(Lexer.Pos));
+              LxPosStr(Lexer.Input.Pos));
       halt(1)
     end
   end
@@ -2582,13 +2583,11 @@ begin
     end;
     Lexer.Prev.Exists := true;
     Lexer.Prev.Input := Lexer.Input;
-    Lexer.Prev.Filename := Lexer.Filename;
-    Lexer.Prev.Pos := Lexer.Pos;
-    Lexer.Pos.Row := 0;
-    Lexer.Pos.Col := 0;
-    Lexer.Filename := Copy(Dir, 4, 255);
-    Assign(Lexer.Input, Lexer.Filename);
-    Reset(Lexer.Input)
+    Lexer.Input.Pos.Row := 0;
+    Lexer.Input.Pos.Col := 0;
+    Lexer.Input.Name := Copy(Dir, 4, 255);
+    Assign(Lexer.Input.Src, Lexer.Input.Name);
+    Reset(Lexer.Input.Src)
   end
 end;
 
@@ -2617,7 +2616,6 @@ begin
     if (Lexer.Token.Id = TkEof) and Lexer.Prev.Exists then
     begin
       Lexer.Input := Lexer.Prev.Input;
-      Lexer.Pos := Lexer.Prev.Pos;
       Lexer.Prev.Exists := false;
       Stop := false
     end
@@ -2697,9 +2695,9 @@ begin
 
   if InputFile <> '-' then
   begin
-    Lexer.Filename := InputFile;
-    Assign(Lexer.Input, InputFile);
-    Reset(Lexer.Input)
+    Lexer.Input.Name := InputFile;
+    Assign(Lexer.Input.Src, Lexer.Input.Name);
+    Reset(Lexer.Input.Src)
   end;
   if OutputFile <> '-' then
   begin
@@ -2711,9 +2709,10 @@ end;
 procedure ClearState;
 begin
   Lexer.Line := '';
-  Lexer.Pos.Row := 0;
-  Lexer.Pos.Col := 0;
-  Lexer.Input := Input;
+  Lexer.Input.Src := Input;
+  Lexer.Input.Name := '-';
+  Lexer.Input.Pos.Row := 0;
+  Lexer.Input.Pos.Col := 0;
   Lexer.Prev.Exists := false;
   Codegen.Output := Output
 end;
@@ -2722,6 +2721,6 @@ begin
   ClearState();
   ParseCmdline();
   ParseProgram();
-  Close(Lexer.Input);
+  Close(Lexer.Input.Src);
   Close(Codegen.Output)
 end.
