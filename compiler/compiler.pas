@@ -2614,7 +2614,11 @@ end;
 procedure Usage(Msg : string);
 begin
   if Msg <> '' then writeln(Msg);
-  writeln(ParamStr(0), ' input [-o output]');
+  writeln('Usage:');
+  writeln(ParamStr(0), ' input.pas [-o output.c]');
+  writeln();
+  writeln('If you specify "-" as the input or output file, ',
+          'stdin/stdout will be used.');
   halt(0)
 end;
 
@@ -2651,7 +2655,7 @@ begin
   for Pos := 1 to ParamCount() do
   begin
     Param := ParamStr(Pos);
-    if Param[1] = '-' then
+    if (Param[1] = '-') and (Param <> '-') then
     begin
       if Param = '-o' then Flag := FlagOutput
       else if Param = '-h' then Usage('')
@@ -2670,18 +2674,21 @@ begin
     end
   end;
 
-  { if InputFile = '' then Usage('Input file must be specified'); }
+  if InputFile = '' then Usage('Input file must be specified');
   if OutputFile = '' then
-    OutputFile := ReplaceExtension(InputFile, '.pas', '.c');
-  { if OutputFile = '' then Usage('Output file must be specified'); }
+  begin
+    if InputFile = '-' then OutputFile := '-'
+    else OutputFile := ReplaceExtension(InputFile, '.pas', '.c')
+  end;
+  if OutputFile = '' then Usage('Output file must be specified');
 
-  if InputFile = '' then Lexer.Input := Input
+  if InputFile = '-' then Lexer.Input := Input
   else
   begin
     Assign(Lexer.Input, InputFile);
     Reset(Lexer.Input)
   end;
-  if OutputFile = '' then Codegen.Output := Output
+  if OutputFile = '-' then Codegen.Output := Output
   else
   begin
     Assign(Codegen.Output, OutputFile);
