@@ -4,10 +4,8 @@ typedef enum { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKNUMBER, TKSTRING, TK
 typedef struct { int ROW; int COL; } TLXPOS;
 typedef struct { TLXTOKENID ID; STRING VALUE; TLXPOS POS; } TLXTOKEN;
 const char* EnumValues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKNUMBER", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKFALSE", "TKTRUE", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
-STRING LXLINE;
-TLXTOKEN LXTOKEN;
-TLXPOS LXPOS;
-PFile LXINPUT;
+struct { STRING LINE; TLXTOKEN TOKEN; TLXPOS POS; PFile INPUT; } LEXER;
+struct { PFile OUTPUT; } CODEGEN;
 STRING LXPOSSTR(TLXPOS POS) {
 STRING return_LXPOSSTR;
 STRING ROW;
@@ -19,14 +17,14 @@ return return_LXPOSSTR;
 }
 STRING LXWHERESTR() {
 STRING return_LXWHERESTR;
-return_LXWHERESTR = cat_ss(str_make(6, " near "), LXPOSSTR(LXTOKEN.POS));
+return_LXWHERESTR = cat_ss(str_make(6, " near "), LXPOSSTR(LEXER.TOKEN.POS));
 return return_LXWHERESTR;
 }
 STRING LXTOKENSTR() {
 STRING return_LXTOKENSTR;
 STRING ID;
-ID = to_str_e(LXTOKEN.ID, EnumValues1);
-return_LXTOKENSTR = cat_sc(cat_ss(cat_ss(ID, str_make(2, " [")), LXTOKEN.VALUE), ']');
+ID = to_str_e(LEXER.TOKEN.ID, EnumValues1);
+return_LXTOKENSTR = cat_sc(cat_ss(cat_ss(ID, str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
 return return_LXTOKENSTR;
 }
 PBoolean LXISALPHA(char CHR) {
@@ -47,28 +45,28 @@ return return_LXISALPHANUM;
 PBoolean LXISTOKENWAITING() {
 PBoolean return_LXISTOKENWAITING;
 do {
-while ((LENGTH(LXLINE) == 0) && !EOF(&LXINPUT)) {
-LXPOS.ROW = LXPOS.ROW + 1;
-LXPOS.COL = 1;
+while ((LENGTH(LEXER.LINE) == 0) && !EOF(&LEXER.INPUT)) {
+LEXER.POS.ROW = LEXER.POS.ROW + 1;
+LEXER.POS.COL = 1;
 {
-read_s(LXINPUT, &LXLINE);
-readln(LXINPUT);
+read_s(LEXER.INPUT, &LEXER.LINE);
+readln(LEXER.INPUT);
 }
 }
-while ((LENGTH(LXLINE) > 0) && (cmp_cc(LXLINE.chr[1], ' ') == 0)) {
-LXPOS.COL = LXPOS.COL + 1;
-DELETE(&LXLINE, 1, 1);
+while ((LENGTH(LEXER.LINE) > 0) && (cmp_cc(LEXER.LINE.chr[1], ' ') == 0)) {
+LEXER.POS.COL = LEXER.POS.COL + 1;
+DELETE(&LEXER.LINE, 1, 1);
 }
-} while (!(EOF(&LXINPUT) || (LENGTH(LXLINE) > 0)));
-return_LXISTOKENWAITING = LENGTH(LXLINE) > 0;
+} while (!(EOF(&LEXER.INPUT) || (LENGTH(LEXER.LINE) > 0)));
+return_LXISTOKENWAITING = LENGTH(LEXER.LINE) > 0;
 return return_LXISTOKENWAITING;
 }
 void LXGETSYMBOL(TLXTOKENID ID, int LENGTH) {
-LXTOKEN.ID = ID;
-LXTOKEN.VALUE = COPY(LXLINE, 1, LENGTH);
-LXTOKEN.POS = LXPOS;
-DELETE(&LXLINE, 1, LENGTH);
-LXPOS.COL = LXPOS.COL + LENGTH;
+LEXER.TOKEN.ID = ID;
+LEXER.TOKEN.VALUE = COPY(LEXER.LINE, 1, LENGTH);
+LEXER.TOKEN.POS = LEXER.POS;
+DELETE(&LEXER.LINE, 1, LENGTH);
+LEXER.POS.COL = LEXER.POS.COL + LENGTH;
 }
 void LXGETIDENTIFIER() {
 char CHR;
@@ -76,60 +74,60 @@ int POS;
 PBoolean INTOKEN;
 POS = 0;
 INTOKEN = 1;
-while ((POS < LENGTH(LXLINE)) && INTOKEN) {
-CHR = LXLINE.chr[POS + 1];
+while ((POS < LENGTH(LEXER.LINE)) && INTOKEN) {
+CHR = LEXER.LINE.chr[POS + 1];
 INTOKEN = LXISALPHANUM(CHR);
 if (INTOKEN) POS = POS + 1;
 }
 LXGETSYMBOL(TKIDENTIFIER, POS);
 {
 int first = 1;
-int last = LENGTH(LXTOKEN.VALUE);
+int last = LENGTH(LEXER.TOKEN.VALUE);
 if (first <= last) {
 POS = first;
 while (1) {
-LXTOKEN.VALUE.chr[POS] = UPCASE(LXTOKEN.VALUE.chr[POS]);
+LEXER.TOKEN.VALUE.chr[POS] = UPCASE(LEXER.TOKEN.VALUE.chr[POS]);
 if (POS == last) break;
 ++POS;
 }
 }
 }
-if (cmp_ss(LXTOKEN.VALUE, str_make(3, "AND")) == 0) LXTOKEN.ID = TKAND;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "ARRAY")) == 0) LXTOKEN.ID = TKARRAY;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "BEGIN")) == 0) LXTOKEN.ID = TKBEGIN;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "CASE")) == 0) LXTOKEN.ID = TKCASE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "CONST")) == 0) LXTOKEN.ID = TKCONST;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "DIV")) == 0) LXTOKEN.ID = TKDIV;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "DO")) == 0) LXTOKEN.ID = TKDO;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(6, "DOWNTO")) == 0) LXTOKEN.ID = TKDOWNTO;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "ELSE")) == 0) LXTOKEN.ID = TKELSE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "END")) == 0) LXTOKEN.ID = TKEND;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "FILE")) == 0) LXTOKEN.ID = TKFILE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "FOR")) == 0) LXTOKEN.ID = TKFOR;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(7, "FORWARD")) == 0) LXTOKEN.ID = TKFORWARD;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(8, "FUNCTION")) == 0) LXTOKEN.ID = TKFUNCTION;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "GOTO")) == 0) LXTOKEN.ID = TKGOTO;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "IF")) == 0) LXTOKEN.ID = TKIF;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "IN")) == 0) LXTOKEN.ID = TKIN;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "LABEL")) == 0) LXTOKEN.ID = TKLABEL;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "MOD")) == 0) LXTOKEN.ID = TKMOD;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "NIL")) == 0) LXTOKEN.ID = TKNIL;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "NOT")) == 0) LXTOKEN.ID = TKNOT;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "OF")) == 0) LXTOKEN.ID = TKOF;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "OR")) == 0) LXTOKEN.ID = TKOR;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(6, "PACKED")) == 0) LXTOKEN.ID = TKPACKED;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(9, "PROCEDURE")) == 0) LXTOKEN.ID = TKPROCEDURE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(7, "PROGRAM")) == 0) LXTOKEN.ID = TKPROGRAM;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(6, "RECORD")) == 0) LXTOKEN.ID = TKRECORD;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(6, "REPEAT")) == 0) LXTOKEN.ID = TKREPEAT;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "SET")) == 0) LXTOKEN.ID = TKSET;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "THEN")) == 0) LXTOKEN.ID = TKTHEN;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(2, "TO")) == 0) LXTOKEN.ID = TKTO;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "TYPE")) == 0) LXTOKEN.ID = TKTYPE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "UNTIL")) == 0) LXTOKEN.ID = TKUNTIL;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(3, "VAR")) == 0) LXTOKEN.ID = TKVAR;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(5, "WHILE")) == 0) LXTOKEN.ID = TKWHILE;
- else if (cmp_ss(LXTOKEN.VALUE, str_make(4, "WITH")) == 0) LXTOKEN.ID = TKWITH;
+if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "AND")) == 0) LEXER.TOKEN.ID = TKAND;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "ARRAY")) == 0) LEXER.TOKEN.ID = TKARRAY;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "BEGIN")) == 0) LEXER.TOKEN.ID = TKBEGIN;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "CASE")) == 0) LEXER.TOKEN.ID = TKCASE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "CONST")) == 0) LEXER.TOKEN.ID = TKCONST;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "DIV")) == 0) LEXER.TOKEN.ID = TKDIV;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "DO")) == 0) LEXER.TOKEN.ID = TKDO;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "DOWNTO")) == 0) LEXER.TOKEN.ID = TKDOWNTO;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "ELSE")) == 0) LEXER.TOKEN.ID = TKELSE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "END")) == 0) LEXER.TOKEN.ID = TKEND;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "FILE")) == 0) LEXER.TOKEN.ID = TKFILE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "FOR")) == 0) LEXER.TOKEN.ID = TKFOR;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(7, "FORWARD")) == 0) LEXER.TOKEN.ID = TKFORWARD;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(8, "FUNCTION")) == 0) LEXER.TOKEN.ID = TKFUNCTION;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "GOTO")) == 0) LEXER.TOKEN.ID = TKGOTO;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "IF")) == 0) LEXER.TOKEN.ID = TKIF;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "IN")) == 0) LEXER.TOKEN.ID = TKIN;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "LABEL")) == 0) LEXER.TOKEN.ID = TKLABEL;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "MOD")) == 0) LEXER.TOKEN.ID = TKMOD;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "NIL")) == 0) LEXER.TOKEN.ID = TKNIL;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "NOT")) == 0) LEXER.TOKEN.ID = TKNOT;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "OF")) == 0) LEXER.TOKEN.ID = TKOF;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "OR")) == 0) LEXER.TOKEN.ID = TKOR;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "PACKED")) == 0) LEXER.TOKEN.ID = TKPACKED;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(9, "PROCEDURE")) == 0) LEXER.TOKEN.ID = TKPROCEDURE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(7, "PROGRAM")) == 0) LEXER.TOKEN.ID = TKPROGRAM;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "RECORD")) == 0) LEXER.TOKEN.ID = TKRECORD;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "REPEAT")) == 0) LEXER.TOKEN.ID = TKREPEAT;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "SET")) == 0) LEXER.TOKEN.ID = TKSET;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "THEN")) == 0) LEXER.TOKEN.ID = TKTHEN;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "TO")) == 0) LEXER.TOKEN.ID = TKTO;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "TYPE")) == 0) LEXER.TOKEN.ID = TKTYPE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "UNTIL")) == 0) LEXER.TOKEN.ID = TKUNTIL;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "VAR")) == 0) LEXER.TOKEN.ID = TKVAR;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "WHILE")) == 0) LEXER.TOKEN.ID = TKWHILE;
+ else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "WITH")) == 0) LEXER.TOKEN.ID = TKWITH;
 }
 void LXGETNUMBER() {
 char CHR;
@@ -137,8 +135,8 @@ int POS;
 PBoolean INTOKEN;
 POS = 0;
 INTOKEN = 1;
-while ((POS < LENGTH(LXLINE)) && INTOKEN) {
-CHR = LXLINE.chr[POS + 1];
+while ((POS < LENGTH(LEXER.LINE)) && INTOKEN) {
+CHR = LEXER.LINE.chr[POS + 1];
 INTOKEN = LXISDIGIT(CHR);
 if (INTOKEN) POS = POS + 1;
 }
@@ -152,9 +150,9 @@ POS = 1;
 INSTRING = 1;
 while (INSTRING) {
 POS = POS + 1;
-CHR = LXLINE.chr[POS];
+CHR = LEXER.LINE.chr[POS];
 if (cmp_cc(CHR, '\'') == 0) {
-if ((LENGTH(LXLINE) > POS + 1) && (cmp_cc(LXLINE.chr[POS + 1], '\'') == 0)) POS = POS + 1;
+if ((LENGTH(LEXER.LINE) > POS + 1) && (cmp_cc(LEXER.LINE.chr[POS + 1], '\'') == 0)) POS = POS + 1;
  else INSTRING = 0;
 }
 }
@@ -165,7 +163,7 @@ char CHR;
 PBoolean SHORTCOMMENT;
 char DELIM;
 PBoolean CANEND;
-CHR = LXLINE.chr[1];
+CHR = LEXER.LINE.chr[1];
 SHORTCOMMENT = cmp_cc(CHR, '{') == 0;
 if (SHORTCOMMENT) {
 DELIM = '}';
@@ -185,55 +183,55 @@ writeln(STDERR);
 HALT(1);
 }
 CANEND = SHORTCOMMENT || (cmp_cc(CHR, '*') == 0);
-CHR = LXLINE.chr[1];
-DELETE(&LXLINE, 1, 1);
-LXPOS.COL = LXPOS.COL + 1;
+CHR = LEXER.LINE.chr[1];
+DELETE(&LEXER.LINE, 1, 1);
+LEXER.POS.COL = LEXER.POS.COL + 1;
 } while (!(CANEND && (cmp_cc(CHR, DELIM) == 0)));
-LXTOKEN.VALUE = str_make(0, "");
+LEXER.TOKEN.VALUE = str_make(0, "");
 }
 void LXREADTOKEN() {
 char CHR;
 char NXT;
-LXTOKEN.VALUE = str_make(0, "");
-LXTOKEN.ID = TKUNKNOWN;
-if (!LXISTOKENWAITING()) LXTOKEN.ID = TKEOF;
+LEXER.TOKEN.VALUE = str_make(0, "");
+LEXER.TOKEN.ID = TKUNKNOWN;
+if (!LXISTOKENWAITING()) LEXER.TOKEN.ID = TKEOF;
  else {
-CHR = LXLINE.chr[1];
+CHR = LEXER.LINE.chr[1];
 if (LXISALPHA(CHR)) LXGETIDENTIFIER();
-if ((LXTOKEN.ID == TKUNKNOWN) && LXISDIGIT(CHR)) LXGETNUMBER();
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '\'') == 0)) LXGETSTRING();
-if ((LXTOKEN.ID == TKUNKNOWN) && (LENGTH(LXLINE) > 1)) {
-NXT = LXLINE.chr[2];
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '>') == 0)) LXGETSYMBOL(TKNOTEQUALS, 2);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKLESSOREQUALS, 2);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKMOREOREQUALS, 2);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKASSIGN, 2);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0) && (cmp_cc(NXT, '.') == 0)) LXGETSYMBOL(TKRANGE, 2);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0) && (cmp_cc(NXT, '*') == 0)) LXGETCOMMENT();
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && LXISDIGIT(CHR)) LXGETNUMBER();
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '\'') == 0)) LXGETSTRING();
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (LENGTH(LEXER.LINE) > 1)) {
+NXT = LEXER.LINE.chr[2];
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '>') == 0)) LXGETSYMBOL(TKNOTEQUALS, 2);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKLESSOREQUALS, 2);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKMOREOREQUALS, 2);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKASSIGN, 2);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0) && (cmp_cc(NXT, '.') == 0)) LXGETSYMBOL(TKRANGE, 2);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0) && (cmp_cc(NXT, '*') == 0)) LXGETCOMMENT();
 }
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '+') == 0)) LXGETSYMBOL(TKPLUS, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '-') == 0)) LXGETSYMBOL(TKMINUS, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '*') == 0)) LXGETSYMBOL(TKASTERISK, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '/') == 0)) LXGETSYMBOL(TKSLASH, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '=') == 0)) LXGETSYMBOL(TKEQUALS, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0)) LXGETSYMBOL(TKLESSTHAN, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0)) LXGETSYMBOL(TKMORETHAN, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '[') == 0)) LXGETSYMBOL(TKLBRACKET, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ']') == 0)) LXGETSYMBOL(TKRBRACKET, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0)) LXGETSYMBOL(TKDOT, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ',') == 0)) LXGETSYMBOL(TKCOMMA, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0)) LXGETSYMBOL(TKCOLON, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ';') == 0)) LXGETSYMBOL(TKSEMICOLON, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '^') == 0)) LXGETSYMBOL(TKCARET, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0)) LXGETSYMBOL(TKLPAREN, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ')') == 0)) LXGETSYMBOL(TKRPAREN, 1);
-if ((LXTOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '{') == 0)) LXGETCOMMENT();
-if (LXTOKEN.ID == TKUNKNOWN) {
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '+') == 0)) LXGETSYMBOL(TKPLUS, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '-') == 0)) LXGETSYMBOL(TKMINUS, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '*') == 0)) LXGETSYMBOL(TKASTERISK, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '/') == 0)) LXGETSYMBOL(TKSLASH, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '=') == 0)) LXGETSYMBOL(TKEQUALS, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0)) LXGETSYMBOL(TKLESSTHAN, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0)) LXGETSYMBOL(TKMORETHAN, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '[') == 0)) LXGETSYMBOL(TKLBRACKET, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ']') == 0)) LXGETSYMBOL(TKRBRACKET, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0)) LXGETSYMBOL(TKDOT, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ',') == 0)) LXGETSYMBOL(TKCOMMA, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0)) LXGETSYMBOL(TKCOLON, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ';') == 0)) LXGETSYMBOL(TKSEMICOLON, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '^') == 0)) LXGETSYMBOL(TKCARET, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0)) LXGETSYMBOL(TKLPAREN, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ')') == 0)) LXGETSYMBOL(TKRPAREN, 1);
+if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '{') == 0)) LXGETCOMMENT();
+if (LEXER.TOKEN.ID == TKUNKNOWN) {
 {
 write_s(STDERR, str_make(17, "Could not parse ["));
-write_s(STDERR, LXLINE);
+write_s(STDERR, LEXER.LINE);
 write_s(STDERR, str_make(5, "] at "));
-write_s(STDERR, LXPOSSTR(LXPOS));
+write_s(STDERR, LXPOSSTR(LEXER.POS));
 writeln(STDERR);
 }
 HALT(1);
@@ -242,7 +240,7 @@ HALT(1);
 }
 void READTOKEN();
 void WANTTOKEN(TLXTOKENID ID) {
-if (LXTOKEN.ID != ID) {
+if (LEXER.TOKEN.ID != ID) {
 {
 write_s(STDERR, str_make(13, "Wanted token "));
 write_e(STDERR, ID, EnumValues1);
@@ -255,7 +253,7 @@ HALT(1);
 }
 }
 void WANTTOKEN2(TLXTOKENID ID1, TLXTOKENID ID2) {
-if ((LXTOKEN.ID != ID1) && (LXTOKEN.ID != ID2)) {
+if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2)) {
 {
 write_s(STDERR, str_make(13, "Wanted token "));
 write_e(STDERR, ID1, EnumValues1);
@@ -276,12 +274,12 @@ READTOKEN();
 STRING GETTOKENVALUEANDREAD(TLXTOKENID ID) {
 STRING return_GETTOKENVALUEANDREAD;
 WANTTOKEN(ID);
-return_GETTOKENVALUEANDREAD = LXTOKEN.VALUE;
+return_GETTOKENVALUEANDREAD = LEXER.TOKEN.VALUE;
 READTOKEN();
 return return_GETTOKENVALUEANDREAD;
 }
 void SKIPTOKEN(TLXTOKENID ID) {
-if (LXTOKEN.ID == ID) READTOKEN();
+if (LEXER.TOKEN.ID == ID) READTOKEN();
 }
 typedef int TPSENUMINDEX;
 typedef int TPSRECORDINDEX;
@@ -311,7 +309,6 @@ const char* EnumValues4[] = { "TECVALUE", "TECFUNCTION", "TECSTATEMENT" };
 TPSDEFS DEFS;
 struct { TPSTYPEINDEX PTBOOLEAN; TPSTYPEINDEX PTINTEGER; TPSTYPEINDEX PTCHAR; TPSTYPEINDEX PTSTRING; TPSTYPEINDEX PTTEXT; } PRIMITIVETYPES;
 TPSSCOPE GLOBALSCOPE;
-PFile CPOUTPUT;
 void CLEARDEFS() {
 DEFS.SCOPE.NUMTYPES = 0;
 DEFS.SCOPE.NUMENUMS = 0;
@@ -1016,12 +1013,12 @@ TPSENUMDEF ENUM;
 TPSRECORDDEF REC;
 TPSARRAYDEF ARR;
 TYPEINDEX = 0;
-if (LXTOKEN.ID == TKIDENTIFIER) {
-TYPEINDEX = FINDTYPE(LXTOKEN.VALUE);
+if (LEXER.TOKEN.ID == TKIDENTIFIER) {
+TYPEINDEX = FINDTYPE(LEXER.TOKEN.VALUE);
 if (TYPEINDEX == 0) {
 {
 write_s(STDERR, str_make(14, "Unknown type: "));
-write_s(STDERR, LXTOKEN.VALUE);
+write_s(STDERR, LEXER.TOKEN.VALUE);
 write_s(STDERR, LXWHERESTR());
 writeln(STDERR);
 }
@@ -1029,7 +1026,7 @@ HALT(1);
 }
 READTOKEN();
 }
- else if (LXTOKEN.ID == TKLPAREN) {
+ else if (LEXER.TOKEN.ID == TKLPAREN) {
 SKIPTOKEN(TKLPAREN);
 ENUM.SIZE = 0;
 do {
@@ -1045,14 +1042,14 @@ HALT(1);
 ENUM.VALUES[(ENUM.SIZE) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
-} while (!(LXTOKEN.ID == TKRPAREN));
+} while (!(LEXER.TOKEN.ID == TKRPAREN));
 TYP = EMPTYTYPE();
 TYP.CLS = TTCENUM;
 TYP.ENUMINDEX = ADDENUM(ENUM);
 TYPEINDEX = ADDTYPE(TYP, SCOPE);
 SKIPTOKEN(TKRPAREN);
 }
- else if (LXTOKEN.ID == TKRECORD) {
+ else if (LEXER.TOKEN.ID == TKRECORD) {
 SKIPTOKEN(TKRECORD);
 REC.SIZE = 0;
 do {
@@ -1070,13 +1067,13 @@ WANTTOKENANDREAD(TKCOLON);
 REC.FIELDS[(REC.SIZE) - 1].TYPEINDEX = PSTYPEDENOTER(SCOPE);
 WANTTOKEN2(TKSEMICOLON, TKEND);
 SKIPTOKEN(TKSEMICOLON);
-} while (!(LXTOKEN.ID == TKEND));
+} while (!(LEXER.TOKEN.ID == TKEND));
 TYP = TYPEOFCLASS(TTCRECORD);
 TYP.RECORDINDEX = ADDRECORD(REC);
 TYPEINDEX = ADDTYPE(TYP, SCOPE);
 SKIPTOKEN(TKEND);
 }
- else if (LXTOKEN.ID == TKARRAY) {
+ else if (LEXER.TOKEN.ID == TKARRAY) {
 SKIPTOKEN(TKARRAY);
 WANTTOKENANDREAD(TKLBRACKET);
 ARR.LOWBOUND = GETTOKENVALUEANDREAD(TKNUMBER);
@@ -1103,22 +1100,22 @@ return return_PSTYPEDENOTER;
 }
 void OUTBEGIN() {
 {
-write_c(CPOUTPUT, '{');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '{');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTEND() {
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTENUMVALUES(TPSENUMINDEX POS) {
 int POSINENUM;
 {
-write_s(CPOUTPUT, str_make(22, "const char* EnumValues"));
-write_i(CPOUTPUT, POS);
-write_s(CPOUTPUT, str_make(7, "[] = { "));
+write_s(CODEGEN.OUTPUT, str_make(22, "const char* EnumValues"));
+write_i(CODEGEN.OUTPUT, POS);
+write_s(CODEGEN.OUTPUT, str_make(7, "[] = { "));
 }
 {
 int first = 1;
@@ -1128,12 +1125,12 @@ POSINENUM = first;
 while (1) {
 {
 if (POSINENUM != 1) {
-write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
 }
 {
-write_c(CPOUTPUT, '\"');
-write_s(CPOUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
-write_c(CPOUTPUT, '\"');
+write_c(CODEGEN.OUTPUT, '\"');
+write_s(CODEGEN.OUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
+write_c(CODEGEN.OUTPUT, '\"');
 }
 }
 if (POSINENUM == last) break;
@@ -1142,8 +1139,8 @@ if (POSINENUM == last) break;
 }
 }
 {
-write_s(CPOUTPUT, str_make(3, " };"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(3, " };"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTENUMVALUESINSCOPE(TPSSCOPE SCOPE) {
@@ -1180,38 +1177,38 @@ TPSARRAYDEF ARR;
 int POS;
 if (TYPEINDEX != 0) TYP = DEFS.TYPES[(TYPEINDEX) - 1];
 if (TYPEINDEX == 0) {
-write_s(CPOUTPUT, str_make(5, "void "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(5, "void "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if ((TYP.ALIASFOR != 0) && (cmp_ss(TYP.NAME, str_make(0, "")) != 0)) {
-write_s(CPOUTPUT, TYP.NAME);
-write_c(CPOUTPUT, ' ');
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, TYP.NAME);
+write_c(CODEGEN.OUTPUT, ' ');
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCBOOLEAN) {
-write_s(CPOUTPUT, str_make(9, "PBoolean "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(9, "PBoolean "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCINTEGER) {
-write_s(CPOUTPUT, str_make(4, "int "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(4, "int "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCCHAR) {
-write_s(CPOUTPUT, str_make(5, "char "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(5, "char "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCSTRING) {
-write_s(CPOUTPUT, str_make(7, "STRING "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(7, "STRING "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCTEXT) {
-write_s(CPOUTPUT, str_make(6, "PFile "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(6, "PFile "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCENUM) {
 ENUM = DEFS.ENUMS[(TYP.ENUMINDEX) - 1];
 {
-write_s(CPOUTPUT, str_make(7, "enum { "));
+write_s(CODEGEN.OUTPUT, str_make(7, "enum { "));
 }
 {
 int first = 1;
@@ -1221,10 +1218,10 @@ POS = first;
 while (1) {
 {
 if (POS > 1) {
-write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
 }
 {
-write_s(CPOUTPUT, ENUM.VALUES[(POS) - 1]);
+write_s(CODEGEN.OUTPUT, ENUM.VALUES[(POS) - 1]);
 }
 }
 if (POS == last) break;
@@ -1233,14 +1230,14 @@ if (POS == last) break;
 }
 }
 {
-write_s(CPOUTPUT, str_make(2, "} "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(2, "} "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCRECORD) {
 REC = DEFS.RECORDS[(TYP.RECORDINDEX) - 1];
 {
-write_s(CPOUTPUT, str_make(9, "struct { "));
+write_s(CODEGEN.OUTPUT, str_make(9, "struct { "));
 }
 {
 int first = 1;
@@ -1251,7 +1248,7 @@ while (1) {
 {
 OUTNAMEANDTYPE(REC.FIELDS[(POS) - 1].NAME, REC.FIELDS[(POS) - 1].TYPEINDEX);
 {
-write_s(CPOUTPUT, str_make(2, "; "));
+write_s(CODEGEN.OUTPUT, str_make(2, "; "));
 }
 }
 if (POS == last) break;
@@ -1260,19 +1257,19 @@ if (POS == last) break;
 }
 }
 {
-write_s(CPOUTPUT, str_make(2, "} "));
-write_s(CPOUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(2, "} "));
+write_s(CODEGEN.OUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCARRAY) {
 ARR = DEFS.ARRAYS[(TYP.ARRAYINDEX) - 1];
 OUTNAMEANDTYPE(NAME, ARR.TYPEINDEX);
 {
-write_s(CPOUTPUT, str_make(5, "[1 + "));
-write_s(CPOUTPUT, ARR.HIGHBOUND);
-write_s(CPOUTPUT, str_make(3, " - "));
-write_s(CPOUTPUT, ARR.LOWBOUND);
-write_c(CPOUTPUT, ']');
+write_s(CODEGEN.OUTPUT, str_make(5, "[1 + "));
+write_s(CODEGEN.OUTPUT, ARR.HIGHBOUND);
+write_s(CODEGEN.OUTPUT, str_make(3, " - "));
+write_s(CODEGEN.OUTPUT, ARR.LOWBOUND);
+write_c(CODEGEN.OUTPUT, ']');
 }
 }
  else {
@@ -1301,12 +1298,12 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(CPOUTPUT, str_make(8, "typedef "));
+write_s(CODEGEN.OUTPUT, str_make(8, "typedef "));
 }
 OUTNAMEANDTYPE(NAME, DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR);
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSTYPEDEFINITIONS(TPSSCOPE SCOPE) {
@@ -1326,14 +1323,14 @@ NEWTYPE.ALIASFOR = TYPEINDEX;
 TYPEINDEX = ADDTYPE(NEWTYPE, SCOPE);
 WANTTOKENANDREAD(TKSEMICOLON);
 OUTTYPEDEFINITION(TYPEINDEX);
-} while (!(LXTOKEN.ID != TKIDENTIFIER));
+} while (!(LEXER.TOKEN.ID != TKIDENTIFIER));
 OUTENUMVALUESINSCOPE(PREVIOUSSCOPE);
 }
 void PSCONSTANT(STRING NAME, TPSSCOPE SCOPE) {
 TPSCONSTANT CONSTANT;
 WANTTOKENANDREAD(TKEQUALS);
 CONSTANT.NAME = NAME;
-if ((LXTOKEN.ID == TKFALSE) || (LXTOKEN.ID == TKTRUE) || (LXTOKEN.ID == TKNUMBER) || (LXTOKEN.ID == TKSTRING)) CONSTANT.REPLACEMENT = LXTOKEN;
+if ((LEXER.TOKEN.ID == TKFALSE) || (LEXER.TOKEN.ID == TKTRUE) || (LEXER.TOKEN.ID == TKNUMBER) || (LEXER.TOKEN.ID == TKSTRING)) CONSTANT.REPLACEMENT = LEXER.TOKEN;
  else {
 {
 write_s(STDERR, str_make(31, "Expected constant value, found "));
@@ -1423,29 +1420,29 @@ return return_GENNUMBERCONSTANT;
 }
 void OUTCONSTANTVALUE(STRING VALUE) {
 {
-write_s(CPOUTPUT, VALUE);
+write_s(CODEGEN.OUTPUT, VALUE);
 }
 }
 void OUTCONSTANTARRAYBEGIN() {
 {
-write_s(CPOUTPUT, str_make(2, "{ "));
+write_s(CODEGEN.OUTPUT, str_make(2, "{ "));
 }
 }
 void OUTCONSTANTARRAYSEPARATOR() {
 {
-write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
 }
 }
 void OUTCONSTANTARRAYEND() {
 {
-write_s(CPOUTPUT, str_make(2, " }"));
+write_s(CODEGEN.OUTPUT, str_make(2, " }"));
 }
 }
 void PSCONSTANTVALUE(TPSTYPEINDEX TYPEINDEX) {
 TPSEXPRESSION EXPR;
 if (ISBOOLEANTYPE(TYPEINDEX)) {
 WANTTOKEN2(TKFALSE, TKTRUE);
-EXPR = GENBOOLEANCONSTANT(LXTOKEN.ID == TKTRUE);
+EXPR = GENBOOLEANCONSTANT(LEXER.TOKEN.ID == TKTRUE);
 READTOKEN();
 OUTCONSTANTVALUE(EXPR.VALUE);
 }
@@ -1474,10 +1471,10 @@ OUTCONSTANTVALUE(EXPR.VALUE);
 WANTTOKENANDREAD(TKLPAREN);
 TYPEINDEX = DEFS.ARRAYS[(DEFS.TYPES[(TYPEINDEX) - 1].ARRAYINDEX) - 1].TYPEINDEX;
 OUTCONSTANTARRAYBEGIN();
-while (LXTOKEN.ID != TKRPAREN) {
+while (LEXER.TOKEN.ID != TKRPAREN) {
 PSCONSTANTVALUE(TYPEINDEX);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
-if (LXTOKEN.ID == TKCOMMA) OUTCONSTANTARRAYSEPARATOR();
+if (LEXER.TOKEN.ID == TKCOMMA) OUTCONSTANTARRAYSEPARATOR();
 SKIPTOKEN(TKCOMMA);
 }
 OUTCONSTANTARRAYEND();
@@ -1498,27 +1495,27 @@ OUTNAMEANDTYPE(OUTVARIABLENAME(VARDEF.NAME, VARDEF.ISREFERENCE), VARDEF.TYPEINDE
 }
 void OUTVARIABLEDEFINITION(TPSVARIABLEINDEX VARINDEX) {
 if (DEFS.VARIABLES[(VARINDEX) - 1].ISCONSTANT) {
-write_s(CPOUTPUT, str_make(6, "const "));
+write_s(CODEGEN.OUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLEINDEX VARINDEX) {
 {
-write_s(CPOUTPUT, str_make(6, "const "));
+write_s(CODEGEN.OUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_s(CPOUTPUT, str_make(3, " = "));
+write_s(CODEGEN.OUTPUT, str_make(3, " = "));
 }
 }
 void OUTCONSTANTDEFINITIONEND() {
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSTYPEDCONSTANT(STRING NAME, TPSSCOPE SCOPE) {
@@ -1536,10 +1533,10 @@ WANTTOKENANDREAD(TKCONST);
 do {
 NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 WANTTOKEN2(TKEQUALS, TKCOLON);
-if (LXTOKEN.ID == TKEQUALS) PSCONSTANT(NAME, SCOPE);
+if (LEXER.TOKEN.ID == TKEQUALS) PSCONSTANT(NAME, SCOPE);
  else PSTYPEDCONSTANT(NAME, SCOPE);
 WANTTOKENANDREAD(TKSEMICOLON);
-} while (!(LXTOKEN.ID != TKIDENTIFIER));
+} while (!(LEXER.TOKEN.ID != TKIDENTIFIER));
 }
 void PSVARDEFINITIONS(TPSSCOPE SCOPE) {
 STRING NAME;
@@ -1553,14 +1550,14 @@ WANTTOKENANDREAD(TKCOLON);
 TYPEINDEX = PSTYPEDENOTER(SCOPE);
 WANTTOKENANDREAD(TKSEMICOLON);
 OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(NAME, TYPEINDEX, 0), SCOPE));
-} while (!(LXTOKEN.ID != TKIDENTIFIER));
+} while (!(LEXER.TOKEN.ID != TKIDENTIFIER));
 OUTENUMVALUESINSCOPE(PREVIOUSSCOPE);
 }
 void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
 int POS;
 OUTNAMEANDTYPE(DEF.NAME, DEF.RETURNTYPEINDEX);
 {
-write_c(CPOUTPUT, '(');
+write_c(CODEGEN.OUTPUT, '(');
 }
 {
 int first = 1;
@@ -1571,7 +1568,7 @@ while (1) {
 {
 OUTVARIABLEDECLARATION(DEF.ARGS[(POS) - 1]);
 if (POS != DEF.ARGCOUNT) {
-write_s(CPOUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
 }
 }
 if (POS == last) break;
@@ -1580,14 +1577,14 @@ if (POS == last) break;
 }
 }
 {
-write_c(CPOUTPUT, ')');
+write_c(CODEGEN.OUTPUT, ')');
 }
 }
 void OUTFUNCTIONDECLARATION(TPSFUNCTIONINDEX FNINDEX) {
 OUTFUNCTIONPROTOTYPE(DEFS.FUNCTIONS[(FNINDEX) - 1]);
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTFUNCTIONDEFINITION(TPSFUNCTIONINDEX FNINDEX) {
@@ -1595,27 +1592,27 @@ TPSFUNCTION FUN;
 FUN = DEFS.FUNCTIONS[(FNINDEX) - 1];
 OUTFUNCTIONPROTOTYPE(FUN);
 {
-write_s(CPOUTPUT, str_make(2, " {"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(2, " {"));
+writeln(CODEGEN.OUTPUT);
 }
 if (FUN.RETURNTYPEINDEX != 0) {
 OUTNAMEANDTYPE(OUTRETURNVARIABLENAME(FUN.NAME), FUN.RETURNTYPEINDEX);
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 }
 void OUTFUNCTIONEND(TPSFUNCTIONINDEX FNINDEX) {
 if (DEFS.FUNCTIONS[(FNINDEX) - 1].RETURNTYPEINDEX != 0) {
-write_s(CPOUTPUT, str_make(7, "return "));
-write_s(CPOUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(7, "return "));
+write_s(CODEGEN.OUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSSTATEMENT();
@@ -1637,7 +1634,7 @@ if (POS == last) break;
 }
 void PSFUNCTIONBODY(TPSFUNCTIONINDEX FNINDEX) {
 TPSSCOPE PREVIOUSSCOPE;
-if (LXTOKEN.ID == TKFORWARD) {
+if (LEXER.TOKEN.ID == TKFORWARD) {
 SKIPTOKEN(TKFORWARD);
 WANTTOKENANDREAD(TKSEMICOLON);
 DEFS.FUNCTIONS[(FNINDEX) - 1].ISDECLARATION = 1;
@@ -1650,7 +1647,7 @@ OUTFUNCTIONDEFINITION(FNINDEX);
 OUTENUMVALUESINSCOPE(PREVIOUSSCOPE);
 PSDEFINITIONS(PREVIOUSSCOPE);
 WANTTOKENANDREAD(TKBEGIN);
-while (LXTOKEN.ID != TKEND) {
+while (LEXER.TOKEN.ID != TKEND) {
 PSSTATEMENT();
 WANTTOKEN2(TKSEMICOLON, TKEND);
 SKIPTOKEN(TKSEMICOLON);
@@ -1665,13 +1662,13 @@ void PSFUNCTIONDEFINITION() {
 PBoolean ISPROCEDURE;
 TPSFUNCTION DEF;
 WANTTOKEN2(TKFUNCTION, TKPROCEDURE);
-ISPROCEDURE = LXTOKEN.ID == TKPROCEDURE;
+ISPROCEDURE = LEXER.TOKEN.ID == TKPROCEDURE;
 READTOKEN();
 DEF.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 DEF.ARGCOUNT = 0;
 if (ISPROCEDURE) WANTTOKEN2(TKLPAREN, TKSEMICOLON);
  else WANTTOKEN2(TKLPAREN, TKCOLON);
-if (LXTOKEN.ID == TKLPAREN) {
+if (LEXER.TOKEN.ID == TKLPAREN) {
 WANTTOKENANDREAD(TKLPAREN);
 do {
 DEF.ARGCOUNT = DEF.ARGCOUNT + 1;
@@ -1684,14 +1681,14 @@ writeln(STDERR);
 }
 HALT(1);
 }
-DEF.ARGS[(DEF.ARGCOUNT) - 1].ISREFERENCE = LXTOKEN.ID == TKVAR;
+DEF.ARGS[(DEF.ARGCOUNT) - 1].ISREFERENCE = LEXER.TOKEN.ID == TKVAR;
 SKIPTOKEN(TKVAR);
 DEF.ARGS[(DEF.ARGCOUNT) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 WANTTOKENANDREAD(TKCOLON);
 DEF.ARGS[(DEF.ARGCOUNT) - 1].TYPEINDEX = PSTYPEDENOTER(GLOBALSCOPE);
 WANTTOKEN2(TKSEMICOLON, TKRPAREN);
 SKIPTOKEN(TKSEMICOLON);
-} while (!(LXTOKEN.ID == TKRPAREN));
+} while (!(LEXER.TOKEN.ID == TKRPAREN));
 SKIPTOKEN(TKRPAREN);
 }
 if (ISPROCEDURE) DEF.RETURNTYPEINDEX = 0;
@@ -1706,35 +1703,35 @@ void PSDEFINITIONS(TPSSCOPE SCOPE) {
 PBoolean DONE;
 DONE = 0;
 do {
-if (LXTOKEN.ID == TKTYPE) PSTYPEDEFINITIONS(SCOPE);
- else if (LXTOKEN.ID == TKCONST) PSCONSTDEFINITIONS(SCOPE);
- else if (LXTOKEN.ID == TKVAR) PSVARDEFINITIONS(SCOPE);
- else if ((LXTOKEN.ID == TKPROCEDURE) || (LXTOKEN.ID == TKFUNCTION)) PSFUNCTIONDEFINITION();
+if (LEXER.TOKEN.ID == TKTYPE) PSTYPEDEFINITIONS(SCOPE);
+ else if (LEXER.TOKEN.ID == TKCONST) PSCONSTDEFINITIONS(SCOPE);
+ else if (LEXER.TOKEN.ID == TKVAR) PSVARDEFINITIONS(SCOPE);
+ else if ((LEXER.TOKEN.ID == TKPROCEDURE) || (LEXER.TOKEN.ID == TKFUNCTION)) PSFUNCTIONDEFINITION();
  else DONE = 1;
 } while (!(DONE));
 }
 void OUTPROGRAMHEADING(STRING NAME) {
 {
-write_s(CPOUTPUT, str_make(12, "/* Program: "));
-write_s(CPOUTPUT, NAME);
-write_s(CPOUTPUT, str_make(3, " */"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(12, "/* Program: "));
+write_s(CODEGEN.OUTPUT, NAME);
+write_s(CODEGEN.OUTPUT, str_make(3, " */"));
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_s(CPOUTPUT, str_make(20, "#include \"pascual.h\""));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(20, "#include \"pascual.h\""));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSPROGRAMHEADING() {
 WANTTOKENANDREAD(TKPROGRAM);
 OUTPROGRAMHEADING(GETTOKENVALUEANDREAD(TKIDENTIFIER));
-if (LXTOKEN.ID == TKLPAREN) {
+if (LEXER.TOKEN.ID == TKLPAREN) {
 do {
 READTOKEN();
 WANTTOKEN2(TKIDENTIFIER, TKRPAREN);
 SKIPTOKEN(TKIDENTIFIER);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
-} while (!(LXTOKEN.ID == TKRPAREN));
+} while (!(LEXER.TOKEN.ID == TKRPAREN));
 SKIPTOKEN(TKRPAREN);
 }
 WANTTOKENANDREAD(TKSEMICOLON);
@@ -2046,22 +2043,22 @@ return return_PSFUNCTIONCALL;
 }
 void OUTREAD(STRING SRC, TPSEXPRESSION OUTVAR) {
 {
-write_s(CPOUTPUT, str_make(5, "read_"));
-write_c(CPOUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
-write_c(CPOUTPUT, '(');
-write_s(CPOUTPUT, SRC);
-write_s(CPOUTPUT, str_make(3, ", &"));
-write_s(CPOUTPUT, OUTVAR.VALUE);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(5, "read_"));
+write_c(CODEGEN.OUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
+write_c(CODEGEN.OUTPUT, '(');
+write_s(CODEGEN.OUTPUT, SRC);
+write_s(CODEGEN.OUTPUT, str_make(3, ", &"));
+write_s(CODEGEN.OUTPUT, OUTVAR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTREADLN(STRING SRC) {
 {
-write_s(CPOUTPUT, str_make(7, "readln("));
-write_s(CPOUTPUT, SRC);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(7, "readln("));
+write_s(CODEGEN.OUTPUT, SRC);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSREAD(TPSIDENTIFIER ID) {
@@ -2072,7 +2069,7 @@ LINEFEED = cmp_ss(ID.NAME, str_make(6, "READLN")) == 0;
 OUTBEGIN();
 SRC = str_make(5, "INPUT");
 WANTTOKENANDREAD(TKLPAREN);
-if (LXTOKEN.ID != TKRPAREN) {
+if (LEXER.TOKEN.ID != TKRPAREN) {
 OUTVAR = PSEXPRESSION();
 if (ISVARIABLEEXPRESSION(OUTVAR) && ISTEXTTYPE(OUTVAR.TYPEINDEX)) SRC = OUTVAR.VALUE;
  else {
@@ -2088,7 +2085,7 @@ OUTREAD(SRC, OUTVAR);
 }
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
-while (LXTOKEN.ID != TKRPAREN) {
+while (LEXER.TOKEN.ID != TKRPAREN) {
 OUTVAR = PSEXPRESSION();
 if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
 {
@@ -2109,32 +2106,32 @@ OUTEND();
 }
 void OUTWRITE(STRING DST, TPSEXPRESSION EXPR) {
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(CPOUTPUT, str_make(8, "write_e("));
-write_s(CPOUTPUT, DST);
-write_s(CPOUTPUT, str_make(2, ", "));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(12, ", EnumValues"));
-write_i(CPOUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(8, "write_e("));
+write_s(CODEGEN.OUTPUT, DST);
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
+write_i(CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
  else {
-write_s(CPOUTPUT, str_make(6, "write_"));
-write_c(CPOUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(CPOUTPUT, '(');
-write_s(CPOUTPUT, DST);
-write_s(CPOUTPUT, str_make(2, ", "));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(6, "write_"));
+write_c(CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_c(CODEGEN.OUTPUT, '(');
+write_s(CODEGEN.OUTPUT, DST);
+write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTWRITELN(STRING SRC) {
 {
-write_s(CPOUTPUT, str_make(8, "writeln("));
-write_s(CPOUTPUT, SRC);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(8, "writeln("));
+write_s(CODEGEN.OUTPUT, SRC);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSWRITE(TPSIDENTIFIER ID) {
@@ -2145,13 +2142,13 @@ LINEFEED = cmp_ss(ID.NAME, str_make(7, "WRITELN")) == 0;
 OUTBEGIN();
 DST = str_make(6, "OUTPUT");
 WANTTOKENANDREAD(TKLPAREN);
-if (LXTOKEN.ID != TKRPAREN) {
+if (LEXER.TOKEN.ID != TKRPAREN) {
 EXPR = PSEXPRESSION();
 if (ISVARIABLEEXPRESSION(EXPR) && ISTEXTTYPE(EXPR.TYPEINDEX)) DST = EXPR.VALUE;
  else OUTWRITE(DST, EXPR);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
-while (LXTOKEN.ID != TKRPAREN) {
+while (LEXER.TOKEN.ID != TKRPAREN) {
 OUTWRITE(DST, PSEXPRESSION());
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
@@ -2163,22 +2160,22 @@ OUTEND();
 }
 void OUTSTR(STRING DST, TPSEXPRESSION EXPR) {
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(CPOUTPUT, DST);
-write_s(CPOUTPUT, str_make(12, " = to_str_e("));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(12, ", EnumValues"));
-write_i(CPOUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, DST);
+write_s(CODEGEN.OUTPUT, str_make(12, " = to_str_e("));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
+write_i(CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
  else {
-write_s(CPOUTPUT, DST);
-write_s(CPOUTPUT, str_make(10, " = to_str_"));
-write_c(CPOUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(CPOUTPUT, '(');
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(2, ");"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, DST);
+write_s(CODEGEN.OUTPUT, str_make(10, " = to_str_"));
+write_c(CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_c(CODEGEN.OUTPUT, '(');
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSSTR() {
@@ -2321,9 +2318,9 @@ HALT(1);
 }
 }
 do {
-if (LXTOKEN.ID == TKDOT) EXPR = PSFIELDACCESS(EXPR);
- else if (LXTOKEN.ID == TKLBRACKET) EXPR = PSARRAYACCESS(EXPR);
- else if (LXTOKEN.ID == TKLPAREN) EXPR = PSFUNCTIONCALL(EXPR);
+if (LEXER.TOKEN.ID == TKDOT) EXPR = PSFIELDACCESS(EXPR);
+ else if (LEXER.TOKEN.ID == TKLBRACKET) EXPR = PSARRAYACCESS(EXPR);
+ else if (LEXER.TOKEN.ID == TKLPAREN) EXPR = PSFUNCTIONCALL(EXPR);
  else DONE = 1;
 } while (!(DONE));
 return_PSVARIABLEORFUNCTIONCALL = EXPR;
@@ -2332,19 +2329,19 @@ return return_PSVARIABLEORFUNCTIONCALL;
 TPSEXPRESSION PSFACTOR() {
 TPSEXPRESSION return_PSFACTOR;
 TPSEXPRESSION EXPR;
-if ((LXTOKEN.ID == TKFALSE) || (LXTOKEN.ID == TKTRUE)) {
-EXPR = GENBOOLEANCONSTANT(LXTOKEN.ID == TKTRUE);
+if ((LEXER.TOKEN.ID == TKFALSE) || (LEXER.TOKEN.ID == TKTRUE)) {
+EXPR = GENBOOLEANCONSTANT(LEXER.TOKEN.ID == TKTRUE);
 READTOKEN();
 }
- else if (LXTOKEN.ID == TKSTRING) EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
- else if (LXTOKEN.ID == TKNUMBER) EXPR = GENNUMBERCONSTANT(GETTOKENVALUEANDREAD(TKNUMBER));
- else if (LXTOKEN.ID == TKIDENTIFIER) EXPR = PSVARIABLEORFUNCTIONCALL();
- else if (LXTOKEN.ID == TKLPAREN) {
+ else if (LEXER.TOKEN.ID == TKSTRING) EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
+ else if (LEXER.TOKEN.ID == TKNUMBER) EXPR = GENNUMBERCONSTANT(GETTOKENVALUEANDREAD(TKNUMBER));
+ else if (LEXER.TOKEN.ID == TKIDENTIFIER) EXPR = PSVARIABLEORFUNCTIONCALL();
+ else if (LEXER.TOKEN.ID == TKLPAREN) {
 WANTTOKENANDREAD(TKLPAREN);
 EXPR = GENPARENS(PSEXPRESSION());
 WANTTOKENANDREAD(TKRPAREN);
 }
- else if (LXTOKEN.ID == TKNOT) {
+ else if (LEXER.TOKEN.ID == TKNOT) {
 WANTTOKENANDREAD(TKNOT);
 EXPR = UNARYEXPRESSION(TKNOT, PSFACTOR());
 }
@@ -2365,8 +2362,8 @@ TPSEXPRESSION return_PSTERM;
 TLXTOKENID OP;
 TPSEXPRESSION EXPR;
 EXPR = PSFACTOR();
-while (ISOPMULTIPYING(LXTOKEN)) {
-OP = LXTOKEN.ID;
+while (ISOPMULTIPYING(LEXER.TOKEN)) {
+OP = LEXER.TOKEN.ID;
 READTOKEN();
 EXPR = BINARYEXPRESSION(EXPR, OP, PSFACTOR());
 }
@@ -2378,8 +2375,8 @@ TPSEXPRESSION return_PSSIMPLEEXPRESSION;
 TLXTOKENID OP;
 TPSEXPRESSION EXPR;
 EXPR = PSTERM();
-while (ISOPADDING(LXTOKEN)) {
-OP = LXTOKEN.ID;
+while (ISOPADDING(LEXER.TOKEN)) {
+OP = LEXER.TOKEN.ID;
 READTOKEN();
 EXPR = BINARYEXPRESSION(EXPR, OP, PSTERM());
 }
@@ -2391,8 +2388,8 @@ TPSEXPRESSION return_PSEXPRESSION;
 TLXTOKENID OP;
 TPSEXPRESSION EXPR;
 EXPR = PSSIMPLEEXPRESSION();
-while (ISOPRELATIONAL(LXTOKEN)) {
-OP = LXTOKEN.ID;
+while (ISOPRELATIONAL(LEXER.TOKEN)) {
+OP = LEXER.TOKEN.ID;
 READTOKEN();
 EXPR = BINARYEXPRESSION(EXPR, OP, PSSIMPLEEXPRESSION());
 }
@@ -2401,26 +2398,26 @@ return return_PSEXPRESSION;
 }
 void OUTEXPRESSION(TPSEXPRESSION EXPR) {
 {
-write_s(CPOUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
 }
 }
 void OUTASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_s(CPOUTPUT, LHS.VALUE);
-write_s(CPOUTPUT, str_make(3, " = "));
-write_s(CPOUTPUT, RHS.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, LHS.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(CODEGEN.OUTPUT, RHS.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTASSIGNRETURNVALUE(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_s(CPOUTPUT, str_make(7, "return_"));
-write_s(CPOUTPUT, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].NAME);
-write_s(CPOUTPUT, str_make(3, " = "));
-write_s(CPOUTPUT, RHS.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(7, "return_"));
+write_s(CODEGEN.OUTPUT, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].NAME);
+write_s(CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(CODEGEN.OUTPUT, RHS.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
@@ -2445,20 +2442,20 @@ HALT(1);
 }
 void OUTIF(TPSEXPRESSION EXPR) {
 {
-write_s(CPOUTPUT, str_make(4, "if ("));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(2, ") "));
+write_s(CODEGEN.OUTPUT, str_make(4, "if ("));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(2, ") "));
 }
 }
 void OUTELSE() {
 {
-write_s(CPOUTPUT, str_make(6, " else "));
+write_s(CODEGEN.OUTPUT, str_make(6, " else "));
 }
 }
 void OUTREPEATBEGIN() {
 {
-write_s(CPOUTPUT, str_make(4, "do {"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(4, "do {"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTREPEATEND(TPSEXPRESSION EXPR) {
@@ -2472,10 +2469,10 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(CPOUTPUT, str_make(11, "} while (!("));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(3, "));"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(11, "} while (!("));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(3, "));"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTWHILEBEGIN(TPSEXPRESSION EXPR) {
@@ -2489,9 +2486,9 @@ writeln(STDERR);
 HALT(1);
 }
 {
-write_s(CPOUTPUT, str_make(7, "while ("));
-write_s(CPOUTPUT, EXPR.VALUE);
-write_s(CPOUTPUT, str_make(2, ") "));
+write_s(CODEGEN.OUTPUT, str_make(7, "while ("));
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(2, ") "));
 }
 }
 void OUTWHILEEND() {
@@ -2502,94 +2499,94 @@ TPSVARIABLE LAST;
 FIRST = MAKEVARIABLE(str_make(5, "first"), ITER.TYPEINDEX, 0);
 LAST = MAKEVARIABLE(str_make(4, "last"), ITER.TYPEINDEX, 0);
 {
-write_c(CPOUTPUT, '{');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '{');
+writeln(CODEGEN.OUTPUT);
 }
 OUTVARIABLEDECLARATION(FIRST);
 {
-write_s(CPOUTPUT, str_make(3, " = "));
-write_s(CPOUTPUT, FIRSTEXPR.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(CODEGEN.OUTPUT, FIRSTEXPR.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 OUTVARIABLEDECLARATION(LAST);
 {
-write_s(CPOUTPUT, str_make(3, " = "));
-write_s(CPOUTPUT, LASTEXPR.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(CODEGEN.OUTPUT, LASTEXPR.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_s(CPOUTPUT, str_make(10, "if (first "));
+write_s(CODEGEN.OUTPUT, str_make(10, "if (first "));
 }
 if (ASCENDING) {
-write_s(CPOUTPUT, str_make(2, "<="));
+write_s(CODEGEN.OUTPUT, str_make(2, "<="));
 }
  else {
-write_s(CPOUTPUT, str_make(2, "=>"));
+write_s(CODEGEN.OUTPUT, str_make(2, "=>"));
 }
 {
-write_s(CPOUTPUT, str_make(8, " last) {"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(8, " last) {"));
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_s(CPOUTPUT, ITER.VALUE);
-write_s(CPOUTPUT, str_make(9, " = first;"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, ITER.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(9, " = first;"));
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_s(CPOUTPUT, str_make(11, "while (1) {"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(11, "while (1) {"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTFOREND(TPSEXPRESSION ITER, PBoolean ASCENDING) {
 {
-write_s(CPOUTPUT, str_make(4, "if ("));
-write_s(CPOUTPUT, ITER.VALUE);
-write_s(CPOUTPUT, str_make(16, " == last) break;"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(4, "if ("));
+write_s(CODEGEN.OUTPUT, ITER.VALUE);
+write_s(CODEGEN.OUTPUT, str_make(16, " == last) break;"));
+writeln(CODEGEN.OUTPUT);
 }
 if (ASCENDING) {
-write_s(CPOUTPUT, str_make(2, "++"));
-write_s(CPOUTPUT, ITER.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(2, "++"));
+write_s(CODEGEN.OUTPUT, ITER.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
  else {
-write_s(CPOUTPUT, str_make(2, "--"));
-write_s(CPOUTPUT, ITER.VALUE);
-write_c(CPOUTPUT, ';');
+write_s(CODEGEN.OUTPUT, str_make(2, "--"));
+write_s(CODEGEN.OUTPUT, ITER.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
 }
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTPROCEDURECALL(TPSEXPRESSION EXPR) {
 {
-write_s(CPOUTPUT, EXPR.VALUE);
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTEMPTYSTATEMENT() {
 {
-write_c(CPOUTPUT, ';');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, ';');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSSTATEMENTSEQUENCE() {
 OUTBEGIN();
 SKIPTOKEN(TKBEGIN);
-while (LXTOKEN.ID != TKEND) {
+while (LEXER.TOKEN.ID != TKEND) {
 PSSTATEMENT();
 WANTTOKEN2(TKSEMICOLON, TKEND);
 SKIPTOKEN(TKSEMICOLON);
@@ -2600,7 +2597,7 @@ SKIPTOKEN(TKEND);
 void PSIDENTIFIERSTATEMENT() {
 TPSEXPRESSION LHS;
 LHS = PSEXPRESSION();
-if (LXTOKEN.ID == TKASSIGN) {
+if (LEXER.TOKEN.ID == TKASSIGN) {
 WANTTOKENANDREAD(TKASSIGN);
 PSASSIGN(LHS, PSEXPRESSION());
 }
@@ -2610,9 +2607,9 @@ void PSIFSTATEMENT() {
 WANTTOKENANDREAD(TKIF);
 OUTIF(PSEXPRESSION());
 WANTTOKENANDREAD(TKTHEN);
-if (LXTOKEN.ID == TKELSE) OUTEMPTYSTATEMENT();
+if (LEXER.TOKEN.ID == TKELSE) OUTEMPTYSTATEMENT();
  else PSSTATEMENT();
-if (LXTOKEN.ID == TKELSE) {
+if (LEXER.TOKEN.ID == TKELSE) {
 WANTTOKENANDREAD(TKELSE);
 OUTELSE();
 PSSTATEMENT();
@@ -2621,7 +2618,7 @@ PSSTATEMENT();
 void PSREPEATSTATEMENT() {
 WANTTOKENANDREAD(TKREPEAT);
 OUTREPEATBEGIN();
-while (LXTOKEN.ID != TKUNTIL) {
+while (LEXER.TOKEN.ID != TKUNTIL) {
 PSSTATEMENT();
 WANTTOKEN2(TKSEMICOLON, TKUNTIL);
 SKIPTOKEN(TKSEMICOLON);
@@ -2654,7 +2651,7 @@ HALT(1);
 WANTTOKENANDREAD(TKASSIGN);
 FIRST = PSEXPRESSION();
 WANTTOKEN2(TKTO, TKDOWNTO);
-ASCENDING = LXTOKEN.ID == TKTO;
+ASCENDING = LEXER.TOKEN.ID == TKTO;
 READTOKEN();
 LAST = PSEXPRESSION();
 WANTTOKENANDREAD(TKDO);
@@ -2663,13 +2660,13 @@ PSSTATEMENT();
 OUTFOREND(ITER, ASCENDING);
 }
 void PSSTATEMENT() {
-if (LXTOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
- else if (LXTOKEN.ID == TKBEGIN) PSSTATEMENTSEQUENCE();
- else if (LXTOKEN.ID == TKIDENTIFIER) PSIDENTIFIERSTATEMENT();
- else if (LXTOKEN.ID == TKIF) PSIFSTATEMENT();
- else if (LXTOKEN.ID == TKREPEAT) PSREPEATSTATEMENT();
- else if (LXTOKEN.ID == TKWHILE) PSWHILESTATEMENT();
- else if (LXTOKEN.ID == TKFOR) PSFORSTATEMENT();
+if (LEXER.TOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
+ else if (LEXER.TOKEN.ID == TKBEGIN) PSSTATEMENTSEQUENCE();
+ else if (LEXER.TOKEN.ID == TKIDENTIFIER) PSIDENTIFIERSTATEMENT();
+ else if (LEXER.TOKEN.ID == TKIF) PSIFSTATEMENT();
+ else if (LEXER.TOKEN.ID == TKREPEAT) PSREPEATSTATEMENT();
+ else if (LEXER.TOKEN.ID == TKWHILE) PSWHILESTATEMENT();
+ else if (LEXER.TOKEN.ID == TKFOR) PSFORSTATEMENT();
  else {
 {
 write_s(STDERR, str_make(17, "Unexpected token "));
@@ -2682,21 +2679,21 @@ HALT(1);
 }
 void OUTPROGRAMBEGIN() {
 {
-write_s(CPOUTPUT, str_make(21, "void pascual_main() {"));
-writeln(CPOUTPUT);
+write_s(CODEGEN.OUTPUT, str_make(21, "void pascual_main() {"));
+writeln(CODEGEN.OUTPUT);
 }
 }
 void OUTPROGRAMEND() {
 {
-write_c(CPOUTPUT, '}');
-writeln(CPOUTPUT);
+write_c(CODEGEN.OUTPUT, '}');
+writeln(CODEGEN.OUTPUT);
 }
 }
 void PSPROGRAMBLOCK() {
 PSDEFINITIONS(GLOBALSCOPE);
 WANTTOKENANDREAD(TKBEGIN);
 OUTPROGRAMBEGIN();
-while (LXTOKEN.ID != TKEND) {
+while (LEXER.TOKEN.ID != TKEND) {
 PSSTATEMENT();
 WANTTOKEN2(TKSEMICOLON, TKEND);
 SKIPTOKEN(TKSEMICOLON);
@@ -2705,8 +2702,8 @@ OUTPROGRAMEND();
 WANTTOKENANDREAD(TKEND);
 }
 void PARSEPROGRAM() {
-LXPOS.ROW = 0;
-LXPOS.COL = 0;
+LEXER.POS.ROW = 0;
+LEXER.POS.COL = 0;
 STARTGLOBALSCOPE();
 READTOKEN();
 PSPROGRAMHEADING();
@@ -2719,20 +2716,106 @@ TPSCONSTANTINDEX CONSTINDEX;
 TLXPOS TOKENPOS;
 do {
 LXREADTOKEN();
-if (LXTOKEN.ID == TKIDENTIFIER) {
-CONSTINDEX = FINDCONSTANT(LXTOKEN.VALUE);
+if (LEXER.TOKEN.ID == TKIDENTIFIER) {
+CONSTINDEX = FINDCONSTANT(LEXER.TOKEN.VALUE);
 if (CONSTINDEX != 0) {
-TOKENPOS = LXTOKEN.POS;
-LXTOKEN = DEFS.CONSTANTS[(CONSTINDEX) - 1].REPLACEMENT;
-LXTOKEN.POS = TOKENPOS;
+TOKENPOS = LEXER.TOKEN.POS;
+LEXER.TOKEN = DEFS.CONSTANTS[(CONSTINDEX) - 1].REPLACEMENT;
+LEXER.TOKEN.POS = TOKENPOS;
 }
 }
-} while (!(LXTOKEN.ID != TKCOMMENT));
+} while (!(LEXER.TOKEN.ID != TKCOMMENT));
+}
+void USAGE(STRING MSG) {
+if (cmp_ss(MSG, str_make(0, "")) != 0) {
+write_s(OUTPUT, MSG);
+writeln(OUTPUT);
+}
+{
+write_s(OUTPUT, PARAMSTR(0));
+write_s(OUTPUT, str_make(18, " input [-o output]"));
+writeln(OUTPUT);
+}
+HALT(0);
+}
+STRING REPLACEEXTENSION(STRING STR, STRING OLD, STRING NEW) {
+STRING return_REPLACEEXTENSION;
+int BASELEN;
+int POS;
+PBoolean MATCHES;
+return_REPLACEEXTENSION = str_make(0, "");
+BASELEN = LENGTH(STR) - LENGTH(OLD);
+if (BASELEN > 0) {
+MATCHES = 1;
+{
+int first = 1;
+int last = LENGTH(OLD);
+if (first <= last) {
+POS = first;
+while (1) {
+MATCHES = MATCHES && (cmp_cc(UPCASE(STR.chr[POS + BASELEN]), UPCASE(OLD.chr[POS])) == 0);
+if (POS == last) break;
+++POS;
+}
+}
+}
+if (MATCHES) return_REPLACEEXTENSION = cat_ss(COPY(STR, 1, BASELEN), NEW);
+}
+return return_REPLACEEXTENSION;
+}
+void PARSECMDLINE() {
+int POS;
+STRING INPUTFILE;
+STRING OUTPUTFILE;
+enum { FLAGNONE, FLAGOUTPUT} FLAG;
+STRING PARAM;
+const char* EnumValues5[] = { "FLAGNONE", "FLAGOUTPUT" };
+INPUTFILE = str_make(0, "");
+OUTPUTFILE = str_make(0, "");
+FLAG = FLAGNONE;
+{
+int first = 1;
+int last = PARAMCOUNT();
+if (first <= last) {
+POS = first;
+while (1) {
+{
+PARAM = PARAMSTR(POS);
+if (cmp_cc(PARAM.chr[1], '-') == 0) {
+if (cmp_ss(PARAM, str_make(2, "-o")) == 0) FLAG = FLAGOUTPUT;
+ else if (cmp_ss(PARAM, str_make(2, "-h")) == 0) USAGE(str_make(0, ""));
+ else USAGE(cat_ss(str_make(16, "Unknown option: "), PARAM));
+}
+ else if (FLAG == FLAGOUTPUT) {
+if (cmp_ss(OUTPUTFILE, str_make(0, "")) != 0) USAGE(str_make(39, "Output file must be specified only once"));
+ else OUTPUTFILE = PARAM;
+FLAG = FLAGNONE;
+}
+ else {
+if (cmp_ss(INPUTFILE, str_make(0, "")) != 0) USAGE(str_make(38, "Input file must be specified only once"));
+ else INPUTFILE = PARAM;
+}
+}
+if (POS == last) break;
+++POS;
+}
+}
+}
+if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) OUTPUTFILE = REPLACEEXTENSION(INPUTFILE, str_make(4, ".pas"), str_make(2, ".c"));
+if (cmp_ss(INPUTFILE, str_make(0, "")) == 0) LEXER.INPUT = INPUT;
+ else {
+ASSIGN(&LEXER.INPUT, INPUTFILE);
+RESET(&LEXER.INPUT);
+}
+if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) CODEGEN.OUTPUT = OUTPUT;
+ else {
+ASSIGN(&CODEGEN.OUTPUT, OUTPUTFILE);
+REWRITE(&CODEGEN.OUTPUT);
+}
 }
 void pascual_main() {
-LXINPUT = INPUT;
-CPOUTPUT = OUTPUT;
+PARSECMDLINE();
 PARSEPROGRAM();
-CLOSE(&LXINPUT);
-CLOSE(&CPOUTPUT);
+CLOSE(&LEXER.INPUT);
+CLOSE(&CODEGEN.OUTPUT);
 }
