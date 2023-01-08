@@ -4,7 +4,7 @@ typedef enum { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKNUMBER, TKSTRING, TK
 typedef struct { int ROW; int COL; } TLXPOS;
 typedef struct { TLXTOKENID ID; STRING VALUE; TLXPOS POS; } TLXTOKEN;
 const char* EnumValues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKNUMBER", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKFALSE", "TKTRUE", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
-struct { STRING LINE; TLXTOKEN TOKEN; TLXPOS POS; PFile INPUT; } LEXER;
+struct { STRING LINE; TLXTOKEN TOKEN; TLXPOS POS; PFile INPUT; PFile PREVINPUT; PBoolean HASPREVINPUT; } LEXER;
 struct { PFile OUTPUT; } CODEGEN;
 STRING LXPOSSTR(TLXPOS POS) {
 STRING return_LXPOSSTR;
@@ -159,74 +159,72 @@ if ((LENGTH(LEXER.LINE) > POS + 1) && (cmp_cc(LEXER.LINE.chr[POS + 1], '\'') == 
 LXGETSYMBOL(TKSTRING, POS);
 }
 void LXGETCOMMENT() {
-char CHR;
-PBoolean SHORTCOMMENT;
-char DELIM;
-PBoolean CANEND;
-CHR = LEXER.LINE.chr[1];
-SHORTCOMMENT = cmp_cc(CHR, '{') == 0;
-if (SHORTCOMMENT) {
-DELIM = '}';
-LXGETSYMBOL(TKCOMMENT, 1);
-}
- else {
-DELIM = ')';
-LXGETSYMBOL(TKCOMMENT, 2);
-}
+PBoolean DONE;
+int DELIMITERLENGTH;
+STRING COMMENT;
+DONE = 0;
+if (cmp_cc(LEXER.LINE.chr[1], '{') == 0) DELIMITERLENGTH = 1;
+ else DELIMITERLENGTH = 2;
+LXGETSYMBOL(TKCOMMENT, DELIMITERLENGTH);
 do {
-if (!LXISTOKENWAITING()) {
+while (cmp_ss(LEXER.LINE, str_make(0, "")) == 0) {
+COMMENT = cat_sc(COMMENT, ' ');
 {
-write_s(STDERR, str_make(22, "End of file in comment"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+read_s(LEXER.INPUT, &LEXER.LINE);
+readln(LEXER.INPUT);
 }
-HALT(1);
+LEXER.POS.ROW = LEXER.POS.ROW + 1;
+LEXER.POS.COL = 1;
 }
-CANEND = SHORTCOMMENT || (cmp_cc(CHR, '*') == 0);
-CHR = LEXER.LINE.chr[1];
+if (DELIMITERLENGTH == 1) DONE = cmp_cc(LEXER.LINE.chr[1], '}') == 0;
+ else DONE = (cmp_cc(LEXER.LINE.chr[1], '*') == 0) && (cmp_cc(LEXER.LINE.chr[2], ')') == 0);
+if (!DONE) {
+COMMENT = cat_sc(COMMENT, LEXER.LINE.chr[1]);
 DELETE(&LEXER.LINE, 1, 1);
 LEXER.POS.COL = LEXER.POS.COL + 1;
-} while (!(CANEND && (cmp_cc(CHR, DELIM) == 0)));
-LEXER.TOKEN.VALUE = str_make(0, "");
+}
+} while (!(DONE));
+DELETE(&LEXER.LINE, 1, DELIMITERLENGTH);
+LEXER.POS.COL = LEXER.POS.COL + DELIMITERLENGTH;
+LEXER.TOKEN.VALUE = COMMENT;
 }
 void LXREADTOKEN() {
 char CHR;
-char NXT;
+STRING PFX;
 LEXER.TOKEN.VALUE = str_make(0, "");
 LEXER.TOKEN.ID = TKUNKNOWN;
 if (!LXISTOKENWAITING()) LEXER.TOKEN.ID = TKEOF;
  else {
 CHR = LEXER.LINE.chr[1];
+if (LENGTH(LEXER.LINE) >= 2) PFX = cat_cc(LEXER.LINE.chr[1], LEXER.LINE.chr[2]);
+ else PFX = str_make(0, "");
 if (LXISALPHA(CHR)) LXGETIDENTIFIER();
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && LXISDIGIT(CHR)) LXGETNUMBER();
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '\'') == 0)) LXGETSTRING();
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (LENGTH(LEXER.LINE) > 1)) {
-NXT = LEXER.LINE.chr[2];
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '>') == 0)) LXGETSYMBOL(TKNOTEQUALS, 2);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKLESSOREQUALS, 2);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKMOREOREQUALS, 2);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0) && (cmp_cc(NXT, '=') == 0)) LXGETSYMBOL(TKASSIGN, 2);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0) && (cmp_cc(NXT, '.') == 0)) LXGETSYMBOL(TKRANGE, 2);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0) && (cmp_cc(NXT, '*') == 0)) LXGETCOMMENT();
-}
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '+') == 0)) LXGETSYMBOL(TKPLUS, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '-') == 0)) LXGETSYMBOL(TKMINUS, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '*') == 0)) LXGETSYMBOL(TKASTERISK, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '/') == 0)) LXGETSYMBOL(TKSLASH, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '=') == 0)) LXGETSYMBOL(TKEQUALS, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '<') == 0)) LXGETSYMBOL(TKLESSTHAN, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '>') == 0)) LXGETSYMBOL(TKMORETHAN, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '[') == 0)) LXGETSYMBOL(TKLBRACKET, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ']') == 0)) LXGETSYMBOL(TKRBRACKET, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '.') == 0)) LXGETSYMBOL(TKDOT, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ',') == 0)) LXGETSYMBOL(TKCOMMA, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ':') == 0)) LXGETSYMBOL(TKCOLON, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ';') == 0)) LXGETSYMBOL(TKSEMICOLON, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '^') == 0)) LXGETSYMBOL(TKCARET, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '(') == 0)) LXGETSYMBOL(TKLPAREN, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, ')') == 0)) LXGETSYMBOL(TKRPAREN, 1);
-if ((LEXER.TOKEN.ID == TKUNKNOWN) && (cmp_cc(CHR, '{') == 0)) LXGETCOMMENT();
-if (LEXER.TOKEN.ID == TKUNKNOWN) {
+ else if (LXISDIGIT(CHR)) LXGETNUMBER();
+ else if (cmp_cc(CHR, '\'') == 0) LXGETSTRING();
+ else if (cmp_ss(PFX, str_make(2, "<>")) == 0) LXGETSYMBOL(TKNOTEQUALS, 2);
+ else if (cmp_ss(PFX, str_make(2, "<=")) == 0) LXGETSYMBOL(TKLESSOREQUALS, 2);
+ else if (cmp_ss(PFX, str_make(2, ">=")) == 0) LXGETSYMBOL(TKMOREOREQUALS, 2);
+ else if (cmp_ss(PFX, str_make(2, ":=")) == 0) LXGETSYMBOL(TKASSIGN, 2);
+ else if (cmp_ss(PFX, str_make(2, "..")) == 0) LXGETSYMBOL(TKRANGE, 2);
+ else if (cmp_ss(PFX, str_make(2, "(*")) == 0) LXGETCOMMENT();
+ else if (cmp_cc(CHR, '+') == 0) LXGETSYMBOL(TKPLUS, 1);
+ else if (cmp_cc(CHR, '-') == 0) LXGETSYMBOL(TKMINUS, 1);
+ else if (cmp_cc(CHR, '*') == 0) LXGETSYMBOL(TKASTERISK, 1);
+ else if (cmp_cc(CHR, '/') == 0) LXGETSYMBOL(TKSLASH, 1);
+ else if (cmp_cc(CHR, '=') == 0) LXGETSYMBOL(TKEQUALS, 1);
+ else if (cmp_cc(CHR, '<') == 0) LXGETSYMBOL(TKLESSTHAN, 1);
+ else if (cmp_cc(CHR, '>') == 0) LXGETSYMBOL(TKMORETHAN, 1);
+ else if (cmp_cc(CHR, '[') == 0) LXGETSYMBOL(TKLBRACKET, 1);
+ else if (cmp_cc(CHR, ']') == 0) LXGETSYMBOL(TKRBRACKET, 1);
+ else if (cmp_cc(CHR, '.') == 0) LXGETSYMBOL(TKDOT, 1);
+ else if (cmp_cc(CHR, ',') == 0) LXGETSYMBOL(TKCOMMA, 1);
+ else if (cmp_cc(CHR, ':') == 0) LXGETSYMBOL(TKCOLON, 1);
+ else if (cmp_cc(CHR, ';') == 0) LXGETSYMBOL(TKSEMICOLON, 1);
+ else if (cmp_cc(CHR, '^') == 0) LXGETSYMBOL(TKCARET, 1);
+ else if (cmp_cc(CHR, '(') == 0) LXGETSYMBOL(TKLPAREN, 1);
+ else if (cmp_cc(CHR, ')') == 0) LXGETSYMBOL(TKRPAREN, 1);
+ else if (cmp_cc(CHR, '{') == 0) LXGETCOMMENT();
+ else {
 {
 write_s(STDERR, str_make(17, "Could not parse ["));
 write_s(STDERR, LEXER.LINE);
@@ -2702,8 +2700,6 @@ OUTPROGRAMEND();
 WANTTOKENANDREAD(TKEND);
 }
 void PARSEPROGRAM() {
-LEXER.POS.ROW = 0;
-LEXER.POS.COL = 0;
 STARTGLOBALSCOPE();
 READTOKEN();
 PSPROGRAMHEADING();
@@ -2711,11 +2707,29 @@ PSPROGRAMBLOCK();
 WANTTOKENANDREAD(TKDOT);
 WANTTOKEN(TKEOF);
 }
+void EXECUTEDIRECTIVE(STRING DIR) {
+if ((LENGTH(DIR) > 3) && (cmp_cc(DIR.chr[2], 'I') == 0) && (cmp_cc(DIR.chr[3], ' ') == 0)) {
+if (LEXER.HASPREVINPUT) {
+{
+write_s(STDERR, str_make(33, "Include files cannot be recursive"));
+write_s(STDERR, LXWHERESTR());
+writeln(STDERR);
+}
+HALT(1);
+}
+LEXER.PREVINPUT = LEXER.INPUT;
+LEXER.HASPREVINPUT = 1;
+ASSIGN(&LEXER.INPUT, COPY(DIR, 4, 255));
+RESET(&LEXER.INPUT);
+}
+}
 void READTOKEN() {
 TPSCONSTANTINDEX CONSTINDEX;
 TLXPOS TOKENPOS;
+PBoolean STOP;
 do {
 LXREADTOKEN();
+STOP = LEXER.TOKEN.ID != TKCOMMENT;
 if (LEXER.TOKEN.ID == TKIDENTIFIER) {
 CONSTINDEX = FINDCONSTANT(LEXER.TOKEN.VALUE);
 if (CONSTINDEX != 0) {
@@ -2724,7 +2738,13 @@ LEXER.TOKEN = DEFS.CONSTANTS[(CONSTINDEX) - 1].REPLACEMENT;
 LEXER.TOKEN.POS = TOKENPOS;
 }
 }
-} while (!(LEXER.TOKEN.ID != TKCOMMENT));
+if (LEXER.TOKEN.ID == TKCOMMENT) if ((LENGTH(LEXER.TOKEN.VALUE) >= 2) && (cmp_cc(LEXER.TOKEN.VALUE.chr[1], '$') == 0)) EXECUTEDIRECTIVE(LEXER.TOKEN.VALUE);
+if ((LEXER.TOKEN.ID == TKEOF) && LEXER.HASPREVINPUT) {
+LEXER.INPUT = LEXER.PREVINPUT;
+LEXER.HASPREVINPUT = 0;
+STOP = 0;
+}
+} while (!(STOP));
 }
 void USAGE(STRING MSG) {
 if (cmp_ss(MSG, str_make(0, "")) != 0) {
@@ -2732,8 +2752,20 @@ write_s(OUTPUT, MSG);
 writeln(OUTPUT);
 }
 {
+write_s(OUTPUT, str_make(6, "Usage:"));
+writeln(OUTPUT);
+}
+{
 write_s(OUTPUT, PARAMSTR(0));
-write_s(OUTPUT, str_make(18, " input [-o output]"));
+write_s(OUTPUT, str_make(24, " input.pas [-o output.c]"));
+writeln(OUTPUT);
+}
+{
+writeln(OUTPUT);
+}
+{
+write_s(OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "));
+write_s(OUTPUT, str_make(26, "stdin/stdout will be used."));
 writeln(OUTPUT);
 }
 HALT(0);
@@ -2781,7 +2813,7 @@ POS = first;
 while (1) {
 {
 PARAM = PARAMSTR(POS);
-if (cmp_cc(PARAM.chr[1], '-') == 0) {
+if ((cmp_cc(PARAM.chr[1], '-') == 0) && (cmp_sc(PARAM, '-') != 0)) {
 if (cmp_ss(PARAM, str_make(2, "-o")) == 0) FLAG = FLAGOUTPUT;
  else if (cmp_ss(PARAM, str_make(2, "-h")) == 0) USAGE(str_make(0, ""));
  else USAGE(cat_ss(str_make(16, "Unknown option: "), PARAM));
@@ -2801,19 +2833,31 @@ if (POS == last) break;
 }
 }
 }
-if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) OUTPUTFILE = REPLACEEXTENSION(INPUTFILE, str_make(4, ".pas"), str_make(2, ".c"));
-if (cmp_ss(INPUTFILE, str_make(0, "")) == 0) LEXER.INPUT = INPUT;
- else {
+if (cmp_ss(INPUTFILE, str_make(0, "")) == 0) USAGE(str_make(28, "Input file must be specified"));
+if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) {
+if (cmp_sc(INPUTFILE, '-') == 0) OUTPUTFILE = str_of('-');
+ else OUTPUTFILE = REPLACEEXTENSION(INPUTFILE, str_make(4, ".pas"), str_make(2, ".c"));
+}
+if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) USAGE(str_make(29, "Output file must be specified"));
+if (cmp_sc(INPUTFILE, '-') != 0) {
 ASSIGN(&LEXER.INPUT, INPUTFILE);
 RESET(&LEXER.INPUT);
 }
-if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) CODEGEN.OUTPUT = OUTPUT;
- else {
+if (cmp_sc(OUTPUTFILE, '-') != 0) {
 ASSIGN(&CODEGEN.OUTPUT, OUTPUTFILE);
 REWRITE(&CODEGEN.OUTPUT);
 }
 }
+void CLEARSTATE() {
+LEXER.LINE = str_make(0, "");
+LEXER.POS.ROW = 0;
+LEXER.POS.COL = 0;
+LEXER.INPUT = INPUT;
+LEXER.HASPREVINPUT = 0;
+CODEGEN.OUTPUT = OUTPUT;
+}
 void pascual_main() {
+CLEARSTATE();
 PARSECMDLINE();
 PARSEPROGRAM();
 CLOSE(&LEXER.INPUT);
