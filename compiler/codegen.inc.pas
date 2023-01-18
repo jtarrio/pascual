@@ -61,7 +61,7 @@ begin
   else if Typ.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean ', Name)
   else if Typ.Cls = TtcInteger then write(Codegen.Output, 'int ', Name)
   else if Typ.Cls = TtcChar then write(Codegen.Output, 'char ', Name)
-  else if Typ.Cls = TtcString then write(Codegen.Output, 'STRING ', Name)
+  else if Typ.Cls = TtcString then write(Codegen.Output, 'PString ', Name)
   else if Typ.Cls = TtcText then write(Codegen.Output, 'PFile ', Name)
   else if Typ.Cls = TtcEnum then
   begin
