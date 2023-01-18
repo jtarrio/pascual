@@ -2714,10 +2714,10 @@ write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
 writeln(&CODEGEN.OUTPUT);
 }
 }
-void OUTWRITELN(PString SRC) {
+void OUTWRITELN(PString DST) {
 {
 write_s(&CODEGEN.OUTPUT, str_make(9, "writeln(&"));
-write_s(&CODEGEN.OUTPUT, SRC);
+write_s(&CODEGEN.OUTPUT, DST);
 write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
 writeln(&CODEGEN.OUTPUT);
 }
