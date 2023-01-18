@@ -49,8 +49,8 @@ while ((LENGTH(LEXER.LINE) == 0) && !EOF(&LEXER.INPUT.SRC)) {
 LEXER.INPUT.POS.ROW = LEXER.INPUT.POS.ROW + 1;
 LEXER.INPUT.POS.COL = 1;
 {
-read_s(LEXER.INPUT.SRC, &LEXER.LINE);
-readln(LEXER.INPUT.SRC);
+read_s(&LEXER.INPUT.SRC, &LEXER.LINE);
+readln(&LEXER.INPUT.SRC);
 }
 }
 while ((LENGTH(LEXER.LINE) > 0) && (cmp_cc(LEXER.LINE.chr[1], ' ') == 0)) {
@@ -171,8 +171,8 @@ do {
 while (cmp_ss(LEXER.LINE, str_make(0, "")) == 0) {
 COMMENT = cat_sc(COMMENT, ' ');
 {
-read_s(LEXER.INPUT.SRC, &LEXER.LINE);
-readln(LEXER.INPUT.SRC);
+read_s(&LEXER.INPUT.SRC, &LEXER.LINE);
+readln(&LEXER.INPUT.SRC);
 }
 LEXER.INPUT.POS.ROW = LEXER.INPUT.POS.ROW + 1;
 LEXER.INPUT.POS.COL = 1;
@@ -227,11 +227,11 @@ if (LXISALPHA(CHR)) LXGETIDENTIFIER();
  else if (cmp_cc(CHR, '{') == 0) LXGETCOMMENT();
  else {
 {
-write_s(STDERR, str_make(17, "Could not parse ["));
-write_s(STDERR, LEXER.LINE);
-write_s(STDERR, str_make(5, "] at "));
-write_s(STDERR, LXPOSSTR(LEXER.INPUT.POS));
-writeln(STDERR);
+write_s(&STDERR, str_make(17, "Could not parse ["));
+write_s(&STDERR, LEXER.LINE);
+write_s(&STDERR, str_make(5, "] at "));
+write_s(&STDERR, LXPOSSTR(LEXER.INPUT.POS));
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -253,9 +253,9 @@ RESET(&LEXER.INPUT.SRC);
 void LXINCLUDE(PString FILENAME) {
 if (LEXER.PREV.EXISTS) {
 {
-write_s(STDERR, str_make(33, "Include files cannot be recursive"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Include files cannot be recursive"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -365,10 +365,10 @@ return_DEEPTYPENAME = RET;
  else if (TYP.CLS == TTCPOINTER) return_DEEPTYPENAME = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEINDEX, 1));
  else {
 {
-write_s(STDERR, str_make(37, "Could not get name for type of class "));
-write_e(STDERR, TYP.CLS, EnumValues2);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(37, "Could not get name for type of class "));
+write_e(&STDERR, TYP.CLS, EnumValues2);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -522,12 +522,12 @@ if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) {
 POS = FINDTYPE(TYP.NAME);
 if (POS > SCOPE.NUMTYPES) {
 {
-write_s(STDERR, str_make(9, "Variable "));
-write_s(STDERR, TYP.NAME);
-write_s(STDERR, str_make(20, " already defined as "));
-write_s(STDERR, TYPENAME(POS));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(9, "Variable "));
+write_s(&STDERR, TYP.NAME);
+write_s(&STDERR, str_make(20, " already defined as "));
+write_s(&STDERR, TYPENAME(POS));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -535,9 +535,9 @@ HALT(1);
 POS = DEFS.SCOPE.NUMTYPES + 1;
 if (POS > 128) {
 {
-write_s(STDERR, str_make(32, "Too many types have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Too many types have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -581,9 +581,9 @@ TPSENUMINDEX return_ADDENUM;
 DEFS.SCOPE.NUMENUMS = DEFS.SCOPE.NUMENUMS + 1;
 if (DEFS.SCOPE.NUMENUMS > 16) {
 {
-write_s(STDERR, str_make(32, "Too many enums have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Too many enums have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -596,9 +596,9 @@ TPSRECORDINDEX return_ADDRECORD;
 DEFS.SCOPE.NUMRECORDS = DEFS.SCOPE.NUMRECORDS + 1;
 if (DEFS.SCOPE.NUMRECORDS > 32) {
 {
-write_s(STDERR, str_make(34, "Too many records have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(34, "Too many records have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -611,9 +611,9 @@ TPSARRAYINDEX return_ADDARRAY;
 DEFS.SCOPE.NUMARRAYS = DEFS.SCOPE.NUMARRAYS + 1;
 if (DEFS.SCOPE.NUMARRAYS > 32) {
 {
-write_s(STDERR, str_make(33, "Too many arrays have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Too many arrays have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -648,11 +648,11 @@ if (cmp_ss(CONSTANT.NAME, str_make(0, "")) != 0) {
 POS = FINDCONSTANT(CONSTANT.NAME);
 if (POS > SCOPE.NUMCONSTANTS) {
 {
-write_s(STDERR, str_make(9, "Constant "));
-write_s(STDERR, CONSTANT.NAME);
-write_s(STDERR, str_make(16, " already defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(9, "Constant "));
+write_s(&STDERR, CONSTANT.NAME);
+write_s(&STDERR, str_make(16, " already defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -660,9 +660,9 @@ HALT(1);
 POS = DEFS.SCOPE.NUMCONSTANTS + 1;
 if (POS > 32) {
 {
-write_s(STDERR, str_make(36, "Too many constants have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Too many constants have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -698,12 +698,12 @@ if (cmp_ss(VARDEF.NAME, str_make(0, "")) != 0) {
 POS = FINDVARIABLE(VARDEF.NAME);
 if (POS > SCOPE.NUMVARIABLES) {
 {
-write_s(STDERR, str_make(9, "Variable "));
-write_s(STDERR, VARDEF.NAME);
-write_s(STDERR, str_make(20, " already defined as "));
-write_s(STDERR, TYPENAME(DEFS.VARIABLES[(POS) - 1].TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(9, "Variable "));
+write_s(&STDERR, VARDEF.NAME);
+write_s(&STDERR, str_make(20, " already defined as "));
+write_s(&STDERR, TYPENAME(DEFS.VARIABLES[(POS) - 1].TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -711,9 +711,9 @@ HALT(1);
 POS = DEFS.SCOPE.NUMVARIABLES + 1;
 if (POS > 32) {
 {
-write_s(STDERR, str_make(36, "Too many variables have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Too many variables have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -787,36 +787,36 @@ if (POS != 0) {
 if (DEFS.FUNCTIONS[(POS) - 1].ISDECLARATION) {
 if (!ISSAMEFUNCTIONDEFINITION(POS, FUN)) {
 if (FUN.RETURNTYPEINDEX == 0) {
-write_s(STDERR, str_make(10, "Procedure "));
-write_s(STDERR, FUN.NAME);
-write_s(STDERR, str_make(42, " incompatible with its forward declaration"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(10, "Procedure "));
+write_s(&STDERR, FUN.NAME);
+write_s(&STDERR, str_make(42, " incompatible with its forward declaration"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
  else {
-write_s(STDERR, str_make(9, "Function "));
-write_s(STDERR, FUN.NAME);
-write_s(STDERR, str_make(42, " incompatible with its forward declaration"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(9, "Function "));
+write_s(&STDERR, FUN.NAME);
+write_s(&STDERR, str_make(42, " incompatible with its forward declaration"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
 }
  else {
 if (FUN.RETURNTYPEINDEX == 0) {
-write_s(STDERR, str_make(10, "Procedure "));
-write_s(STDERR, FUN.NAME);
-write_s(STDERR, str_make(16, " already defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(10, "Procedure "));
+write_s(&STDERR, FUN.NAME);
+write_s(&STDERR, str_make(16, " already defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
  else {
-write_s(STDERR, str_make(9, "Function "));
-write_s(STDERR, FUN.NAME);
-write_s(STDERR, str_make(16, " already defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(9, "Function "));
+write_s(&STDERR, FUN.NAME);
+write_s(&STDERR, str_make(16, " already defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -825,9 +825,9 @@ HALT(1);
 POS = DEFS.SCOPE.NUMFUNCTIONS + 1;
 if (POS > 256) {
 {
-write_s(STDERR, str_make(36, "Too many functions have been defined"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Too many functions have been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -845,10 +845,10 @@ int POS;
 TYP = DEFS.TYPES[(TYPEINDEX) - 1];
 if (TYP.CLS != TTCRECORD) {
 {
-write_s(STDERR, str_make(14, "Not a record: "));
-write_s(STDERR, TYP.NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(14, "Not a record: "));
+write_s(&STDERR, TYP.NAME);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -868,10 +868,10 @@ if (POS == last) break;
 }
 if (TYPEINDEX == 0) {
 {
-write_s(STDERR, str_make(17, "Field not found: "));
-write_s(STDERR, NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(17, "Field not found: "));
+write_s(&STDERR, NAME);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -976,9 +976,9 @@ TPSEXPRESSION return_EVALUATE;
 if (EXPR.CLS == TECFUNCTION) {
 if (DEFS.FUNCTIONS[(EXPR.FUNCTIONINDEX) - 1].ARGCOUNT != 0) {
 {
-write_s(STDERR, str_make(27, "Function requires arguments"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(27, "Function requires arguments"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -995,10 +995,10 @@ TPSEXPRESSION return_COERCETYPE;
 EXPR = EVALUATE(EXPR);
 if (EXPR.CLS != TECVALUE) {
 {
-write_s(STDERR, str_make(26, "Cannot assign function to "));
-write_s(STDERR, TYPENAME(TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(26, "Cannot assign function to "));
+write_s(&STDERR, TYPENAME(TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1008,12 +1008,12 @@ EXPR.VALUE = cat_sc(cat_ss(str_make(7, "str_of("), EXPR.VALUE), ')');
 }
  else if (!ISSAMETYPE(EXPR.TYPEINDEX, TYPEINDEX)) {
 {
-write_s(STDERR, str_make(14, "Cannot assign "));
-write_s(STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(STDERR, str_make(4, " to "));
-write_s(STDERR, TYPENAME(TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(14, "Cannot assign "));
+write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
+write_s(&STDERR, str_make(4, " to "));
+write_s(&STDERR, TYPENAME(TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1124,10 +1124,10 @@ if (ISBOOLEANTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'b';
  else if (ISENUMTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'e';
  else {
 {
-write_s(STDERR, str_make(30, "No short type name exists for "));
-write_s(STDERR, TYPENAME(TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(30, "No short type name exists for "));
+write_s(&STDERR, TYPENAME(TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1156,10 +1156,10 @@ if (OP == TKPLUS) OPER = str_of('+');
  else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
  else {
 {
-write_s(STDERR, str_make(32, "Expected binary operator, found "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Expected binary operator, found "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1185,10 +1185,10 @@ if (OP == TKAND) OPER = str_make(2, "&&");
  else if (OP == TKMOREOREQUALS) OPER = str_make(2, ">=");
  else {
 {
-write_s(STDERR, str_make(32, "Expected binary operator, found "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Expected binary operator, found "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1215,10 +1215,10 @@ if (OP == TKPLUS) FNAME = str_make(3, "cat");
  else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
  else {
 {
-write_s(STDERR, str_make(32, "Expected binary operator, found "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Expected binary operator, found "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1247,10 +1247,10 @@ if (OP == TKEQUALS) CMP = str_make(2, "==");
  else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
  else {
 {
-write_s(STDERR, str_make(32, "Expected binary operator, found "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(32, "Expected binary operator, found "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1271,14 +1271,14 @@ if (ISBOOLEANTYPE(LEFT.TYPEINDEX) && ISBOOLEANTYPE(RIGHT.TYPEINDEX)) return_BINA
  else if (ISENUMTYPE(LEFT.TYPEINDEX) && ISSAMETYPE(LEFT.TYPEINDEX, RIGHT.TYPEINDEX)) return_BINARYEXPRESSION = ENUMBINARYEXPRESSION(LEFT, OP, RIGHT);
  else {
 {
-write_s(STDERR, str_make(27, "Type mismatch for operator "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, str_make(2, ": "));
-write_s(STDERR, TYPENAME(LEFT.TYPEINDEX));
-write_s(STDERR, str_make(5, " and "));
-write_s(STDERR, TYPENAME(RIGHT.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(27, "Type mismatch for operator "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, str_make(2, ": "));
+write_s(&STDERR, TYPENAME(LEFT.TYPEINDEX));
+write_s(&STDERR, str_make(5, " and "));
+write_s(&STDERR, TYPENAME(RIGHT.TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1289,19 +1289,19 @@ TPSEXPRESSION return_UNARYEXPRESSION;
 EXPR = EVALUATE(EXPR);
 if (OP != TKNOT) {
 {
-write_s(STDERR, str_make(31, "Expected unary operator, found "));
-write_e(STDERR, OP, EnumValues1);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(31, "Expected unary operator, found "));
+write_e(&STDERR, OP, EnumValues1);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
  else if (!ISBOOLEANTYPE(EXPR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(33, "Expected boolean expression, got "));
-write_s(STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Expected boolean expression, got "));
+write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1314,12 +1314,12 @@ void READTOKEN();
 void WANTTOKEN(TLXTOKENID ID) {
 if (LEXER.TOKEN.ID != ID) {
 {
-write_s(STDERR, str_make(13, "Wanted token "));
-write_e(STDERR, ID, EnumValues1);
-write_s(STDERR, str_make(8, ", found "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(13, "Wanted token "));
+write_e(&STDERR, ID, EnumValues1);
+write_s(&STDERR, str_make(8, ", found "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1327,14 +1327,14 @@ HALT(1);
 void WANTTOKEN2(TLXTOKENID ID1, TLXTOKENID ID2) {
 if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2)) {
 {
-write_s(STDERR, str_make(13, "Wanted token "));
-write_e(STDERR, ID1, EnumValues1);
-write_s(STDERR, str_make(4, " or "));
-write_e(STDERR, ID2, EnumValues1);
-write_s(STDERR, str_make(8, ", found "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(13, "Wanted token "));
+write_e(&STDERR, ID1, EnumValues1);
+write_s(&STDERR, str_make(4, " or "));
+write_e(&STDERR, ID2, EnumValues1);
+write_s(&STDERR, str_make(8, ", found "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1365,10 +1365,10 @@ if (LEXER.TOKEN.ID == TKIDENTIFIER) {
 TYPEINDEX = FINDTYPE(LEXER.TOKEN.VALUE);
 if (TYPEINDEX == 0) {
 {
-write_s(STDERR, str_make(14, "Unknown type: "));
-write_s(STDERR, LEXER.TOKEN.VALUE);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(14, "Unknown type: "));
+write_s(&STDERR, LEXER.TOKEN.VALUE);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1381,9 +1381,9 @@ do {
 ENUM.SIZE = ENUM.SIZE + 1;
 if (ENUM.SIZE > 128) {
 {
-write_s(STDERR, str_make(23, "Too many values in enum"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(23, "Too many values in enum"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1404,9 +1404,9 @@ do {
 REC.SIZE = REC.SIZE + 1;
 if (REC.SIZE > 16) {
 {
-write_s(STDERR, str_make(25, "Too many fields in record"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(25, "Too many fields in record"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1441,10 +1441,10 @@ TYPEINDEX = ADDTYPE(TYP, SCOPE);
 }
  else {
 {
-write_s(STDERR, str_make(30, "Wanted type definition, found "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(30, "Wanted type definition, found "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1478,10 +1478,10 @@ CONSTANT.NAME = NAME;
 if ((LEXER.TOKEN.ID == TKFALSE) || (LEXER.TOKEN.ID == TKTRUE) || (LEXER.TOKEN.ID == TKNUMBER) || (LEXER.TOKEN.ID == TKSTRING)) CONSTANT.REPLACEMENT = LEXER.TOKEN;
  else {
 {
-write_s(STDERR, str_make(31, "Expected constant value, found "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(31, "Expected constant value, found "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1504,10 +1504,10 @@ OUTCONSTANTVALUE(EXPR.VALUE);
 EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
 if (!ISCHARTYPE(EXPR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(28, "Expected char constant, got "));
-write_s(STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(28, "Expected char constant, got "));
+write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1532,10 +1532,10 @@ WANTTOKENANDREAD(TKRPAREN);
 }
  else {
 {
-write_s(STDERR, str_make(27, "Invalid type for constant: "));
-write_s(STDERR, TYPENAME(TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(27, "Invalid type for constant: "));
+write_s(&STDERR, TYPENAME(TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1631,10 +1631,10 @@ do {
 DEF.ARGCOUNT = DEF.ARGCOUNT + 1;
 if (DEF.ARGCOUNT > 4) {
 {
-write_s(STDERR, str_make(41, "Too many arguments declared for function "));
-write_s(STDERR, DEF.NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(41, "Too many arguments declared for function "));
+write_s(&STDERR, DEF.NAME);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1696,9 +1696,9 @@ TPSEXPRESSION EXPR;
 int ARGNUM;
 if (FN.CLS != TECFUNCTION) {
 {
-write_s(STDERR, str_make(14, "Not a function"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(14, "Not a function"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1734,9 +1734,9 @@ TPSEXPRESSION return_PSPOINTERDEREF;
 PTR = EVALUATE(PTR);
 if ((PTR.CLS != TECVALUE) || !ISPOINTERTYPE(PTR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(13, "Not a pointer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(13, "Not a pointer"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1764,9 +1764,9 @@ if (ISVARIABLEEXPRESSION(OUTVAR) && ISTEXTTYPE(OUTVAR.TYPEINDEX)) SRC = OUTVAR.V
  else {
 if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(36, "Invalid expression for read argument"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Invalid expression for read argument"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1778,9 +1778,9 @@ while (LEXER.TOKEN.ID != TKRPAREN) {
 OUTVAR = PSEXPRESSION();
 if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(36, "Invalid expression for read argument"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Invalid expression for read argument"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1832,9 +1832,9 @@ WANTTOKENANDREAD(TKCOMMA);
 DEST = PSEXPRESSION();
 if (!ISVARIABLEEXPRESSION(DEST) || !ISSTRINGTYPE(DEST.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(45, "Destination argument is not a string variable"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(45, "Destination argument is not a string variable"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1848,9 +1848,9 @@ DEST = PSEXPRESSION();
 WANTTOKENANDREAD(TKRPAREN);
 if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(25, "Argument is not a pointer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(25, "Argument is not a pointer"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1863,9 +1863,9 @@ DEST = PSEXPRESSION();
 WANTTOKENANDREAD(TKRPAREN);
 if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(25, "Argument is not a pointer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(25, "Argument is not a pointer"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1879,9 +1879,9 @@ IDX = PSEXPRESSION();
 WANTTOKENANDREAD(TKRBRACKET);
 if ((IDX.CLS != TECVALUE) || !ISINTEGERTYPE(IDX.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(28, "Subscript must be an integer"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(28, "Subscript must be an integer"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1895,9 +1895,9 @@ ARR.TYPEINDEX = DEFS.ARRAYS[(DEFS.TYPES[(ARR.TYPEINDEX) - 1].ARRAYINDEX) - 1].TY
 }
  else {
 {
-write_s(STDERR, str_make(21, "Not a string or array"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(21, "Not a string or array"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1910,9 +1910,9 @@ TPSIDENTIFIER FLD;
 TPSTYPEINDEX FLDTYPE;
 if ((REC.CLS != TECVALUE) || (DEFS.TYPES[(REC.TYPEINDEX) - 1].CLS != TTCRECORD)) {
 {
-write_s(STDERR, str_make(12, "Not a record"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(12, "Not a record"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1921,11 +1921,11 @@ FLD = PSIDENTIFIER();
 FLDTYPE = FINDFIELDTYPE(REC.TYPEINDEX, FLD.NAME);
 if (FLDTYPE == 0) {
 {
-write_s(STDERR, str_make(6, "Field "));
-write_s(STDERR, FLD.NAME);
-write_s(STDERR, str_make(20, " not found in record"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(6, "Field "));
+write_s(&STDERR, FLD.NAME);
+write_s(&STDERR, str_make(20, " not found in record"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -1976,10 +1976,10 @@ if ((cmp_ss(ID.NAME, str_make(4, "READ")) == 0) || (cmp_ss(ID.NAME, str_make(6, 
  else if (cmp_ss(ID.NAME, str_make(7, "DISPOSE")) == 0) PSDISPOSE();
  else {
 {
-write_s(STDERR, str_make(30, "Unknown variable or function: "));
-write_s(STDERR, ID.NAME);
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(30, "Unknown variable or function: "));
+write_s(&STDERR, ID.NAME);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2015,10 +2015,10 @@ EXPR = UNARYEXPRESSION(TKNOT, PSFACTOR());
 }
  else {
 {
-write_s(STDERR, str_make(29, "Invalid token in expression: "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(29, "Invalid token in expression: "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2067,9 +2067,9 @@ return return_PSEXPRESSION;
 void PSASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 if (LHS.ISCONSTANT) {
 {
-write_s(STDERR, str_make(33, "Cannot assign to a constant value"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Cannot assign to a constant value"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2077,9 +2077,9 @@ if (LHS.CLS == TECFUNCTION) OUTASSIGNRETURNVALUE(LHS, COERCETYPE(RHS, DEFS.FUNCT
  else if (LHS.CLS == TECVALUE) OUTASSIGN(LHS, COERCETYPE(RHS, LHS.TYPEINDEX));
  else {
 {
-write_s(STDERR, str_make(36, "Cannot assign to result of statement"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(36, "Cannot assign to result of statement"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2146,9 +2146,9 @@ WANTTOKENANDREAD(TKFOR);
 ITER = PSEXPRESSION();
 if (!ISVARIABLEEXPRESSION(ITER)) {
 {
-write_s(STDERR, str_make(17, "Expected variable"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(17, "Expected variable"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2173,10 +2173,10 @@ if (LEXER.TOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
  else if (LEXER.TOKEN.ID == TKFOR) PSFORSTATEMENT();
  else {
 {
-write_s(STDERR, str_make(17, "Unexpected token "));
-write_s(STDERR, LXTOKENSTR());
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(17, "Unexpected token "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2308,22 +2308,22 @@ ADDFUNCTION(FUN);
 struct { PFile OUTPUT; } CODEGEN;
 void OUTBEGIN() {
 {
-write_c(CODEGEN.OUTPUT, '{');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '{');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTEND() {
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTENUMVALUES(TPSENUMINDEX POS) {
 int POSINENUM;
 {
-write_s(CODEGEN.OUTPUT, str_make(22, "const char* EnumValues"));
-write_i(CODEGEN.OUTPUT, POS);
-write_s(CODEGEN.OUTPUT, str_make(7, "[] = { "));
+write_s(&CODEGEN.OUTPUT, str_make(22, "const char* EnumValues"));
+write_i(&CODEGEN.OUTPUT, POS);
+write_s(&CODEGEN.OUTPUT, str_make(7, "[] = { "));
 }
 {
 int first = 1;
@@ -2333,12 +2333,12 @@ POSINENUM = first;
 while (1) {
 {
 if (POSINENUM != 1) {
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
 }
 {
-write_c(CODEGEN.OUTPUT, '\"');
-write_s(CODEGEN.OUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
-write_c(CODEGEN.OUTPUT, '\"');
+write_c(&CODEGEN.OUTPUT, '\"');
+write_s(&CODEGEN.OUTPUT, DEFS.ENUMS[(POS) - 1].VALUES[(POSINENUM) - 1]);
+write_c(&CODEGEN.OUTPUT, '\"');
 }
 }
 if (POSINENUM == last) break;
@@ -2347,8 +2347,8 @@ if (POSINENUM == last) break;
 }
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(3, " };"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(3, " };"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTENUMVALUESINSCOPE(TPSSCOPE SCOPE) {
@@ -2385,38 +2385,38 @@ TPSARRAYDEF ARR;
 int POS;
 if (TYPEINDEX != 0) TYP = DEFS.TYPES[(TYPEINDEX) - 1];
 if (TYPEINDEX == 0) {
-write_s(CODEGEN.OUTPUT, str_make(5, "void "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(5, "void "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if ((TYP.ALIASFOR != 0) && (cmp_ss(TYP.NAME, str_make(0, "")) != 0)) {
-write_s(CODEGEN.OUTPUT, TYP.NAME);
-write_c(CODEGEN.OUTPUT, ' ');
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, TYP.NAME);
+write_c(&CODEGEN.OUTPUT, ' ');
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCBOOLEAN) {
-write_s(CODEGEN.OUTPUT, str_make(9, "PBoolean "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(9, "PBoolean "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCINTEGER) {
-write_s(CODEGEN.OUTPUT, str_make(4, "int "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(4, "int "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCCHAR) {
-write_s(CODEGEN.OUTPUT, str_make(5, "char "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(5, "char "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCSTRING) {
-write_s(CODEGEN.OUTPUT, str_make(8, "PString "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(8, "PString "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCTEXT) {
-write_s(CODEGEN.OUTPUT, str_make(6, "PFile "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(6, "PFile "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
  else if (TYP.CLS == TTCENUM) {
 ENUM = DEFS.ENUMS[(TYP.ENUMINDEX) - 1];
 {
-write_s(CODEGEN.OUTPUT, str_make(7, "enum { "));
+write_s(&CODEGEN.OUTPUT, str_make(7, "enum { "));
 }
 {
 int first = 1;
@@ -2426,10 +2426,10 @@ POS = first;
 while (1) {
 {
 if (POS > 1) {
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
 }
 {
-write_s(CODEGEN.OUTPUT, ENUM.VALUES[(POS) - 1]);
+write_s(&CODEGEN.OUTPUT, ENUM.VALUES[(POS) - 1]);
 }
 }
 if (POS == last) break;
@@ -2438,14 +2438,14 @@ if (POS == last) break;
 }
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(2, "} "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(2, "} "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCRECORD) {
 REC = DEFS.RECORDS[(TYP.RECORDINDEX) - 1];
 {
-write_s(CODEGEN.OUTPUT, str_make(9, "struct { "));
+write_s(&CODEGEN.OUTPUT, str_make(9, "struct { "));
 }
 {
 int first = 1;
@@ -2456,7 +2456,7 @@ while (1) {
 {
 OUTNAMEANDTYPE(REC.FIELDS[(POS) - 1].NAME, REC.FIELDS[(POS) - 1].TYPEINDEX);
 {
-write_s(CODEGEN.OUTPUT, str_make(2, "; "));
+write_s(&CODEGEN.OUTPUT, str_make(2, "; "));
 }
 }
 if (POS == last) break;
@@ -2465,30 +2465,30 @@ if (POS == last) break;
 }
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(2, "} "));
-write_s(CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(2, "} "));
+write_s(&CODEGEN.OUTPUT, NAME);
 }
 }
  else if (TYP.CLS == TTCARRAY) {
 ARR = DEFS.ARRAYS[(TYP.ARRAYINDEX) - 1];
 OUTNAMEANDTYPE(NAME, ARR.TYPEINDEX);
 {
-write_s(CODEGEN.OUTPUT, str_make(5, "[1 + "));
-write_s(CODEGEN.OUTPUT, ARR.HIGHBOUND);
-write_s(CODEGEN.OUTPUT, str_make(3, " - "));
-write_s(CODEGEN.OUTPUT, ARR.LOWBOUND);
-write_c(CODEGEN.OUTPUT, ']');
+write_s(&CODEGEN.OUTPUT, str_make(5, "[1 + "));
+write_s(&CODEGEN.OUTPUT, ARR.HIGHBOUND);
+write_s(&CODEGEN.OUTPUT, str_make(3, " - "));
+write_s(&CODEGEN.OUTPUT, ARR.LOWBOUND);
+write_c(&CODEGEN.OUTPUT, ']');
 }
 }
  else if (TYP.CLS == TTCPOINTER) OUTNAMEANDTYPE(cat_cs('*', NAME), TYP.POINTEDTYPEINDEX);
  else {
 {
-write_s(STDERR, str_make(29, "Error writing name and type: "));
-write_s(STDERR, NAME);
-write_s(STDERR, str_make(2, ", "));
-write_s(STDERR, TYPENAME(TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(29, "Error writing name and type: "));
+write_s(&STDERR, NAME);
+write_s(&STDERR, str_make(2, ", "));
+write_s(&STDERR, TYPENAME(TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
@@ -2498,41 +2498,41 @@ PString NAME;
 NAME = DEFS.TYPES[(TYPEINDEX) - 1].NAME;
 if (DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR == 0) {
 {
-write_s(STDERR, str_make(5, "Type "));
-write_s(STDERR, NAME);
-write_s(STDERR, str_make(16, " is not an alias"));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(5, "Type "));
+write_s(&STDERR, NAME);
+write_s(&STDERR, str_make(16, " is not an alias"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(8, "typedef "));
+write_s(&CODEGEN.OUTPUT, str_make(8, "typedef "));
 }
 OUTNAMEANDTYPE(NAME, DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR);
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTCONSTANTVALUE(PString VALUE) {
 {
-write_s(CODEGEN.OUTPUT, VALUE);
+write_s(&CODEGEN.OUTPUT, VALUE);
 }
 }
 void OUTCONSTANTARRAYBEGIN() {
 {
-write_s(CODEGEN.OUTPUT, str_make(2, "{ "));
+write_s(&CODEGEN.OUTPUT, str_make(2, "{ "));
 }
 }
 void OUTCONSTANTARRAYSEPARATOR() {
 {
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
 }
 }
 void OUTCONSTANTARRAYEND() {
 {
-write_s(CODEGEN.OUTPUT, str_make(2, " }"));
+write_s(&CODEGEN.OUTPUT, str_make(2, " }"));
 }
 }
 void OUTVARIABLEDECLARATION(TPSVARIABLE VARDEF) {
@@ -2540,34 +2540,34 @@ OUTNAMEANDTYPE(OUTVARIABLENAME(VARDEF.NAME, VARDEF.ISREFERENCE), VARDEF.TYPEINDE
 }
 void OUTVARIABLEDEFINITION(TPSVARIABLEINDEX VARINDEX) {
 if (DEFS.VARIABLES[(VARINDEX) - 1].ISCONSTANT) {
-write_s(CODEGEN.OUTPUT, str_make(6, "const "));
+write_s(&CODEGEN.OUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLEINDEX VARINDEX) {
 {
-write_s(CODEGEN.OUTPUT, str_make(6, "const "));
+write_s(&CODEGEN.OUTPUT, str_make(6, "const "));
 }
 OUTVARIABLEDECLARATION(DEFS.VARIABLES[(VARINDEX) - 1]);
 {
-write_s(CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
 }
 }
 void OUTCONSTANTDEFINITIONEND() {
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
 int POS;
 OUTNAMEANDTYPE(DEF.NAME, DEF.RETURNTYPEINDEX);
 {
-write_c(CODEGEN.OUTPUT, '(');
+write_c(&CODEGEN.OUTPUT, '(');
 }
 {
 int first = 1;
@@ -2578,7 +2578,7 @@ while (1) {
 {
 OUTVARIABLEDECLARATION(DEF.ARGS[(POS) - 1]);
 if (POS != DEF.ARGCOUNT) {
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
 }
 }
 if (POS == last) break;
@@ -2587,14 +2587,14 @@ if (POS == last) break;
 }
 }
 {
-write_c(CODEGEN.OUTPUT, ')');
+write_c(&CODEGEN.OUTPUT, ')');
 }
 }
 void OUTFUNCTIONDECLARATION(TPSFUNCTIONINDEX FNINDEX) {
 OUTFUNCTIONPROTOTYPE(DEFS.FUNCTIONS[(FNINDEX) - 1]);
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTFUNCTIONDEFINITION(TPSFUNCTIONINDEX FNINDEX) {
@@ -2602,39 +2602,39 @@ TPSFUNCTION FUN;
 FUN = DEFS.FUNCTIONS[(FNINDEX) - 1];
 OUTFUNCTIONPROTOTYPE(FUN);
 {
-write_s(CODEGEN.OUTPUT, str_make(2, " {"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(2, " {"));
+writeln(&CODEGEN.OUTPUT);
 }
 if (FUN.RETURNTYPEINDEX != 0) {
 OUTNAMEANDTYPE(OUTRETURNVARIABLENAME(FUN.NAME), FUN.RETURNTYPEINDEX);
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 }
 void OUTFUNCTIONEND(TPSFUNCTIONINDEX FNINDEX) {
 if (DEFS.FUNCTIONS[(FNINDEX) - 1].RETURNTYPEINDEX != 0) {
-write_s(CODEGEN.OUTPUT, str_make(7, "return "));
-write_s(CODEGEN.OUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(7, "return "));
+write_s(&CODEGEN.OUTPUT, OUTRETURNVARIABLENAME(DEFS.FUNCTIONS[(FNINDEX) - 1].NAME));
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTPROGRAMHEADING(PString NAME) {
 {
-write_s(CODEGEN.OUTPUT, str_make(12, "/* Program: "));
-write_s(CODEGEN.OUTPUT, NAME);
-write_s(CODEGEN.OUTPUT, str_make(3, " */"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(12, "/* Program: "));
+write_s(&CODEGEN.OUTPUT, NAME);
+write_s(&CODEGEN.OUTPUT, str_make(3, " */"));
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(20, "#include \"pascual.h\""));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(20, "#include \"pascual.h\""));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void SETSTRINGINDEX(TPSEXPRESSION *STR, TPSEXPRESSION IDX) {
@@ -2673,168 +2673,168 @@ return return_GENPARENS;
 }
 void OUTREAD(PString SRC, TPSEXPRESSION OUTVAR) {
 {
-write_s(CODEGEN.OUTPUT, str_make(5, "read_"));
-write_c(CODEGEN.OUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
-write_c(CODEGEN.OUTPUT, '(');
-write_s(CODEGEN.OUTPUT, SRC);
-write_s(CODEGEN.OUTPUT, str_make(3, ", &"));
-write_s(CODEGEN.OUTPUT, OUTVAR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(5, "read_"));
+write_c(&CODEGEN.OUTPUT, SHORTTYPENAME(OUTVAR.TYPEINDEX));
+write_s(&CODEGEN.OUTPUT, str_make(2, "(&"));
+write_s(&CODEGEN.OUTPUT, SRC);
+write_s(&CODEGEN.OUTPUT, str_make(3, ", &"));
+write_s(&CODEGEN.OUTPUT, OUTVAR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTREADLN(PString SRC) {
 {
-write_s(CODEGEN.OUTPUT, str_make(7, "readln("));
-write_s(CODEGEN.OUTPUT, SRC);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(8, "readln(&"));
+write_s(&CODEGEN.OUTPUT, SRC);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTWRITE(PString DST, TPSEXPRESSION EXPR) {
 EXPR = EVALUATE(EXPR);
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(CODEGEN.OUTPUT, str_make(8, "write_e("));
-write_s(CODEGEN.OUTPUT, DST);
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
-write_i(CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(9, "write_e(&"));
+write_s(&CODEGEN.OUTPUT, DST);
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
+write_i(&CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
  else {
-write_s(CODEGEN.OUTPUT, str_make(6, "write_"));
-write_c(CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(CODEGEN.OUTPUT, '(');
-write_s(CODEGEN.OUTPUT, DST);
-write_s(CODEGEN.OUTPUT, str_make(2, ", "));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(6, "write_"));
+write_c(&CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_s(&CODEGEN.OUTPUT, str_make(2, "(&"));
+write_s(&CODEGEN.OUTPUT, DST);
+write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTWRITELN(PString SRC) {
 {
-write_s(CODEGEN.OUTPUT, str_make(8, "writeln("));
-write_s(CODEGEN.OUTPUT, SRC);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(9, "writeln(&"));
+write_s(&CODEGEN.OUTPUT, SRC);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTSTR(PString DST, TPSEXPRESSION EXPR) {
 EXPR = EVALUATE(EXPR);
 if (DEFS.TYPES[(EXPR.TYPEINDEX) - 1].CLS == TTCENUM) {
-write_s(CODEGEN.OUTPUT, DST);
-write_s(CODEGEN.OUTPUT, str_make(12, " = to_str_e("));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
-write_i(CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, DST);
+write_s(&CODEGEN.OUTPUT, str_make(12, " = to_str_e("));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(12, ", EnumValues"));
+write_i(&CODEGEN.OUTPUT, DEFS.TYPES[(EXPR.TYPEINDEX) - 1].ENUMINDEX);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
  else {
-write_s(CODEGEN.OUTPUT, DST);
-write_s(CODEGEN.OUTPUT, str_make(10, " = to_str_"));
-write_c(CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
-write_c(CODEGEN.OUTPUT, '(');
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, DST);
+write_s(&CODEGEN.OUTPUT, str_make(10, " = to_str_"));
+write_c(&CODEGEN.OUTPUT, SHORTTYPENAME(EXPR.TYPEINDEX));
+write_c(&CODEGEN.OUTPUT, '(');
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTNEW(TPSEXPRESSION DST) {
 {
-write_s(CODEGEN.OUTPUT, DST.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(17, " = malloc(sizeof("));
+write_s(&CODEGEN.OUTPUT, DST.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(17, " = malloc(sizeof("));
 }
 OUTNAMEANDTYPE(str_make(0, ""), DEFS.TYPES[(DST.TYPEINDEX) - 1].POINTEDTYPEINDEX);
 {
-write_s(CODEGEN.OUTPUT, str_make(3, "));"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(3, "));"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTDISPOSE(TPSEXPRESSION DST) {
 {
-write_s(CODEGEN.OUTPUT, str_make(5, "free("));
-write_s(CODEGEN.OUTPUT, DST.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ");"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(5, "free("));
+write_s(&CODEGEN.OUTPUT, DST.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTEXPRESSION(TPSEXPRESSION EXPR) {
 {
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
 }
 }
 void OUTASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_s(CODEGEN.OUTPUT, LHS.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(3, " = "));
-write_s(CODEGEN.OUTPUT, RHS.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, LHS.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(&CODEGEN.OUTPUT, RHS.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTASSIGNRETURNVALUE(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
 {
-write_s(CODEGEN.OUTPUT, str_make(7, "return_"));
-write_s(CODEGEN.OUTPUT, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].NAME);
-write_s(CODEGEN.OUTPUT, str_make(3, " = "));
-write_s(CODEGEN.OUTPUT, RHS.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(7, "return_"));
+write_s(&CODEGEN.OUTPUT, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].NAME);
+write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(&CODEGEN.OUTPUT, RHS.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTIF(TPSEXPRESSION EXPR) {
 {
-write_s(CODEGEN.OUTPUT, str_make(4, "if ("));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ") "));
+write_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ") "));
 }
 }
 void OUTELSE() {
 {
-write_s(CODEGEN.OUTPUT, str_make(6, " else "));
+write_s(&CODEGEN.OUTPUT, str_make(6, " else "));
 }
 }
 void OUTREPEATBEGIN() {
 {
-write_s(CODEGEN.OUTPUT, str_make(4, "do {"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(4, "do {"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTREPEATEND(TPSEXPRESSION EXPR) {
 if (!ISBOOLEANTYPE(EXPR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(33, "Expected boolean expression, got "));
-write_s(STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Expected boolean expression, got "));
+write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(11, "} while (!("));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(3, "));"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(11, "} while (!("));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(3, "));"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTWHILEBEGIN(TPSEXPRESSION EXPR) {
 if (!ISBOOLEANTYPE(EXPR.TYPEINDEX)) {
 {
-write_s(STDERR, str_make(33, "Expected boolean expression, got "));
-write_s(STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(STDERR, LXWHERESTR());
-writeln(STDERR);
+write_s(&STDERR, str_make(33, "Expected boolean expression, got "));
+write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
 }
 HALT(1);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(7, "while ("));
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(2, ") "));
+write_s(&CODEGEN.OUTPUT, str_make(7, "while ("));
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(2, ") "));
 }
 }
 void OUTWHILEEND() {
@@ -2845,100 +2845,100 @@ TPSVARIABLE LAST;
 FIRST = MAKEVARIABLE(str_make(5, "first"), ITER.TYPEINDEX, 0);
 LAST = MAKEVARIABLE(str_make(4, "last"), ITER.TYPEINDEX, 0);
 {
-write_c(CODEGEN.OUTPUT, '{');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '{');
+writeln(&CODEGEN.OUTPUT);
 }
 OUTVARIABLEDECLARATION(FIRST);
 {
-write_s(CODEGEN.OUTPUT, str_make(3, " = "));
-write_s(CODEGEN.OUTPUT, FIRSTEXPR.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(&CODEGEN.OUTPUT, FIRSTEXPR.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 OUTVARIABLEDECLARATION(LAST);
 {
-write_s(CODEGEN.OUTPUT, str_make(3, " = "));
-write_s(CODEGEN.OUTPUT, LASTEXPR.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+write_s(&CODEGEN.OUTPUT, LASTEXPR.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(10, "if (first "));
+write_s(&CODEGEN.OUTPUT, str_make(10, "if (first "));
 }
 if (ASCENDING) {
-write_s(CODEGEN.OUTPUT, str_make(2, "<="));
+write_s(&CODEGEN.OUTPUT, str_make(2, "<="));
 }
  else {
-write_s(CODEGEN.OUTPUT, str_make(2, "=>"));
+write_s(&CODEGEN.OUTPUT, str_make(2, "=>"));
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(8, " last) {"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(8, " last) {"));
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_s(CODEGEN.OUTPUT, ITER.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(9, " = first;"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, ITER.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(9, " = first;"));
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_s(CODEGEN.OUTPUT, str_make(11, "while (1) {"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(11, "while (1) {"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTFOREND(TPSEXPRESSION ITER, PBoolean ASCENDING) {
 {
-write_s(CODEGEN.OUTPUT, str_make(4, "if ("));
-write_s(CODEGEN.OUTPUT, ITER.VALUE);
-write_s(CODEGEN.OUTPUT, str_make(16, " == last) break;"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
+write_s(&CODEGEN.OUTPUT, ITER.VALUE);
+write_s(&CODEGEN.OUTPUT, str_make(16, " == last) break;"));
+writeln(&CODEGEN.OUTPUT);
 }
 if (ASCENDING) {
-write_s(CODEGEN.OUTPUT, str_make(2, "++"));
-write_s(CODEGEN.OUTPUT, ITER.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(2, "++"));
+write_s(&CODEGEN.OUTPUT, ITER.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
  else {
-write_s(CODEGEN.OUTPUT, str_make(2, "--"));
-write_s(CODEGEN.OUTPUT, ITER.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
+write_s(&CODEGEN.OUTPUT, str_make(2, "--"));
+write_s(&CODEGEN.OUTPUT, ITER.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
 }
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTPROCEDURECALL(TPSEXPRESSION EXPR) {
 {
-write_s(CODEGEN.OUTPUT, EXPR.VALUE);
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, EXPR.VALUE);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTEMPTYSTATEMENT() {
 {
-write_c(CODEGEN.OUTPUT, ';');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, ';');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTPROGRAMBEGIN() {
 {
-write_s(CODEGEN.OUTPUT, str_make(21, "void pascual_main() {"));
-writeln(CODEGEN.OUTPUT);
+write_s(&CODEGEN.OUTPUT, str_make(21, "void pascual_main() {"));
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void OUTPROGRAMEND() {
 {
-write_c(CODEGEN.OUTPUT, '}');
-writeln(CODEGEN.OUTPUT);
+write_c(&CODEGEN.OUTPUT, '}');
+writeln(&CODEGEN.OUTPUT);
 }
 }
 void CODEGENRESET() {
@@ -2950,23 +2950,23 @@ REWRITE(&CODEGEN.OUTPUT);
 }
 void USAGE(PString MSG) {
 if (cmp_ss(MSG, str_make(0, "")) != 0) {
-write_s(OUTPUT, MSG);
-writeln(OUTPUT);
+write_s(&OUTPUT, MSG);
+writeln(&OUTPUT);
 }
 {
-write_s(OUTPUT, str_make(6, "Usage:"));
-writeln(OUTPUT);
+write_s(&OUTPUT, str_make(6, "Usage:"));
+writeln(&OUTPUT);
 }
 {
-write_s(OUTPUT, PARAMSTR(0));
-write_s(OUTPUT, str_make(24, " input.pas [-o output.c]"));
-writeln(OUTPUT);
+write_s(&OUTPUT, PARAMSTR(0));
+write_s(&OUTPUT, str_make(24, " input.pas [-o output.c]"));
+writeln(&OUTPUT);
 }
-writeln(OUTPUT);
+writeln(&OUTPUT);
 {
-write_s(OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "));
-write_s(OUTPUT, str_make(26, "stdin/stdout will be used."));
-writeln(OUTPUT);
+write_s(&OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "));
+write_s(&OUTPUT, str_make(26, "stdin/stdout will be used."));
+writeln(&OUTPUT);
 }
 HALT(0);
 }

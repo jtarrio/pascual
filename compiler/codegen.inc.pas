@@ -258,29 +258,29 @@ end;
 
 procedure OutRead(Src : string; OutVar : TPsExpression);
 begin
-  writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(',
+  writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(&',
   Src, ', &', OutVar.Value, ');')
 end;
 
 procedure OutReadln(Src : string);
 begin
-  writeln(Codegen.Output, 'readln(', Src, ');')
+  writeln(Codegen.Output, 'readln(&', Src, ');')
 end;
 
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 begin
   Expr := Evaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Codegen.Output, 'write_e(', Dst, ', ', Expr.Value, ', EnumValues',
+    writeln(Codegen.Output, 'write_e(&', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
     writeln(Codegen.Output, 'write_', ShortTypeName(Expr.TypeIndex),
-    '(', Dst, ', ', Expr.Value, ');')
+    '(&', Dst, ', ', Expr.Value, ');')
 end;
 
-procedure OutWriteln(Src : string);
+procedure OutWriteln(Dst : string);
 begin
-  writeln(Codegen.Output, 'writeln(', Src, ');')
+  writeln(Codegen.Output, 'writeln(&', Dst, ');')
 end;
 
 procedure OutStr(Dst : string; Expr : TPsExpression);

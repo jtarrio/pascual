@@ -11,6 +11,7 @@ PString str_of(char chr);
 #define str_make(l, s) \
   (PString) { .len = l, .value = s }
 PString str_of_pchar(const char* str);
+const char* pchar_of_str(PString* str);
 
 PString cat_cc(char a, char b);
 PString cat_cs(char a, PString b);

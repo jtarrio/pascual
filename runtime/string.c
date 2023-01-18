@@ -51,6 +51,13 @@ PString str_of_pchar(const char* str) {
   return ret;
 }
 
+const char* pchar_of_str(PString* str) {
+  static char buffer[256];
+  memcpy(buffer, str->value, str->len);
+  buffer[str->len] = 0;
+  return buffer;
+}
+
 PString cat_cc(char a, char b) {
   PString ret;
   ret.len = 2;
