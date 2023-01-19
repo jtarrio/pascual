@@ -1,5 +1,5 @@
 const 
-  MaxNames = 1;
+  MaxNames = 1024;
   MaxTypes = 128;
   MaxEnums = 16;
   MaxEnumValues = 128;
@@ -116,6 +116,7 @@ var
 
 procedure ClearDefs;
 begin
+  Defs.Scope.NumNames := 0;
   Defs.Scope.NumTypes := 0;
   Defs.Scope.NumEnums := 0;
   Defs.Scope.NumRecords := 0;
@@ -133,6 +134,72 @@ end;
 procedure SetCurrentScope(Scope : TPsScope);
 begin
   Defs.Scope := Scope
+end;
+
+function FindName(Name : string; Required : boolean) : TPsNameIndex;
+var 
+  Pos : TPsNameIndex;
+  Ret : TPsNameIndex;
+begin
+  Ret := 0;
+  for Pos := 1 to Defs.Scope.NumNames do
+    if Name = Defs.Names[Pos].Name then Ret := Pos;
+  if Required and (Ret = 0) then
+  begin
+    writeln(StdErr, 'Unknown identifier: ', Name, LxWhereStr);
+    halt(1)
+  end;
+  FindName := Ret
+end;
+
+function AddName(Def : TPsName; Scope : TPsScope) : TPsNameIndex;
+var 
+  Pos : TPsNameIndex;
+begin
+  Pos := FindName(Def.Name, false);
+  if Pos > Scope.NumNames then
+  begin
+    writeln(StdErr, 'Identifier ', Def.Name, ' already defined', LxWhereStr);
+    halt(1)
+  end;
+  Pos := Defs.Scope.NumNames + 1;
+  if Pos > MaxNames then
+  begin
+    writeln(StdErr, 'Too many identifiers have been defined', LxWhereStr);
+    halt(1)
+  end;
+  Defs.Names[Pos] := Def;
+  Defs.Scope.NumNames := Pos;
+  AddName := Pos
+end;
+
+function MakeName(Name : string; Cls : TPsNameClass; Idx : integer) : TPsName;
+var 
+  Def : TPsName;
+begin
+  Def.Name := Name;
+  Def.Cls := Cls;
+  if Cls = TncType then Def.TypeIndex := Idx
+  else if Cls = TncVariable then Def.VariableIndex := Idx
+  else if Cls = TncEnumValue then Def.TypeIndex := Idx
+  else if Cls = TncFunction then Def.FunctionIndex := Idx
+  else
+  begin
+    writeln(StdErr, 'Cannot use MakeName for special functions', LxWhereStr);
+    halt(1)
+  end;
+  MakeName := Def
+end;
+
+function MakeSpecialFunctionName(Name : string;
+                                 Fn : TPsSpecialFunction) : TPsName;
+var 
+  Def : TPsName;
+begin
+  Def.Name := Name;
+  Def.Cls := TncSpecialFunction;
+  Def.SpecialFunction := Fn;
+  MakeSpecialFunctionName := Def
 end;
 
 function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;
@@ -315,28 +382,18 @@ begin
                 and (A.RecordIndex = B.RecordIndex)
 end;
 
-function FindType(Name : string) : TPsTypeIndex;
-var 
-  Pos : integer;
-  Ret : TPsTypeIndex;
-begin
-  Ret := 0;
-  for Pos := 1 to Defs.Scope.NumTypes do
-    if Name = Defs.Types[Pos].Name then Ret := Pos;
-  FindType := Ret
-end;
-
 function AddType(Typ : TPsType; Scope : TPsScope) : TPsTypeIndex;
 var 
   Pos : integer;
+  EnumPos : integer;
 begin
   if Typ.Name <> '' then
   begin
-    Pos := FindType(Typ.Name);
-    if Pos > Scope.NumTypes then
+    Pos := FindName(Typ.Name, false);
+    if Pos > Scope.NumNames then
     begin
-      writeln(StdErr, 'Variable ', Typ.Name, ' already defined as ',
-              TypeName(Pos), LxWhereStr);
+      writeln(StdErr, 'Identifier ', Typ.Name, ' already defined',
+              LxWhereStr);
       halt(1)
     end
   end;
@@ -349,19 +406,12 @@ begin
   Defs.Types[Pos] := Typ;
   Defs.Scope.NumTypes := Pos;
   AddType := Pos;
-end;
-
-function FindTypeOfEnumValue(Name : string) : TPsTypeIndex;
-var 
-  Pos : TPsTypeIndex;
-  EnumPos : integer;
-begin
-  FindTypeOfEnumValue := 0;
-  for Pos := 1 to Defs.Scope.NumTypes do
-    if Defs.Types[Pos].EnumIndex <> 0 then
-      for EnumPos := 1 to Defs.Enums[Defs.Types[Pos].EnumIndex].Size do
-        if Name = Defs.Enums[Defs.Types[Pos].EnumIndex].Values[EnumPos] then
-          FindTypeOfEnumValue := Pos
+  if Typ.Name <> '' then
+    AddName(MakeName(Typ.Name, TncType, Pos), Scope);
+  if (Typ.Cls = TtcEnum) and (Typ.AliasFor = 0) then
+    for EnumPos := 1 to Defs.Enums[Typ.EnumIndex].Size do
+      AddName(MakeName(Defs.Enums[Typ.EnumIndex].Values[EnumPos],
+              TncEnumValue, Pos), Scope)
 end;
 
 function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;
@@ -437,17 +487,6 @@ begin
   AddConstant := Pos
 end;
 
-function FindVariable(Name : string) : TPsVariableIndex;
-var 
-  Pos : integer;
-  Ret : TPsVariableIndex;
-begin
-  Ret := 0;
-  for Pos := 1 to Defs.Scope.NumVariables do
-    if Name = Defs.Variables[Pos].Name then Ret := Pos;
-  FindVariable := Ret
-end;
-
 function AddVariable(VarDef : TPsVariable; Scope : TPsScope)
 : TPsVariableIndex;
 var 
@@ -455,11 +494,11 @@ var
 begin
   if VarDef.Name <> '' then
   begin
-    Pos := FindVariable(VarDef.Name);
-    if Pos > Scope.NumVariables then
+    Pos := FindName(VarDef.Name, false);
+    if Pos > Scope.NumNames then
     begin
-      writeln(StdErr, 'Variable ', VarDef.Name, ' already defined as ',
-              TypeName(Defs.Variables[Pos].TypeIndex), LxWhereStr);
+      writeln(StdErr, 'Identifier ', VarDef.Name, ' already defined',
+              LxWhereStr);
       halt(1)
     end
   end;
@@ -471,7 +510,9 @@ begin
   end;
   Defs.Variables[Pos] := VarDef;
   Defs.Scope.NumVariables := Pos;
-  AddVariable := Pos
+  AddVariable := Pos;
+  if VarDef.Name <> '' then
+    AddName(MakeName(VarDef.Name, TncVariable, Pos), Scope)
 end;
 
 function EmptyFunction : TPsFunction;
@@ -488,18 +529,6 @@ end;
 function IsEmptyFunction(Fn : TPsFunction) : boolean;
 begin
   IsEmptyFunction := Fn.Name = ''
-end;
-
-function FindFunction(Name : string) : TPsFunctionIndex;
-var 
-  Pos : integer;
-begin
-  FindFunction := 0;
-  for Pos := 1 to Defs.Scope.NumFunctions do
-  begin
-    if Defs.Functions[Pos].Name = Name then
-      FindFunction := Pos
-  end
 end;
 
 function IsSameFunctionDefinition(DeclIndex : TPsFunctionIndex; Fun :
@@ -522,10 +551,18 @@ end;
 function AddFunction(Fun : TPsFunction) : TPsFunctionIndex;
 var 
   Pos : integer;
+  IsNew : boolean;
 begin
-  Pos := FindFunction(Fun.Name);
+  Pos := FindName(Fun.Name, false);
   if Pos <> 0 then
   begin
+    if Defs.Names[Pos].Cls <> TncFunction then
+    begin
+      writeln(StdErr, 'Identifier ', Fun.Name, ' already defined', LxWhereStr);
+      halt(1)
+    end;
+    IsNew := false;
+    Pos := Defs.Names[Pos].FunctionIndex;
     if Defs.Functions[Pos].IsDeclaration then
     begin
       if not IsSameFunctionDefinition(Pos, Fun) then
@@ -550,6 +587,7 @@ begin
   end
   else
   begin
+    IsNew := true;
     Pos := Defs.Scope.NumFunctions + 1;
     if Pos > MaxFunctions then
     begin
@@ -559,7 +597,19 @@ begin
     Defs.Scope.NumFunctions := Pos
   end;
   Defs.Functions[Pos] := Fun;
-  AddFunction := Pos
+  AddFunction := Pos;
+  if IsNew and (Fun.Name <> '') then
+    AddName(MakeName(Fun.Name, TncFunction, Pos), GlobalScope)
+end;
+
+procedure AddSpecialFunction(Name : string; Fn : TPsSpecialFunction);
+var 
+  Def : TPsName;
+begin
+  Def.Name := Name;
+  Def.Cls := TncSpecialFunction;
+  Def.SpecialFunction := Fn;
+  AddName(Def, GlobalScope)
 end;
 
 function FindFieldType(TypeIndex : TPsTypeIndex; Name : string) : TPsTypeIndex;
@@ -630,82 +680,4 @@ begin
   VarDef.IsReference := IsRef;
   VarDef.IsConstant := false;
   MakeVariable := VarDef
-end;
-
-function FindName(Name : string) : TPsNameIndex;
-var 
-  NameDef : TPsName;
-  VarIndex : TPsVariableIndex;
-  FnIndex : TPsFunctionIndex;
-  TypeIndex : TPsTypeIndex;
-  EnumTypeIndex : TPsTypeIndex;
-  Pos : integer;
-begin
-  NameDef.Name := Name;
-  VarIndex := FindVariable(Name);
-  FnIndex := FindFunction(Name);
-  TypeIndex := FindType(Name);
-  EnumTypeIndex := FindTypeOfEnumValue(Name);
-  if TypeIndex <> 0 then
-  begin
-    NameDef.Cls := TncType;
-    NameDef.TypeIndex := TypeIndex;
-  end
-  else if VarIndex <> 0 then
-  begin
-    NameDef.Cls := TncVariable;
-    NameDef.VariableIndex := VarIndex
-  end
-  else if FnIndex <> 0 then
-  begin
-    NameDef.Cls := TncFunction;
-    NameDef.FunctionIndex := FnIndex
-  end
-  else if EnumTypeIndex <> 0 then
-  begin
-    NameDef.Cls := TncEnumValue;
-    NameDef.TypeIndex := EnumTypeIndex
-  end
-  else if Name = 'READ' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfRead
-  end
-  else if Name = 'READLN' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfReadln
-  end
-  else if Name = 'WRITE' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfWrite
-  end
-  else if Name = 'WRITELN' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfWriteln
-  end
-  else if Name = 'STR' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfStr
-  end
-  else if Name = 'NEW' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfNew
-  end
-  else if Name = 'DISPOSE' then
-  begin
-    NameDef.Cls := TncSpecialFunction;
-    NameDef.SpecialFunction := TsfDispose
-  end
-  else
-  begin
-    writeln(StdErr, 'Unknown identifier: ', Name, LxWhereStr);
-    halt(1)
-  end;
-  Defs.Names[1] := NameDef;
-  FindName := 1
 end;

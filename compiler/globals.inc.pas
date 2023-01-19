@@ -23,6 +23,14 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false),
   GlobalScope);
 
+  AddSpecialFunction('READ', TsfRead);
+  AddSpecialFunction('READLN', TsfReadln);
+  AddSpecialFunction('WRITE', TsfWrite);
+  AddSpecialFunction('WRITELN', TsfWriteln);
+  AddSpecialFunction('STR', TsfStr);
+  AddSpecialFunction('NEW', TsfNew);
+  AddSpecialFunction('DISPOSE', TsfDispose);
+
   Fun.Name := 'ASSIGN';
   Fun.ArgCount := 2;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);

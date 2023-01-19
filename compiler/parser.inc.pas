@@ -50,7 +50,7 @@ begin
   TypeIndex := 0;
   if Lexer.Token.Id = TkIdentifier then
   begin
-    Found := Defs.Names[FindName(Lexer.Token.Value)];
+    Found := Defs.Names[FindName(Lexer.Token.Value, true)];
     if Found.Cls <> TncType then
     begin
       writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
@@ -651,7 +651,7 @@ begin
   Expr.Value := '';
   Expr.IsConstant := false;
   Id := PsIdentifier;
-  Found := Defs.Names[FindName(Id.Name)];
+  Found := Defs.Names[FindName(Id.Name, true)];
   if Found.Cls = TncVariable then
   begin
     if Defs.Variables[Found.VariableIndex].IsReference then

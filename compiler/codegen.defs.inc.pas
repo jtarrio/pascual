@@ -66,7 +66,7 @@ procedure OutReadln(Src : string);
 forward;
 procedure OutWrite(Dst : string; Expr : TPsExpression);
 forward;
-procedure OutWriteln(Src : string);
+procedure OutWriteln(Dst : string);
 forward;
 procedure OutStr(Dst : string; Expr : TPsExpression);
 forward;
