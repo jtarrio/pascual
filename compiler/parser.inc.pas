@@ -40,6 +40,7 @@ end;
 
 function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 var 
+  Found : TPsName;
   TypeIndex : TPsTypeIndex;
   Typ : TPsType;
   Enum : TPsEnumDef;
@@ -49,12 +50,13 @@ begin
   TypeIndex := 0;
   if Lexer.Token.Id = TkIdentifier then
   begin
-    TypeIndex := FindType(Lexer.Token.Value);
-    if TypeIndex = 0 then
+    Found := Defs.Names[FindName(Lexer.Token.Value)];
+    if Found.Cls <> TncType then
     begin
-      writeln(StdErr, 'Unknown type: ', Lexer.Token.Value, LxWhereStr);
+      writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
       halt(1)
     end;
+    TypeIndex := Found.TypeIndex;
     ReadToken
   end
   else if Lexer.Token.Id = TkLparen then
