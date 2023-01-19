@@ -443,13 +443,13 @@ begin
   PsPointerDeref := Ptr
 end;
 
-procedure PsRead(Id : TPsIdentifier);
+procedure PsRead(Fn : TPsSpecialFunction);
 var 
   Src : string;
   LineFeed : boolean;
   OutVar : TPsExpression;
 begin
-  LineFeed := Id.Name = 'READLN';
+  LineFeed := Fn = TsfReadln;
   Src := 'INPUT';
   if Lexer.Token.Id <> TkLparen then
   begin
@@ -497,13 +497,13 @@ begin
   end
 end;
 
-procedure PsWrite(Id : TPsIdentifier);
+procedure PsWrite(Fn : TPsSpecialFunction);
 var 
   Dst : string;
   LineFeed : boolean;
   Expr : TPsExpression;
 begin
-  LineFeed := Id.Name = 'WRITELN';
+  LineFeed := Fn = TsfWriteln;
   Dst := 'OUTPUT';
   if Lexer.Token.Id <> TkLparen then
   begin
@@ -556,7 +556,7 @@ begin
 end;
 
 procedure PsNew;
-var
+var 
   Dest : TPsExpression;
 begin
   WantTokenAndRead(TkLparen);
@@ -571,7 +571,7 @@ begin
 end;
 
 procedure PsDispose;
-var
+var 
   Dest : TPsExpression;
 begin
   WantTokenAndRead(TkLparen);
@@ -641,9 +641,7 @@ end;
 function PsVariableOrFunctionCall : TPsExpression;
 var 
   Id : TPsIdentifier;
-  VarIndex : TPsVariableIndex;
-  FnIndex : TPsFunctionIndex;
-  EnumTypeIndex : TPsTypeIndex;
+  Found : TPsName;
   Expr : TPsExpression;
   Done : boolean;
 begin
@@ -651,45 +649,47 @@ begin
   Expr.Value := '';
   Expr.IsConstant := false;
   Id := PsIdentifier;
-  VarIndex := FindVariable(Id.Name);
-  FnIndex := FindFunction(Id.Name);
-  EnumTypeIndex := FindTypeOfEnumValue(Id.Name);
-  if VarIndex <> 0 then
+  Found := Defs.Names[FindName(Id.Name)];
+  if Found.Cls = TncVariable then
   begin
-    if Defs.Variables[VarIndex].IsReference then
+    if Defs.Variables[Found.VariableIndex].IsReference then
       Expr.Value := '*' + Id.Name
     else
       Expr.Value := Id.Name;
     Expr.Cls := TecValue;
-    Expr.TypeIndex := Defs.Variables[VarIndex].TypeIndex;
+    Expr.TypeIndex := Defs.Variables[Found.VariableIndex].TypeIndex;
   end
-  else if FnIndex <> 0 then
+  else if Found.Cls = TncFunction then
   begin
     Expr.Value := Id.Name;
     Expr.Cls := TecFunction;
-    Expr.FunctionIndex := FnIndex
+    Expr.FunctionIndex := Found.FunctionIndex
   end
-  else if EnumTypeIndex <> 0 then
+  else if Found.Cls = TncEnumValue then
   begin
     Expr.Value := Id.Name;
     Expr.Cls := TecValue;
-    Expr.TypeIndex := EnumTypeIndex;
+    Expr.TypeIndex := Found.TypeIndex;
     Expr.IsConstant := true
   end
-  else
+  else if Found.Cls = TncSpecialFunction then
   begin
     Expr.Cls := TecStatement;
     Expr.TypeIndex := 0;
-    if (Id.Name = 'READ') or (Id.Name = 'READLN') then PsRead(Id)
-    else if (Id.Name = 'WRITE') or (Id.Name = 'WRITELN') then PsWrite(Id)
-    else if Id.Name = 'STR' then PsStr
-    else if Id.Name = 'NEW' then PsNew
-    else if Id.Name = 'DISPOSE' then PsDispose
-    else
-    begin
-      writeln(StdErr, 'Unknown variable or function: ', Id.Name, LxWhereStr);
-      halt(1)
-    end;
+    if (Found.SpecialFunction = TsfRead)
+       or (Found.SpecialFunction = TsfReadln) then
+      PsRead(Found.SpecialFunction)
+    else if (Found.SpecialFunction = TsfWrite)
+            or (Found.SpecialFunction = TsfWriteln) then
+           PsWrite(Found.SpecialFunction)
+    else if Found.SpecialFunction = TsfStr then PsStr
+    else if Found.SpecialFunction = TsfNew then PsNew
+    else if Found.SpecialFunction = TsfDispose then PsDispose
+  end
+  else
+  begin
+    writeln(StdErr, 'Invalid identifier: ', Id.Name, LxWhereStr);
+    halt(1)
   end;
   repeat
     if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)

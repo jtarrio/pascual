@@ -1,4 +1,5 @@
 const 
+  MaxNames = 1;
   MaxTypes = 128;
   MaxEnums = 16;
   MaxEnumValues = 128;
@@ -63,7 +64,21 @@ type
     ReturnTypeIndex : TPsTypeIndex;
     IsDeclaration : boolean;
   end;
+  TPsNameIndex = integer;
+  TPsNameClass = (TncType, TncVariable, TncEnumValue, TncFunction,
+                  TncSpecialFunction);
+  TPsSpecialFunction = (TsfRead, TsfReadln, TsfWrite, TsfWriteln, TsfStr,
+                        TsfNew, TsfDispose);
+  TPsName = record
+    Name : string;
+    Cls : TPsNameClass;
+    TypeIndex : TPsTypeIndex;
+    VariableIndex : TPsVariableIndex;
+    FunctionIndex : TPsFunctionIndex;
+    SpecialFunction : TPsSpecialFunction;
+  end;
   TPsScope = record
+    NumNames : integer;
     NumTypes : integer;
     NumEnums : integer;
     NumRecords : integer;
@@ -74,6 +89,7 @@ type
   end;
   TPsDefs = record
     Scope : TPsScope;
+    Names : array[1..MaxNames] of TPsName;
     Types : array[1..MaxTypes] of TPsType;
     Enums : array[1..MaxEnums] of TPsEnumDef;
     Records : array[1..MaxRecords] of TPsRecordDef;
@@ -163,7 +179,7 @@ begin
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
-    DeepTypeName := '^' + DeepTypeName(Typ.PointedTypeIndex, true)
+         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypeIndex, true)
   else
   begin
     writeln(StdErr, 'Could not get name for type of class ', Typ.Cls, LxWhereStr
@@ -274,7 +290,7 @@ begin
 end;
 
 function PointerType(TypeIndex : TPsTypeIndex) : TPsType;
-var
+var 
   Typ : TPsType;
 begin
   Typ := TypeOfClass(TtcPointer);
@@ -614,4 +630,82 @@ begin
   VarDef.IsReference := IsRef;
   VarDef.IsConstant := false;
   MakeVariable := VarDef
+end;
+
+function FindName(Name : string) : TPsNameIndex;
+var 
+  NameDef : TPsName;
+  VarIndex : TPsVariableIndex;
+  FnIndex : TPsFunctionIndex;
+  TypeIndex : TPsTypeIndex;
+  EnumTypeIndex : TPsTypeIndex;
+  Pos : integer;
+begin
+  NameDef.Name := Name;
+  VarIndex := FindVariable(Name);
+  FnIndex := FindFunction(Name);
+  TypeIndex := FindType(Name);
+  EnumTypeIndex := FindTypeOfEnumValue(Name);
+  if TypeIndex <> 0 then
+  begin
+    NameDef.Cls := TncType;
+    NameDef.TypeIndex := TypeIndex;
+  end
+  else if VarIndex <> 0 then
+  begin
+    NameDef.Cls := TncVariable;
+    NameDef.VariableIndex := VarIndex
+  end
+  else if FnIndex <> 0 then
+  begin
+    NameDef.Cls := TncFunction;
+    NameDef.FunctionIndex := FnIndex
+  end
+  else if EnumTypeIndex <> 0 then
+  begin
+    NameDef.Cls := TncEnumValue;
+    NameDef.TypeIndex := EnumTypeIndex
+  end
+  else if Name = 'READ' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfRead
+  end
+  else if Name = 'READLN' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfReadln
+  end
+  else if Name = 'WRITE' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfWrite
+  end
+  else if Name = 'WRITELN' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfWriteln
+  end
+  else if Name = 'STR' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfStr
+  end
+  else if Name = 'NEW' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfNew
+  end
+  else if Name = 'DISPOSE' then
+  begin
+    NameDef.Cls := TncSpecialFunction;
+    NameDef.SpecialFunction := TsfDispose
+  end
+  else
+  begin
+    writeln(StdErr, 'Unknown identifier: ', Name, LxWhereStr);
+    halt(1)
+  end;
+  Defs.Names[1] := NameDef;
+  FindName := 1
 end;
