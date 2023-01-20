@@ -16,6 +16,7 @@ begin
 
   AddConstant(MakeConstant('FALSE', TkFalse, 'FALSE'), GlobalScope);
   AddConstant(MakeConstant('TRUE', TkTrue, 'TRUE'), GlobalScope);
+  AddConstant(MakeConstant('MAXINT', TkNumber, '2147483647'), GlobalScope);
 
   AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false), GlobalScope);
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false),

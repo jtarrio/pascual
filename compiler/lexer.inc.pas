@@ -73,6 +73,16 @@ begin
   LxIsAlphaNum := LxIsAlpha(Chr) or LxIsDigit(Chr)
 end;
 
+function LxIsIdentifierFirst(Chr : char) : boolean;
+begin
+  LxIsIdentifierFirst := LxIsAlpha(Chr) or (Chr = '_')
+end;
+
+function LxIsIdentifierChar(Chr : char) : boolean;
+begin
+  LxIsIdentifierChar := LxIsAlphaNum(Chr) or (Chr = '_')
+end;
+
 function LxIsTokenWaiting : boolean;
 begin
   repeat
@@ -111,7 +121,7 @@ begin
   while (Pos < Length(Lexer.Line)) and InToken do
   begin
     Chr := Lexer.Line[Pos + 1];
-    InToken := LxIsAlphaNum(Chr);
+    InToken := LxIsIdentifierChar(Chr);
     if InToken then Pos := Pos + 1
   end;
   LxGetSymbol(TkIdentifier, Pos);
@@ -245,7 +255,7 @@ begin
     if Length(Lexer.Line) >= 2 then Pfx := Lexer.Line[1] + Lexer.Line[2]
     else Pfx := '';
 
-    if LxIsAlpha(Chr) then LxGetIdentifier
+    if LxIsIdentifierFirst(Chr) then LxGetIdentifier
     else if LxIsDigit(Chr) then LxGetNumber
     else if Chr = '''' then LxGetString
     else if Pfx = '<>' then LxGetSymbol(TkNotEquals, 2)
