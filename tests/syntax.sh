@@ -245,3 +245,64 @@ echo '^integer; X = T' | testtype | is_valid
 echo '^integer; X = ^T' | testtype | is_valid
 echo '^X; X = record A : integer end' | testtype | will_be_valid
 echo '^X; X = integer' | testtype | will_be_valid
+
+# Variable access
+testvar () {
+  echo 'program foo; type T = '; cat; echo "; var A : T; begin writeln($1) end."
+}
+echo 'integer' | testvar 'A' | is_valid
+echo 'array[1..10] of integer' | testvar 'A[1]' | is_valid
+echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1][2]' | is_valid
+echo 'array[1..10, 1..10] of integer' | testvar 'A[1][2]' | will_be_valid
+echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1, 2]' | will_be_valid
+echo 'record
+        B : integer;
+        C : record
+              D : boolean;
+              E : string
+            end
+      end' | testvar 'A.B' | is_valid
+echo 'record
+        B : integer;
+        C : record
+              D : boolean;
+              E : string
+            end
+       end' | testvar 'A.C.D' | is_valid
+echo 'record
+        B : integer;
+        C : record
+              D : boolean;
+              E : string
+            end
+      end' | testvar 'A.C.E' | is_valid
+echo 'record
+        B : integer;
+        C : record
+              D : boolean;
+              E : string
+            end
+      end' | testvar 'A.C.F' | is_not_valid
+echo 'array[1..10] of record
+                        B : array[1..10] of record
+                                              C : boolean
+                                            end
+                      end' | testvar 'A[1].B[2].C' | is_valid
+echo '^integer' | testvar 'A^' | is_valid
+echo 'integer' | testvar 'A^' | is_not_valid
+echo 'program foo; 
+      type T = record B : integer end;
+           C = ^T;
+      var A : C;
+      begin writeln(A^.B) end.' | is_valid
+echo 'program foo; 
+      type T = record B : integer end;
+           C = ^T;
+      var A : C;
+      begin writeln(A.B) end.' | is_not_valid
+echo 'program foo; 
+      type T = record C : ^integer end;
+      type U = record B : ^T end;
+           C = ^U;
+      var A : C;
+      begin writeln(A^.B^.C^) end.' | is_valid
