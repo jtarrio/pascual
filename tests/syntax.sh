@@ -158,7 +158,7 @@ echo 'var A : boolean' | testdef | is_not_valid
 echo 'var A:;' | testdef | is_not_valid
 
 # Type denoters
-testtype () {
+testtype() {
   echo 'program foo; type T = ' ; cat ; echo '; begin end.'
 }
 echo 'boolean' | testtype | is_valid
@@ -256,7 +256,7 @@ echo '^X; X = record A : integer end' | testtype | will_be_valid
 echo '^X; X = integer' | testtype | will_be_valid
 
 # Variable access
-testvar () {
+testvar() {
   echo 'program foo; type T = '; cat; echo "; var A : T; begin writeln($1) end."
 }
 echo 'integer' | testvar 'A' | is_valid
@@ -470,7 +470,7 @@ echo 'program foo;
       begin end.' | is_not_valid
 
 # Expressions
-testexpr () {
+testexpr() {
   echo "program foo; var R : $1; x : $2; y : $2; z : $2; begin R := $3 end."
 }
 testexpr integer integer x | is_valid
@@ -580,7 +580,7 @@ echo 'program foo; var a : record b : integer end; c : record d : integer end;
       end.' | will_be_valid
 
 # I/O
-testwrite () {
+testwrite() {
   echo "program foo; var $1; begin write($2) end."
 }
 testwrite 'a : boolean' a | is_valid
@@ -593,7 +593,7 @@ testwrite 'a : string' 'output, a' | is_valid
 testwrite 'a : string; b : string' 'output, a, b' | is_valid
 testwrite 'a : integer' 'a:10' | will_be_valid
 testwrite 'a : real' 'a:10:5' | will_be_valid
-testwriteln () {
+testwriteln() {
   echo "program foo; var $1; begin writeln($2) end."
 }
 testwriteln 'a : boolean' '' | is_valid
@@ -608,7 +608,7 @@ testwriteln 'a : string' 'output, a' | is_valid
 testwriteln 'a : string; b : string' 'output, a, b' | is_valid
 testwriteln 'a : integer' 'a:10' | will_be_valid
 testwriteln 'a : real' 'a:10:5' | will_be_valid
-testread () {
+testread() {
   echo "program foo; var $1; begin read($2) end."
 }
 testread 'a : integer' a | will_be_valid
@@ -618,7 +618,7 @@ testread 'a : string' a | is_valid
 testread 'a : string; b : string' 'a, b' | is_valid
 testread 'a : string' 'input, a' | is_valid
 testread 'a : string; b : string' 'input, a, b' | is_valid
-testreadln () {
+testreadln() {
   echo "program foo; var $1; begin read($2) end."
 }
 testreadln 'a : integer' '' | is_valid

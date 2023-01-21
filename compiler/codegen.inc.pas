@@ -366,11 +366,14 @@ end;
 procedure OutForBegin(Iter : TPsExpression; FirstExpr : TPsExpression;
                       LastExpr : TPsExpression; Ascending : boolean);
 var 
+  LimitType : TPsTypeIndex;
   First : TPsVariable;
   Last : TPsVariable;
 begin
-  First := MakeVariable('first', Iter.TypeIndex, false);
-  Last := MakeVariable('last', Iter.TypeIndex, false);
+  LimitType := Iter.TypeIndex;
+  if IsEnumType(LimitType) then LimitType := PrimitiveTypes.PtInteger;
+  First := MakeVariable('first', LimitType, false);
+  Last := MakeVariable('last', LimitType, false);
   writeln(Codegen.Output, '{');
   OutVariableDeclaration(First);
   writeln(Codegen.Output, ' = ', FirstExpr.Value, ';');
@@ -380,7 +383,7 @@ begin
   if Ascending then
     write(Codegen.Output, '<=')
   else
-    write(Codegen.Output, '=>');
+    write(Codegen.Output, '>=');
   writeln(Codegen.Output, ' last) {');
   writeln(Codegen.Output, Iter.Value, ' = first;');
   writeln(Codegen.Output, 'while (1) {');
