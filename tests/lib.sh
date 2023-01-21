@@ -8,7 +8,7 @@ do_test_syntax() {
     outfile="$(mktemp)"
     trap "rm -f \"$infile\" \"$outfile\" \"${outfile}.o\"" EXIT
     cat > "$infile"
-    fpc "$infile" -o"$outfile" >/dev/null 2>&1
+    fpc -Mtp "$infile" -o"$outfile" >/dev/null 2>&1
   else
     "$PC" - -o /dev/null 2>/dev/null
   fi

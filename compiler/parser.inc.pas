@@ -726,7 +726,7 @@ begin
   else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
-    Expr := UnaryExpression(TkNot, PsFactor());
+    Expr := UnaryExpression(TkNot, PsFactor);
   end
   else
   begin
@@ -742,7 +742,7 @@ var
   Expr : TPsExpression;
 begin
   Expr := PsFactor;
-  while IsOpMultipying(Lexer.Token) do
+  while IsOpMultiplying(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;
     ReadToken;
@@ -753,10 +753,14 @@ end;
 
 function PsSimpleExpression : TPsExpression;
 var 
+  Negative : boolean;
   Op : TLxTokenId;
   Expr : TPsExpression;
 begin
+  Negative := Lexer.Token.Id = TkMinus;
+  if Negative then ReadToken;
   Expr := PsTerm;
+  if Negative then Expr := UnaryExpression(TkMinus, Expr);
   while IsOpAdding(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;

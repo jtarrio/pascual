@@ -126,11 +126,11 @@ begin
   IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)
 end;
 
-function IsOpMultipying(Tok : TLxToken) : boolean;
+function IsOpMultiplying(Tok : TLxToken) : boolean;
 begin
-  IsOpMultipying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
-                    or (Tok.Id = TkDiv) or (Tok.Id = TkMod)
-                    or (Tok.Id = TkAnd)
+  IsOpMultiplying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
+                     or (Tok.Id = TkDiv) or (Tok.Id = TkMod)
+                     or (Tok.Id = TkAnd)
 end;
 
 function IsOpRelational(Tok : TLxToken) : boolean;
@@ -312,19 +312,31 @@ function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
 : TPsExpression;
 begin
   Expr := Evaluate(Expr);
-  if Op <> TkNot then
+  if Op = TkNot then
+  begin
+    if not IsBooleanType(Expr.TypeIndex) then
+    begin
+      writeln(StdErr, 'Expected boolean expression, got ',
+              TypeName(Expr.TypeIndex), LxWhereStr);
+      halt(1)
+    end;
+    Expr.Value := '!' + Expr.Value;
+  end
+  else if Op = TkMinus then
+  begin
+    if not IsIntegerType(Expr.TypeIndex) then
+    begin
+      writeln(StdErr, 'Expected numeric expression, got ',
+              TypeName(Expr.TypeIndex), LxWhereStr);
+      halt(1)
+    end;
+    Expr.Value := '-' + Expr.Value;
+  end
+  else
   begin
     writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr);
     halt(1)
-  end
-  else if not IsBooleanType(Expr.TypeIndex) then
-  begin
-    writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr);
-    halt(1)
-  end
-  else
-    Expr.Value := '!' + Expr.Value;
+  end;
   Expr.IsConstant := true;
   UnaryExpression := Expr
 end;

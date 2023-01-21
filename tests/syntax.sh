@@ -49,7 +49,7 @@ testid _abc_DEF_123 | is_valid
 
 # Numbers
 testinteger() {
-  echo "program foo; var a : integer; begin a := $1 end."
+  echo "program foo; const a : integer = $1; begin end."
 }
 testinteger 1 | is_valid
 testinteger 1234 | is_valid
@@ -60,7 +60,7 @@ testinteger +1234 | will_be_valid
 testinteger '$1234' | will_be_valid
 testinteger '$CAFE' | will_be_valid
 testreal() {
-  echo "program foo; var a : real; begin a := $1 end."
+  echo "program foo; const a : real = $1; begin end."
 }
 testreal 1.234 | will_be_valid
 testreal -1.234 | will_be_valid
@@ -69,7 +69,7 @@ testreal 1.234e-3 | will_be_valid
 
 # Character strings
 teststring() {
-  echo "program foo; var a : string; begin a := $1 end."
+  echo "program foo; const a : string = $1; begin end."
 }
 teststring "''" | is_valid
 teststring '""' | is_not_valid
@@ -117,12 +117,13 @@ testdef() {
 }
 echo '' | testdef | is_valid
 echo 'const A = 123;' | testdef | is_valid
+echo 'const C : integer = 123;' | testdef | is_valid
 echo 'type T = integer;' | testdef | is_valid
 echo 'var V : boolean;' | testdef | is_valid
-echo 'const A = 123; type T = integer;' | testdef | is_valid
-echo 'const A = 123; var V : boolean;' | testdef | is_valid
-echo 'type T = integer; var V : boolean;' | testdef | is_valid
-echo 'const A = 123; type T = integer; var V : boolean;' | testdef | is_valid
+echo 'const A = 123;
+      const C : integer = 456;
+      type T = integer;
+      var V : boolean;' | testdef | is_valid
 
 # Untyped constant definitions
 echo 'const A = 123;' | testdef | is_valid
@@ -132,6 +133,14 @@ echo 'const A = 123' | testdef | is_not_valid
 echo 'const A = 123; B = A;' | testdef | is_valid
 echo 'const A = B; B = 123;' | testdef | is_not_valid
 echo 'const A = 1 + 2;' | testdef | will_be_valid
+
+# Typed constant definitions
+echo 'const A : integer = 123;' | testdef | is_valid
+echo 'const A : integer;' | testdef | is_not_valid
+echo 'const A : integer = 123; B : integer = A;' | testdef | is_not_valid
+echo 'const A : integer = 1 + 2;' | testdef | will_be_valid
+echo 'const A : array[1..5] of integer = (1, 2, 3, 4, 5);' | testdef | is_valid
+echo 'const A : array[1..5] of integer = 5;' | testdef | is_not_valid
 
 # Type definitions
 echo 'type A = integer;' | testdef | is_valid
@@ -290,6 +299,16 @@ echo 'array[1..10] of record
                       end' | testvar 'A[1].B[2].C' | is_valid
 echo '^integer' | testvar 'A^' | is_valid
 echo 'integer' | testvar 'A^' | is_not_valid
+echo 'program foo;
+      type C = integer;
+           T = ^C;
+      var A : T;
+      begin writeln(A^) end.' | is_valid
+echo 'program foo;
+      type T = ^C;
+           C = integer;
+      var A : T;
+      begin writeln(A^) end.' | will_be_valid
 echo 'program foo; 
       type T = record B : integer end;
            C = ^T;
@@ -306,3 +325,308 @@ echo 'program foo;
            C = ^U;
       var A : C;
       begin writeln(A^.B^.C^) end.' | is_valid
+echo 'program foo;
+      type T = record C : array [1..10] of ^integer end;
+      type U = array [1..10] of ^T;
+      var A : ^U;
+      begin writeln(A^[1]^.C[10]^) end.' | is_valid
+
+# Procedures
+echo 'program foo;
+      procedure Proc;
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc();
+      begin writeln(maxint) end;
+      begin end.' | is_not_valid
+echo 'program foo;
+      procedure Proc(A : integer);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(A : integer; B : boolean);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(A, B : integer);
+      begin writeln(maxint) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      procedure Proc(var A : integer);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(var A : integer; B : boolean);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(var A, B : integer);
+      begin writeln(maxint) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      type T = procedure;
+      procedure Proc(P : T);
+      begin P end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      type T = procedure (A : integer);
+      procedure Proc(P : T);
+      begin P(1) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      type T = function : integer;
+      procedure Proc(P : T);
+      begin writeln(P) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      type T = function (A : integer) : integer;
+      procedure Proc(P : T);
+      begin writeln(P(1)) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      procedure Proc; forward;
+      procedure Proc;
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(A : integer); forward;
+      procedure Proc;
+      begin writeln(maxint) end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      procedure Proc(A : integer); forward;
+      procedure Proc(A : boolean);
+      begin writeln(maxint) end;
+      begin end.' | is_not_valid
+
+# Functions
+echo 'program foo;
+      function Func : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func() : integer;
+      begin Func := maxint end;
+      begin end.' | is_not_valid
+echo 'program foo;
+      function Func : array[1..10] of integer;
+      begin Func[1] := 1 end;
+      begin end.' | is_not_valid
+echo 'program foo;
+      type T = array[1..10] of integer;
+      function Func : T;
+      begin Func[1] := 1 end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      type T = ^integer;
+      function Func : T;
+      var Ret : ^integer;
+      begin Func := Ret end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(A : integer) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(A : integer; B : boolean) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(A, B : integer) : integer;
+      begin Func := maxint end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      function Func(var A : integer) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(var A : integer; B : boolean) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(var A, B : integer) : integer;
+      begin Func := maxint end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      function Func : integer; forward;
+      function Func : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(A : integer) : integer; forward;
+      function Func;
+      begin Func := maxint end;
+      begin end.' | will_be_valid
+echo 'program foo;
+      function Func(A : integer) : integer; forward;
+      function Func : integer;
+      begin Func := maxint end;
+      begin end.' | is_not_valid
+echo 'program foo;
+      function Func(A : integer) : integer; forward;
+      function Func(A : boolean) : integer;
+      begin Func := maxint end;
+      begin end.' | is_not_valid
+
+# Expressions
+testexpr () {
+  echo "program foo; var R : $1; x : $2; y : $2; z : $2; begin R := $3 end."
+}
+testexpr integer integer x | is_valid
+testexpr integer 'record A : integer; B : integer end' 'x.A' | is_valid
+testexpr integer 'array [1..10] of integer' 'x[1]' | is_valid
+testexpr integer integer 15 | is_valid
+testexpr integer string 'length(x)' | is_valid
+testexpr 'set of char' integer "['a'..'z']" | will_be_valid
+testexpr integer integer '(x + y + z)' | is_valid
+testexpr boolean boolean 'not x' | is_valid
+testexpr integer integer 'x * y * z' | is_valid
+testexpr real real 'x / 2' | will_be_valid
+testexpr integer integer 'x div 2' | is_valid
+testexpr integer integer 'x mod 2' | is_valid
+testexpr boolean boolean 'x and y and z' | is_valid
+testexpr integer integer '-x' | is_valid
+testexpr integer integer 'x + y + z' | is_valid
+testexpr integer integer 'x - y - z' | is_valid
+testexpr boolean boolean 'x or y or z' | is_valid
+testexpr boolean integer 'x = y' | is_valid
+testexpr boolean integer 'x = y = z' | is_not_valid
+testexpr boolean integer 'x > y' | is_valid
+testexpr boolean integer 'x < y' | is_valid
+testexpr boolean integer 'x >= y' | is_valid
+testexpr boolean integer 'x <= y' | is_valid
+testexpr boolean integer 'x <> y' | is_valid
+testexpr boolean 'set of char' "'a' in x" | will_be_valid
+
+# Statements
+echo 'program foo; begin ; ; end.' | is_valid
+echo 'program foo; var a : integer; begin a := 1 end.' | is_valid
+echo 'program foo;
+      function x : integer;
+      begin x := 1 end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure bar;
+      begin end;
+      begin bar end.' | is_valid
+echo 'program foo;
+      procedure bar(a : integer);
+      begin end;
+      begin bar(1) end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+      begin a := 1; b := 2 end;
+      a := 3
+      end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+      begin a := 1; b := 2; end;
+      a := 3;
+      end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin if a = 1 then b := 2 end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin if a = 1 then b := 2 else b := 3 end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin if a = 1 then b := 2; else b := 3 end.' | is_not_valid
+echo 'program foo; var a : integer; b : integer;
+      begin if a = 1 then else b := 3 end.' | is_valid
+echo "program foo; var a : char; b : integer;
+      begin case a of 'a' : b := 1; 'b' : b := 2 end end." | will_be_valid
+echo "program foo; var a : char; b : integer;
+      begin case a of 'a' : b := 1; 'b' : b := 2; end end." | will_be_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+        a := 0; b := 10;
+        repeat
+          a := a + 1;
+          b := b - 1
+        until a > b
+      end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+        a := 0; b := 10;
+        while a <= b do
+        begin
+          a := a + 1;
+          b := b - 1
+        end
+      end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+        b := 10;
+        for a := 0 to 10 do b := b - 1
+      end.' | is_valid
+echo 'program foo; var a : integer; b : integer;
+      begin
+        b := 0;
+        for a := 10 downto 0 do b := b + 1
+      end.' | is_valid
+echo 'program foo; var a : record b : integer end;
+      begin
+        with a do
+        begin
+          writeln(b)
+        end
+      end.' | will_be_valid
+echo 'program foo; var a : record b : integer end; c : record d : integer end;
+      begin
+        with a, c do
+        begin
+          writeln(b);
+          writeln(d)
+        end
+      end.' | will_be_valid
+
+# I/O
+testwrite () {
+  echo "program foo; var $1; begin write($2) end."
+}
+testwrite 'a : boolean' a | is_valid
+testwrite 'a : integer' a | is_valid
+testwrite 'a : real' a | will_be_valid
+testwrite 'a : char' a | is_valid
+testwrite 'a : string' a | is_valid
+testwrite 'a : string; b : string' 'a, b' | is_valid
+testwrite 'a : string' 'output, a' | is_valid
+testwrite 'a : string; b : string' 'output, a, b' | is_valid
+testwrite 'a : integer' 'a:10' | will_be_valid
+testwrite 'a : real' 'a:10:5' | will_be_valid
+testwriteln () {
+  echo "program foo; var $1; begin writeln($2) end."
+}
+testwriteln 'a : boolean' '' | is_valid
+testwriteln 'a : boolean' 'output' | is_valid
+testwriteln 'a : boolean' a | is_valid
+testwriteln 'a : integer' a | is_valid
+testwriteln 'a : real' a | will_be_valid
+testwriteln 'a : char' a | is_valid
+testwriteln 'a : string' a | is_valid
+testwriteln 'a : string; b : string' 'a, b' | is_valid
+testwriteln 'a : string' 'output, a' | is_valid
+testwriteln 'a : string; b : string' 'output, a, b' | is_valid
+testwriteln 'a : integer' 'a:10' | will_be_valid
+testwriteln 'a : real' 'a:10:5' | will_be_valid
+testread () {
+  echo "program foo; var $1; begin read($2) end."
+}
+testread 'a : integer' a | will_be_valid
+testread 'a : real' a | will_be_valid
+testread 'a : char' a | is_valid
+testread 'a : string' a | is_valid
+testread 'a : string; b : string' 'a, b' | is_valid
+testread 'a : string' 'input, a' | is_valid
+testread 'a : string; b : string' 'input, a, b' | is_valid
+testreadln () {
+  echo "program foo; var $1; begin read($2) end."
+}
+testreadln 'a : integer' '' | is_valid
+testreadln 'a : integer' 'input' | is_valid
+testreadln 'a : integer' a | will_be_valid
+testreadln 'a : real' a | will_be_valid
+testreadln 'a : char' a | is_valid
+testreadln 'a : string' a | is_valid
+testreadln 'a : string; b : string' 'a, b' | is_valid
+testreadln 'a : string' 'input, a' | is_valid
+testreadln 'a : string; b : string' 'input, a, b' | is_valid
