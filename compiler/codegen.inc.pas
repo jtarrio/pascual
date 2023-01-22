@@ -339,23 +339,11 @@ end;
 
 procedure OutRepeatEnd(Expr : TPsExpression);
 begin
-  if not IsBooleanType(Expr.TypeIndex) then
-  begin
-    writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr);
-    halt(1)
-  end;
   writeln(Codegen.Output, '} while (!(', Expr.Value, '));')
 end;
 
 procedure OutWhileBegin(Expr : TPsExpression);
 begin
-  if not IsBooleanType(Expr.TypeIndex) then
-  begin
-    writeln(StdErr, 'Expected boolean expression, got ',
-            TypeName(Expr.TypeIndex), LxWhereStr);
-    halt(1)
-  end;
   write(Codegen.Output, 'while (', Expr.Value, ') ')
 end;
 

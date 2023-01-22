@@ -370,6 +370,14 @@ begin
   IsPointerType := TypeHasClass(TypeIndex, TtcPointer)
 end;
 
+function IsOrdinalType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsOrdinalType := IsBooleanType(TypeIndex)
+                   or IsIntegerType(TypeIndex)
+                   or IsCharType(TypeIndex)
+                   or IsEnumType(TypeIndex)
+end;
+
 function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
 var 
   A : TPsType;
@@ -548,6 +556,17 @@ begin
   IsSameFunctionDefinition := Same
 end;
 
+function HasForwardDeclaration(Name : string) : boolean;
+var 
+  Pos : integer;
+begin
+  Pos := FindName(Name, false);
+  HasForwardDeclaration := (Pos <> 0)
+                           and (Defs.Names[Pos].Cls = TncFunction)
+                           and (Defs.Functions[Defs.Names[Pos].FunctionIndex].
+                           IsDeclaration)
+end;
+
 function AddFunction(Fun : TPsFunction) : TPsFunctionIndex;
 var 
   Pos : integer;
@@ -556,7 +575,7 @@ begin
   Pos := FindName(Fun.Name, false);
   if Pos <> 0 then
   begin
-    if Defs.Names[Pos].Cls <> TncFunction then
+    if (Defs.Names[Pos].Cls <> TncFunction) or Fun.IsDeclaration then
     begin
       writeln(StdErr, 'Identifier ', Fun.Name, ' already defined', LxWhereStr);
       halt(1)
@@ -565,7 +584,12 @@ begin
     Pos := Defs.Names[Pos].FunctionIndex;
     if Defs.Functions[Pos].IsDeclaration then
     begin
-      if not IsSameFunctionDefinition(Pos, Fun) then
+      if (Fun.ArgCount = 0) and (Fun.ReturnTypeIndex = 0) then
+      begin
+        Fun := Defs.Functions[Pos];
+        Fun.IsDeclaration := false
+      end
+      else if not IsSameFunctionDefinition(Pos, Fun) then
       begin
         if Fun.ReturnTypeIndex = 0 then
           writeln(StdErr, 'Procedure ', Fun.Name,

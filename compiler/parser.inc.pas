@@ -285,33 +285,67 @@ var
   PreviousScope : TPsScope;
   Pos : integer;
 begin
+  PreviousScope := GetCurrentScope;
+  for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
+    AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope);
+  OutFunctionDefinition(FnIndex);
+  OutEnumValuesInScope(PreviousScope);
+  PsDefinitions(PreviousScope);
+  WantTokenAndRead(TkBegin);
+  while Lexer.Token.Id <> TkEnd do
+  begin
+    PsStatement;
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon)
+  end;
+  WantTokenAndRead(TkEnd);
+  WantTokenAndRead(TkSemicolon);
+  OutFunctionEnd(FnIndex);
+  SetCurrentScope(PreviousScope);
+end;
+
+procedure PsArguments(var Def : TPsFunction);
+begin
+  WantTokenAndRead(TkLparen);
+  repeat
+    Def.ArgCount := Def.ArgCount + 1;
+    if Def.ArgCount > MaxFunctionArguments then
+    begin
+      writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
+              LxWhereStr);
+      halt(1)
+    end;
+    Def.Args[Def.ArgCount].IsReference := Lexer.Token.Id = TkVar;
+    SkipToken(TkVar);
+    Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
+    WantTokenAndRead(TkColon);
+    Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
+    WantToken2(TkSemicolon, TkRparen);
+    SkipToken(TkSemicolon);
+  until Lexer.Token.Id = TkRparen;
+  SkipToken(TkRparen)
+end;
+
+procedure PsProcedureDefinition;
+var 
+  IsProcedure : boolean;
+  Def : TPsFunction;
+begin
+  Def := EmptyFunction();
+  WantTokenAndRead(TkProcedure);
+  Def.Name := GetTokenValueAndRead(TkIdentifier);
+  WantToken2(TkLparen, TkSemicolon);
+  if Lexer.Token.Id = TkLparen then PsArguments(Def);
+  WantTokenAndRead(TkSemicolon);
   if Lexer.Token.Id = TkForward then
   begin
     SkipToken(TkForward);
     WantTokenAndRead(TkSemicolon);
-    Defs.Functions[FnIndex].IsDeclaration := true;
-    OutFunctionDeclaration(FnIndex);
+    Def.IsDeclaration := true;
+    OutFunctionDeclaration(AddFunction(Def))
   end
   else
-  begin
-    PreviousScope := GetCurrentScope;
-    for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
-      AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope);
-    OutFunctionDefinition(FnIndex);
-    OutEnumValuesInScope(PreviousScope);
-    PsDefinitions(PreviousScope);
-    WantTokenAndRead(TkBegin);
-    while Lexer.Token.Id <> TkEnd do
-    begin
-      PsStatement;
-      WantToken2(TkSemicolon, TkEnd);
-      SkipToken(TkSemicolon)
-    end;
-    WantTokenAndRead(TkEnd);
-    WantTokenAndRead(TkSemicolon);
-    OutFunctionEnd(FnIndex);
-    SetCurrentScope(PreviousScope);
-  end
+    PsFunctionBody(AddFunction(Def));
 end;
 
 procedure PsFunctionDefinition;
@@ -319,43 +353,28 @@ var
   IsProcedure : boolean;
   Def : TPsFunction;
 begin
-  WantToken2(TkFunction, TkProcedure);
-  IsProcedure := Lexer.Token.Id = TkProcedure;
-  ReadToken;
+  Def := EmptyFunction();
+  WantTokenAndRead(TkFunction);
   Def.Name := GetTokenValueAndRead(TkIdentifier);
-  Def.ArgCount := 0;
-  if IsProcedure then WantToken2(TkLparen, TkSemicolon)
-  else WantToken2(TkLparen, TkColon);
-  if Lexer.Token.Id = TkLparen then
-  begin
-    WantTokenAndRead(TkLparen);
-    repeat
-      Def.ArgCount := Def.ArgCount + 1;
-      if Def.ArgCount > MaxFunctionArguments then
-      begin
-        writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
-                LxWhereStr);
-        halt(1)
-      end;
-      Def.Args[Def.ArgCount].IsReference := Lexer.Token.Id = TkVar;
-      SkipToken(TkVar);
-      Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
-      WantTokenAndRead(TkColon);
-      Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
-      WantToken2(TkSemicolon, TkRparen);
-      SkipToken(TkSemicolon);
-    until Lexer.Token.Id = TkRparen;
-    SkipToken(TkRparen)
-  end;
-  if IsProcedure then
+  if (Lexer.Token.Id = TkSemicolon) and HasForwardDeclaration(Def.Name) then
     Def.ReturnTypeIndex := 0
   else
   begin
+    WantToken2(TkLparen, TkColon);
+    if Lexer.Token.Id = TkLparen then PsArguments(Def);
     WantTokenAndRead(TkColon);
     Def.ReturnTypeIndex := PsTypeDenoter(GlobalScope);
   end;
   WantTokenAndRead(TkSemicolon);
-  PsFunctionBody(AddFunction(Def));
+  if Lexer.Token.Id = TkForward then
+  begin
+    SkipToken(TkForward);
+    WantTokenAndRead(TkSemicolon);
+    Def.IsDeclaration := true;
+    OutFunctionDeclaration(AddFunction(Def))
+  end
+  else
+    PsFunctionBody(AddFunction(Def));
 end;
 
 procedure PsDefinitions(Scope : TPsScope);
@@ -367,8 +386,8 @@ begin
     if Lexer.Token.Id = TkType then PsTypeDefinitions(Scope)
     else if Lexer.Token.Id = TkConst then PsConstDefinitions(Scope)
     else if Lexer.Token.Id = TkVar then PsVarDefinitions(Scope)
-    else if (Lexer.Token.Id = TkProcedure)
-            or (Lexer.Token.Id = TkFunction) then PsFunctionDefinition
+    else if Lexer.Token.Id = TkProcedure then PsProcedureDefinition
+    else if Lexer.Token.Id = TkFunction then PsFunctionDefinition
     else
       Done := true;
   until Done;
@@ -838,7 +857,7 @@ end;
 procedure PsIfStatement;
 begin
   WantTokenAndRead(TkIf);
-  OutIf(PsExpression);
+  OutIf(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
   WantTokenAndRead(TkThen);
   if Lexer.Token.Id = TkElse then OutEmptyStatement
   else PsStatement;
@@ -861,13 +880,13 @@ begin
     SkipToken(TkSemicolon)
   end;
   WantTokenAndRead(TkUntil);
-  OutRepeatEnd(PsExpression);
+  OutRepeatEnd(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
 end;
 
 procedure PsWhileStatement;
 begin
   WantTokenAndRead(TkWhile);
-  OutWhileBegin(PsExpression);
+  OutWhileBegin(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
   WantTokenAndRead(TkDo);
   PsStatement;
   OutWhileEnd
@@ -885,6 +904,12 @@ begin
   if not IsVariableExpression(Iter) then
   begin
     writeln(StdErr, 'Expected variable', LxWhereStr);
+    halt(1)
+  end;
+  if not IsOrdinalType(Iter.TypeIndex) then
+  begin
+    writeln(StdErr, 'Type of iterator is not ordinal: ',
+            TypeName(Iter.TypeIndex), LxWhereStr);
     halt(1)
   end;
   WantTokenAndRead(TkAssign);

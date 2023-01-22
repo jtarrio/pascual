@@ -57,6 +57,10 @@ testif "if false then if true then write('true')
 testif "if false then if false then write('true')
                                else write('false1')
                  else write('false2')" | outputs 'S false2 E'
+# The expression must be boolean
+testif "if 1 then write('true') else write('false')" | is_not_valid
+testif "if 'a' then write('true') else write('false')" | is_not_valid
+testif "if 'abc' then write('true') else write('false')" | is_not_valid
 
 # Repeat-until
 testlooptype() {
@@ -80,6 +84,7 @@ testloop "i := 0;
 testloop "i := 10;
           repeat i := i + 1; write(i, ' ') until i > 0;
           write(i)" | outputs 'S 11 11 E'
+testloop "i := 0; repeat i := i + 1 until 0" | is_not_valid
 
 # While
 testloop "i := 0;
@@ -88,6 +93,7 @@ testloop "i := 0;
 testloop "i := 0;
           while i < 0 do begin i := i + 1; write(i, ' ') end;
           write(i)" | outputs 'S 0 E'
+testloop "i := 0; while 0 do i := i + 1" | is_not_valid
 
 # For
 testloop "i := 99;
@@ -111,3 +117,6 @@ testloop "i := 99;
 testlooptype char "for i := 'a' to 'j' do write(i)" | outputs 'S abcdefghij E'
 testlooptype char "for i := 'j' downto 'a' do write(i)" | outputs 'S jihgfedcba E'
 testlooptype "(A,B,C,D,E,F)" "for i := B to E do write(i)" | outputs 'S BCDE E'
+testlooptype boolean "for i := false to true do write(i)" |
+outputs 'S FALSETRUE E'
+testlooptype string "for i := 'a' to 'z' do write(i)" | is_not_valid

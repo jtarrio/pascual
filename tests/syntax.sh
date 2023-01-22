@@ -393,7 +393,13 @@ echo 'program foo;
       procedure Proc(A : integer); forward;
       procedure Proc;
       begin writeln(maxint) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(A : integer); forward;
+      procedure Proc(A : integer); forward;
+      procedure Proc;
+      begin writeln(maxint) end;
+      begin end.' | is_not_valid
 echo 'program foo;
       procedure Proc(A : integer); forward;
       procedure Proc(A : boolean);
@@ -457,7 +463,13 @@ echo 'program foo;
       function Func(A : integer) : integer; forward;
       function Func;
       begin Func := maxint end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(A : integer) : integer; forward;
+      function Func(A : integer) : integer; forward;
+      function Func;
+      begin Func := maxint end;
+      begin end.' | is_not_valid
 echo 'program foo;
       function Func(A : integer) : integer; forward;
       function Func : integer;
