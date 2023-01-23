@@ -722,6 +722,26 @@ begin
   PsVariableOrFunctionCall := Expr
 end;
 
+function IsOpAdding(Tok : TLxToken) : boolean;
+begin
+  IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)
+end;
+
+function IsOpMultiplying(Tok : TLxToken) : boolean;
+begin
+  IsOpMultiplying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
+                     or (Tok.Id = TkDiv) or (Tok.Id = TkMod)
+                     or (Tok.Id = TkAnd)
+end;
+
+function IsOpRelational(Tok : TLxToken) : boolean;
+begin
+  IsOpRelational := (Tok.Id = TkEquals) or (Tok.Id = TkNotEquals)
+                    or (Tok.Id = TkLessthan) or (Tok.Id = TkMorethan)
+                    or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
+                    or (Tok.Id = TkIn);
+end;
+
 function PsFactor : TPsExpression;
 var 
   Expr : TPsExpression;
