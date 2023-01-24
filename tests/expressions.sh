@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./lib.sh
+. ./testing.libsh
 
 # runexpr expr type
 # runexpr defs init expr type

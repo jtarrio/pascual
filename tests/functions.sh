@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./lib.sh
+. ./testing.libsh
 
 # Basic function calls.
 echo "program foo;

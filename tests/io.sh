@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./lib.sh
+. ./testing.libsh
 
 # Output
 testout() {

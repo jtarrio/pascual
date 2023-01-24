@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./lib.sh
+. ./testing.libsh
 
 # Nil
 echo "program foo; var P : ^integer; begin P := nil end." | outputs ''
