@@ -407,6 +407,11 @@ begin
                    or IsEnumType(TypeIndex)
 end;
 
+function IsSimpleType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsSimpleType := IsOrdinalType(TypeIndex) or IsStringType(TypeIndex)
+end;
+
 function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
 var 
   A : TPsType;

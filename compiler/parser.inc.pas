@@ -38,10 +38,78 @@ begin
   if Lexer.Token.Id = Id then ReadToken
 end;
 
-function PsTypeDenoterWithPlaceholder(Scope : TPsScope) : TPsTypeIndex;
+function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 forward;
 
-function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
+function PsTypeIdentifier : TPsTypeIndex;
+var 
+  Found : TPsName;
+  TypeIndex : TPsTypeIndex;
+begin
+  WantToken(TkIdentifier);
+  TypeIndex := 0;
+  Found := Defs.Names[FindName(Lexer.Token.Value, true)];
+  if Found.Cls <> TncType then
+  begin
+    writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
+    halt(1)
+  end;
+  PsTypeIdentifier := Found.TypeIndex;
+  ReadToken
+end;
+
+function PsEnumeratedType(Scope : TPsScope) : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  Enum : TPsEnumDef;
+begin
+  WantTokenAndRead(TkLparen);
+  Enum.Size := 0;
+  repeat
+    Enum.Size := Enum.Size + 1;
+    if Enum.Size > MaxEnumValues then
+    begin
+      writeln(StdErr, 'Too many values in enum', LxWhereStr);
+      halt(1)
+    end;
+    Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma);
+  until Lexer.Token.Id = TkRparen;
+  Typ := EmptyType;
+  Typ.Cls := TtcEnum;
+  Typ.EnumIndex := AddEnum(Enum);
+  PsEnumeratedType := AddType(Typ, Scope);
+  SkipToken(TkRparen)
+end;
+
+function PsRecordType(Scope : TPsScope) : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  Rec : TPsRecordDef;
+begin
+  WantTokenAndRead(TkRecord);
+  Rec.Size := 0;
+  repeat
+    Rec.Size := Rec.Size + 1;
+    if Rec.Size > MaxRecordFields then
+    begin
+      writeln(StdErr, 'Too many fields in record', LxWhereStr);
+      halt(1)
+    end;
+    Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
+    WantTokenAndRead(TkColon);
+    Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon);
+  until Lexer.Token.Id = TkEnd;
+  Typ := TypeOfClass(TtcRecord);
+  Typ.RecordIndex := AddRecord(Rec);
+  PsRecordType := AddType(Typ, Scope);
+  SkipToken(TkEnd)
+end;
+
+function PsArrayType(Scope : TPsScope) : TPsTypeIndex;
 var 
   Found : TPsName;
   TypeIndex : TPsTypeIndex;
@@ -50,104 +118,62 @@ var
   Rec : TPsRecordDef;
   Arr : TPsArrayDef;
 begin
+  WantTokenAndRead(TkArray);
+  WantTokenAndRead(TkLbracket);
+  Arr.LowBound := GetTokenValueAndRead(TkNumber);
+  WantTokenAndRead(TkRange);
+  Arr.HighBound := GetTokenValueAndRead(TkNumber);
+  WantTokenAndRead(TkRbracket);
+  WantTokenAndRead(TkOf);
+  Arr.TypeIndex := PsTypeDenoter(Scope);
+  Typ := TypeOfClass(TtcArray);
+  Typ.ArrayIndex := AddArray(Arr);
+  PsArrayType := AddType(Typ, Scope)
+end;
+
+function PsPointerType(Scope : TPsScope) : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  TypeIndex : TPsTypeIndex;
+  NameIndex : TPsNameIndex;
+begin
+  WantTokenAndRead(TkCaret);
+  WantToken(TkIdentifier);
+  NameIndex := FindName(Lexer.Token.Value, false);
+  if NameIndex = 0 then
+  begin
+    Typ := PlaceholderType;
+    Typ.Name := Lexer.Token.Value;
+    TypeIndex := AddType(Typ, Scope)
+  end
+  else if Defs.Names[NameIndex].Cls = TncType then
+         TypeIndex := Defs.Names[NameIndex].TypeIndex
+  else
+  begin
+    writeln(StdErr, 'Not a type: ', Lexer.Token.Value, LxWhereStr);
+    halt(1)
+  end;
+  ReadToken;
+  Typ := PointerType(TypeIndex);
+  PsPointerType := AddType(Typ, Scope)
+end;
+
+function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
+var 
+  TypeIndex : TPsTypeIndex;
+begin
   TypeIndex := 0;
-  if Lexer.Token.Id = TkIdentifier then
-  begin
-    Found := Defs.Names[FindName(Lexer.Token.Value, true)];
-    if Found.Cls <> TncType then
-    begin
-      writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
-      halt(1)
-    end;
-    TypeIndex := Found.TypeIndex;
-    ReadToken
-  end
-  else if Lexer.Token.Id = TkLparen then
-  begin
-    SkipToken(TkLparen);
-    Enum.Size := 0;
-    repeat
-      Enum.Size := Enum.Size + 1;
-      if Enum.Size > MaxEnumValues then
-      begin
-        writeln(StdErr, 'Too many values in enum', LxWhereStr);
-        halt(1)
-      end;
-      Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
-    until Lexer.Token.Id = TkRparen;
-    Typ := EmptyType;
-    Typ.Cls := TtcEnum;
-    Typ.EnumIndex := AddEnum(Enum);
-    TypeIndex := AddType(Typ, Scope);
-    SkipToken(TkRparen)
-  end
-  else if Lexer.Token.Id = TkRecord then
-  begin
-    SkipToken(TkRecord);
-    Rec.Size := 0;
-    repeat
-      Rec.Size := Rec.Size + 1;
-      if Rec.Size > MaxRecordFields then
-      begin
-        writeln(StdErr, 'Too many fields in record', LxWhereStr);
-        halt(1)
-      end;
-      Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
-      WantTokenAndRead(TkColon);
-      Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
-      WantToken2(TkSemicolon, TkEnd);
-      SkipToken(TkSemicolon);
-    until Lexer.Token.Id = TkEnd;
-    Typ := TypeOfClass(TtcRecord);
-    Typ.RecordIndex := AddRecord(Rec);
-    TypeIndex := AddType(Typ, Scope);
-    SkipToken(TkEnd)
-  end
-  else if Lexer.Token.Id = TkArray then
-  begin
-    SkipToken(TkArray);
-    WantTokenAndRead(TkLbracket);
-    Arr.LowBound := GetTokenValueAndRead(TkNumber);
-    WantTokenAndRead(TkRange);
-    Arr.HighBound := GetTokenValueAndRead(TkNumber);
-    WantTokenAndRead(TkRbracket);
-    WantTokenAndRead(TkOf);
-    Arr.TypeIndex := PsTypeDenoter(Scope);
-    Typ := TypeOfClass(TtcArray);
-    Typ.ArrayIndex := AddArray(Arr);
-    TypeIndex := AddType(Typ, Scope)
-  end
-  else if Lexer.Token.Id = TkCaret then
-  begin
-    SkipToken(TkCaret);
-    Typ := PointerType(PsTypeDenoterWithPlaceholder(Scope));
-    TypeIndex := AddType(Typ, Scope)
-  end
+  if Lexer.Token.Id = TkIdentifier then TypeIndex := PsTypeIdentifier
+  else if Lexer.Token.Id = TkLparen then TypeIndex := PsEnumeratedType(Scope)
+  else if Lexer.Token.Id = TkRecord then TypeIndex := PsRecordType(Scope)
+  else if Lexer.Token.Id = TkArray then TypeIndex := PsArrayType(Scope)
+  else if Lexer.Token.Id = TkCaret then TypeIndex := PsPointerType(Scope)
   else
   begin
     writeln(StdErr, 'Wanted type definition, found ', LxTokenStr, LxWhereStr);
     halt(1)
   end;
   PsTypeDenoter := TypeIndex;
-end;
-
-function PsTypeDenoterWithPlaceholder(Scope : TPsScope) : TPsTypeIndex;
-var 
-  NameIndex : TPsNameIndex;
-  Typ : TPsType;
-begin
-  NameIndex := 0;
-  if Lexer.Token.Id = TkIdentifier then
-  begin
-    Typ := PlaceholderType;
-    Typ.Name := Lexer.Token.Value;
-    NameIndex := FindName(Typ.Name, false);
-    if NameIndex = 0 then
-      AddType(Typ, Scope)
-  end;
-  PsTypeDenoterWithPlaceholder := PsTypeDenoter(Scope)
 end;
 
 procedure PsTypeDefinitions(Scope : TPsScope);
@@ -349,7 +375,7 @@ begin
     SkipToken(TkVar);
     Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkColon);
-    Def.Args[Def.ArgCount].TypeIndex := PsTypeDenoter(GlobalScope);
+    Def.Args[Def.ArgCount].TypeIndex := PsTypeIdentifier;
     WantToken2(TkSemicolon, TkRparen);
     SkipToken(TkSemicolon);
   until Lexer.Token.Id = TkRparen;
@@ -378,6 +404,20 @@ begin
     PsFunctionBody(AddFunction(Def));
 end;
 
+function PsResultType : TPsTypeIndex;
+var 
+  TypeIndex : TPsTypeIndex;
+begin
+  TypeIndex := PsTypeIdentifier;
+  if not IsSimpleType(TypeIndex) and not IsPointerType(TypeIndex) then
+  begin
+    writeln(StdErr, 'Expected a simple or pointer type, got ',
+            TypeName(TypeIndex), LxWhereStr);
+    halt(1)
+  end;
+  PsResultType := TypeIndex
+end;
+
 procedure PsFunctionDefinition;
 var 
   IsProcedure : boolean;
@@ -393,7 +433,7 @@ begin
     WantToken2(TkLparen, TkColon);
     if Lexer.Token.Id = TkLparen then PsArguments(Def);
     WantTokenAndRead(TkColon);
-    Def.ReturnTypeIndex := PsTypeDenoter(GlobalScope);
+    Def.ReturnTypeIndex := PsResultType;
   end;
   WantTokenAndRead(TkSemicolon);
   if Lexer.Token.Id = TkForward then
