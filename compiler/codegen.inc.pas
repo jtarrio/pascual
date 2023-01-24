@@ -45,6 +45,39 @@ begin
   OutReturnVariableName := 'return_' + Name
 end;
 
+procedure OutTypeReference(TypeIndex : TPsTypeIndex);
+var 
+  Typ : TPsType;
+begin
+  if TypeIndex <> 0 then Typ := Defs.Types[TypeIndex];
+  if TypeIndex = 0 then write(Codegen.Output, 'void')
+  else if Typ.Cls = TtcPointer then
+  begin
+    OutTypeReference(Typ.PointedTypeIndex);
+    write(Codegen.Output, '*')
+  end
+  else if Typ.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
+  else if Typ.Cls = TtcInteger then write(Codegen.Output, 'int')
+  else if Typ.Cls = TtcChar then write(Codegen.Output, 'char')
+  else if Typ.Cls = TtcString then write(Codegen.Output, 'PString')
+  else if Typ.Cls = TtcText then write(Codegen.Output, 'PFile')
+  else if Typ.Cls = TtcEnum then write(Codegen.Output, 'enum enum', Typ.
+                                       EnumIndex)
+  else if Typ.Cls = TtcRecord then
+         write(Codegen.Output, 'struct record', Typ.RecordIndex)
+  else if Typ.Cls = TtcArray then
+  begin
+    OutTypeReference(Defs.Arrays[Typ.ArrayIndex].TypeIndex);
+    write(Codegen.Output, '*')
+  end
+  else
+  begin
+    writeln(StdErr, 'Error writing type reference: ',
+            TypeName(TypeIndex), LxWhereStr);
+    halt(1)
+  end
+end;
+
 procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
 var 
   Typ : TPsType;
@@ -56,6 +89,11 @@ begin
   if TypeIndex <> 0 then
     Typ := Defs.Types[TypeIndex];
   if TypeIndex = 0 then write(Codegen.Output, 'void ', Name)
+  else if Typ.Cls = TtcPointer then
+  begin
+    OutTypeReference(Typ.PointedTypeIndex);
+    write(Codegen.Output, ' *', Name)
+  end
   else if (Typ.AliasFor <> 0) and (Typ.Name <> '') then
          write(Codegen.Output, Typ.Name, ' ', Name)
   else if Typ.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean ', Name)
@@ -66,7 +104,7 @@ begin
   else if Typ.Cls = TtcEnum then
   begin
     Enum := Defs.Enums[Typ.EnumIndex];
-    write(Codegen.Output, 'enum { ');
+    write(Codegen.Output, 'enum enum', Typ.EnumIndex, ' { ');
     for Pos := 1 to Enum.Size do
     begin
       if Pos > 1 then
@@ -78,7 +116,7 @@ begin
   else if Typ.Cls = TtcRecord then
   begin
     Rec := Defs.Records[Typ.RecordIndex];
-    write(Codegen.Output, 'struct { ');
+    write(Codegen.Output, 'struct record', Typ.RecordIndex, ' { ');
     for Pos := 1 to Rec.Size do
     begin
       OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
@@ -92,8 +130,6 @@ begin
     OutNameAndType(Name, Arr.TypeIndex);
     write(Codegen.Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
-  else if Typ.Cls = TtcPointer then
-         OutNameAndType('*' + Name, Typ.PointedTypeIndex)
   else
   begin
     writeln(StdErr, 'Error writing name and type: ', Name, ', ',
@@ -297,7 +333,7 @@ end;
 procedure OutNew(Dst : TPsExpression);
 begin
   write(Codegen.Output, Dst.Value, ' = malloc(sizeof(');
-  OutNameAndType('', Defs.Types[Dst.TypeIndex].PointedTypeIndex);
+  OutTypeReference(Defs.Types[Dst.TypeIndex].PointedTypeIndex);
   writeln(Codegen.Output, '));')
 end;
 

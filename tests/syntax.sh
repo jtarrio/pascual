@@ -252,8 +252,8 @@ echo '^integer' | testtype | is_valid
 echo 'integer; X = ^T' | testtype | is_valid
 echo '^integer; X = T' | testtype | is_valid
 echo '^integer; X = ^T' | testtype | is_valid
-echo '^X; X = record A : integer end' | testtype | will_be_valid
-echo '^X; X = integer' | testtype | will_be_valid
+echo '^X; X = record A : integer end' | testtype | is_valid
+echo '^X; X = integer' | testtype | is_valid
 
 # Variable access
 testvar() {
@@ -308,7 +308,7 @@ echo 'program foo;
       type T = ^C;
            C = integer;
       var A : T;
-      begin writeln(A^) end.' | will_be_valid
+      begin writeln(A^) end.' | is_valid
 echo 'program foo; 
       type T = record B : integer end;
            C = ^T;

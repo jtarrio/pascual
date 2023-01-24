@@ -5,6 +5,7 @@ begin
   ClearDefs;
   GlobalScope := GetCurrentScope;
 
+  PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil), GlobalScope);
   PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean),
                               GlobalScope);
   PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger),

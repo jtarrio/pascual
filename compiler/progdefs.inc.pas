@@ -17,7 +17,8 @@ type
   TPsArrayIndex = integer;
   TPsTypeIndex = integer;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
-                  TtcEnum, TtcRecord, TtcArray, TtcPointer);
+                  TtcEnum, TtcRecord, TtcArray, TtcPointer, TtcNil,
+                  TtcPlaceholder);
   TPsType = record
     Name : string;
     Cls : TPsTypeClass;
@@ -106,6 +107,7 @@ type
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
+    PtNil : TPsTypeIndex;
     PtBoolean : TPsTypeIndex;
     PtInteger : TPsTypeIndex;
     PtChar : TPsTypeIndex;
@@ -268,6 +270,8 @@ begin
   Ret.Cls := TtcBoolean;
   Ret.EnumIndex := 0;
   Ret.RecordIndex := 0;
+  Ret.ArrayIndex := 0;
+  Ret.PointedTypeIndex := 0;
   Ret.AliasFor := 0;
   EmptyType := Ret
 end;
@@ -370,6 +374,31 @@ begin
   IsPointerType := TypeHasClass(TypeIndex, TtcPointer)
 end;
 
+function NilType : TPsType;
+begin
+  NilType := TypeOfClass(TtcNil)
+end;
+
+function IsNilType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsNilType := TypeHasClass(TypeIndex, TtcNil)
+end;
+
+function IsPointeryType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsPointeryType := IsPointerType(TypeIndex) or IsNilType(TypeIndex)
+end;
+
+function PlaceholderType : TPsType;
+begin
+  PlaceholderType := TypeOfClass(TtcPlaceholder)
+end;
+
+function IsPlaceholderType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  IsPlaceholderType := TypeHasClass(TypeIndex, TtcPlaceholder)
+end;
+
 function IsOrdinalType(TypeIndex : TPsTypeIndex) : boolean;
 begin
   IsOrdinalType := IsBooleanType(TypeIndex)
@@ -388,6 +417,17 @@ begin
   IsSameType := (A.Cls = B.Cls)
                 and (A.EnumIndex = B.EnumIndex)
                 and (A.RecordIndex = B.RecordIndex)
+                and (A.ArrayIndex = B.ArrayIndex)
+                and (A.PointedTypeIndex = B.PointedTypeIndex)
+end;
+
+function ArePointersCompatible(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex)
+: boolean;
+begin
+  ArePointersCompatible := IsPointeryType(AIndex) and IsPointeryType(BIndex) and
+                           (IsNilType(AIndex)
+                           or IsNilType(BIndex)
+                           or IsSameType(AIndex, BIndex))
 end;
 
 function AddType(Typ : TPsType; Scope : TPsScope) : TPsTypeIndex;
@@ -395,27 +435,31 @@ var
   Pos : integer;
   EnumPos : integer;
 begin
-  if Typ.Name <> '' then
+  if Typ.Name = '' then Pos := 0
+  else Pos := FindName(Typ.Name, false);
+  if Pos <= Scope.NumNames then
   begin
-    Pos := FindName(Typ.Name, false);
-    if Pos > Scope.NumNames then
+    Pos := Defs.Scope.NumTypes + 1;
+    if Pos > MaxTypes then
     begin
-      writeln(StdErr, 'Identifier ', Typ.Name, ' already defined',
-              LxWhereStr);
+      writeln(StdErr, 'Too many types have been defined', LxWhereStr);
       halt(1)
-    end
-  end;
-  Pos := Defs.Scope.NumTypes + 1;
-  if Pos > MaxTypes then
+    end;
+    Defs.Scope.NumTypes := Pos;
+    if Typ.Name <> '' then
+      AddName(MakeName(Typ.Name, TncType, Pos), Scope);
+  end
+  else if (Defs.Names[Pos].Cls = TncType)
+          and IsPlaceholderType(Defs.Names[Pos].TypeIndex) then
+         Pos := Defs.Names[Pos].TypeIndex
+  else
   begin
-    writeln(StdErr, 'Too many types have been defined', LxWhereStr);
+    writeln(StdErr, 'Identifier ', Typ.Name, ' already defined',
+            LxWhereStr);
     halt(1)
   end;
   Defs.Types[Pos] := Typ;
-  Defs.Scope.NumTypes := Pos;
   AddType := Pos;
-  if Typ.Name <> '' then
-    AddName(MakeName(Typ.Name, TncType, Pos), Scope);
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = 0) then
     for EnumPos := 1 to Defs.Enums[Typ.EnumIndex].Size do
       AddName(MakeName(Defs.Enums[Typ.EnumIndex].Values[EnumPos],

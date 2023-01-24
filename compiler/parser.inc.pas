@@ -38,6 +38,9 @@ begin
   if Lexer.Token.Id = Id then ReadToken
 end;
 
+function PsTypeDenoterWithPlaceholder(Scope : TPsScope) : TPsTypeIndex;
+forward;
+
 function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 var 
   Found : TPsName;
@@ -119,7 +122,7 @@ begin
   else if Lexer.Token.Id = TkCaret then
   begin
     SkipToken(TkCaret);
-    Typ := PointerType(PsTypeDenoter(Scope));
+    Typ := PointerType(PsTypeDenoterWithPlaceholder(Scope));
     TypeIndex := AddType(Typ, Scope)
   end
   else
@@ -128,6 +131,23 @@ begin
     halt(1)
   end;
   PsTypeDenoter := TypeIndex;
+end;
+
+function PsTypeDenoterWithPlaceholder(Scope : TPsScope) : TPsTypeIndex;
+var 
+  NameIndex : TPsNameIndex;
+  Typ : TPsType;
+begin
+  NameIndex := 0;
+  if Lexer.Token.Id = TkIdentifier then
+  begin
+    Typ := PlaceholderType;
+    Typ.Name := Lexer.Token.Value;
+    NameIndex := FindName(Typ.Name, false);
+    if NameIndex = 0 then
+      AddType(Typ, Scope)
+  end;
+  PsTypeDenoterWithPlaceholder := PsTypeDenoter(Scope)
 end;
 
 procedure PsTypeDefinitions(Scope : TPsScope);
@@ -147,9 +167,19 @@ begin
     NewType.Name := Name;
     NewType.AliasFor := TypeIndex;
     TypeIndex := AddType(NewType, Scope);
-    WantTokenAndRead(TkSemicolon);
-    OutTypeDefinition(TypeIndex);
+    WantTokenAndRead(TkSemicolon)
   until Lexer.Token.Id <> TkIdentifier;
+  for TypeIndex := PreviousScope.NumTypes + 1 to Defs.Scope.NumTypes do
+  begin
+    if IsPlaceholderType(TypeIndex) then
+    begin
+      writeln(StdErr, 'Type has been mentioned but not defined: ',
+              TypeName(TypeIndex), LxWhereStr);
+      halt(1)
+    end;
+    if Defs.Types[TypeIndex].AliasFor <> 0 then
+      OutTypeDefinition(TypeIndex)
+  end;
   OutEnumValuesInScope(PreviousScope)
 end;
 
@@ -746,7 +776,12 @@ function PsFactor : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
+  if Lexer.Token.Id = TkNil then
+  begin
+    Expr := GenNilConstant;
+    ReadToken
+  end
+  else if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
   begin
     Expr := GenBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken
