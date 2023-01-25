@@ -378,8 +378,7 @@ end;
 procedure PsArguments(var Def : TPsFunction);
 var 
   IsReference : boolean;
-  LastArg : integer;
-  Arg : integer;
+  LastArg, Arg : integer;
   TypeIndex : TPsTypeIndex;
 begin
   WantTokenAndRead(TkLparen);
@@ -648,8 +647,7 @@ end;
 
 procedure PsStr;
 var 
-  Expr : TPsExpression;
-  Dest : TPsExpression;
+  Expr, Dest : TPsExpression;
 begin
   WantTokenAndRead(TkLparen);
   Expr := PsExpression;
@@ -918,7 +916,7 @@ begin
   PsExpression := Expr
 end;
 
-procedure PsAssign(Lhs : TPsExpression; Rhs : TPsExpression);
+procedure PsAssign(Lhs, Rhs : TPsExpression);
 begin
   if Lhs.IsConstant then
   begin
@@ -1008,9 +1006,7 @@ end;
 
 procedure PsForStatement;
 var 
-  Iter : TPsExpression;
-  First : TPsExpression;
-  Last  : TPsExpression;
+  Iter, First, Last : TPsExpression;
   Ascending : boolean;
 begin
   WantTokenAndRead(TkFor);

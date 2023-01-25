@@ -20,10 +20,9 @@ begin
   halt(0)
 end;
 
-function ReplaceExtension(Str : string; Old : string; New : string) : string;
+function ReplaceExtension(Str, Old, New : string) : string;
 var 
-  BaseLen : integer;
-  Pos : integer;
+  BaseLen, Pos : integer;
   Matches : boolean;
 begin
   ReplaceExtension := '';
@@ -41,8 +40,7 @@ end;
 procedure ParseCmdline;
 var 
   Pos : integer;
-  InputFile : string;
-  OutputFile : string;
+  InputFile, OutputFile : string;
   Flag : (FlagNone, FlagOutput);
   Param : string;
 begin

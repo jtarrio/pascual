@@ -347,12 +347,12 @@ begin
   write(Codegen.Output, Expr.Value)
 end;
 
-procedure OutAssign(Lhs : TPsExpression; Rhs : TPsExpression);
+procedure OutAssign(Lhs, Rhs : TPsExpression);
 begin
   writeln(Codegen.Output, Lhs.Value, ' = ', Rhs.Value, ';')
 end;
 
-procedure OutAssignReturnValue(Lhs : TPsExpression; Rhs : TPsExpression);
+procedure OutAssignReturnValue(Lhs, Rhs : TPsExpression);
 begin
   writeln(Codegen.Output, 'return_', Defs.Functions[Lhs.FunctionIndex].Name,
           ' = ', Rhs.Value, ';')
@@ -387,12 +387,11 @@ procedure OutWhileEnd;
 begin
 end;
 
-procedure OutForBegin(Iter : TPsExpression; FirstExpr : TPsExpression;
-                      LastExpr : TPsExpression; Ascending : boolean);
+procedure OutForBegin(Iter, FirstExpr, LastExpr : TPsExpression;
+                      Ascending : boolean);
 var 
   LimitType : TPsTypeIndex;
-  First : TPsVariable;
-  Last : TPsVariable;
+  First, Last : TPsVariable;
 begin
   LimitType := Iter.TypeIndex;
   if IsEnumType(LimitType) then LimitType := PrimitiveTypes.PtInteger;

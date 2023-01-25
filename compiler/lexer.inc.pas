@@ -36,8 +36,7 @@ var
 
 function LxPosStr(Pos : TLxPos) : string;
 var 
-  Row : string;
-  Col : string;
+  Row, Col : string;
 begin
   Str(Pos.Row, Row);
   Str(Pos.Col, Col);

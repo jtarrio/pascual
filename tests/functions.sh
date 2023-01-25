@@ -45,7 +45,7 @@ echo "program foo;
         write(Fun(i), ' ', i)
       end." | outputs '15 10'
 echo "program foo;
-      var i : integer; j : integer;
+      var i, j : integer;
       function Swap(var a, b : integer) : boolean;
       var i : integer;
       begin

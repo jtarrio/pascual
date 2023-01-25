@@ -47,7 +47,7 @@ echo "program foo;
         write(' ', i)
       end." | outputs 'proc 10 10'
 echo "program foo;
-      var i : integer; j : integer;
+      var i, j : integer;
       procedure Swap(var a, b : integer);
       var i : integer;
       begin

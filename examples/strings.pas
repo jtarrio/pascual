@@ -25,8 +25,7 @@ end;
 procedure Variables;
 var
   c : char;
-  s : string;
-  t : string;
+  s, t : string;
 begin
   c := 'a';
   writeln(c);
@@ -50,8 +49,7 @@ end;
 
 procedure Manipulation;
 var
-  s : string;
-  t : string;
+  s, t : string;
 begin
   s := '12345';
   t := copy(s, 2, 3);
@@ -60,7 +58,7 @@ begin
   writeln('Expect 45 ', s)
 end;
 
-function Concat(A : string; B : string) : string;
+function Concat(A, B : string) : string;
 begin
   Concat := A + B
 end;

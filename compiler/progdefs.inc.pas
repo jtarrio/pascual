@@ -140,8 +140,7 @@ end;
 
 function FindName(Name : string; Required : boolean) : TPsNameIndex;
 var 
-  Pos : TPsNameIndex;
-  Ret : TPsNameIndex;
+  Pos, Ret : TPsNameIndex;
 begin
   Ret := 0;
   for Pos := 1 to Defs.Scope.NumNames do
@@ -412,10 +411,9 @@ begin
   IsSimpleType := IsOrdinalType(TypeIndex) or IsStringType(TypeIndex)
 end;
 
-function IsSameType(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex) : boolean;
+function IsSameType(AIndex, BIndex : TPsTypeIndex) : boolean;
 var 
-  A : TPsType;
-  B : TPsType;
+  A, B : TPsType;
 begin
   A := Defs.Types[AIndex];
   B := Defs.Types[BIndex];
@@ -426,8 +424,7 @@ begin
                 and (A.PointedTypeIndex = B.PointedTypeIndex)
 end;
 
-function ArePointersCompatible(AIndex : TPsTypeIndex; BIndex : TPsTypeIndex)
-: boolean;
+function ArePointersCompatible(AIndex, BIndex : TPsTypeIndex) : boolean;
 begin
   ArePointersCompatible := IsPointeryType(AIndex) and IsPointeryType(BIndex) and
                            (IsNilType(AIndex)
@@ -437,8 +434,7 @@ end;
 
 function AddType(Typ : TPsType; Scope : TPsScope) : TPsTypeIndex;
 var 
-  Pos : integer;
-  EnumPos : integer;
+  Pos, EnumPos : integer;
 begin
   if Typ.Name = '' then Pos := 0
   else Pos := FindName(Typ.Name, false);

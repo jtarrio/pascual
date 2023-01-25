@@ -24,10 +24,9 @@ echo "program foo;
       type TP = ^T;
       T = record
         value : integer;
-        prev : TP;
-        next: TP
+        prev, next : TP
       end;
-      var root : TP; last : TP;
+      var root, last : TP;
       procedure add(v : integer);
       begin
         if root = nil then

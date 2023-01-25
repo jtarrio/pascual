@@ -77,8 +77,7 @@ var
   Expr : TPsExpression;
   Size : string;
   Pos : integer;
-  InStr : boolean;
-  LastQuote : boolean;
+  InStr, LastQuote : boolean;
   Len : integer;
 begin
   InStr := false;
@@ -152,8 +151,7 @@ end;
 function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
                                  Right : TPsExpression) : TPsExpression;
 var 
-  Oper : string;
-  Cmp : string;
+  Oper, Cmp : string;
   Expr : TPsExpression;
 begin
   Oper := '';
@@ -216,8 +214,7 @@ end;
 function StringyBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
                                  Right : TPsExpression) : TPsExpression;
 var 
-  FName : string;
-  Cmp : string;
+  FName, Cmp : string;
   Expr : TPsExpression;
 begin
   FName := 'cmp';

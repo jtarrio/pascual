@@ -1,8 +1,7 @@
 program textfiles;
 
 var
-  infile : text;
-  outfile : text;
+  infile, outfile : text;
 
 procedure copyfile(var filein : text; var fileout : text);
 var
