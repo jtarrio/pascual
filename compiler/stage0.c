@@ -1068,6 +1068,8 @@ void OUTELSE();
 void OUTCASEBEGIN(TPSEXPRESSION CASEINDEX);
 void OUTCASESTATEMENTBEGIN(TPSEXPRESSION CASELABEL);
 void OUTCASESTATEMENTEND();
+void OUTCASEELSEBEGIN();
+void OUTCASEELSEEND();
 void OUTCASEEND();
 void OUTREPEATBEGIN();
 void OUTREPEATEND(TPSEXPRESSION EXPR);
@@ -1473,6 +1475,23 @@ write_e(&STDERR, ID1, EnumValues1);
 write_s(&STDERR, str_make(4, " or "));
 write_e(&STDERR, ID2, EnumValues1);
 write_s(&STDERR, str_make(8, ", found "));
+write_s(&STDERR, LXTOKENSTR());
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
+}
+HALT(1);
+}
+}
+void WANTTOKEN3(TLXTOKENID ID1, TLXTOKENID ID2, TLXTOKENID ID3) {
+if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2) && (LEXER.TOKEN.ID != ID3)) {
+{
+write_s(&STDERR, str_make(13, "Wanted token "));
+write_e(&STDERR, ID1, EnumValues1);
+write_s(&STDERR, str_make(2, ", "));
+write_e(&STDERR, ID2, EnumValues1);
+write_s(&STDERR, str_make(5, ", or "));
+write_e(&STDERR, ID3, EnumValues1);
+write_s(&STDERR, str_make(7, " found "));
 write_s(&STDERR, LXTOKENSTR());
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
@@ -2457,11 +2476,17 @@ WANTTOKENANDREAD(TKCOLON);
 OUTCASESTATEMENTBEGIN(CASELABEL);
 PSSTATEMENT();
 OUTCASESTATEMENTEND();
-WANTTOKEN2(TKSEMICOLON, TKEND);
+WANTTOKEN3(TKSEMICOLON, TKELSE, TKEND);
 SKIPTOKEN(TKSEMICOLON);
-} while (!(LEXER.TOKEN.ID == TKEND));
-WANTTOKENANDREAD(TKEND);
+} while (!((LEXER.TOKEN.ID == TKELSE) || (LEXER.TOKEN.ID == TKEND)));
+OUTCASEELSEBEGIN();
+if (LEXER.TOKEN.ID == TKELSE) {
+READTOKEN();
+PSSTATEMENT();
+}
+OUTCASEELSEEND();
 OUTCASEEND();
+WANTTOKENANDREAD(TKEND);
 }
 void PSREPEATSTATEMENT() {
 WANTTOKENANDREAD(TKREPEAT);
@@ -3243,11 +3268,18 @@ write_s(&CODEGEN.OUTPUT, str_make(6, "break;"));
 writeln(&CODEGEN.OUTPUT);
 }
 }
-void OUTCASEEND() {
+void OUTCASEELSEBEGIN() {
 {
-write_s(&CODEGEN.OUTPUT, str_make(15, "default: break;"));
+write_s(&CODEGEN.OUTPUT, str_make(9, "default: "));
+}
+}
+void OUTCASEELSEEND() {
+{
+write_s(&CODEGEN.OUTPUT, str_make(6, "break;"));
 writeln(&CODEGEN.OUTPUT);
 }
+}
+void OUTCASEEND() {
 {
 write_c(&CODEGEN.OUTPUT, '}');
 writeln(&CODEGEN.OUTPUT);
