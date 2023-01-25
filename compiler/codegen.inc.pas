@@ -381,9 +381,18 @@ begin
   writeln(CodeGen.Output, 'break;')
 end;
 
+procedure OutCaseElseBegin;
+begin
+  write(CodeGen.Output, 'default: ')
+end;
+
+procedure OutCaseElseEnd;
+begin
+  writeln(CodeGen.Output, 'break;')
+end;
+
 procedure OutCaseEnd;
 begin
-  writeln(CodeGen.Output, 'default: break;');
   writeln(CodeGen.Output, '}')
 end;
 

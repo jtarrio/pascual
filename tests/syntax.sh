@@ -550,6 +550,8 @@ echo "program foo; var a : integer; b : integer;
       begin case a of 10 : b := 1; 20 : b := 2 end end." | is_valid
 echo "program foo; var a : char; b : integer;
       begin case a of 'a' : b := 1; 'b' : b := 2; end end." | is_valid
+echo "program foo; var a : char; b : integer;
+      begin case a of 'a' : b := 1; else b := 2 end end." | is_valid
 echo 'program foo; var a : integer; b : integer;
       begin
         a := 0; b := 10;

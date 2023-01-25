@@ -10,7 +10,7 @@ begin
   end
 end;
 
-procedure WantToken2(Id1 : TLxTokenId; Id2 : TLxTokenId);
+procedure WantToken2(Id1, Id2 : TLxTokenId);
 begin
   if (Lexer.Token.Id <> Id1) and (Lexer.Token.Id <> Id2) then
   begin
@@ -19,6 +19,18 @@ begin
     halt(1)
   end
 end;
+
+procedure WantToken3(Id1, Id2, Id3 : TLxTokenId);
+begin
+  if (Lexer.Token.Id <> Id1)
+     and (Lexer.Token.Id <> Id2) and (Lexer.Token.Id <> Id3) then
+  begin
+    writeln(StdErr, 'Wanted token ', Id1, ', ', Id2, ', or ', Id3,
+            ' found ', LxTokenStr, LxWhereStr);
+    halt(1)
+  end
+end;
+
 
 procedure WantTokenAndRead(Id : TLxTokenId);
 begin
@@ -983,7 +995,7 @@ begin
 end;
 
 procedure PsCaseStatement;
-var
+var 
   CaseIndex : TPsExpression;
   CaseLabel : TPsExpression;
 begin
@@ -991,7 +1003,8 @@ begin
   CaseIndex := PsExpression;
   if not IsOrdinalType(CaseIndex.TypeIndex) then
   begin
-    writeln(StdErr, 'The index of the case statement is not ordinal', LxWhereStr);
+    writeln(StdErr, 'The index of the case statement is not ordinal',
+            LxWhereStr);
     halt(1)
   end;
   OutCaseBegin(CaseIndex);
@@ -1000,18 +1013,26 @@ begin
     CaseLabel := CoerceType(PsExpression, CaseIndex.TypeIndex);
     if not CaseLabel.IsConstant then
     begin
-      writeln(StdErr, 'The label of the case statement is not constant', LxWhereStr);
+      writeln(StdErr, 'The label of the case statement is not constant',
+              LxWhereStr);
       halt(1)
     end;
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
     PsStatement;
     OutCaseStatementEnd;
-    WantToken2(TkSemicolon, TkEnd);
+    WantToken3(TkSemicolon, TkElse, TkEnd);
     SkipToken(TkSemicolon);
-  until Lexer.Token.Id = TkEnd;
-  WantTokenAndRead(TkEnd);
+  until (Lexer.Token.Id = TkElse) or (Lexer.Token.Id = TkEnd);
+  OutCaseElseBegin;
+  if Lexer.Token.Id = TkElse then
+  begin
+    ReadToken;
+    PsStatement;
+  end;
+  OutCaseElseEnd;
   OutCaseEnd;
+  WantTokenAndRead(TkEnd);
 end;
 
 procedure PsRepeatStatement;
