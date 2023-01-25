@@ -62,6 +62,56 @@ testif "if 1 then write('true') else write('false')" | is_not_valid
 testif "if 'a' then write('true') else write('false')" | is_not_valid
 testif "if 'abc' then write('true') else write('false')" | is_not_valid
 
+# Case
+testcase() {
+  echo "program foo; var i : $1;
+        begin i := $2; case i of $3 end end."
+}
+testcase boolean true "true : write('1x');
+                       false : write('2x')" | outputs '1x'
+testcase boolean false "true : write('1x');
+                        false : write('2x')" | outputs '2x'
+testcase char "'a'" "'a' : write('1x');
+                     'b' : begin write('2a'); write('2b') end;
+                     'd' : write('4x')" | outputs '1x'
+testcase char "'b'" "'a' : write('1x');
+                     'b' : begin write('2a'); write('2b') end;
+                     'd' : write('4x')" | outputs '2a2b'
+testcase char "'c'" "'a' : write('1x');
+                     'b' : begin write('2a'); write('2b') end;
+                     'd' : write('4x')" | outputs ''
+testcase char "'d'" "'a' : write('1x');
+                     'b' : begin write('2a'); write('2b') end;
+                     'd' : write('4x')" | outputs '4x'
+testcase integer 1 "1 : write('1x');
+                    2 : begin write('2a'); write('2b') end;
+                    4 : write('4x')" | outputs '1x'
+testcase integer 2 "1 : write('1x');
+                    2 : begin write('2a'); write('2b') end;
+                    4 : write('4x')" | outputs '2a2b'
+testcase integer 3 "1 : write('1x');
+                    2 : begin write('2a'); write('2b') end;
+                    4 : write('4x')" | outputs ''
+testcase integer 4 "1 : write('1x');
+                    2 : begin write('2a'); write('2b') end;
+                    4 : write('4x')" | outputs '4x'
+testcase "(One, Two, Three, Four)" One \
+         "One : write('1x');
+          Two : begin write('2a'); write('2b') end;
+          Four : write('4x')" | outputs '1x'
+testcase "(One, Two, Three, Four)" Two \
+         "One : write('1x');
+          Two : begin write('2a'); write('2b') end;
+          Four : write('4x')" | outputs '2a2b'
+testcase "(One, Two, Three, Four)" Three \
+         "One : write('1x');
+          Two : begin write('2a'); write('2b') end;
+          Four : write('4x')" | outputs ''
+testcase "(One, Two, Three, Four)" Four \
+         "One : write('1x');
+          Two : begin write('2a'); write('2b') end;
+          Four : write('4x')" | outputs '4x'
+
 # Repeat-until
 testlooptype() {
   echo "program foo;

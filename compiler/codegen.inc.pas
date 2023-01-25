@@ -366,6 +366,27 @@ begin
   write(Codegen.Output, ' else ')
 end;
 
+procedure OutCaseBegin;
+begin
+  writeln(Codegen.Output, 'switch (', CaseIndex.Value, ') {')
+end;
+
+procedure OutCaseStatementBegin;
+begin
+  write(CodeGen.Output, 'case ', CaseLabel.Value, ': ')
+end;
+
+procedure OutCaseStatementEnd;
+begin
+  writeln(CodeGen.Output, 'break;')
+end;
+
+procedure OutCaseEnd;
+begin
+  writeln(CodeGen.Output, 'default: break;');
+  writeln(CodeGen.Output, '}')
+end;
+
 procedure OutRepeatBegin;
 begin
   writeln(Codegen.Output, 'do {')

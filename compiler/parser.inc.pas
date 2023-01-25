@@ -982,6 +982,38 @@ begin
   end
 end;
 
+procedure PsCaseStatement;
+var
+  CaseIndex : TPsExpression;
+  CaseLabel : TPsExpression;
+begin
+  WantTokenAndRead(TkCase);
+  CaseIndex := PsExpression;
+  if not IsOrdinalType(CaseIndex.TypeIndex) then
+  begin
+    writeln(StdErr, 'The index of the case statement is not ordinal', LxWhereStr);
+    halt(1)
+  end;
+  OutCaseBegin(CaseIndex);
+  WantTokenAndRead(TkOf);
+  repeat
+    CaseLabel := CoerceType(PsExpression, CaseIndex.TypeIndex);
+    if not CaseLabel.IsConstant then
+    begin
+      writeln(StdErr, 'The label of the case statement is not constant', LxWhereStr);
+      halt(1)
+    end;
+    WantTokenAndRead(TkColon);
+    OutCaseStatementBegin(CaseLabel);
+    PsStatement;
+    OutCaseStatementEnd;
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon);
+  until Lexer.Token.Id = TkEnd;
+  WantTokenAndRead(TkEnd);
+  OutCaseEnd;
+end;
+
 procedure PsRepeatStatement;
 begin
   WantTokenAndRead(TkRepeat);
@@ -1041,6 +1073,7 @@ begin
   else if Lexer.Token.Id = TkBegin then PsStatementSequence
   else if Lexer.Token.Id = TkIdentifier then PsIdentifierStatement
   else if Lexer.Token.Id = TkIf then PsIfStatement
+  else if Lexer.Token.Id = TkCase then PsCaseStatement
   else if Lexer.Token.Id = TkRepeat then PsRepeatStatement
   else if Lexer.Token.Id = TkWhile then PsWhileStatement
   else if Lexer.Token.Id = TkFor then PsForStatement
