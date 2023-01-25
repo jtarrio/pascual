@@ -44,10 +44,8 @@ forward;
 function PsTypeIdentifier : TPsTypeIndex;
 var 
   Found : TPsName;
-  TypeIndex : TPsTypeIndex;
 begin
   WantToken(TkIdentifier);
-  TypeIndex := 0;
   Found := Defs.Names[FindName(Lexer.Token.Value, true)];
   if Found.Cls <> TncType then
   begin
@@ -111,11 +109,7 @@ end;
 
 function PsArrayType(Scope : TPsScope) : TPsTypeIndex;
 var 
-  Found : TPsName;
-  TypeIndex : TPsTypeIndex;
   Typ : TPsType;
-  Enum : TPsEnumDef;
-  Rec : TPsRecordDef;
   Arr : TPsArrayDef;
 begin
   WantTokenAndRead(TkArray);
@@ -411,7 +405,6 @@ end;
 
 procedure PsProcedureDefinition;
 var 
-  IsProcedure : boolean;
   Def : TPsFunction;
 begin
   Def := EmptyFunction();
@@ -438,7 +431,6 @@ end;
 
 procedure PsFunctionDefinition;
 var 
-  IsProcedure : boolean;
   Def : TPsFunction;
 begin
   Def := EmptyFunction();
