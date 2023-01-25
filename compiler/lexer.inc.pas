@@ -10,8 +10,7 @@ type
                 TkPacked, TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet,
                 TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith);
   TLxPos = record
-    Row : integer;
-    Col : integer
+    Row, Col : integer
   end;
   TLxToken = record
     Id : TLxTokenId;

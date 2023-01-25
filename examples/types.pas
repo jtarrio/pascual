@@ -24,8 +24,7 @@ var
   ARec2 : Rec2;
   ALetter : (LetterA, LetterB, LetterC, LetterD);
   AName : record
-    First : string;
-    Last : string;
+    First, Last : string;
   end;
   AArr1 : Arr1;
   AArr3 : array[1..20] of string;

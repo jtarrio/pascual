@@ -41,8 +41,7 @@ type
     Fields : array[1..MaxRecordFields] of TPsRecordField
   end;
   TPsArrayDef = record
-    LowBound : string;
-    HighBound : string;
+    LowBound, HighBound : string;
     TypeIndex : TPsTypeIndex
   end;
   TPsConstantIndex = integer;
@@ -79,13 +78,13 @@ type
     SpecialFunction : TPsSpecialFunction;
   end;
   TPsScope = record
-    NumNames : integer;
-    NumTypes : integer;
-    NumEnums : integer;
-    NumRecords : integer;
-    NumArrays : integer;
-    NumConstants : integer;
-    NumVariables : integer;
+    NumNames,
+    NumTypes,
+    NumEnums,
+    NumRecords,
+    NumArrays,
+    NumConstants,
+    NumVariables,
     NumFunctions : integer
   end;
   TPsDefs = record
@@ -107,12 +106,7 @@ type
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
-    PtNil : TPsTypeIndex;
-    PtBoolean : TPsTypeIndex;
-    PtInteger : TPsTypeIndex;
-    PtChar : TPsTypeIndex;
-    PtString : TPsTypeIndex;
-    PtText : TPsTypeIndex
+    PtNil, PtBoolean, PtInteger, PtChar, PtString, PtText : TPsTypeIndex
   end;
   GlobalScope : TPsScope;
 
