@@ -1026,10 +1026,11 @@ begin
   until (Lexer.Token.Id = TkElse) or (Lexer.Token.Id = TkEnd);
   OutCaseElseBegin;
   if Lexer.Token.Id = TkElse then
-  begin
-    ReadToken;
-    PsStatement;
-  end;
+    repeat
+      ReadToken;
+      PsStatement;
+      WantToken2(TkSemicolon, TkEnd);
+    until Lexer.Token.Id = TkEnd;
   OutCaseElseEnd;
   OutCaseEnd;
   WantTokenAndRead(TkEnd);

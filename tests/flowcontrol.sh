@@ -86,19 +86,19 @@ testcase integer 4 "1 : write('1x');
 testcase integer 1 "1 : write('1x');
                     2 : begin write('2a'); write('2b') end;
                     4 : write('4x');
-                    else write('else')" | outputs '1x'
+                    else write('el') ; write('se')" | outputs '1x'
 testcase integer 2 "1 : write('1x');
                     2 : begin write('2a'); write('2b') end;
                     4 : write('4x')
-                    else write('else')" | outputs '2a2b'
+                    else write('el') ; write('se')" | outputs '2a2b'
 testcase integer 3 "1 : write('1x');
                     2 : begin write('2a'); write('2b') end;
                     4 : write('4x')
-                    else write('else')" | outputs 'else'
+                    else write('el') ; write('se')" | outputs 'else'
 testcase integer 4 "1 : write('1x');
                     2 : begin write('2a'); write('2b') end;
                     4 : write('4x')
-                    else write('else')" | outputs '4x'
+                    else write('el') ; write('se')" | outputs '4x'
 
 testcase char "'b'" "'a' : write('1x');
                      'b' : begin write('2a'); write('2b') end;
