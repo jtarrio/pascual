@@ -312,20 +312,35 @@ begin
 end;
 
 procedure PsVarDefinitions(Scope : TPsScope);
+const 
+  MaxVarNames = 8;
 var 
-  Name : string;
+  NumNames : integer;
+  Names : array[1..MaxVarNames] of string;
   TypeIndex : TPsTypeIndex;
   PreviousScope : TPsScope;
 begin
   PreviousScope := GetCurrentScope;
   WantTokenAndRead(TkVar);
   repeat
-    Name := GetTokenValueAndRead(TkIdentifier);
+    NumNames := 0;
+    repeat
+      NumNames := NumNames + 1;
+      if NumNames > MaxVarNames then
+      begin
+        writeln(StdErr, 'Too many names in variable definition', LxWhereStr);
+        halt(1)
+      end;
+      Names[NumNames] := GetTokenValueAndRead(TkIdentifier);
+      WantToken2(TkComma, TkColon);
+      SkipToken(TkComma)
+    until Lexer.Token.Id = TkColon;
     WantTokenAndRead(TkColon);
     TypeIndex := PsTypeDenoter(Scope);
     WantTokenAndRead(TkSemicolon);
-    OutVariableDefinition(AddVariable(MakeVariable(Name, TypeIndex, false),
-    Scope));
+    for NumNames := 1 to NumNames do
+      OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
+                            TypeIndex, false), Scope));
   until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesInScope(PreviousScope)
 end;
@@ -361,21 +376,34 @@ begin
 end;
 
 procedure PsArguments(var Def : TPsFunction);
+var 
+  IsReference : boolean;
+  LastArg : integer;
+  Arg : integer;
+  TypeIndex : TPsTypeIndex;
 begin
   WantTokenAndRead(TkLparen);
   repeat
-    Def.ArgCount := Def.ArgCount + 1;
-    if Def.ArgCount > MaxFunctionArguments then
-    begin
-      writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
-              LxWhereStr);
-      halt(1)
-    end;
-    Def.Args[Def.ArgCount].IsReference := Lexer.Token.Id = TkVar;
+    IsReference := Lexer.Token.Id = TkVar;
     SkipToken(TkVar);
-    Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
-    WantTokenAndRead(TkColon);
-    Def.Args[Def.ArgCount].TypeIndex := PsTypeIdentifier;
+    LastArg := Def.ArgCount;
+    repeat
+      Def.ArgCount := Def.ArgCount + 1;
+      if Def.ArgCount > MaxFunctionArguments then
+      begin
+        writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
+                LxWhereStr);
+        halt(1)
+      end;
+      Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
+      Def.Args[Def.ArgCount].IsReference := IsReference;
+      WantToken2(TkColon, TkComma);
+      SkipToken(TkComma)
+    until Lexer.Token.Id = TkColon;
+    SkipToken(TkColon);
+    TypeIndex := PsTypeIdentifier;
+    for Arg := LastArg + 1 to Def.ArgCount do
+      Def.Args[Arg].TypeIndex := TypeIndex;
     WantToken2(TkSemicolon, TkRparen);
     SkipToken(TkSemicolon);
   until Lexer.Token.Id = TkRparen;

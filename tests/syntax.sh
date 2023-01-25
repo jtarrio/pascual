@@ -152,7 +152,7 @@ echo 'type A=;' | testdef | is_not_valid
 # Variable definitions
 echo 'var A : integer;' | testdef | is_valid
 echo 'type A = integer; var B : A;' | testdef | is_valid
-echo 'var A, B : integer;' | testdef | will_be_valid
+echo 'var A, B : integer;' | testdef | is_valid
 echo 'var A = boolean;' | testdef | is_not_valid
 echo 'var A : boolean' | testdef | is_not_valid
 echo 'var A:;' | testdef | is_not_valid
@@ -351,7 +351,7 @@ echo 'program foo;
 echo 'program foo;
       procedure Proc(A, B : integer);
       begin writeln(maxint) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       procedure Proc(var A : integer);
       begin writeln(maxint) end;
@@ -363,7 +363,7 @@ echo 'program foo;
 echo 'program foo;
       procedure Proc(var A, B : integer);
       begin writeln(maxint) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       type T = procedure;
       procedure Proc(P : T);
@@ -441,7 +441,7 @@ echo 'program foo;
 echo 'program foo;
       function Func(A, B : integer) : integer;
       begin Func := maxint end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       function Func(var A : integer) : integer;
       begin Func := maxint end;
@@ -453,7 +453,7 @@ echo 'program foo;
 echo 'program foo;
       function Func(var A, B : integer) : integer;
       begin Func := maxint end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       function Func : integer; forward;
       function Func : integer;

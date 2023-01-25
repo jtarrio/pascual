@@ -12,11 +12,9 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
     * Missing variants.
     * Missing "with" statement.
     * Missing bounds checking.
-    * Missing I/O result checking.
+    * Missing active I/O result checking.
 * Type definitions, variable definitions, untyped constant definitions, typed constant definitions.
     * Missing record typed constants.
-    * Missing comma syntax to define more than one variable or argument with the same type.
-    * Missing the ability to declare a pointer to another type that will be declared later in the same block.
 * Functions and procedures, pass by value and pass by reference.
     * Missing functions and procedures as arguments.
     * Missing nested functions and procedures.

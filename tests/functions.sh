@@ -15,6 +15,10 @@ echo "program foo;
       function Fun(a : string; b : string) : string;
       begin Fun := 'fun ' + a + ' ' + b end;
       begin write(Fun('1', '2')) end." | outputs 'fun 1 2'
+echo "program foo;
+      function Fun(a : integer; b, c : string; d : integer) : string;
+      begin Fun := 'fun ' + b + ' ' + c end;
+      begin write(Fun(1, '2', '3', 4)) end." | outputs 'fun 2 3'
 
 # Arguments are passed by value
 echo "program foo;
@@ -40,6 +44,18 @@ echo "program foo;
         i := 1;
         write(Fun(i), ' ', i)
       end." | outputs '15 10'
+echo "program foo;
+      var i : integer; j : integer;
+      function Swap(var a, b : integer) : boolean;
+      var i : integer;
+      begin
+        i := a; a := b; b := i;
+        Swap := a = b
+      end;
+      begin
+        i := 1; j := 2;
+        write(Swap(i, j), ' ', i, ' ', j)
+      end." | outputs 'FALSE 2 1'
 # Variables and types can be defined inside the function
 echo "program foo;
       function Fun(a : integer) : integer;

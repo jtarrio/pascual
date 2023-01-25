@@ -15,6 +15,10 @@ echo "program foo;
       procedure Proc(a : integer; b : integer);
       begin write('proc ', a, ' ', b) end;
       begin Proc(1, 2) end." | outputs 'proc 1 2'
+echo "program foo;
+      procedure Proc(a : string; b, c : integer; d : string);
+      begin write('proc ', a, ' ', b, ' ', c, ' ', d) end;
+      begin Proc('1', 2, 3, '4') end." | outputs 'proc 1 2 3 4'
 
 # Arguments are passed by value
 echo "program foo;
@@ -42,6 +46,18 @@ echo "program foo;
         Proc(i);
         write(' ', i)
       end." | outputs 'proc 10 10'
+echo "program foo;
+      var i : integer; j : integer;
+      procedure Swap(var a, b : integer);
+      var i : integer;
+      begin
+        i := a; a := b; b := i
+      end;
+      begin
+        i := 1; j := 2;
+        Swap(i, j);
+        write(i, ' ', j)
+      end." | outputs '2 1'
 # Variables and types can be defined inside the procedure
 echo "program foo;
       procedure Proc(a : integer);
