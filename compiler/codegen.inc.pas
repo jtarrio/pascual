@@ -13,7 +13,7 @@ begin
   writeln(Codegen.Output, '}')
 end;
 
-procedure OutEnumValues(Pos : TPsEnumIndex);
+procedure OutEnumValues;
 var 
   PosInEnum : integer;
 begin
@@ -26,7 +26,7 @@ begin
   writeln(Codegen.Output, ' };')
 end;
 
-procedure OutEnumValuesInScope(Scope : TPsScope);
+procedure OutEnumValuesInScope;
 var 
   Pos : TPsEnumIndex;
 begin
@@ -34,18 +34,18 @@ begin
     OutEnumValues(Pos)
 end;
 
-function OutVariableName(Name : string; IsReference : boolean) : string;
+function OutVariableName;
 begin
   if IsReference then OutVariableName := '*' + Name
   else OutVariableName := Name
 end;
 
-function OutReturnVariableName(Name : string) : string;
+function OutReturnVariableName;
 begin
   OutReturnVariableName := 'return_' + Name
 end;
 
-procedure OutTypeReference(TypeIndex : TPsTypeIndex);
+procedure OutTypeReference;
 var 
   Typ : TPsType;
 begin
@@ -78,7 +78,7 @@ begin
   end
 end;
 
-procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
+procedure OutNameAndType;
 var 
   Typ : TPsType;
   Enum : TPsEnumDef;
@@ -138,7 +138,7 @@ begin
   end
 end;
 
-procedure OutTypeDefinition(TypeIndex : TPsTypeIndex);
+procedure OutTypeDefinition;
 var 
   Name : string;
 begin
@@ -153,7 +153,7 @@ begin
   writeln(Codegen.Output, ';');
 end;
 
-procedure OutConstantValue(Value : string);
+procedure OutConstantValue;
 begin
   write(Codegen.Output, Value)
 end;
@@ -173,13 +173,13 @@ begin
   write(Codegen.Output, ' }')
 end;
 
-procedure OutVariableDeclaration(VarDef : TPsVariable);
+procedure OutVariableDeclaration;
 begin
   OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
   VarDef.TypeIndex)
 end;
 
-procedure OutVariableDefinition(VarIndex : TPsVariableIndex);
+procedure OutVariableDefinition;
 begin
   if Defs.Variables[VarIndex].IsConstant then
     write(Codegen.Output, 'const ');
@@ -187,7 +187,7 @@ begin
   writeln(Codegen.Output, ';');
 end;
 
-procedure OutConstantDefinitionBegin(VarIndex : TPsVariableIndex);
+procedure OutConstantDefinitionBegin;
 begin
   write(Codegen.Output, 'const ');
   OutVariableDeclaration(Defs.Variables[VarIndex]);
@@ -199,7 +199,7 @@ begin
   writeln(Codegen.Output, ';')
 end;
 
-procedure OutFunctionPrototype(Def : TPsFunction);
+procedure OutFunctionPrototype;
 var 
   Pos : integer;
 begin
@@ -214,13 +214,13 @@ begin
   write(Codegen.Output, ')')
 end;
 
-procedure OutFunctionDeclaration(FnIndex : TPsFunctionIndex);
+procedure OutFunctionDeclaration;
 begin
   OutFunctionPrototype(Defs.Functions[FnIndex]);
   writeln(Codegen.Output, ';')
 end;
 
-procedure OutFunctionDefinition(FnIndex : TPsFunctionIndex);
+procedure OutFunctionDefinition;
 var 
   Fun : TPsFunction;
 begin
@@ -234,7 +234,7 @@ begin
   end
 end;
 
-procedure OutFunctionEnd(FnIndex : TPsFunctionIndex);
+procedure OutFunctionEnd;
 begin
   if Defs.Functions[FnIndex].ReturnTypeIndex <> 0 then
     writeln(Codegen.Output, 'return ',
@@ -242,43 +242,41 @@ begin
   writeln(Codegen.Output, '}')
 end;
 
-procedure OutProgramHeading(Name : string);
+procedure OutProgramHeading;
 begin
   writeln(Codegen.Output, '/* Program: ', Name, ' */');
   writeln(Codegen.Output, '#include "pascual.h"')
 end;
 
-procedure SetStringIndex(var Str : TPsExpression; Idx : TPsExpression);
+procedure SetStringIndex;
 begin
   Str.Value := Str.Value + '.chr[' + Idx.Value + ']';
 end;
 
-procedure SetArrayIndex(var Arr : TPsExpression; Idx : TPsExpression);
+procedure SetArrayIndex;
 begin
   Arr.Value := Arr.Value + '[(' + Idx.Value + ') - '
                + Defs.Arrays[Defs.Types[Arr.TypeIndex].ArrayIndex].LowBound
                + ']'
 end;
 
-procedure SetFieldAccess(var Rec : TPsExpression; Fld : string);
+procedure SetFieldAccess;
 begin
   if Rec.Value[1] = '*' then Rec.Value := '(' + Rec.Value + ')';
   Rec.Value := Rec.Value + '.' + Fld
 end;
 
-function GenFunctionCallStart(Fn : string) : string;
+function GenFunctionCallStart;
 begin
   GenFunctionCallStart := Fn + '('
 end;
 
-function GenFunctionCallEnd(Fn : string) : string;
+function GenFunctionCallEnd;
 begin
   GenFunctionCallEnd := Fn + ')'
 end;
 
-function GenFunctionCallArgument(Fn : string; Expr : TPsExpression;
-                                 IsReference : boolean;
-                                 ArgNum : integer) : string;
+function GenFunctionCallArgument;
 begin
   if ArgNum <> 1 then Fn := Fn + ', ';
   if IsReference then Fn := Fn + '&' + Expr.Value
@@ -286,24 +284,24 @@ begin
   GenFunctionCallArgument := Fn
 end;
 
-function GenParens(Expr : TPsExpression) : TPsExpression;
+function GenParens;
 begin
   Expr.Value := '(' + Expr.Value + ')';
   GenParens := Expr
 end;
 
-procedure OutRead(Src : string; OutVar : TPsExpression);
+procedure OutRead;
 begin
   writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(&',
   Src, ', &', OutVar.Value, ');')
 end;
 
-procedure OutReadln(Src : string);
+procedure OutReadln;
 begin
   writeln(Codegen.Output, 'readln(&', Src, ');')
 end;
 
-procedure OutWrite(Dst : string; Expr : TPsExpression);
+procedure OutWrite;
 begin
   Expr := Evaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
@@ -314,12 +312,12 @@ begin
     '(&', Dst, ', ', Expr.Value, ');')
 end;
 
-procedure OutWriteln(Dst : string);
+procedure OutWriteln;
 begin
   writeln(Codegen.Output, 'writeln(&', Dst, ');')
 end;
 
-procedure OutStr(Dst : string; Expr : TPsExpression);
+procedure OutStr;
 begin
   Expr := Evaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
@@ -330,35 +328,35 @@ begin
     '(', Expr.Value, ');')
 end;
 
-procedure OutNew(Dst : TPsExpression);
+procedure OutNew;
 begin
   write(Codegen.Output, Dst.Value, ' = malloc(sizeof(');
   OutTypeReference(Defs.Types[Dst.TypeIndex].PointedTypeIndex);
   writeln(Codegen.Output, '));')
 end;
 
-procedure OutDispose(Dst : TPsExpression);
+procedure OutDispose;
 begin
   writeln(Codegen.Output, 'free(', Dst.Value, ');')
 end;
 
-procedure OutExpression(Expr : TPsExpression);
+procedure OutExpression;
 begin
   write(Codegen.Output, Expr.Value)
 end;
 
-procedure OutAssign(Lhs, Rhs : TPsExpression);
+procedure OutAssign;
 begin
   writeln(Codegen.Output, Lhs.Value, ' = ', Rhs.Value, ';')
 end;
 
-procedure OutAssignReturnValue(Lhs, Rhs : TPsExpression);
+procedure OutAssignReturnValue;
 begin
   writeln(Codegen.Output, 'return_', Defs.Functions[Lhs.FunctionIndex].Name,
           ' = ', Rhs.Value, ';')
 end;
 
-procedure OutIf(Expr : TPsExpression);
+procedure OutIf;
 begin
   write(Codegen.Output, 'if (', Expr.Value, ') ')
 end;
@@ -373,12 +371,12 @@ begin
   writeln(Codegen.Output, 'do {')
 end;
 
-procedure OutRepeatEnd(Expr : TPsExpression);
+procedure OutRepeatEnd;
 begin
   writeln(Codegen.Output, '} while (!(', Expr.Value, '));')
 end;
 
-procedure OutWhileBegin(Expr : TPsExpression);
+procedure OutWhileBegin;
 begin
   write(Codegen.Output, 'while (', Expr.Value, ') ')
 end;
@@ -387,8 +385,7 @@ procedure OutWhileEnd;
 begin
 end;
 
-procedure OutForBegin(Iter, FirstExpr, LastExpr : TPsExpression;
-                      Ascending : boolean);
+procedure OutForBegin;
 var 
   LimitType : TPsTypeIndex;
   First, Last : TPsVariable;
@@ -412,7 +409,7 @@ begin
   writeln(Codegen.Output, 'while (1) {');
 end;
 
-procedure OutForEnd(Iter : TPsExpression; Ascending : boolean);
+procedure OutForEnd;
 begin
   writeln(Codegen.Output, 'if (', Iter.Value, ' == last) break;');
   if Ascending then
@@ -424,7 +421,7 @@ begin
   writeln(Codegen.Output, '}');
 end;
 
-procedure OutProcedureCall(Expr : TPsExpression);
+procedure OutProcedureCall;
 begin
   writeln(Codegen.Output, Expr.Value, ';')
 end;
@@ -449,7 +446,7 @@ begin
   Codegen.Output := Output
 end;
 
-procedure CodegenSetOutput(Filename : string);
+procedure CodegenSetOutput;
 begin
   Assign(Codegen.Output, Filename);
   Rewrite(Codegen.Output)

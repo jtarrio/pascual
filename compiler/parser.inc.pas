@@ -158,7 +158,7 @@ begin
   PsPointerType := AddType(Typ, Scope)
 end;
 
-function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
+function PsTypeDenoter;
 var 
   TypeIndex : TPsTypeIndex;
 begin
@@ -465,7 +465,7 @@ begin
     PsFunctionBody(AddFunction(Def));
 end;
 
-procedure PsDefinitions(Scope : TPsScope);
+procedure PsDefinitions;
 var 
   Done : boolean;
 begin
