@@ -84,20 +84,29 @@ end;
 function PsRecordType(Scope : TPsScope) : TPsTypeIndex;
 var 
   Typ : TPsType;
+  LastField, Field : integer;
+  TypeIndex : TPsTypeIndex;
   Rec : TPsRecordDef;
 begin
   WantTokenAndRead(TkRecord);
   Rec.Size := 0;
   repeat
-    Rec.Size := Rec.Size + 1;
-    if Rec.Size > MaxRecordFields then
-    begin
-      writeln(StdErr, 'Too many fields in record', LxWhereStr);
-      halt(1)
-    end;
-    Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
+    LastField := Rec.Size;
+    repeat
+      Rec.Size := Rec.Size + 1;
+      if Rec.Size > MaxRecordFields then
+      begin
+        writeln(StdErr, 'Too many fields in record', LxWhereStr);
+        halt(1)
+      end;
+      Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
+      WantToken2(TkComma, TkColon);
+      SkipToken(TkComma)
+    until Lexer.Token.Id = TkColon;
     WantTokenAndRead(TkColon);
-    Rec.Fields[Rec.Size].TypeIndex := PsTypeDenoter(Scope);
+    TypeIndex := PsTypeDenoter(Scope);
+    for Field := LastField + 1 to Rec.Size do
+      Rec.Fields[Field].TypeIndex := TypeIndex;
     WantToken2(TkSemicolon, TkEnd);
     SkipToken(TkSemicolon);
   until Lexer.Token.Id = TkEnd;
