@@ -433,17 +433,8 @@ begin
 end;
 
 function PsResultType : TPsTypeIndex;
-var 
-  TypeIndex : TPsTypeIndex;
 begin
-  TypeIndex := PsTypeIdentifier;
-  if not IsSimpleType(TypeIndex) and not IsPointerType(TypeIndex) then
-  begin
-    writeln(StdErr, 'Expected a simple or pointer type, got ',
-            TypeName(TypeIndex), LxWhereStr);
-    halt(1)
-  end;
-  PsResultType := TypeIndex
+  PsResultType := PsTypeIdentifier
 end;
 
 procedure PsFunctionDefinition;
