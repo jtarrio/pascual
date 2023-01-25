@@ -174,13 +174,13 @@ var
 begin
   Def.Name := Name;
   Def.Cls := Cls;
-  if Cls = TncType then Def.TypeIndex := Idx
-  else if Cls = TncVariable then Def.VariableIndex := Idx
-  else if Cls = TncEnumValue then Def.TypeIndex := Idx
-  else if Cls = TncFunction then Def.FunctionIndex := Idx
-  else
-  begin
-    writeln(StdErr, 'Cannot use MakeName for special functions', LxWhereStr);
+  case Cls of 
+    TncType : Def.TypeIndex := Idx;
+    TncVariable : Def.VariableIndex := Idx;
+    TncEnumValue : Def.TypeIndex := Idx;
+    TncFunction : Def.FunctionIndex := Idx;
+    else
+      writeln(StdErr, 'Cannot use MakeName for special functions', LxWhereStr);
     halt(1)
   end;
   MakeName := Def

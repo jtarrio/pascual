@@ -156,22 +156,23 @@ var
 begin
   Oper := '';
   Cmp := '';
-  if Op = TkPlus then Oper := '+'
-  else if Op = TkMinus then Oper := '-'
-  else if Op = TkAsterisk then Oper := '*'
-  else if Op = TkDiv then Oper := '/'
-  else if Op = TkMod then Oper := '%'
-  else if Op = TkAnd then Oper := '&'
-  else if Op = TkOr then Oper := '|'
-  else if Op = TkEquals then Cmp := '=='
-  else if Op = TkNotEquals then Cmp := '!='
-  else if Op = TkLessthan then Cmp := '<'
-  else if Op = TkMorethan then Cmp := '>'
-  else if Op = TkLessOrEquals then Cmp := '<='
-  else if Op = TkMoreOrEquals then Cmp := '>='
-  else
-  begin
-    writeln(StdErr, 'Expected integer binary operator, found ', Op, LxWhereStr);
+  case Op of 
+    TkPlus : Oper := '+';
+    TkMinus : Oper := '-';
+    TkAsterisk : Oper := '*';
+    TkDiv : Oper := '/';
+    TkMod : Oper := '%';
+    TkAnd : Oper := '&';
+    TkOr : Oper := '|';
+    TkEquals : Cmp := '==';
+    TkNotEquals : Cmp := '!=';
+    TkLessthan : Cmp := '<';
+    TkMorethan : Cmp := '>';
+    TkLessOrEquals : Cmp := '<=';
+    TkMoreOrEquals : Cmp := '>=';
+    else
+      writeln(StdErr, 'Expected integer binary operator, found ', Op,
+              LxWhereStr);
     halt(1)
   end;
   if Cmp = '' then
@@ -190,17 +191,18 @@ var
   Oper : string;
   Expr : TPsExpression;
 begin
-  if Op = TkAnd then Oper := '&&'
-  else if Op = TkOr then Oper := '||'
-  else if Op = TkEquals then Oper := '=='
-  else if Op = TkNotEquals then Oper := '!='
-  else if Op = TkLessthan then Oper := '<'
-  else if Op = TkMorethan then Oper := '>'
-  else if Op = TkLessOrEquals then Oper := '<='
-  else if Op = TkMoreOrEquals then Oper := '>='
-  else
-  begin
-    writeln(StdErr, 'Expected boolean binary operator, found ', Op, LxWhereStr);
+  case Op of 
+    TkAnd : Oper := '&&';
+    TkOr : Oper := '||';
+    TkEquals : Oper := '==';
+    TkNotEquals : Oper := '!=';
+    TkLessthan : Oper := '<';
+    TkMorethan : Oper := '>';
+    TkLessOrEquals : Oper := '<=';
+    TkMoreOrEquals : Oper := '>=';
+    else
+      writeln(StdErr, 'Expected boolean binary operator, found ', Op,
+              LxWhereStr);
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
@@ -219,16 +221,17 @@ var
 begin
   FName := 'cmp';
   Cmp := '';
-  if Op = TkPlus then FName := 'cat'
-  else if Op = TkEquals then Cmp := '=='
-  else if Op = TkNotEquals then Cmp := '!='
-  else if Op = TkLessthan then Cmp := '<'
-  else if Op = TkMorethan then Cmp := '>'
-  else if Op = TkLessOrEquals then Cmp := '<='
-  else if Op = TkMoreOrEquals then Cmp := '>='
-  else
-  begin
-    writeln(StdErr, 'Expected string binary operator, found ', Op, LxWhereStr);
+  case Op of 
+    TkPlus : FName := 'cat';
+    TkEquals : Cmp := '==';
+    TkNotEquals : Cmp := '!=';
+    TkLessthan : Cmp := '<';
+    TkMorethan : Cmp := '>';
+    TkLessOrEquals : Cmp := '<=';
+    TkMoreOrEquals : Cmp := '>=';
+    else
+      writeln(StdErr, 'Expected string binary operator, found ', Op,
+              LxWhereStr);
     halt(1)
   end;
 
@@ -254,15 +257,16 @@ var
   Expr : TPsExpression;
 begin
   Cmp := '';
-  if Op = TkEquals then Cmp := '=='
-  else if Op = TkNotEquals then Cmp := '!='
-  else if Op = TkLessthan then Cmp := '<'
-  else if Op = TkMorethan then Cmp := '>'
-  else if Op = TkLessOrEquals then Cmp := '<='
-  else if Op = TkMoreOrEquals then Cmp := '>='
-  else
-  begin
-    writeln(StdErr, 'Expected ordinal binary operator, found ', Op, LxWhereStr);
+  case Op of 
+    TkEquals : Cmp := '==';
+    TkNotEquals : Cmp := '!=';
+    TkLessthan : Cmp := '<';
+    TkMorethan : Cmp := '>';
+    TkLessOrEquals : Cmp := '<=';
+    TkMoreOrEquals : Cmp := '>=';
+    else
+      writeln(StdErr, 'Expected ordinal binary operator, found ', Op,
+              LxWhereStr);
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
@@ -279,11 +283,12 @@ var
   Expr : TPsExpression;
 begin
   Cmp := '';
-  if Op = TkEquals then Cmp := '=='
-  else if Op = TkNotEquals then Cmp := '!='
-  else
-  begin
-    writeln(StdErr, 'Expected pointer binary operator, found ', Op, LxWhereStr);
+  case Op of 
+    TkEquals : Cmp := '==';
+    TkNotEquals : Cmp := '!=';
+    else
+      writeln(StdErr, 'Expected pointer binary operator, found ', Op,
+              LxWhereStr);
     halt(1)
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
