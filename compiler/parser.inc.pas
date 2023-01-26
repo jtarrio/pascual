@@ -4,31 +4,22 @@ forward;
 procedure WantToken(Id : TLxTokenId);
 begin
   if Lexer.Token.Id <> Id then
-  begin
-    writeln(StdErr, 'Wanted token ', Id, ', found ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end
+    CompileError('Wanted token ' + LxTokenName(Id) + ', found ' + LxTokenStr)
 end;
 
 procedure WantToken2(Id1, Id2 : TLxTokenId);
 begin
   if (Lexer.Token.Id <> Id1) and (Lexer.Token.Id <> Id2) then
-  begin
-    writeln(StdErr, 'Wanted token ', Id1, ' or ', Id2, ', found ', LxTokenStr,
-            LxWhereStr);
-    halt(1)
-  end
+    CompileError('Wanted token ' + LxTokenName(Id1) + ' or ' +
+    LxTokenName(Id2) + ', found ' + LxTokenStr)
 end;
 
 procedure WantToken3(Id1, Id2, Id3 : TLxTokenId);
 begin
   if (Lexer.Token.Id <> Id1)
      and (Lexer.Token.Id <> Id2) and (Lexer.Token.Id <> Id3) then
-  begin
-    writeln(StdErr, 'Wanted token ', Id1, ', ', Id2, ', or ', Id3,
-            ' found ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end
+    CompileError('Wanted token ' + LxTokenName(Id1) + ', ' + LxTokenName(Id2) +
+    ', or ' + LxTokenName(Id3) + ' found ' + LxTokenStr)
 end;
 
 procedure WantTokenAndRead(Id : TLxTokenId);
@@ -58,10 +49,7 @@ var
 begin
   Found := Defs.Names[FindName(Name, true)];
   if Found.Cls <> TncType then
-  begin
-    writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a type: ' + Found.Name);
   PsFindType := Found.TypeIndex;
 end;
 
@@ -93,10 +81,7 @@ begin
   repeat
     Enum.Size := Enum.Size + 1;
     if Enum.Size > MaxEnumValues then
-    begin
-      writeln(StdErr, 'Too many values in enum', LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Too many values in enum');
     Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma);
@@ -121,18 +106,11 @@ begin
     for Field := 1 to Rec.Size do
     begin
       if Rec.Fields[Field].Name = Name then
-      begin
-        writeln(StdErr, 'A field named ', Name, ' has already been defined',
-                LxWhereStr);
-        halt(1)
-      end
+        CompileError('A field named ' + Name + ' has already been defined')
     end;
     Rec.Size := Rec.Size + 1;
     if Rec.Size > MaxRecordFields then
-    begin
-      writeln(StdErr, 'Too many fields in record', LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Too many fields in record');
     Rec.Fields[Rec.Size].Name := Name;
     WantToken2(TkComma, TkColon);
     SkipToken(TkComma)
@@ -165,11 +143,7 @@ begin
   else
     TagType := PsFindType(Tag.Name);
   if not IsOrdinalType(TagType) then
-  begin
-    writeln(StdErr, 'The index of the case statement is not ordinal',
-            LxWhereStr);
-    halt(1)
-  end;
+    CompileError('The index of the case statement is not ordinal');
   WantTokenAndRead(TkOf);
   repeat
     Rec.NumVariants := Rec.NumVariants + 1;
@@ -177,11 +151,7 @@ begin
     repeat
       CaseLabel := CoerceType(PsExpression, TagType);
       if not CaseLabel.IsConstant then
-      begin
-        writeln(StdErr, 'The label of the case statement is not constant',
-                LxWhereStr);
-        halt(1)
-      end;
+        CompileError('The label of the case statement is not constant');
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
@@ -249,10 +219,7 @@ begin
   else if Defs.Names[NameIndex].Cls = TncType then
          TypeIndex := Defs.Names[NameIndex].TypeIndex
   else
-  begin
-    writeln(StdErr, 'Not a type: ', Lexer.Token.Value, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a type: ' + Lexer.Token.Value);
   ReadToken;
   Typ := PointerType(TypeIndex);
   PsPointerType := AddType(Typ, Scope)
@@ -269,10 +236,7 @@ begin
   else if Lexer.Token.Id = TkArray then TypeIndex := PsArrayType(Scope)
   else if Lexer.Token.Id = TkCaret then TypeIndex := PsPointerType(Scope)
   else
-  begin
-    writeln(StdErr, 'Wanted type definition, found ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Wanted type definition, found ' + LxTokenStr);
   PsTypeDenoter := TypeIndex;
 end;
 
@@ -298,11 +262,8 @@ begin
   for TypeIndex := PreviousScope.NumTypes + 1 to Defs.Scope.NumTypes do
   begin
     if IsPlaceholderType(TypeIndex) then
-    begin
-      writeln(StdErr, 'Type has been mentioned but not defined: ',
-              TypeName(TypeIndex), LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Type has been mentioned but not defined: ' +
+                   TypeName(TypeIndex));
     if Defs.Types[TypeIndex].AliasFor <> 0 then
       OutTypeDefinition(TypeIndex)
   end;
@@ -319,10 +280,7 @@ begin
      (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString) then
     Constant.Replacement := Lexer.Token
   else
-  begin
-    writeln(Stderr, 'Expected constant value, found ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Expected constant value, found ' + LxTokenStr);
   AddConstant(Constant, Scope);
   ReadToken;
 end;
@@ -347,11 +305,7 @@ begin
   begin
     Expr := GenStringConstant(GetTokenValueAndRead(TkString));
     if not IsCharType(Expr.TypeIndex) then
-    begin
-      writeln(StdErr, 'Expected char constant, got ',
-              TypeName(Expr.TypeIndex), LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Expected char constant, got ' + TypeName(Expr.TypeIndex));
     OutConstantValue(Expr.Value)
   end
   else if IsStringType(TypeIndex) then
@@ -375,11 +329,7 @@ begin
     WantTokenAndRead(TkRparen);
   end
   else
-  begin
-    writeln(StdErr, 'Invalid type for constant: ', TypeName(TypeIndex),
-    LxWhereStr);
-    halt(1)
-  end
+    CompileError('Invalid type for constant: ' + TypeName(TypeIndex))
 end;
 
 procedure PsTypedConstant(Name : string; Scope : TPsScope);
@@ -427,10 +377,7 @@ begin
     repeat
       NumNames := NumNames + 1;
       if NumNames > MaxVarNames then
-      begin
-        writeln(StdErr, 'Too many names in variable definition', LxWhereStr);
-        halt(1)
-      end;
+        CompileError('Too many names in variable definition');
       Names[NumNames] := GetTokenValueAndRead(TkIdentifier);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
@@ -489,11 +436,7 @@ begin
     repeat
       Def.ArgCount := Def.ArgCount + 1;
       if Def.ArgCount > MaxFunctionArguments then
-      begin
-        writeln(StdErr, 'Too many arguments declared for function ', Def.Name,
-                LxWhereStr);
-        halt(1)
-      end;
+        CompileError('Too many arguments declared for function ' + Def.Name);
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
       Def.Args[Def.ArgCount].IsReference := IsReference;
       WantToken2(TkColon, TkComma);
@@ -603,10 +546,7 @@ var
   ArgNum : integer;
 begin
   if Fn.Cls <> TecFunction then
-  begin
-    writeln(StdErr, 'Not a function', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a function');
   Fun := Defs.Functions[Fn.FunctionIndex];
   Fn.Value := GenFunctionCallStart(Fn.Value);
   WantTokenAndRead(TkLparen);
@@ -629,10 +569,7 @@ function PsPointerDeref(Ptr : TPsExpression) : TPsExpression;
 begin
   Ptr := Evaluate(Ptr);
   if (Ptr.Cls <> TecValue) or not IsPointerType(Ptr.TypeIndex) then
-  begin
-    writeln(StdErr, 'Not a pointer', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a pointer');
   WantTokenAndRead(TkCaret);
   Ptr.Value := '*(' + Ptr.Value + ')';
   Ptr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
@@ -664,10 +601,7 @@ begin
       begin
         if not IsVariableExpression(OutVar)
            or not IsStringyType(OutVar.TypeIndex) then
-        begin
-          writeln(StdErr, 'Invalid expression for read argument', LxWhereStr);
-          halt(1)
-        end;
+          CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
       end;
       WantToken2(TkComma, TkRparen);
@@ -677,10 +611,7 @@ begin
         OutVar := PsExpression;
         if not IsVariableExpression(OutVar)
            or not IsStringyType(OutVar.TypeIndex) then
-        begin
-          writeln(StdErr, 'Invalid expression for read argument', LxWhereStr);
-          halt(1)
-        end;
+          CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
         WantToken2(TkComma, TkRparen);
         SkipToken(TkComma)
@@ -741,11 +672,7 @@ begin
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
   if not IsVariableExpression(Dest) or not IsStringType(Dest.TypeIndex) then
-  begin
-    writeln(StdErr, 'Destination argument is not a string variable',
-            LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
   OutStr(Dest.Value, Expr)
 end;
@@ -758,10 +685,7 @@ begin
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
   if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
-  begin
-    writeln(StdErr, 'Argument is not a pointer', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Argument is not a pointer');
   OutNew(Dest)
 end;
 
@@ -773,10 +697,7 @@ begin
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
   if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
-  begin
-    writeln(StdErr, 'Argument is not a pointer', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Argument is not a pointer');
   OutDispose(Dest)
 end;
 
@@ -788,10 +709,7 @@ begin
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
   if (Idx.Cls <> TecValue) or not IsIntegerType(Idx.TypeIndex) then
-  begin
-    writeln(StdErr, 'Subscript must be an integer', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Subscript must be an integer');
   if (Arr.Cls = TecValue) and IsStringType(Arr.TypeIndex) then
   begin
     SetStringIndex(Arr, Idx);
@@ -803,10 +721,7 @@ begin
     Arr.TypeIndex := Defs.Arrays[Defs.Types[Arr.TypeIndex].ArrayIndex].TypeIndex
   end
   else
-  begin
-    writeln(StdErr, 'Not a string or array', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a string or array');
   PsArrayAccess := Arr
 end;
 
@@ -816,18 +731,12 @@ var
   FldType : TPsTypeIndex;
 begin
   if (Rec.Cls <> TecValue) or (Defs.Types[Rec.TypeIndex].Cls <> TtcRecord) then
-  begin
-    writeln(StdErr, 'Not a record', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Not a record');
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
   FldType := FindFieldType(Rec.TypeIndex, Fld.Name, true);
   if FldType = 0 then
-  begin
-    writeln(StdErr, 'Field ', Fld.Name, ' not found in record', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Field ' + Fld.Name + ' not found in record');
   SetFieldAccess(Rec, Fld.Name);
   Rec.TypeIndex := FldType;
   PsFieldAccess := Rec
@@ -892,10 +801,7 @@ begin
       else if Found.SpecialFunction = TsfDispose then PsDispose
     end
     else
-    begin
-      writeln(StdErr, 'Invalid identifier: ', Id.Name, LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Invalid identifier: ' + Id.Name)
   end;
   repeat
     if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
@@ -958,10 +864,7 @@ begin
     Expr := UnaryExpression(TkNot, PsFactor);
   end
   else
-  begin
-    writeln(StdErr, 'Invalid token in expression: ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Invalid token in expression: ' + LxTokenStr);
   PsFactor := Expr
 end;
 
@@ -1017,20 +920,14 @@ end;
 procedure PsAssign(Lhs, Rhs : TPsExpression);
 begin
   if Lhs.IsConstant then
-  begin
-    writeln(StdErr, 'Cannot assign to a constant value', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Cannot assign to a constant value');
   if Lhs.Cls = TecFunction then
     OutAssignReturnValue(Lhs, CoerceType(Rhs,
                          Defs.Functions[Lhs.FunctionIndex].ReturnTypeIndex))
   else if Lhs.Cls = TecValue then
          OutAssign(Lhs, CoerceType(Rhs, Lhs.TypeIndex))
   else
-  begin
-    writeln(StdErr, 'Cannot assign to result of statement', LxWhereStr);
-    halt(1)
-  end
+    CompileError('Cannot assign to result of statement')
 end;
 
 procedure PsStatementSequence;
@@ -1087,21 +984,13 @@ begin
   WantTokenAndRead(TkCase);
   CaseIndex := PsExpression;
   if not IsOrdinalType(CaseIndex.TypeIndex) then
-  begin
-    writeln(StdErr, 'The index of the case statement is not ordinal',
-            LxWhereStr);
-    halt(1)
-  end;
+    CompileError('The index of the case statement is not ordinal');
   OutCaseBegin(CaseIndex);
   WantTokenAndRead(TkOf);
   repeat
     CaseLabel := CoerceType(PsExpression, CaseIndex.TypeIndex);
     if not CaseLabel.IsConstant then
-    begin
-      writeln(StdErr, 'The label of the case statement is not constant',
-              LxWhereStr);
-      halt(1)
-    end;
+      CompileError('The label of the case statement is not constant');
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
     PsStatement;
@@ -1152,16 +1041,10 @@ begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
   if not IsVariableExpression(Iter) then
-  begin
-    writeln(StdErr, 'Expected variable', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Expected variable');
   if not IsOrdinalType(Iter.TypeIndex) then
-  begin
-    writeln(StdErr, 'Type of iterator is not ordinal: ',
-            TypeName(Iter.TypeIndex), LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Type of iterator is not ordinal: ' +
+                 TypeName(Iter.TypeIndex));
   WantTokenAndRead(TkAssign);
   First := Evaluate(PsExpression);
   WantToken2(TkTo, TkDownto);
@@ -1175,7 +1058,7 @@ begin
 end;
 
 procedure PsWithStatement;
-var
+var 
   Initial : TPsWithVarIndex;
   Base : TPsExpression;
   Pos : TPsWithVarIndex;
@@ -1204,10 +1087,7 @@ begin
   else if Lexer.Token.Id = TkFor then PsForStatement
   else if Lexer.Token.Id = TkWith then PsWithStatement
   else
-  begin
-    writeln(StdErr, 'Unexpected token ', LxTokenStr, LxWhereStr);
-    halt(1)
-  end
+    CompileError('Unexpected token ' + LxTokenStr)
 end;
 
 procedure PsProgramBlock;

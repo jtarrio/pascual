@@ -71,11 +71,7 @@ begin
     write(Codegen.Output, '*')
   end
   else
-  begin
-    writeln(StdErr, 'Error writing type reference: ',
-            TypeName(TypeIndex), LxWhereStr);
-    halt(1)
-  end
+    CompileError('Error writing type reference: ' + TypeName(TypeIndex))
 end;
 
 procedure OutNameAndRecord(Name : string; RecordIndex : TPsRecordIndex);
@@ -149,11 +145,8 @@ begin
     write(Codegen.Output, '[1 + ', Arr.HighBound, ' - ', Arr.LowBound, ']')
   end
   else
-  begin
-    writeln(StdErr, 'Error writing name and type: ', Name, ', ',
-            TypeName(TypeIndex), LxWhereStr);
-    halt(1)
-  end
+    CompileError('Error writing name and type: ' + Name + ', ' +
+                 TypeName(TypeIndex))
 end;
 
 procedure OutTypeDefinition;
@@ -162,10 +155,7 @@ var
 begin
   Name := Defs.Types[TypeIndex].Name;
   if Defs.Types[TypeIndex].AliasFor = 0 then
-  begin
-    writeln(StdErr, 'Type ', Name, ' is not an alias', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Type ' + Name + ' is not an alias');
   write(Codegen.Output, 'typedef ');
   OutNameAndType(Name, Defs.Types[TypeIndex].AliasFor);
   writeln(Codegen.Output, ';');

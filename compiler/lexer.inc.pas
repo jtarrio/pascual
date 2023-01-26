@@ -33,6 +33,14 @@ var
     end
   end;
 
+function LxTokenName(Id : TLxTokenId) : string;
+var 
+  Name : string;
+begin
+  Str(Id, Name);
+  LxTokenName := Name
+end;
+
 function LxPosStr(Pos : TLxPos) : string;
 var 
   Row, Col : string;
@@ -48,11 +56,14 @@ begin
 end;
 
 function LxTokenStr : string;
-var 
-  Id : string;
 begin
-  Str(Lexer.Token.Id, Id);
-  LxTokenStr := Id + ' [' + Lexer.Token.Value + ']'
+  LxTokenStr := LxTokenName(Lexer.Token.Id) + ' [' + Lexer.Token.Value + ']'
+end;
+
+procedure CompileError(Msg : string);
+begin
+  writeln(StdErr, Msg, LxWhereStr);
+  halt(1)
 end;
 
 function LxIsAlpha(Chr : char) : boolean;
@@ -281,9 +292,7 @@ begin
            ')' : LxGetSymbol(TkRparen, 1);
            '{' : LxGetComment;
            else
-             writeln(StdErr, 'Could not parse [', Lexer.Line, '] at ',
-                     LxPosStr(Lexer.Input.Pos));
-           halt(1)
+             CompileError('Could not parse [' + Lexer.Line)
       end
   end
 end;
@@ -308,10 +317,7 @@ end;
 procedure LxInclude(Filename : string);
 begin
   if Lexer.Prev.Exists then
-  begin
-    writeln(StdErr, 'Include files cannot be recursive', LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Include files cannot be recursive');
   Lexer.Prev.Exists := true;
   Lexer.Prev.Input := Lexer.Input;
   Lexer.Input.Pos.Row := 0;

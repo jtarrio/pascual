@@ -3,10 +3,7 @@ begin
   if Expr.Cls = TecFunction then
   begin
     if Defs.Functions[Expr.FunctionIndex].ArgCount <> 0 then
-    begin
-      writeln(StdErr, 'Function requires arguments', LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Function requires arguments');
     Expr.Value := Expr.Value + '()';
     Expr.TypeIndex := Defs.Functions[Expr.FunctionIndex].ReturnTypeIndex;
     if Expr.TypeIndex = 0 then Expr.Cls := TecStatement
@@ -20,11 +17,7 @@ function CoerceType(Expr : TPsExpression; TypeIndex : TPsTypeIndex)
 begin
   Expr := Evaluate(Expr);
   if Expr.Cls <> TecValue then
-  begin
-    writeln(StdErr, 'Cannot assign function to ', TypeName(TypeIndex),
-    LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Cannot assign function to ' + TypeName(TypeIndex));
   if IsCharType(Expr.TypeIndex) and IsStringType(TypeIndex) then
   begin
     Expr.TypeIndex := PrimitiveTypes.PtString;
@@ -33,11 +26,8 @@ begin
   else if IsNilType(Expr.TypeIndex) and IsPointerType(TypeIndex) then
          Expr.TypeIndex := TypeIndex
   else if not IsSameType(Expr.TypeIndex, TypeIndex) then
-  begin
-    writeln(StdErr, 'Cannot assign ', TypeName(Expr.TypeIndex), ' to ',
-    TypeName(TypeIndex), LxWhereStr);
-    halt(1)
-  end;
+         CompileError('Cannot assign ' + TypeName(Expr.TypeIndex) + ' to ' +
+         TypeName(TypeIndex));
   CoerceType := Expr
 end;
 
@@ -141,11 +131,7 @@ begin
   else if IsStringType(TypeIndex) then ShortTypeName := 's'
   else if IsEnumType(TypeIndex) then ShortTypeName := 'e'
   else
-  begin
-    writeln(StdErr, 'No short type name exists for ', TypeName(TypeIndex),
-    LxWhereStr);
-    halt(1)
-  end
+    CompileError('No short type name exists for ' + TypeName(TypeIndex))
 end;
 
 function IntegerBinaryExpression(Left : TPsExpression; Op : TLxTokenId;
@@ -171,9 +157,7 @@ begin
     TkLessOrEquals : Cmp := '<=';
     TkMoreOrEquals : Cmp := '>=';
     else
-      writeln(StdErr, 'Expected integer binary operator, found ', Op,
-              LxWhereStr);
-    halt(1)
+      CompileError('Expected integer binary operator, found ' + LxTokenName(Op))
   end;
   if Cmp = '' then
     Expr.TypeIndex := PrimitiveTypes.PtInteger
@@ -201,9 +185,7 @@ begin
     TkLessOrEquals : Oper := '<=';
     TkMoreOrEquals : Oper := '>=';
     else
-      writeln(StdErr, 'Expected boolean binary operator, found ', Op,
-              LxWhereStr);
-    halt(1)
+      CompileError('Expected boolean binary operator, found ' + LxTokenName(Op))
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
   Expr.Value := Left.Value + ' ' + Oper + ' ' + Right.Value;
@@ -230,9 +212,7 @@ begin
     TkLessOrEquals : Cmp := '<=';
     TkMoreOrEquals : Cmp := '>=';
     else
-      writeln(StdErr, 'Expected string binary operator, found ', Op,
-              LxWhereStr);
-    halt(1)
+      CompileError('Expected string binary operator, found ' + LxTokenName(Op))
   end;
 
   FName := FName + '_' + ShortTypeName(Left.TypeIndex) +
@@ -265,9 +245,7 @@ begin
     TkLessOrEquals : Cmp := '<=';
     TkMoreOrEquals : Cmp := '>=';
     else
-      writeln(StdErr, 'Expected ordinal binary operator, found ', Op,
-              LxWhereStr);
-    halt(1)
+      CompileError('Expected ordinal binary operator, found ' + LxTokenName(Op))
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
   Expr.Value := Left.Value + ' ' + Cmp + ' ' + Right.Value;
@@ -287,9 +265,7 @@ begin
     TkEquals : Cmp := '==';
     TkNotEquals : Cmp := '!=';
     else
-      writeln(StdErr, 'Expected pointer binary operator, found ', Op,
-              LxWhereStr);
-    halt(1)
+      CompileError('Expected pointer binary operator, found ' + LxTokenName(Op))
   end;
   Expr.TypeIndex := PrimitiveTypes.PtBoolean;
   Expr.Value := Left.Value + ' ' + Cmp + ' ' + Right.Value;
@@ -317,12 +293,8 @@ begin
   else if ArePointersCompatible(Left.TypeIndex, Right.TypeIndex) then
          BinaryExpression := PointerBinaryExpression(Left, Op, Right)
   else
-  begin
-    writeln(StdErr, 'Type mismatch for operator ', Op,
-            ': ', TypeName(Left.TypeIndex), ' and ', TypeName(Right.TypeIndex),
-    LxWhereStr);
-    halt(1)
-  end
+    CompileError('Type mismatch for operator ' + LxTokenName(Op) + ': ' +
+    TypeName(Left.TypeIndex) + ' and ' + TypeName(Right.TypeIndex))
 end;
 
 function UnaryExpression(Op : TLxTokenId; Expr : TPsExpression)
@@ -332,28 +304,19 @@ begin
   if Op = TkNot then
   begin
     if not IsBooleanType(Expr.TypeIndex) then
-    begin
-      writeln(StdErr, 'Expected boolean expression, got ',
-              TypeName(Expr.TypeIndex), LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Expected boolean expression, got ' +
+                   TypeName(Expr.TypeIndex));
     Expr.Value := '!' + Expr.Value;
   end
   else if Op = TkMinus then
   begin
     if not IsIntegerType(Expr.TypeIndex) then
-    begin
-      writeln(StdErr, 'Expected numeric expression, got ',
-              TypeName(Expr.TypeIndex), LxWhereStr);
-      halt(1)
-    end;
+      CompileError('Expected numeric expression, got ' +
+                   TypeName(Expr.TypeIndex));
     Expr.Value := '-' + Expr.Value;
   end
   else
-  begin
-    writeln(StdErr, 'Expected unary operator, found ', Op, LxWhereStr);
-    halt(1)
-  end;
+    CompileError('Expected unary operator, found ' + LxTokenName(Op));
   Expr.IsConstant := true;
   UnaryExpression := Expr
 end;
