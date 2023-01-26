@@ -1068,6 +1068,7 @@ begin
   repeat
     ReadToken;
     AddWithVar(PsExpression);
+    
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
