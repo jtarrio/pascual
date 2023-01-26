@@ -209,34 +209,52 @@ if (!LXISTOKENWAITING()) LEXER.TOKEN.ID = TKEOF;
 CHR = LEXER.LINE.chr[1];
 if (LENGTH(LEXER.LINE) >= 2) PFX = cat_cc(LEXER.LINE.chr[1], LEXER.LINE.chr[2]);
  else PFX = str_make(0, "");
-if (LXISIDENTIFIERFIRST(CHR)) LXGETIDENTIFIER();
- else if (LXISDIGIT(CHR)) LXGETNUMBER();
- else if (cmp_cc(CHR, '\'') == 0) LXGETSTRING();
- else if (cmp_ss(PFX, str_make(2, "<>")) == 0) LXGETSYMBOL(TKNOTEQUALS, 2);
+if (cmp_ss(PFX, str_make(2, "<>")) == 0) LXGETSYMBOL(TKNOTEQUALS, 2);
  else if (cmp_ss(PFX, str_make(2, "<=")) == 0) LXGETSYMBOL(TKLESSOREQUALS, 2);
  else if (cmp_ss(PFX, str_make(2, ">=")) == 0) LXGETSYMBOL(TKMOREOREQUALS, 2);
  else if (cmp_ss(PFX, str_make(2, ":=")) == 0) LXGETSYMBOL(TKASSIGN, 2);
  else if (cmp_ss(PFX, str_make(2, "..")) == 0) LXGETSYMBOL(TKRANGE, 2);
  else if (cmp_ss(PFX, str_make(2, "(*")) == 0) LXGETCOMMENT();
- else if (cmp_cc(CHR, '+') == 0) LXGETSYMBOL(TKPLUS, 1);
- else if (cmp_cc(CHR, '-') == 0) LXGETSYMBOL(TKMINUS, 1);
- else if (cmp_cc(CHR, '*') == 0) LXGETSYMBOL(TKASTERISK, 1);
- else if (cmp_cc(CHR, '/') == 0) LXGETSYMBOL(TKSLASH, 1);
- else if (cmp_cc(CHR, '=') == 0) LXGETSYMBOL(TKEQUALS, 1);
- else if (cmp_cc(CHR, '<') == 0) LXGETSYMBOL(TKLESSTHAN, 1);
- else if (cmp_cc(CHR, '>') == 0) LXGETSYMBOL(TKMORETHAN, 1);
- else if (cmp_cc(CHR, '[') == 0) LXGETSYMBOL(TKLBRACKET, 1);
- else if (cmp_cc(CHR, ']') == 0) LXGETSYMBOL(TKRBRACKET, 1);
- else if (cmp_cc(CHR, '.') == 0) LXGETSYMBOL(TKDOT, 1);
- else if (cmp_cc(CHR, ',') == 0) LXGETSYMBOL(TKCOMMA, 1);
- else if (cmp_cc(CHR, ':') == 0) LXGETSYMBOL(TKCOLON, 1);
- else if (cmp_cc(CHR, ';') == 0) LXGETSYMBOL(TKSEMICOLON, 1);
- else if (cmp_cc(CHR, '^') == 0) LXGETSYMBOL(TKCARET, 1);
- else if (cmp_cc(CHR, '(') == 0) LXGETSYMBOL(TKLPAREN, 1);
- else if (cmp_cc(CHR, ')') == 0) LXGETSYMBOL(TKRPAREN, 1);
- else if (cmp_cc(CHR, '{') == 0) LXGETCOMMENT();
- else {
-{
+ else if (LXISIDENTIFIERFIRST(CHR)) LXGETIDENTIFIER();
+ else if (LXISDIGIT(CHR)) LXGETNUMBER();
+ else switch (CHR) {
+case '\'': LXGETSTRING();
+break;
+case '+': LXGETSYMBOL(TKPLUS, 1);
+break;
+case '-': LXGETSYMBOL(TKMINUS, 1);
+break;
+case '*': LXGETSYMBOL(TKASTERISK, 1);
+break;
+case '/': LXGETSYMBOL(TKSLASH, 1);
+break;
+case '=': LXGETSYMBOL(TKEQUALS, 1);
+break;
+case '<': LXGETSYMBOL(TKLESSTHAN, 1);
+break;
+case '>': LXGETSYMBOL(TKMORETHAN, 1);
+break;
+case '[': LXGETSYMBOL(TKLBRACKET, 1);
+break;
+case ']': LXGETSYMBOL(TKRBRACKET, 1);
+break;
+case '.': LXGETSYMBOL(TKDOT, 1);
+break;
+case ',': LXGETSYMBOL(TKCOMMA, 1);
+break;
+case ':': LXGETSYMBOL(TKCOLON, 1);
+break;
+case ';': LXGETSYMBOL(TKSEMICOLON, 1);
+break;
+case '^': LXGETSYMBOL(TKCARET, 1);
+break;
+case '(': LXGETSYMBOL(TKLPAREN, 1);
+break;
+case ')': LXGETSYMBOL(TKRPAREN, 1);
+break;
+case '{': LXGETCOMMENT();
+break;
+default: {
 write_s(&STDERR, str_make(17, "Could not parse ["));
 write_s(&STDERR, LEXER.LINE);
 write_s(&STDERR, str_make(5, "] at "));
@@ -244,6 +262,7 @@ write_s(&STDERR, LXPOSSTR(LEXER.INPUT.POS));
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 }
 }
@@ -283,7 +302,7 @@ typedef enum enum2 { TTCBOOLEAN, TTCINTEGER, TTCCHAR, TTCSTRING, TTCTEXT, TTCENU
 typedef struct record6 { PString NAME; TPSTYPECLASS CLS; TPSENUMINDEX ENUMINDEX; TPSRECORDINDEX RECORDINDEX; TPSARRAYINDEX ARRAYINDEX; TPSTYPEINDEX POINTEDTYPEINDEX; TPSTYPEINDEX ALIASFOR; } TPSTYPE;
 typedef struct record7 { int SIZE; PString VALUES[1 + 128 - 1]; } TPSENUMDEF;
 typedef struct record8 { PString NAME; TPSTYPEINDEX TYPEINDEX; } TPSRECORDFIELD;
-typedef struct record9 { int SIZE; TPSRECORDFIELD FIELDS[1 + 16 - 1]; } TPSRECORDDEF;
+typedef struct record9 { int SIZE; TPSRECORDFIELD FIELDS[1 + 16 - 1]; int NUMVARIANTS; int VARIANTBOUNDS[1 + 16 - 1]; } TPSRECORDDEF;
 typedef struct record10 { PString LOWBOUND; PString HIGHBOUND; TPSTYPEINDEX TYPEINDEX; } TPSARRAYDEF;
 typedef int TPSCONSTANTINDEX;
 typedef struct record11 { PString NAME; TLXTOKEN REPLACEMENT; } TPSCONSTANT;
@@ -386,17 +405,22 @@ TPSNAME return_MAKENAME;
 TPSNAME DEF;
 DEF.NAME = NAME;
 DEF.CLS = CLS;
-if (CLS == TNCTYPE) DEF.TYPEINDEX = IDX;
- else if (CLS == TNCVARIABLE) DEF.VARIABLEINDEX = IDX;
- else if (CLS == TNCENUMVALUE) DEF.TYPEINDEX = IDX;
- else if (CLS == TNCFUNCTION) DEF.FUNCTIONINDEX = IDX;
- else {
-{
+switch (CLS) {
+case TNCTYPE: DEF.TYPEINDEX = IDX;
+break;
+case TNCVARIABLE: DEF.VARIABLEINDEX = IDX;
+break;
+case TNCENUMVALUE: DEF.TYPEINDEX = IDX;
+break;
+case TNCFUNCTION: DEF.FUNCTIONINDEX = IDX;
+break;
+default: {
 write_s(&STDERR, str_make(41, "Cannot use MakeName for special functions"));
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 return_MAKENAME = DEF;
 return return_MAKENAME;
@@ -1246,27 +1270,41 @@ PString CMP;
 TPSEXPRESSION EXPR;
 OPER = str_make(0, "");
 CMP = str_make(0, "");
-if (OP == TKPLUS) OPER = str_of('+');
- else if (OP == TKMINUS) OPER = str_of('-');
- else if (OP == TKASTERISK) OPER = str_of('*');
- else if (OP == TKDIV) OPER = str_of('/');
- else if (OP == TKMOD) OPER = str_of('%');
- else if (OP == TKAND) OPER = str_of('&');
- else if (OP == TKOR) OPER = str_of('|');
- else if (OP == TKEQUALS) CMP = str_make(2, "==");
- else if (OP == TKNOTEQUALS) CMP = str_make(2, "!=");
- else if (OP == TKLESSTHAN) CMP = str_of('<');
- else if (OP == TKMORETHAN) CMP = str_of('>');
- else if (OP == TKLESSOREQUALS) CMP = str_make(2, "<=");
- else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
- else {
-{
+switch (OP) {
+case TKPLUS: OPER = str_of('+');
+break;
+case TKMINUS: OPER = str_of('-');
+break;
+case TKASTERISK: OPER = str_of('*');
+break;
+case TKDIV: OPER = str_of('/');
+break;
+case TKMOD: OPER = str_of('%');
+break;
+case TKAND: OPER = str_of('&');
+break;
+case TKOR: OPER = str_of('|');
+break;
+case TKEQUALS: CMP = str_make(2, "==");
+break;
+case TKNOTEQUALS: CMP = str_make(2, "!=");
+break;
+case TKLESSTHAN: CMP = str_of('<');
+break;
+case TKMORETHAN: CMP = str_of('>');
+break;
+case TKLESSOREQUALS: CMP = str_make(2, "<=");
+break;
+case TKMOREOREQUALS: CMP = str_make(2, ">=");
+break;
+default: {
 write_s(&STDERR, str_make(40, "Expected integer binary operator, found "));
 write_e(&STDERR, OP, EnumValues1);
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 if (cmp_ss(CMP, str_make(0, "")) == 0) EXPR.TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
  else EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
@@ -1280,22 +1318,31 @@ TPSEXPRESSION BOOLEANBINARYEXPRESSION(TPSEXPRESSION LEFT, TLXTOKENID OP, TPSEXPR
 TPSEXPRESSION return_BOOLEANBINARYEXPRESSION;
 PString OPER;
 TPSEXPRESSION EXPR;
-if (OP == TKAND) OPER = str_make(2, "&&");
- else if (OP == TKOR) OPER = str_make(2, "||");
- else if (OP == TKEQUALS) OPER = str_make(2, "==");
- else if (OP == TKNOTEQUALS) OPER = str_make(2, "!=");
- else if (OP == TKLESSTHAN) OPER = str_of('<');
- else if (OP == TKMORETHAN) OPER = str_of('>');
- else if (OP == TKLESSOREQUALS) OPER = str_make(2, "<=");
- else if (OP == TKMOREOREQUALS) OPER = str_make(2, ">=");
- else {
-{
+switch (OP) {
+case TKAND: OPER = str_make(2, "&&");
+break;
+case TKOR: OPER = str_make(2, "||");
+break;
+case TKEQUALS: OPER = str_make(2, "==");
+break;
+case TKNOTEQUALS: OPER = str_make(2, "!=");
+break;
+case TKLESSTHAN: OPER = str_of('<');
+break;
+case TKMORETHAN: OPER = str_of('>');
+break;
+case TKLESSOREQUALS: OPER = str_make(2, "<=");
+break;
+case TKMOREOREQUALS: OPER = str_make(2, ">=");
+break;
+default: {
 write_s(&STDERR, str_make(40, "Expected boolean binary operator, found "));
 write_e(&STDERR, OP, EnumValues1);
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_sc(LEFT.VALUE, ' '), OPER), ' '), RIGHT.VALUE);
@@ -1311,21 +1358,29 @@ PString CMP;
 TPSEXPRESSION EXPR;
 FNAME = str_make(3, "cmp");
 CMP = str_make(0, "");
-if (OP == TKPLUS) FNAME = str_make(3, "cat");
- else if (OP == TKEQUALS) CMP = str_make(2, "==");
- else if (OP == TKNOTEQUALS) CMP = str_make(2, "!=");
- else if (OP == TKLESSTHAN) CMP = str_of('<');
- else if (OP == TKMORETHAN) CMP = str_of('>');
- else if (OP == TKLESSOREQUALS) CMP = str_make(2, "<=");
- else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
- else {
-{
+switch (OP) {
+case TKPLUS: FNAME = str_make(3, "cat");
+break;
+case TKEQUALS: CMP = str_make(2, "==");
+break;
+case TKNOTEQUALS: CMP = str_make(2, "!=");
+break;
+case TKLESSTHAN: CMP = str_of('<');
+break;
+case TKMORETHAN: CMP = str_of('>');
+break;
+case TKLESSOREQUALS: CMP = str_make(2, "<=");
+break;
+case TKMOREOREQUALS: CMP = str_make(2, ">=");
+break;
+default: {
 write_s(&STDERR, str_make(39, "Expected string binary operator, found "));
 write_e(&STDERR, OP, EnumValues1);
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 FNAME = cat_sc(cat_sc(cat_sc(FNAME, '_'), SHORTTYPENAME(LEFT.TYPEINDEX)), SHORTTYPENAME(RIGHT.TYPEINDEX));
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTSTRING;
@@ -1344,20 +1399,27 @@ TPSEXPRESSION return_ENUMBINARYEXPRESSION;
 PString CMP;
 TPSEXPRESSION EXPR;
 CMP = str_make(0, "");
-if (OP == TKEQUALS) CMP = str_make(2, "==");
- else if (OP == TKNOTEQUALS) CMP = str_make(2, "!=");
- else if (OP == TKLESSTHAN) CMP = str_of('<');
- else if (OP == TKMORETHAN) CMP = str_of('>');
- else if (OP == TKLESSOREQUALS) CMP = str_make(2, "<=");
- else if (OP == TKMOREOREQUALS) CMP = str_make(2, ">=");
- else {
-{
+switch (OP) {
+case TKEQUALS: CMP = str_make(2, "==");
+break;
+case TKNOTEQUALS: CMP = str_make(2, "!=");
+break;
+case TKLESSTHAN: CMP = str_of('<');
+break;
+case TKMORETHAN: CMP = str_of('>');
+break;
+case TKLESSOREQUALS: CMP = str_make(2, "<=");
+break;
+case TKMOREOREQUALS: CMP = str_make(2, ">=");
+break;
+default: {
 write_s(&STDERR, str_make(40, "Expected ordinal binary operator, found "));
 write_e(&STDERR, OP, EnumValues1);
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_sc(LEFT.VALUE, ' '), CMP), ' '), RIGHT.VALUE);
@@ -1371,16 +1433,19 @@ TPSEXPRESSION return_POINTERBINARYEXPRESSION;
 PString CMP;
 TPSEXPRESSION EXPR;
 CMP = str_make(0, "");
-if (OP == TKEQUALS) CMP = str_make(2, "==");
- else if (OP == TKNOTEQUALS) CMP = str_make(2, "!=");
- else {
-{
+switch (OP) {
+case TKEQUALS: CMP = str_make(2, "==");
+break;
+case TKNOTEQUALS: CMP = str_make(2, "!=");
+break;
+default: {
 write_s(&STDERR, str_make(40, "Expected pointer binary operator, found "));
 write_e(&STDERR, OP, EnumValues1);
 write_s(&STDERR, LXWHERESTR());
 writeln(&STDERR);
 }
 HALT(1);
+break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
 EXPR.VALUE = cat_ss(cat_sc(cat_ss(cat_sc(LEFT.VALUE, ' '), CMP), ' '), RIGHT.VALUE);
@@ -1514,11 +1579,10 @@ void SKIPTOKEN(TLXTOKENID ID) {
 if (LEXER.TOKEN.ID == ID) READTOKEN();
 }
 TPSTYPEINDEX PSTYPEDENOTER(TPSSCOPE SCOPE);
-TPSTYPEINDEX PSTYPEIDENTIFIER() {
-TPSTYPEINDEX return_PSTYPEIDENTIFIER;
+TPSTYPEINDEX PSFINDTYPE(PString NAME) {
+TPSTYPEINDEX return_PSFINDTYPE;
 TPSNAME FOUND;
-WANTTOKEN(TKIDENTIFIER);
-FOUND = DEFS.NAMES[(FINDNAME(LEXER.TOKEN.VALUE, 1)) - 1];
+FOUND = DEFS.NAMES[(FINDNAME(NAME, 1)) - 1];
 if (FOUND.CLS != TNCTYPE) {
 {
 write_s(&STDERR, str_make(12, "Not a type: "));
@@ -1528,10 +1592,24 @@ writeln(&STDERR);
 }
 HALT(1);
 }
-return_PSTYPEIDENTIFIER = FOUND.TYPEINDEX;
+return_PSFINDTYPE = FOUND.TYPEINDEX;
+return return_PSFINDTYPE;
+}
+TPSTYPEINDEX PSTYPEIDENTIFIER() {
+TPSTYPEINDEX return_PSTYPEIDENTIFIER;
+WANTTOKEN(TKIDENTIFIER);
+return_PSTYPEIDENTIFIER = PSFINDTYPE(LEXER.TOKEN.VALUE);
 READTOKEN();
 return return_PSTYPEIDENTIFIER;
 }
+TPSIDENTIFIER PSIDENTIFIER() {
+TPSIDENTIFIER return_PSIDENTIFIER;
+TPSIDENTIFIER IDENT;
+IDENT.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+return_PSIDENTIFIER = IDENT;
+return return_PSIDENTIFIER;
+}
+TPSEXPRESSION PSEXPRESSION();
 TPSTYPEINDEX PSENUMERATEDTYPE(TPSSCOPE SCOPE) {
 TPSTYPEINDEX return_PSENUMERATEDTYPE;
 TPSTYPE TYP;
@@ -1559,20 +1637,39 @@ return_PSENUMERATEDTYPE = ADDTYPE(TYP, SCOPE);
 SKIPTOKEN(TKRPAREN);
 return return_PSENUMERATEDTYPE;
 }
-TPSTYPEINDEX PSRECORDTYPE(TPSSCOPE SCOPE) {
-TPSTYPEINDEX return_PSRECORDTYPE;
-TPSTYPE TYP;
+void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER, TPSSCOPE SCOPE) {
+PString NAME;
 int LASTFIELD;
 int FIELD;
 TPSTYPEINDEX TYPEINDEX;
-TPSRECORDDEF REC;
-WANTTOKENANDREAD(TKRECORD);
-REC.SIZE = 0;
+LASTFIELD = (*REC).SIZE;
 do {
-LASTFIELD = REC.SIZE;
-do {
-REC.SIZE = REC.SIZE + 1;
-if (REC.SIZE > 16) {
+NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+{
+int first = 1;
+int last = (*REC).SIZE;
+if (first <= last) {
+FIELD = first;
+while (1) {
+{
+if (cmp_ss((*REC).FIELDS[(FIELD) - 1].NAME, NAME) == 0) {
+{
+write_s(&STDERR, str_make(14, "A field named "));
+write_s(&STDERR, NAME);
+write_s(&STDERR, str_make(25, " has already been defined"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
+}
+HALT(1);
+}
+}
+if (FIELD == last) break;
+++FIELD;
+}
+}
+}
+(*REC).SIZE = (*REC).SIZE + 1;
+if ((*REC).SIZE > 16) {
 {
 write_s(&STDERR, str_make(25, "Too many fields in record"));
 write_s(&STDERR, LXWHERESTR());
@@ -1580,7 +1677,7 @@ writeln(&STDERR);
 }
 HALT(1);
 }
-REC.FIELDS[(REC.SIZE) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+(*REC).FIELDS[((*REC).SIZE) - 1].NAME = NAME;
 WANTTOKEN2(TKCOMMA, TKCOLON);
 SKIPTOKEN(TKCOMMA);
 } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -1588,23 +1685,72 @@ WANTTOKENANDREAD(TKCOLON);
 TYPEINDEX = PSTYPEDENOTER(SCOPE);
 {
 int first = LASTFIELD + 1;
-int last = REC.SIZE;
+int last = (*REC).SIZE;
 if (first <= last) {
 FIELD = first;
 while (1) {
-REC.FIELDS[(FIELD) - 1].TYPEINDEX = TYPEINDEX;
+(*REC).FIELDS[(FIELD) - 1].TYPEINDEX = TYPEINDEX;
 if (FIELD == last) break;
 ++FIELD;
 }
 }
 }
+WANTTOKEN2(TKSEMICOLON, DELIMITER);
+SKIPTOKEN(TKSEMICOLON);
+}
+void PSRECORDVARIANTS(TPSRECORDDEF *REC, TPSSCOPE SCOPE) {
+TPSIDENTIFIER TAG;
+TPSTYPEINDEX TAGTYPE;
+TPSEXPRESSION CASELABEL;
+WANTTOKENANDREAD(TKCASE);
+TAG = PSIDENTIFIER();
+WANTTOKEN2(TKCOLON, TKOF);
+if (LEXER.TOKEN.ID == TKCOLON) {
+READTOKEN();
+TAGTYPE = PSTYPEIDENTIFIER();
+(*REC).SIZE = (*REC).SIZE + 1;
+(*REC).FIELDS[((*REC).SIZE) - 1].NAME = TAG.NAME;
+(*REC).FIELDS[((*REC).SIZE) - 1].TYPEINDEX = TAGTYPE;
+}
+ else TAGTYPE = PSFINDTYPE(TAG.NAME);
+WANTTOKENANDREAD(TKOF);
+do {
+(*REC).NUMVARIANTS = (*REC).NUMVARIANTS + 1;
+(*REC).VARIANTBOUNDS[((*REC).NUMVARIANTS) - 1] = (*REC).SIZE + 1;
+do {
+CASELABEL = COERCETYPE(PSEXPRESSION(), TAGTYPE);
+if (!CASELABEL.ISCONSTANT) {
+{
+write_s(&STDERR, str_make(47, "The label of the case statement is not constant"));
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
+}
+HALT(1);
+}
+WANTTOKEN2(TKCOMMA, TKCOLON);
+SKIPTOKEN(TKCOMMA);
+} while (!(LEXER.TOKEN.ID == TKCOLON));
+WANTTOKENANDREAD(TKCOLON);
+WANTTOKENANDREAD(TKLPAREN);
+while (LEXER.TOKEN.ID != TKRPAREN) PSRECORDFIELD(&*REC, TKRPAREN, SCOPE);
+WANTTOKENANDREAD(TKRPAREN);
 WANTTOKEN2(TKSEMICOLON, TKEND);
 SKIPTOKEN(TKSEMICOLON);
 } while (!(LEXER.TOKEN.ID == TKEND));
+}
+TPSTYPEINDEX PSRECORDTYPE(TPSSCOPE SCOPE) {
+TPSTYPEINDEX return_PSRECORDTYPE;
+TPSTYPE TYP;
+TPSRECORDDEF REC;
+WANTTOKENANDREAD(TKRECORD);
+REC.SIZE = 0;
+REC.NUMVARIANTS = 0;
+while ((LEXER.TOKEN.ID != TKCASE) && (LEXER.TOKEN.ID != TKEND)) PSRECORDFIELD(&REC, TKEND, SCOPE);
+if (LEXER.TOKEN.ID == TKCASE) PSRECORDVARIANTS(&REC, SCOPE);
+WANTTOKENANDREAD(TKEND);
 TYP = TYPEOFCLASS(TTCRECORD);
 TYP.RECORDINDEX = ADDRECORD(REC);
 return_PSRECORDTYPE = ADDTYPE(TYP, SCOPE);
-SKIPTOKEN(TKEND);
 return return_PSRECORDTYPE;
 }
 TPSTYPEINDEX PSARRAYTYPE(TPSSCOPE SCOPE) {
@@ -1989,14 +2135,6 @@ WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKRPAREN);
 }
 WANTTOKENANDREAD(TKSEMICOLON);
-}
-TPSEXPRESSION PSEXPRESSION();
-TPSIDENTIFIER PSIDENTIFIER() {
-TPSIDENTIFIER return_PSIDENTIFIER;
-TPSIDENTIFIER IDENT;
-IDENT.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-return_PSIDENTIFIER = IDENT;
-return return_PSIDENTIFIER;
 }
 TPSEXPRESSION PSFUNCTIONCALL(TPSEXPRESSION FN) {
 TPSEXPRESSION return_PSFUNCTIONCALL;
@@ -2817,6 +2955,54 @@ writeln(&STDERR);
 HALT(1);
 }
 }
+void OUTNAMEANDRECORD(PString NAME, TPSRECORDINDEX RECORDINDEX) {
+TPSRECORDDEF REC;
+int POS;
+int NUMVARIANT;
+REC = DEFS.RECORDS[(RECORDINDEX) - 1];
+NUMVARIANT = 0;
+{
+write_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
+write_i(&CODEGEN.OUTPUT, RECORDINDEX);
+write_s(&CODEGEN.OUTPUT, str_make(3, " { "));
+}
+{
+int first = 1;
+int last = REC.SIZE;
+if (first <= last) {
+POS = first;
+while (1) {
+{
+if ((REC.NUMVARIANTS > NUMVARIANT) && (REC.VARIANTBOUNDS[(NUMVARIANT + 1) - 1] == POS)) {
+NUMVARIANT = NUMVARIANT + 1;
+if (NUMVARIANT == 1) {
+write_s(&CODEGEN.OUTPUT, str_make(8, "union { "));
+}
+ else {
+write_s(&CODEGEN.OUTPUT, str_make(3, "}; "));
+}
+{
+write_s(&CODEGEN.OUTPUT, str_make(9, "struct { "));
+}
+}
+OUTNAMEANDTYPE(REC.FIELDS[(POS) - 1].NAME, REC.FIELDS[(POS) - 1].TYPEINDEX);
+{
+write_s(&CODEGEN.OUTPUT, str_make(2, "; "));
+}
+}
+if (POS == last) break;
+++POS;
+}
+}
+}
+if (NUMVARIANT > 0) {
+write_s(&CODEGEN.OUTPUT, str_make(6, "}; }; "));
+}
+{
+write_s(&CODEGEN.OUTPUT, str_make(2, "} "));
+write_s(&CODEGEN.OUTPUT, NAME);
+}
+}
 void OUTNAMEANDTYPE(PString NAME, TPSTYPEINDEX TYPEINDEX) {
 TPSTYPE TYP;
 TPSENUMDEF ENUM;
@@ -2891,35 +3077,7 @@ write_s(&CODEGEN.OUTPUT, str_make(2, "} "));
 write_s(&CODEGEN.OUTPUT, NAME);
 }
 }
- else if (TYP.CLS == TTCRECORD) {
-REC = DEFS.RECORDS[(TYP.RECORDINDEX) - 1];
-{
-write_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
-write_i(&CODEGEN.OUTPUT, TYP.RECORDINDEX);
-write_s(&CODEGEN.OUTPUT, str_make(3, " { "));
-}
-{
-int first = 1;
-int last = REC.SIZE;
-if (first <= last) {
-POS = first;
-while (1) {
-{
-OUTNAMEANDTYPE(REC.FIELDS[(POS) - 1].NAME, REC.FIELDS[(POS) - 1].TYPEINDEX);
-{
-write_s(&CODEGEN.OUTPUT, str_make(2, "; "));
-}
-}
-if (POS == last) break;
-++POS;
-}
-}
-}
-{
-write_s(&CODEGEN.OUTPUT, str_make(2, "} "));
-write_s(&CODEGEN.OUTPUT, NAME);
-}
-}
+ else if (TYP.CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYP.RECORDINDEX);
  else if (TYP.CLS == TTCARRAY) {
 ARR = DEFS.ARRAYS[(TYP.ARRAYINDEX) - 1];
 OUTNAMEANDTYPE(NAME, ARR.TYPEINDEX);
