@@ -6,6 +6,13 @@ typedef struct record2 { TLXTOKENID ID; PString VALUE; TLXPOS POS; } TLXTOKEN;
 typedef struct record3 { PFile SRC; PString NAME; TLXPOS POS; } TLXINPUTFILE;
 const char* EnumValues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKNUMBER", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKFALSE", "TKTRUE", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
 struct record5 { PString LINE; TLXTOKEN TOKEN; TLXINPUTFILE INPUT; struct record4 { PBoolean EXISTS; TLXINPUTFILE INPUT; } PREV; } LEXER;
+PString LXTOKENNAME(TLXTOKENID ID) {
+PString return_LXTOKENNAME;
+PString NAME;
+NAME = to_str_e(ID, EnumValues1);
+return_LXTOKENNAME = NAME;
+return return_LXTOKENNAME;
+}
 PString LXPOSSTR(TLXPOS POS) {
 PString return_LXPOSSTR;
 PString ROW;
@@ -22,10 +29,16 @@ return return_LXWHERESTR;
 }
 PString LXTOKENSTR() {
 PString return_LXTOKENSTR;
-PString ID;
-ID = to_str_e(LEXER.TOKEN.ID, EnumValues1);
-return_LXTOKENSTR = cat_sc(cat_ss(cat_ss(ID, str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
+return_LXTOKENSTR = cat_sc(cat_ss(cat_ss(LXTOKENNAME(LEXER.TOKEN.ID), str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
 return return_LXTOKENSTR;
+}
+void COMPILEERROR(PString MSG) {
+{
+write_s(&STDERR, MSG);
+write_s(&STDERR, LXWHERESTR());
+writeln(&STDERR);
+}
+HALT(1);
 }
 PBoolean LXISALPHA(char CHR) {
 PBoolean return_LXISALPHA;
@@ -254,14 +267,7 @@ case ')': LXGETSYMBOL(TKRPAREN, 1);
 break;
 case '{': LXGETCOMMENT();
 break;
-default: {
-write_s(&STDERR, str_make(17, "Could not parse ["));
-write_s(&STDERR, LEXER.LINE);
-write_s(&STDERR, str_make(5, "] at "));
-write_s(&STDERR, LXPOSSTR(LEXER.INPUT.POS));
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(17, "Could not parse ["), LEXER.LINE));
 break;
 }
 }
@@ -280,50 +286,46 @@ ASSIGN(&LEXER.INPUT.SRC, LEXER.INPUT.NAME);
 RESET(&LEXER.INPUT.SRC);
 }
 void LXINCLUDE(PString FILENAME) {
-if (LEXER.PREV.EXISTS) {
-{
-write_s(&STDERR, str_make(33, "Include files cannot be recursive"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (LEXER.PREV.EXISTS) COMPILEERROR(str_make(33, "Include files cannot be recursive"));
 LEXER.PREV.EXISTS = 1;
 LEXER.PREV.INPUT = LEXER.INPUT;
 LEXER.INPUT.POS.ROW = 0;
 LEXER.INPUT.POS.COL = 0;
 LXOPEN(FILENAME);
 }
+typedef int TPSTYPEINDEX;
 typedef int TPSENUMINDEX;
 typedef int TPSRECORDINDEX;
 typedef int TPSARRAYINDEX;
-typedef int TPSTYPEINDEX;
-typedef enum enum2 { TTCBOOLEAN, TTCINTEGER, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPLACEHOLDER} TPSTYPECLASS;
-typedef struct record6 { PString NAME; TPSTYPECLASS CLS; TPSENUMINDEX ENUMINDEX; TPSRECORDINDEX RECORDINDEX; TPSARRAYINDEX ARRAYINDEX; TPSTYPEINDEX POINTEDTYPEINDEX; TPSTYPEINDEX ALIASFOR; } TPSTYPE;
-typedef struct record7 { int SIZE; PString VALUES[1 + 128 - 1]; } TPSENUMDEF;
-typedef struct record8 { PString NAME; TPSTYPEINDEX TYPEINDEX; } TPSRECORDFIELD;
-typedef struct record9 { int SIZE; TPSRECORDFIELD FIELDS[1 + 16 - 1]; int NUMVARIANTS; int VARIANTBOUNDS[1 + 16 - 1]; } TPSRECORDDEF;
-typedef struct record10 { PString LOWBOUND; PString HIGHBOUND; TPSTYPEINDEX TYPEINDEX; } TPSARRAYDEF;
 typedef int TPSCONSTANTINDEX;
-typedef struct record11 { PString NAME; TLXTOKEN REPLACEMENT; } TPSCONSTANT;
 typedef int TPSVARIABLEINDEX;
-typedef struct record12 { PString NAME; TPSTYPEINDEX TYPEINDEX; PBoolean ISREFERENCE; PBoolean ISCONSTANT; } TPSVARIABLE;
 typedef int TPSFUNCTIONINDEX;
-typedef struct record13 { PString NAME; int ARGCOUNT; TPSVARIABLE ARGS[1 + 4 - 1]; TPSTYPEINDEX RETURNTYPEINDEX; PBoolean ISDECLARATION; } TPSFUNCTION;
+typedef enum enum2 { TECVALUE, TECFUNCTION, TECSTATEMENT} TPSEXPRESSIONCLASS;
+typedef struct record6 { PString VALUE; PBoolean ISCONSTANT; TPSEXPRESSIONCLASS CLS; union { struct { TPSTYPEINDEX TYPEINDEX; }; struct { TPSFUNCTIONINDEX FUNCTIONINDEX; }; }; } TPSEXPRESSION;
+typedef enum enum3 { TTCBOOLEAN, TTCINTEGER, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPLACEHOLDER} TPSTYPECLASS;
+typedef struct record7 { PString NAME; TPSTYPEINDEX ALIASFOR; TPSTYPECLASS CLS; union { struct { TPSENUMINDEX ENUMINDEX; }; struct { TPSRECORDINDEX RECORDINDEX; }; struct { TPSARRAYINDEX ARRAYINDEX; }; struct { TPSTYPEINDEX POINTEDTYPEINDEX; }; }; } TPSTYPE;
+typedef struct record8 { int SIZE; PString VALUES[1 + 128 - 1]; } TPSENUMDEF;
+typedef struct record9 { PString NAME; TPSTYPEINDEX TYPEINDEX; } TPSRECORDFIELD;
+typedef struct record10 { int SIZE; TPSRECORDFIELD FIELDS[1 + 16 - 1]; int NUMVARIANTS; int VARIANTBOUNDS[1 + 16 - 1]; } TPSRECORDDEF;
+typedef struct record11 { PString LOWBOUND; PString HIGHBOUND; TPSTYPEINDEX TYPEINDEX; } TPSARRAYDEF;
+typedef struct record12 { PString NAME; TLXTOKEN REPLACEMENT; } TPSCONSTANT;
+typedef struct record13 { PString NAME; TPSTYPEINDEX TYPEINDEX; PBoolean ISREFERENCE; PBoolean ISCONSTANT; } TPSVARIABLE;
+typedef struct record14 { PString NAME; int ARGCOUNT; TPSVARIABLE ARGS[1 + 4 - 1]; TPSTYPEINDEX RETURNTYPEINDEX; PBoolean ISDECLARATION; } TPSFUNCTION;
+typedef int TPSWITHVARINDEX;
+typedef struct record15 { TPSEXPRESSION EXPR; } TPSWITHVAR;
 typedef int TPSNAMEINDEX;
-typedef enum enum3 { TNCTYPE, TNCVARIABLE, TNCENUMVALUE, TNCFUNCTION, TNCSPECIALFUNCTION} TPSNAMECLASS;
-typedef enum enum4 { TSFREAD, TSFREADLN, TSFWRITE, TSFWRITELN, TSFSTR, TSFNEW, TSFDISPOSE} TPSSPECIALFUNCTION;
-typedef struct record14 { PString NAME; TPSNAMECLASS CLS; TPSTYPEINDEX TYPEINDEX; TPSVARIABLEINDEX VARIABLEINDEX; TPSFUNCTIONINDEX FUNCTIONINDEX; TPSSPECIALFUNCTION SPECIALFUNCTION; } TPSNAME;
-typedef struct record15 { int NUMNAMES; int NUMTYPES; int NUMENUMS; int NUMRECORDS; int NUMARRAYS; int NUMCONSTANTS; int NUMVARIABLES; int NUMFUNCTIONS; } TPSSCOPE;
-typedef struct record16 { TPSSCOPE SCOPE; TPSNAME NAMES[1 + 1024 - 1]; TPSTYPE TYPES[1 + 128 - 1]; TPSENUMDEF ENUMS[1 + 16 - 1]; TPSRECORDDEF RECORDS[1 + 32 - 1]; TPSARRAYDEF ARRAYS[1 + 32 - 1]; TPSCONSTANT CONSTANTS[1 + 32 - 1]; TPSVARIABLE VARIABLES[1 + 32 - 1]; TPSFUNCTION FUNCTIONS[1 + 256 - 1]; } TPSDEFS;
-typedef enum enum5 { IDCVARIABLE, IDCFUNCTION, IDCREAD, IDCREADLN, IDCWRITE, IDCWRITELN, IDCSTR} TPSIDCLASS;
-typedef struct record17 { PString NAME; } TPSIDENTIFIER;
-const char* EnumValues2[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPLACEHOLDER" };
-const char* EnumValues3[] = { "TNCTYPE", "TNCVARIABLE", "TNCENUMVALUE", "TNCFUNCTION", "TNCSPECIALFUNCTION" };
-const char* EnumValues4[] = { "TSFREAD", "TSFREADLN", "TSFWRITE", "TSFWRITELN", "TSFSTR", "TSFNEW", "TSFDISPOSE" };
-const char* EnumValues5[] = { "IDCVARIABLE", "IDCFUNCTION", "IDCREAD", "IDCREADLN", "IDCWRITE", "IDCWRITELN", "IDCSTR" };
+typedef enum enum4 { TNCTYPE, TNCVARIABLE, TNCENUMVALUE, TNCFUNCTION, TNCSPECIALFUNCTION} TPSNAMECLASS;
+typedef enum enum5 { TSFREAD, TSFREADLN, TSFWRITE, TSFWRITELN, TSFSTR, TSFNEW, TSFDISPOSE} TPSSPECIALFUNCTION;
+typedef struct record16 { PString NAME; TPSNAMECLASS CLS; union { struct { TPSTYPEINDEX TYPEINDEX; }; struct { TPSVARIABLEINDEX VARIABLEINDEX; }; struct { TPSTYPEINDEX ENUMTYPEINDEX; }; struct { TPSFUNCTIONINDEX FUNCTIONINDEX; }; struct { TPSSPECIALFUNCTION SPECIALFUNCTION; }; }; } TPSNAME;
+typedef struct record17 { int NUMNAMES; int NUMTYPES; int NUMENUMS; int NUMRECORDS; int NUMARRAYS; int NUMCONSTANTS; int NUMVARIABLES; int NUMFUNCTIONS; int NUMWITHVARS; } TPSSCOPE;
+typedef struct record18 { TPSSCOPE SCOPE; TPSNAME NAMES[1 + 1024 - 1]; TPSTYPE TYPES[1 + 128 - 1]; TPSENUMDEF ENUMS[1 + 16 - 1]; TPSRECORDDEF RECORDS[1 + 32 - 1]; TPSARRAYDEF ARRAYS[1 + 32 - 1]; TPSCONSTANT CONSTANTS[1 + 32 - 1]; TPSVARIABLE VARIABLES[1 + 32 - 1]; TPSFUNCTION FUNCTIONS[1 + 256 - 1]; TPSWITHVAR WITHVARS[1 + 8 - 1]; } TPSDEFS;
+typedef struct record19 { PString NAME; } TPSIDENTIFIER;
+const char* EnumValues2[] = { "TECVALUE", "TECFUNCTION", "TECSTATEMENT" };
+const char* EnumValues3[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPLACEHOLDER" };
+const char* EnumValues4[] = { "TNCTYPE", "TNCVARIABLE", "TNCENUMVALUE", "TNCFUNCTION", "TNCSPECIALFUNCTION" };
+const char* EnumValues5[] = { "TSFREAD", "TSFREADLN", "TSFWRITE", "TSFWRITELN", "TSFSTR", "TSFNEW", "TSFDISPOSE" };
 TPSDEFS DEFS;
-struct record18 { TPSTYPEINDEX PTNIL; TPSTYPEINDEX PTBOOLEAN; TPSTYPEINDEX PTINTEGER; TPSTYPEINDEX PTCHAR; TPSTYPEINDEX PTSTRING; TPSTYPEINDEX PTTEXT; } PRIMITIVETYPES;
+struct record20 { TPSTYPEINDEX PTNIL; TPSTYPEINDEX PTBOOLEAN; TPSTYPEINDEX PTINTEGER; TPSTYPEINDEX PTCHAR; TPSTYPEINDEX PTSTRING; TPSTYPEINDEX PTTEXT; } PRIMITIVETYPES;
 TPSSCOPE GLOBALSCOPE;
 void CLEARDEFS() {
 DEFS.SCOPE.NUMNAMES = 0;
@@ -334,6 +336,7 @@ DEFS.SCOPE.NUMARRAYS = 0;
 DEFS.SCOPE.NUMCONSTANTS = 0;
 DEFS.SCOPE.NUMVARIABLES = 0;
 DEFS.SCOPE.NUMFUNCTIONS = 0;
+DEFS.SCOPE.NUMWITHVARS = 0;
 }
 TPSSCOPE GETCURRENTSCOPE() {
 TPSSCOPE return_GETCURRENTSCOPE;
@@ -360,15 +363,7 @@ if (POS == last) break;
 }
 }
 }
-if (REQUIRED && (RET == 0)) {
-{
-write_s(&STDERR, str_make(20, "Unknown identifier: "));
-write_s(&STDERR, NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (REQUIRED && (RET == 0)) COMPILEERROR(cat_ss(str_make(20, "Unknown identifier: "), NAME));
 return_FINDNAME = RET;
 return return_FINDNAME;
 }
@@ -376,25 +371,9 @@ TPSNAMEINDEX ADDNAME(TPSNAME DEF, TPSSCOPE SCOPE) {
 TPSNAMEINDEX return_ADDNAME;
 TPSNAMEINDEX POS;
 POS = FINDNAME(DEF.NAME, 0);
-if (POS > SCOPE.NUMNAMES) {
-{
-write_s(&STDERR, str_make(11, "Identifier "));
-write_s(&STDERR, DEF.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > SCOPE.NUMNAMES) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), DEF.NAME), str_make(16, " already defined")));
 POS = DEFS.SCOPE.NUMNAMES + 1;
-if (POS > 1024) {
-{
-write_s(&STDERR, str_make(38, "Too many identifiers have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > 1024) COMPILEERROR(str_make(38, "Too many identifiers have been defined"));
 DEFS.NAMES[(POS) - 1] = DEF;
 DEFS.SCOPE.NUMNAMES = POS;
 return_ADDNAME = POS;
@@ -410,16 +389,11 @@ case TNCTYPE: DEF.TYPEINDEX = IDX;
 break;
 case TNCVARIABLE: DEF.VARIABLEINDEX = IDX;
 break;
-case TNCENUMVALUE: DEF.TYPEINDEX = IDX;
+case TNCENUMVALUE: DEF.ENUMTYPEINDEX = IDX;
 break;
 case TNCFUNCTION: DEF.FUNCTIONINDEX = IDX;
 break;
-default: {
-write_s(&STDERR, str_make(41, "Cannot use MakeName for special functions"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(str_make(41, "Cannot use MakeName for special functions"));
 break;
 }
 return_MAKENAME = DEF;
@@ -491,13 +465,8 @@ return_DEEPTYPENAME = RET;
 }
  else if (TYP.CLS == TTCPOINTER) return_DEEPTYPENAME = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEINDEX, 1));
  else {
-{
-write_s(&STDERR, str_make(37, "Could not get name for type of class "));
-write_e(&STDERR, TYP.CLS, EnumValues2);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+RET = to_str_e(TYP.CLS, EnumValues3);
+COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
 }
 return return_DEEPTYPENAME;
 }
@@ -672,28 +641,12 @@ if (cmp_ss(TYP.NAME, str_make(0, "")) == 0) POS = 0;
  else POS = FINDNAME(TYP.NAME, 0);
 if (POS <= SCOPE.NUMNAMES) {
 POS = DEFS.SCOPE.NUMTYPES + 1;
-if (POS > 128) {
-{
-write_s(&STDERR, str_make(32, "Too many types have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > 128) COMPILEERROR(str_make(32, "Too many types have been defined"));
 DEFS.SCOPE.NUMTYPES = POS;
 if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) ADDNAME(MAKENAME(TYP.NAME, TNCTYPE, POS), SCOPE);
 }
  else if ((DEFS.NAMES[(POS) - 1].CLS == TNCTYPE) && ISPLACEHOLDERTYPE(DEFS.NAMES[(POS) - 1].TYPEINDEX)) POS = DEFS.NAMES[(POS) - 1].TYPEINDEX;
- else {
-{
-write_s(&STDERR, str_make(11, "Identifier "));
-write_s(&STDERR, TYP.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), TYP.NAME), str_make(16, " already defined")));
 DEFS.TYPES[(POS) - 1] = TYP;
 return_ADDTYPE = POS;
 if ((TYP.CLS == TTCENUM) && (TYP.ALIASFOR == 0)) {
@@ -713,14 +666,7 @@ return return_ADDTYPE;
 TPSENUMINDEX ADDENUM(TPSENUMDEF ENUM) {
 TPSENUMINDEX return_ADDENUM;
 DEFS.SCOPE.NUMENUMS = DEFS.SCOPE.NUMENUMS + 1;
-if (DEFS.SCOPE.NUMENUMS > 16) {
-{
-write_s(&STDERR, str_make(32, "Too many enums have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (DEFS.SCOPE.NUMENUMS > 16) COMPILEERROR(str_make(32, "Too many enums have been defined"));
 DEFS.ENUMS[(DEFS.SCOPE.NUMENUMS) - 1] = ENUM;
 return_ADDENUM = DEFS.SCOPE.NUMENUMS;
 return return_ADDENUM;
@@ -728,14 +674,7 @@ return return_ADDENUM;
 TPSRECORDINDEX ADDRECORD(TPSRECORDDEF REC) {
 TPSRECORDINDEX return_ADDRECORD;
 DEFS.SCOPE.NUMRECORDS = DEFS.SCOPE.NUMRECORDS + 1;
-if (DEFS.SCOPE.NUMRECORDS > 32) {
-{
-write_s(&STDERR, str_make(34, "Too many records have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (DEFS.SCOPE.NUMRECORDS > 32) COMPILEERROR(str_make(34, "Too many records have been defined"));
 DEFS.RECORDS[(DEFS.SCOPE.NUMRECORDS) - 1] = REC;
 return_ADDRECORD = DEFS.SCOPE.NUMRECORDS;
 return return_ADDRECORD;
@@ -743,14 +682,7 @@ return return_ADDRECORD;
 TPSARRAYINDEX ADDARRAY(TPSARRAYDEF ARR) {
 TPSARRAYINDEX return_ADDARRAY;
 DEFS.SCOPE.NUMARRAYS = DEFS.SCOPE.NUMARRAYS + 1;
-if (DEFS.SCOPE.NUMARRAYS > 32) {
-{
-write_s(&STDERR, str_make(33, "Too many arrays have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (DEFS.SCOPE.NUMARRAYS > 32) COMPILEERROR(str_make(33, "Too many arrays have been defined"));
 DEFS.ARRAYS[(DEFS.SCOPE.NUMARRAYS) - 1] = ARR;
 return_ADDARRAY = DEFS.SCOPE.NUMARRAYS;
 return return_ADDARRAY;
@@ -780,26 +712,10 @@ TPSCONSTANTINDEX return_ADDCONSTANT;
 int POS;
 if (cmp_ss(CONSTANT.NAME, str_make(0, "")) != 0) {
 POS = FINDCONSTANT(CONSTANT.NAME);
-if (POS > SCOPE.NUMCONSTANTS) {
-{
-write_s(&STDERR, str_make(9, "Constant "));
-write_s(&STDERR, CONSTANT.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > SCOPE.NUMCONSTANTS) COMPILEERROR(cat_ss(cat_ss(str_make(9, "Constant "), CONSTANT.NAME), str_make(16, " already defined")));
 }
 POS = DEFS.SCOPE.NUMCONSTANTS + 1;
-if (POS > 32) {
-{
-write_s(&STDERR, str_make(36, "Too many constants have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > 32) COMPILEERROR(str_make(36, "Too many constants have been defined"));
 DEFS.CONSTANTS[(POS) - 1] = CONSTANT;
 DEFS.SCOPE.NUMCONSTANTS = POS;
 return_ADDCONSTANT = POS;
@@ -810,26 +726,10 @@ TPSVARIABLEINDEX return_ADDVARIABLE;
 int POS;
 if (cmp_ss(VARDEF.NAME, str_make(0, "")) != 0) {
 POS = FINDNAME(VARDEF.NAME, 0);
-if (POS > SCOPE.NUMNAMES) {
-{
-write_s(&STDERR, str_make(11, "Identifier "));
-write_s(&STDERR, VARDEF.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > SCOPE.NUMNAMES) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), VARDEF.NAME), str_make(16, " already defined")));
 }
 POS = DEFS.SCOPE.NUMVARIABLES + 1;
-if (POS > 32) {
-{
-write_s(&STDERR, str_make(36, "Too many variables have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > 32) COMPILEERROR(str_make(36, "Too many variables have been defined"));
 DEFS.VARIABLES[(POS) - 1] = VARDEF;
 DEFS.SCOPE.NUMVARIABLES = POS;
 return_ADDVARIABLE = POS;
@@ -886,16 +786,7 @@ int POS;
 PBoolean ISNEW;
 POS = FINDNAME(FUN.NAME, 0);
 if (POS != 0) {
-if ((DEFS.NAMES[(POS) - 1].CLS != TNCFUNCTION) || FUN.ISDECLARATION) {
-{
-write_s(&STDERR, str_make(11, "Identifier "));
-write_s(&STDERR, FUN.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((DEFS.NAMES[(POS) - 1].CLS != TNCFUNCTION) || FUN.ISDECLARATION) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), FUN.NAME), str_make(16, " already defined")));
 ISNEW = 0;
 POS = DEFS.NAMES[(POS) - 1].FUNCTIONINDEX;
 if (DEFS.FUNCTIONS[(POS) - 1].ISDECLARATION) {
@@ -904,52 +795,19 @@ FUN = DEFS.FUNCTIONS[(POS) - 1];
 FUN.ISDECLARATION = 0;
 }
  else if (!ISSAMEFUNCTIONDEFINITION(POS, FUN)) {
-if (FUN.RETURNTYPEINDEX == 0) {
-write_s(&STDERR, str_make(10, "Procedure "));
-write_s(&STDERR, FUN.NAME);
-write_s(&STDERR, str_make(42, " incompatible with its forward declaration"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
- else {
-write_s(&STDERR, str_make(9, "Function "));
-write_s(&STDERR, FUN.NAME);
-write_s(&STDERR, str_make(42, " incompatible with its forward declaration"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+if (FUN.RETURNTYPEINDEX == 0) COMPILEERROR(cat_ss(cat_ss(str_make(10, "Procedure "), FUN.NAME), str_make(42, " incompatible with its forward declaration")));
+ else COMPILEERROR(cat_ss(cat_ss(str_make(9, "Function "), FUN.NAME), str_make(42, " incompatible with its forward declaration")));
 }
 }
  else {
-if (FUN.RETURNTYPEINDEX == 0) {
-write_s(&STDERR, str_make(10, "Procedure "));
-write_s(&STDERR, FUN.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
- else {
-write_s(&STDERR, str_make(9, "Function "));
-write_s(&STDERR, FUN.NAME);
-write_s(&STDERR, str_make(16, " already defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+if (FUN.RETURNTYPEINDEX == 0) COMPILEERROR(cat_ss(cat_ss(str_make(10, "Procedure "), FUN.NAME), str_make(16, " already defined")));
+ else COMPILEERROR(cat_ss(cat_ss(str_make(9, "Function "), FUN.NAME), str_make(16, " already defined")));
 }
 }
  else {
 ISNEW = 1;
 POS = DEFS.SCOPE.NUMFUNCTIONS + 1;
-if (POS > 256) {
-{
-write_s(&STDERR, str_make(36, "Too many functions have been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (POS > 256) COMPILEERROR(str_make(36, "Too many functions have been defined"));
 DEFS.SCOPE.NUMFUNCTIONS = POS;
 }
 DEFS.FUNCTIONS[(POS) - 1] = FUN;
@@ -964,21 +822,13 @@ DEF.CLS = TNCSPECIALFUNCTION;
 DEF.SPECIALFUNCTION = FN;
 ADDNAME(DEF, GLOBALSCOPE);
 }
-TPSTYPEINDEX FINDFIELDTYPE(TPSTYPEINDEX TYPEINDEX, PString NAME) {
+TPSTYPEINDEX FINDFIELDTYPE(TPSTYPEINDEX TYPEINDEX, PString NAME, PBoolean REQUIRED) {
 TPSTYPEINDEX return_FINDFIELDTYPE;
 TPSTYPE TYP;
 TPSRECORDDEF REC;
 int POS;
 TYP = DEFS.TYPES[(TYPEINDEX) - 1];
-if (TYP.CLS != TTCRECORD) {
-{
-write_s(&STDERR, str_make(14, "Not a record: "));
-write_s(&STDERR, TYP.NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (TYP.CLS != TTCRECORD) COMPILEERROR(cat_ss(str_make(14, "Not a record: "), TYP.NAME));
 TYPEINDEX = 0;
 REC = DEFS.RECORDS[(TYP.RECORDINDEX) - 1];
 {
@@ -993,17 +843,37 @@ if (POS == last) break;
 }
 }
 }
-if (TYPEINDEX == 0) {
-{
-write_s(&STDERR, str_make(17, "Field not found: "));
-write_s(&STDERR, NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (REQUIRED && (TYPEINDEX == 0)) COMPILEERROR(cat_ss(str_make(17, "Field not found: "), NAME));
 return_FINDFIELDTYPE = TYPEINDEX;
 return return_FINDFIELDTYPE;
+}
+TPSWITHVARINDEX FINDWITHVAR(PString NAME) {
+TPSWITHVARINDEX return_FINDWITHVAR;
+TPSWITHVARINDEX RET;
+TPSWITHVARINDEX POS;
+RET = 0;
+{
+TPSWITHVARINDEX first = 1;
+TPSWITHVARINDEX last = DEFS.SCOPE.NUMWITHVARS;
+if (first <= last) {
+POS = first;
+while (1) {
+if (FINDFIELDTYPE(DEFS.WITHVARS[(POS) - 1].EXPR.TYPEINDEX, NAME, 0) != 0) RET = POS;
+if (POS == last) break;
+++POS;
+}
+}
+}
+return_FINDWITHVAR = RET;
+return return_FINDWITHVAR;
+}
+TPSWITHVARINDEX ADDWITHVAR(TPSEXPRESSION BASE) {
+TPSWITHVARINDEX return_ADDWITHVAR;
+if (!ISRECORDTYPE(BASE.TYPEINDEX)) COMPILEERROR(str_make(31, "\'With\' variable is not a record"));
+DEFS.SCOPE.NUMWITHVARS = DEFS.SCOPE.NUMWITHVARS + 1;
+if (DEFS.SCOPE.NUMWITHVARS > 8) COMPILEERROR(str_make(34, "Too many nesting levels for \'with\'"));
+DEFS.WITHVARS[(DEFS.SCOPE.NUMWITHVARS) - 1].EXPR = BASE;
+return return_ADDWITHVAR;
 }
 TPSTYPE MAKETYPE(PString NAME, TPSTYPECLASS CLS) {
 TPSTYPE return_MAKETYPE;
@@ -1043,9 +913,6 @@ VARDEF.ISCONSTANT = 0;
 return_MAKEVARIABLE = VARDEF;
 return return_MAKEVARIABLE;
 }
-typedef enum enum6 { TECVALUE, TECFUNCTION, TECSTATEMENT} TPSEXPRESSIONCLASS;
-typedef struct record19 { PString VALUE; TPSEXPRESSIONCLASS CLS; PBoolean ISCONSTANT; TPSTYPEINDEX TYPEINDEX; TPSFUNCTIONINDEX FUNCTIONINDEX; } TPSEXPRESSION;
-const char* EnumValues6[] = { "TECVALUE", "TECFUNCTION", "TECSTATEMENT" };
 void CODEGENRESET();
 void CODEGENSETOUTPUT(PString FILENAME);
 void OUTBEGIN();
@@ -1108,14 +975,7 @@ void OUTPROGRAMEND();
 TPSEXPRESSION EVALUATE(TPSEXPRESSION EXPR) {
 TPSEXPRESSION return_EVALUATE;
 if (EXPR.CLS == TECFUNCTION) {
-if (DEFS.FUNCTIONS[(EXPR.FUNCTIONINDEX) - 1].ARGCOUNT != 0) {
-{
-write_s(&STDERR, str_make(27, "Function requires arguments"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (DEFS.FUNCTIONS[(EXPR.FUNCTIONINDEX) - 1].ARGCOUNT != 0) COMPILEERROR(str_make(27, "Function requires arguments"));
 EXPR.VALUE = cat_ss(EXPR.VALUE, str_make(2, "()"));
 EXPR.TYPEINDEX = DEFS.FUNCTIONS[(EXPR.FUNCTIONINDEX) - 1].RETURNTYPEINDEX;
 if (EXPR.TYPEINDEX == 0) EXPR.CLS = TECSTATEMENT;
@@ -1127,31 +987,13 @@ return return_EVALUATE;
 TPSEXPRESSION COERCETYPE(TPSEXPRESSION EXPR, TPSTYPEINDEX TYPEINDEX) {
 TPSEXPRESSION return_COERCETYPE;
 EXPR = EVALUATE(EXPR);
-if (EXPR.CLS != TECVALUE) {
-{
-write_s(&STDERR, str_make(26, "Cannot assign function to "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (EXPR.CLS != TECVALUE) COMPILEERROR(cat_ss(str_make(26, "Cannot assign function to "), TYPENAME(TYPEINDEX)));
 if (ISCHARTYPE(EXPR.TYPEINDEX) && ISSTRINGTYPE(TYPEINDEX)) {
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTSTRING;
 EXPR.VALUE = cat_sc(cat_ss(str_make(7, "str_of("), EXPR.VALUE), ')');
 }
  else if (ISNILTYPE(EXPR.TYPEINDEX) && ISPOINTERTYPE(TYPEINDEX)) EXPR.TYPEINDEX = TYPEINDEX;
- else if (!ISSAMETYPE(EXPR.TYPEINDEX, TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(14, "Cannot assign "));
-write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(&STDERR, str_make(4, " to "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else if (!ISSAMETYPE(EXPR.TYPEINDEX, TYPEINDEX)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(14, "Cannot assign "), TYPENAME(EXPR.TYPEINDEX)), str_make(4, " to ")), TYPENAME(TYPEINDEX)));
 return_COERCETYPE = EXPR;
 return return_COERCETYPE;
 }
@@ -1252,15 +1094,7 @@ if (ISBOOLEANTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'b';
  else if (ISCHARTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'c';
  else if (ISSTRINGTYPE(TYPEINDEX)) return_SHORTTYPENAME = 's';
  else if (ISENUMTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'e';
- else {
-{
-write_s(&STDERR, str_make(30, "No short type name exists for "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(30, "No short type name exists for "), TYPENAME(TYPEINDEX)));
 return return_SHORTTYPENAME;
 }
 TPSEXPRESSION INTEGERBINARYEXPRESSION(TPSEXPRESSION LEFT, TLXTOKENID OP, TPSEXPRESSION RIGHT) {
@@ -1297,13 +1131,7 @@ case TKLESSOREQUALS: CMP = str_make(2, "<=");
 break;
 case TKMOREOREQUALS: CMP = str_make(2, ">=");
 break;
-default: {
-write_s(&STDERR, str_make(40, "Expected integer binary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(40, "Expected integer binary operator, found "), LXTOKENNAME(OP)));
 break;
 }
 if (cmp_ss(CMP, str_make(0, "")) == 0) EXPR.TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
@@ -1335,13 +1163,7 @@ case TKLESSOREQUALS: OPER = str_make(2, "<=");
 break;
 case TKMOREOREQUALS: OPER = str_make(2, ">=");
 break;
-default: {
-write_s(&STDERR, str_make(40, "Expected boolean binary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(40, "Expected boolean binary operator, found "), LXTOKENNAME(OP)));
 break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
@@ -1373,13 +1195,7 @@ case TKLESSOREQUALS: CMP = str_make(2, "<=");
 break;
 case TKMOREOREQUALS: CMP = str_make(2, ">=");
 break;
-default: {
-write_s(&STDERR, str_make(39, "Expected string binary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(39, "Expected string binary operator, found "), LXTOKENNAME(OP)));
 break;
 }
 FNAME = cat_sc(cat_sc(cat_sc(FNAME, '_'), SHORTTYPENAME(LEFT.TYPEINDEX)), SHORTTYPENAME(RIGHT.TYPEINDEX));
@@ -1412,13 +1228,7 @@ case TKLESSOREQUALS: CMP = str_make(2, "<=");
 break;
 case TKMOREOREQUALS: CMP = str_make(2, ">=");
 break;
-default: {
-write_s(&STDERR, str_make(40, "Expected ordinal binary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(40, "Expected ordinal binary operator, found "), LXTOKENNAME(OP)));
 break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
@@ -1438,13 +1248,7 @@ case TKEQUALS: CMP = str_make(2, "==");
 break;
 case TKNOTEQUALS: CMP = str_make(2, "!=");
 break;
-default: {
-write_s(&STDERR, str_make(40, "Expected pointer binary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+default: COMPILEERROR(cat_ss(str_make(40, "Expected pointer binary operator, found "), LXTOKENNAME(OP)));
 break;
 }
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
@@ -1463,106 +1267,34 @@ if (ISBOOLEANTYPE(LEFT.TYPEINDEX) && ISBOOLEANTYPE(RIGHT.TYPEINDEX)) return_BINA
  else if (ISSTRINGYTYPE(LEFT.TYPEINDEX) && ISSTRINGYTYPE(RIGHT.TYPEINDEX)) return_BINARYEXPRESSION = STRINGYBINARYEXPRESSION(LEFT, OP, RIGHT);
  else if (ISENUMTYPE(LEFT.TYPEINDEX) && ISSAMETYPE(LEFT.TYPEINDEX, RIGHT.TYPEINDEX)) return_BINARYEXPRESSION = ENUMBINARYEXPRESSION(LEFT, OP, RIGHT);
  else if (AREPOINTERSCOMPATIBLE(LEFT.TYPEINDEX, RIGHT.TYPEINDEX)) return_BINARYEXPRESSION = POINTERBINARYEXPRESSION(LEFT, OP, RIGHT);
- else {
-{
-write_s(&STDERR, str_make(27, "Type mismatch for operator "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, str_make(2, ": "));
-write_s(&STDERR, TYPENAME(LEFT.TYPEINDEX));
-write_s(&STDERR, str_make(5, " and "));
-write_s(&STDERR, TYPENAME(RIGHT.TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(27, "Type mismatch for operator "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(LEFT.TYPEINDEX)), str_make(5, " and ")), TYPENAME(RIGHT.TYPEINDEX)));
 return return_BINARYEXPRESSION;
 }
 TPSEXPRESSION UNARYEXPRESSION(TLXTOKENID OP, TPSEXPRESSION EXPR) {
 TPSEXPRESSION return_UNARYEXPRESSION;
 EXPR = EVALUATE(EXPR);
 if (OP == TKNOT) {
-if (!ISBOOLEANTYPE(EXPR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(33, "Expected boolean expression, got "));
-write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISBOOLEANTYPE(EXPR.TYPEINDEX)) COMPILEERROR(cat_ss(str_make(33, "Expected boolean expression, got "), TYPENAME(EXPR.TYPEINDEX)));
 EXPR.VALUE = cat_cs('!', EXPR.VALUE);
 }
  else if (OP == TKMINUS) {
-if (!ISINTEGERTYPE(EXPR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(33, "Expected numeric expression, got "));
-write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISINTEGERTYPE(EXPR.TYPEINDEX)) COMPILEERROR(cat_ss(str_make(33, "Expected numeric expression, got "), TYPENAME(EXPR.TYPEINDEX)));
 EXPR.VALUE = cat_cs('-', EXPR.VALUE);
 }
- else {
-{
-write_s(&STDERR, str_make(31, "Expected unary operator, found "));
-write_e(&STDERR, OP, EnumValues1);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(31, "Expected unary operator, found "), LXTOKENNAME(OP)));
 EXPR.ISCONSTANT = 1;
 return_UNARYEXPRESSION = EXPR;
 return return_UNARYEXPRESSION;
 }
 void READTOKEN();
 void WANTTOKEN(TLXTOKENID ID) {
-if (LEXER.TOKEN.ID != ID) {
-{
-write_s(&STDERR, str_make(13, "Wanted token "));
-write_e(&STDERR, ID, EnumValues1);
-write_s(&STDERR, str_make(8, ", found "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (LEXER.TOKEN.ID != ID) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID)), str_make(8, ", found ")), LXTOKENSTR()));
 }
 void WANTTOKEN2(TLXTOKENID ID1, TLXTOKENID ID2) {
-if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2)) {
-{
-write_s(&STDERR, str_make(13, "Wanted token "));
-write_e(&STDERR, ID1, EnumValues1);
-write_s(&STDERR, str_make(4, " or "));
-write_e(&STDERR, ID2, EnumValues1);
-write_s(&STDERR, str_make(8, ", found "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2)) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID1)), str_make(4, " or ")), LXTOKENNAME(ID2)), str_make(8, ", found ")), LXTOKENSTR()));
 }
 void WANTTOKEN3(TLXTOKENID ID1, TLXTOKENID ID2, TLXTOKENID ID3) {
-if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2) && (LEXER.TOKEN.ID != ID3)) {
-{
-write_s(&STDERR, str_make(13, "Wanted token "));
-write_e(&STDERR, ID1, EnumValues1);
-write_s(&STDERR, str_make(2, ", "));
-write_e(&STDERR, ID2, EnumValues1);
-write_s(&STDERR, str_make(5, ", or "));
-write_e(&STDERR, ID3, EnumValues1);
-write_s(&STDERR, str_make(7, " found "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((LEXER.TOKEN.ID != ID1) && (LEXER.TOKEN.ID != ID2) && (LEXER.TOKEN.ID != ID3)) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID1)), str_make(2, ", ")), LXTOKENNAME(ID2)), str_make(5, ", or ")), LXTOKENNAME(ID3)), str_make(7, " found ")), LXTOKENSTR()));
 }
 void WANTTOKENANDREAD(TLXTOKENID ID) {
 WANTTOKEN(ID);
@@ -1583,15 +1315,7 @@ TPSTYPEINDEX PSFINDTYPE(PString NAME) {
 TPSTYPEINDEX return_PSFINDTYPE;
 TPSNAME FOUND;
 FOUND = DEFS.NAMES[(FINDNAME(NAME, 1)) - 1];
-if (FOUND.CLS != TNCTYPE) {
-{
-write_s(&STDERR, str_make(12, "Not a type: "));
-write_s(&STDERR, FOUND.NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (FOUND.CLS != TNCTYPE) COMPILEERROR(cat_ss(str_make(12, "Not a type: "), FOUND.NAME));
 return_PSFINDTYPE = FOUND.TYPEINDEX;
 return return_PSFINDTYPE;
 }
@@ -1618,14 +1342,7 @@ WANTTOKENANDREAD(TKLPAREN);
 ENUM.SIZE = 0;
 do {
 ENUM.SIZE = ENUM.SIZE + 1;
-if (ENUM.SIZE > 128) {
-{
-write_s(&STDERR, str_make(23, "Too many values in enum"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (ENUM.SIZE > 128) COMPILEERROR(str_make(23, "Too many values in enum"));
 ENUM.VALUES[(ENUM.SIZE) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
@@ -1652,16 +1369,7 @@ if (first <= last) {
 FIELD = first;
 while (1) {
 {
-if (cmp_ss((*REC).FIELDS[(FIELD) - 1].NAME, NAME) == 0) {
-{
-write_s(&STDERR, str_make(14, "A field named "));
-write_s(&STDERR, NAME);
-write_s(&STDERR, str_make(25, " has already been defined"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (cmp_ss((*REC).FIELDS[(FIELD) - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
 }
 if (FIELD == last) break;
 ++FIELD;
@@ -1669,14 +1377,7 @@ if (FIELD == last) break;
 }
 }
 (*REC).SIZE = (*REC).SIZE + 1;
-if ((*REC).SIZE > 16) {
-{
-write_s(&STDERR, str_make(25, "Too many fields in record"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((*REC).SIZE > 16) COMPILEERROR(str_make(25, "Too many fields in record"));
 (*REC).FIELDS[((*REC).SIZE) - 1].NAME = NAME;
 WANTTOKEN2(TKCOMMA, TKCOLON);
 SKIPTOKEN(TKCOMMA);
@@ -1713,20 +1414,14 @@ TAGTYPE = PSTYPEIDENTIFIER();
 (*REC).FIELDS[((*REC).SIZE) - 1].TYPEINDEX = TAGTYPE;
 }
  else TAGTYPE = PSFINDTYPE(TAG.NAME);
+if (!ISORDINALTYPE(TAGTYPE)) COMPILEERROR(str_make(46, "The index of the case statement is not ordinal"));
 WANTTOKENANDREAD(TKOF);
 do {
 (*REC).NUMVARIANTS = (*REC).NUMVARIANTS + 1;
 (*REC).VARIANTBOUNDS[((*REC).NUMVARIANTS) - 1] = (*REC).SIZE + 1;
 do {
 CASELABEL = COERCETYPE(PSEXPRESSION(), TAGTYPE);
-if (!CASELABEL.ISCONSTANT) {
-{
-write_s(&STDERR, str_make(47, "The label of the case statement is not constant"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!CASELABEL.ISCONSTANT) COMPILEERROR(str_make(47, "The label of the case statement is not constant"));
 WANTTOKEN2(TKCOMMA, TKCOLON);
 SKIPTOKEN(TKCOMMA);
 } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -1784,15 +1479,7 @@ TYP.NAME = LEXER.TOKEN.VALUE;
 TYPEINDEX = ADDTYPE(TYP, SCOPE);
 }
  else if (DEFS.NAMES[(NAMEINDEX) - 1].CLS == TNCTYPE) TYPEINDEX = DEFS.NAMES[(NAMEINDEX) - 1].TYPEINDEX;
- else {
-{
-write_s(&STDERR, str_make(12, "Not a type: "));
-write_s(&STDERR, LEXER.TOKEN.VALUE);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(12, "Not a type: "), LEXER.TOKEN.VALUE));
 READTOKEN();
 TYP = POINTERTYPE(TYPEINDEX);
 return_PSPOINTERTYPE = ADDTYPE(TYP, SCOPE);
@@ -1807,15 +1494,7 @@ if (LEXER.TOKEN.ID == TKIDENTIFIER) TYPEINDEX = PSTYPEIDENTIFIER();
  else if (LEXER.TOKEN.ID == TKRECORD) TYPEINDEX = PSRECORDTYPE(SCOPE);
  else if (LEXER.TOKEN.ID == TKARRAY) TYPEINDEX = PSARRAYTYPE(SCOPE);
  else if (LEXER.TOKEN.ID == TKCARET) TYPEINDEX = PSPOINTERTYPE(SCOPE);
- else {
-{
-write_s(&STDERR, str_make(30, "Wanted type definition, found "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(30, "Wanted type definition, found "), LXTOKENSTR()));
 return_PSTYPEDENOTER = TYPEINDEX;
 return return_PSTYPEDENOTER;
 }
@@ -1843,15 +1522,7 @@ if (first <= last) {
 TYPEINDEX = first;
 while (1) {
 {
-if (ISPLACEHOLDERTYPE(TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(41, "Type has been mentioned but not defined: "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (ISPLACEHOLDERTYPE(TYPEINDEX)) COMPILEERROR(cat_ss(str_make(41, "Type has been mentioned but not defined: "), TYPENAME(TYPEINDEX)));
 if (DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR != 0) OUTTYPEDEFINITION(TYPEINDEX);
 }
 if (TYPEINDEX == last) break;
@@ -1866,15 +1537,7 @@ TPSCONSTANT CONSTANT;
 WANTTOKENANDREAD(TKEQUALS);
 CONSTANT.NAME = NAME;
 if ((LEXER.TOKEN.ID == TKFALSE) || (LEXER.TOKEN.ID == TKTRUE) || (LEXER.TOKEN.ID == TKNUMBER) || (LEXER.TOKEN.ID == TKSTRING)) CONSTANT.REPLACEMENT = LEXER.TOKEN;
- else {
-{
-write_s(&STDERR, str_make(31, "Expected constant value, found "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(31, "Expected constant value, found "), LXTOKENSTR()));
 ADDCONSTANT(CONSTANT, SCOPE);
 READTOKEN();
 }
@@ -1892,15 +1555,7 @@ OUTCONSTANTVALUE(EXPR.VALUE);
 }
  else if (ISCHARTYPE(TYPEINDEX)) {
 EXPR = GENSTRINGCONSTANT(GETTOKENVALUEANDREAD(TKSTRING));
-if (!ISCHARTYPE(EXPR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(28, "Expected char constant, got "));
-write_s(&STDERR, TYPENAME(EXPR.TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISCHARTYPE(EXPR.TYPEINDEX)) COMPILEERROR(cat_ss(str_make(28, "Expected char constant, got "), TYPENAME(EXPR.TYPEINDEX)));
 OUTCONSTANTVALUE(EXPR.VALUE);
 }
  else if (ISSTRINGTYPE(TYPEINDEX)) {
@@ -1920,15 +1575,7 @@ SKIPTOKEN(TKCOMMA);
 OUTCONSTANTARRAYEND();
 WANTTOKENANDREAD(TKRPAREN);
 }
- else {
-{
-write_s(&STDERR, str_make(27, "Invalid type for constant: "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(27, "Invalid type for constant: "), TYPENAME(TYPEINDEX)));
 }
 void PSTYPEDCONSTANT(PString NAME, TPSSCOPE SCOPE) {
 TPSTYPEINDEX TYPEINDEX;
@@ -1961,14 +1608,7 @@ do {
 NUMNAMES = 0;
 do {
 NUMNAMES = NUMNAMES + 1;
-if (NUMNAMES > 8) {
-{
-write_s(&STDERR, str_make(37, "Too many names in variable definition"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (NUMNAMES > 8) COMPILEERROR(str_make(37, "Too many names in variable definition"));
 NAMES[(NUMNAMES) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 WANTTOKEN2(TKCOMMA, TKCOLON);
 SKIPTOKEN(TKCOMMA);
@@ -2035,15 +1675,7 @@ SKIPTOKEN(TKVAR);
 LASTARG = (*DEF).ARGCOUNT;
 do {
 (*DEF).ARGCOUNT = (*DEF).ARGCOUNT + 1;
-if ((*DEF).ARGCOUNT > 4) {
-{
-write_s(&STDERR, str_make(41, "Too many arguments declared for function "));
-write_s(&STDERR, (*DEF).NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((*DEF).ARGCOUNT > 4) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), (*DEF).NAME));
 (*DEF).ARGS[((*DEF).ARGCOUNT) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
 (*DEF).ARGS[((*DEF).ARGCOUNT) - 1].ISREFERENCE = ISREFERENCE;
 WANTTOKEN2(TKCOLON, TKCOMMA);
@@ -2141,14 +1773,7 @@ TPSEXPRESSION return_PSFUNCTIONCALL;
 TPSFUNCTION FUN;
 TPSEXPRESSION EXPR;
 int ARGNUM;
-if (FN.CLS != TECFUNCTION) {
-{
-write_s(&STDERR, str_make(14, "Not a function"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (FN.CLS != TECFUNCTION) COMPILEERROR(str_make(14, "Not a function"));
 FUN = DEFS.FUNCTIONS[(FN.FUNCTIONINDEX) - 1];
 FN.VALUE = GENFUNCTIONCALLSTART(FN.VALUE);
 WANTTOKENANDREAD(TKLPAREN);
@@ -2179,14 +1804,7 @@ return return_PSFUNCTIONCALL;
 TPSEXPRESSION PSPOINTERDEREF(TPSEXPRESSION PTR) {
 TPSEXPRESSION return_PSPOINTERDEREF;
 PTR = EVALUATE(PTR);
-if ((PTR.CLS != TECVALUE) || !ISPOINTERTYPE(PTR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(13, "Not a pointer"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((PTR.CLS != TECVALUE) || !ISPOINTERTYPE(PTR.TYPEINDEX)) COMPILEERROR(str_make(13, "Not a pointer"));
 WANTTOKENANDREAD(TKCARET);
 PTR.VALUE = cat_sc(cat_ss(str_make(2, "*("), PTR.VALUE), ')');
 PTR.TYPEINDEX = DEFS.TYPES[(PTR.TYPEINDEX) - 1].POINTEDTYPEINDEX;
@@ -2209,28 +1827,14 @@ if (LEXER.TOKEN.ID != TKRPAREN) {
 OUTVAR = PSEXPRESSION();
 if (ISVARIABLEEXPRESSION(OUTVAR) && ISTEXTTYPE(OUTVAR.TYPEINDEX)) SRC = OUTVAR.VALUE;
  else {
-if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(36, "Invalid expression for read argument"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) COMPILEERROR(str_make(36, "Invalid expression for read argument"));
 OUTREAD(SRC, OUTVAR);
 }
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
 while (LEXER.TOKEN.ID != TKRPAREN) {
 OUTVAR = PSEXPRESSION();
-if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(36, "Invalid expression for read argument"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(OUTVAR) || !ISSTRINGYTYPE(OUTVAR.TYPEINDEX)) COMPILEERROR(str_make(36, "Invalid expression for read argument"));
 OUTREAD(SRC, OUTVAR);
 WANTTOKEN2(TKCOMMA, TKRPAREN);
 SKIPTOKEN(TKCOMMA);
@@ -2277,14 +1881,7 @@ WANTTOKENANDREAD(TKLPAREN);
 EXPR = PSEXPRESSION();
 WANTTOKENANDREAD(TKCOMMA);
 DEST = PSEXPRESSION();
-if (!ISVARIABLEEXPRESSION(DEST) || !ISSTRINGTYPE(DEST.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(45, "Destination argument is not a string variable"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(DEST) || !ISSTRINGTYPE(DEST.TYPEINDEX)) COMPILEERROR(str_make(45, "Destination argument is not a string variable"));
 WANTTOKENANDREAD(TKRPAREN);
 OUTSTR(DEST.VALUE, EXPR);
 }
@@ -2293,14 +1890,7 @@ TPSEXPRESSION DEST;
 WANTTOKENANDREAD(TKLPAREN);
 DEST = PSEXPRESSION();
 WANTTOKENANDREAD(TKRPAREN);
-if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(25, "Argument is not a pointer"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) COMPILEERROR(str_make(25, "Argument is not a pointer"));
 OUTNEW(DEST);
 }
 void PSDISPOSE() {
@@ -2308,14 +1898,7 @@ TPSEXPRESSION DEST;
 WANTTOKENANDREAD(TKLPAREN);
 DEST = PSEXPRESSION();
 WANTTOKENANDREAD(TKRPAREN);
-if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(25, "Argument is not a pointer"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(DEST) || !ISPOINTERTYPE(DEST.TYPEINDEX)) COMPILEERROR(str_make(25, "Argument is not a pointer"));
 OUTDISPOSE(DEST);
 }
 TPSEXPRESSION PSARRAYACCESS(TPSEXPRESSION ARR) {
@@ -2324,14 +1907,7 @@ TPSEXPRESSION IDX;
 WANTTOKENANDREAD(TKLBRACKET);
 IDX = PSEXPRESSION();
 WANTTOKENANDREAD(TKRBRACKET);
-if ((IDX.CLS != TECVALUE) || !ISINTEGERTYPE(IDX.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(28, "Subscript must be an integer"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((IDX.CLS != TECVALUE) || !ISINTEGERTYPE(IDX.TYPEINDEX)) COMPILEERROR(str_make(28, "Subscript must be an integer"));
 if ((ARR.CLS == TECVALUE) && ISSTRINGTYPE(ARR.TYPEINDEX)) {
 SETSTRINGINDEX(&ARR, IDX);
 ARR.TYPEINDEX = PRIMITIVETYPES.PTCHAR;
@@ -2340,14 +1916,7 @@ ARR.TYPEINDEX = PRIMITIVETYPES.PTCHAR;
 SETARRAYINDEX(&ARR, IDX);
 ARR.TYPEINDEX = DEFS.ARRAYS[(DEFS.TYPES[(ARR.TYPEINDEX) - 1].ARRAYINDEX) - 1].TYPEINDEX;
 }
- else {
-{
-write_s(&STDERR, str_make(21, "Not a string or array"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(str_make(21, "Not a string or array"));
 return_PSARRAYACCESS = ARR;
 return return_PSARRAYACCESS;
 }
@@ -2355,27 +1924,11 @@ TPSEXPRESSION PSFIELDACCESS(TPSEXPRESSION REC) {
 TPSEXPRESSION return_PSFIELDACCESS;
 TPSIDENTIFIER FLD;
 TPSTYPEINDEX FLDTYPE;
-if ((REC.CLS != TECVALUE) || (DEFS.TYPES[(REC.TYPEINDEX) - 1].CLS != TTCRECORD)) {
-{
-write_s(&STDERR, str_make(12, "Not a record"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if ((REC.CLS != TECVALUE) || (DEFS.TYPES[(REC.TYPEINDEX) - 1].CLS != TTCRECORD)) COMPILEERROR(str_make(12, "Not a record"));
 WANTTOKENANDREAD(TKDOT);
 FLD = PSIDENTIFIER();
-FLDTYPE = FINDFIELDTYPE(REC.TYPEINDEX, FLD.NAME);
-if (FLDTYPE == 0) {
-{
-write_s(&STDERR, str_make(6, "Field "));
-write_s(&STDERR, FLD.NAME);
-write_s(&STDERR, str_make(20, " not found in record"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+FLDTYPE = FINDFIELDTYPE(REC.TYPEINDEX, FLD.NAME, 1);
+if (FLDTYPE == 0) COMPILEERROR(cat_ss(cat_ss(str_make(6, "Field "), FLD.NAME), str_make(20, " not found in record")));
 SETFIELDACCESS(&REC, FLD.NAME);
 REC.TYPEINDEX = FLDTYPE;
 return_PSFIELDACCESS = REC;
@@ -2384,6 +1937,7 @@ return return_PSFIELDACCESS;
 TPSEXPRESSION PSVARIABLEORFUNCTIONCALL() {
 TPSEXPRESSION return_PSVARIABLEORFUNCTIONCALL;
 TPSIDENTIFIER ID;
+TPSWITHVARINDEX WITHVARINDEX;
 TPSNAME FOUND;
 TPSEXPRESSION EXPR;
 PBoolean DONE;
@@ -2391,6 +1945,13 @@ DONE = 0;
 EXPR.VALUE = str_make(0, "");
 EXPR.ISCONSTANT = 0;
 ID = PSIDENTIFIER();
+WITHVARINDEX = FINDWITHVAR(ID.NAME);
+if (WITHVARINDEX != 0) {
+EXPR = DEFS.WITHVARS[(WITHVARINDEX) - 1].EXPR;
+SETFIELDACCESS(&EXPR, ID.NAME);
+EXPR.TYPEINDEX = FINDFIELDTYPE(EXPR.TYPEINDEX, ID.NAME, 1);
+}
+ else {
 FOUND = DEFS.NAMES[(FINDNAME(ID.NAME, 1)) - 1];
 if (FOUND.CLS == TNCVARIABLE) {
 if (DEFS.VARIABLES[(FOUND.VARIABLEINDEX) - 1].ISREFERENCE) EXPR.VALUE = cat_cs('*', ID.NAME);
@@ -2406,7 +1967,7 @@ EXPR.FUNCTIONINDEX = FOUND.FUNCTIONINDEX;
  else if (FOUND.CLS == TNCENUMVALUE) {
 EXPR.VALUE = ID.NAME;
 EXPR.CLS = TECVALUE;
-EXPR.TYPEINDEX = FOUND.TYPEINDEX;
+EXPR.TYPEINDEX = FOUND.ENUMTYPEINDEX;
 EXPR.ISCONSTANT = 1;
 }
  else if (FOUND.CLS == TNCSPECIALFUNCTION) {
@@ -2418,14 +1979,7 @@ if ((FOUND.SPECIALFUNCTION == TSFREAD) || (FOUND.SPECIALFUNCTION == TSFREADLN)) 
  else if (FOUND.SPECIALFUNCTION == TSFNEW) PSNEW();
  else if (FOUND.SPECIALFUNCTION == TSFDISPOSE) PSDISPOSE();
 }
- else {
-{
-write_s(&STDERR, str_make(20, "Invalid identifier: "));
-write_s(&STDERR, ID.NAME);
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
+ else COMPILEERROR(cat_ss(str_make(20, "Invalid identifier: "), ID.NAME));
 }
 do {
 if (LEXER.TOKEN.ID == TKDOT) EXPR = PSFIELDACCESS(EXPR);
@@ -2475,15 +2029,7 @@ WANTTOKENANDREAD(TKRPAREN);
 WANTTOKENANDREAD(TKNOT);
 EXPR = UNARYEXPRESSION(TKNOT, PSFACTOR());
 }
- else {
-{
-write_s(&STDERR, str_make(29, "Invalid token in expression: "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(29, "Invalid token in expression: "), LXTOKENSTR()));
 return_PSFACTOR = EXPR;
 return return_PSFACTOR;
 }
@@ -2531,24 +2077,10 @@ return_PSEXPRESSION = EXPR;
 return return_PSEXPRESSION;
 }
 void PSASSIGN(TPSEXPRESSION LHS, TPSEXPRESSION RHS) {
-if (LHS.ISCONSTANT) {
-{
-write_s(&STDERR, str_make(33, "Cannot assign to a constant value"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (LHS.ISCONSTANT) COMPILEERROR(str_make(33, "Cannot assign to a constant value"));
 if (LHS.CLS == TECFUNCTION) OUTASSIGNRETURNVALUE(LHS, COERCETYPE(RHS, DEFS.FUNCTIONS[(LHS.FUNCTIONINDEX) - 1].RETURNTYPEINDEX));
  else if (LHS.CLS == TECVALUE) OUTASSIGN(LHS, COERCETYPE(RHS, LHS.TYPEINDEX));
- else {
-{
-write_s(&STDERR, str_make(36, "Cannot assign to result of statement"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(str_make(36, "Cannot assign to result of statement"));
 }
 void PSSTATEMENTSEQUENCE() {
 OUTBEGIN();
@@ -2590,26 +2122,12 @@ TPSEXPRESSION CASEINDEX;
 TPSEXPRESSION CASELABEL;
 WANTTOKENANDREAD(TKCASE);
 CASEINDEX = PSEXPRESSION();
-if (!ISORDINALTYPE(CASEINDEX.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(46, "The index of the case statement is not ordinal"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISORDINALTYPE(CASEINDEX.TYPEINDEX)) COMPILEERROR(str_make(46, "The index of the case statement is not ordinal"));
 OUTCASEBEGIN(CASEINDEX);
 WANTTOKENANDREAD(TKOF);
 do {
 CASELABEL = COERCETYPE(PSEXPRESSION(), CASEINDEX.TYPEINDEX);
-if (!CASELABEL.ISCONSTANT) {
-{
-write_s(&STDERR, str_make(47, "The label of the case statement is not constant"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!CASELABEL.ISCONSTANT) COMPILEERROR(str_make(47, "The label of the case statement is not constant"));
 WANTTOKENANDREAD(TKCOLON);
 OUTCASESTATEMENTBEGIN(CASELABEL);
 PSSTATEMENT();
@@ -2652,23 +2170,8 @@ TPSEXPRESSION LAST;
 PBoolean ASCENDING;
 WANTTOKENANDREAD(TKFOR);
 ITER = PSEXPRESSION();
-if (!ISVARIABLEEXPRESSION(ITER)) {
-{
-write_s(&STDERR, str_make(17, "Expected variable"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
-if (!ISORDINALTYPE(ITER.TYPEINDEX)) {
-{
-write_s(&STDERR, str_make(33, "Type of iterator is not ordinal: "));
-write_s(&STDERR, TYPENAME(ITER.TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (!ISVARIABLEEXPRESSION(ITER)) COMPILEERROR(str_make(17, "Expected variable"));
+if (!ISORDINALTYPE(ITER.TYPEINDEX)) COMPILEERROR(cat_ss(str_make(33, "Type of iterator is not ordinal: "), TYPENAME(ITER.TYPEINDEX)));
 WANTTOKENANDREAD(TKASSIGN);
 FIRST = EVALUATE(PSEXPRESSION());
 WANTTOKEN2(TKTO, TKDOWNTO);
@@ -2680,6 +2183,21 @@ OUTFORBEGIN(ITER, FIRST, LAST, ASCENDING);
 PSSTATEMENT();
 OUTFOREND(ITER, ASCENDING);
 }
+void PSWITHSTATEMENT() {
+TPSWITHVARINDEX INITIAL;
+TPSEXPRESSION BASE;
+TPSWITHVARINDEX POS;
+WANTTOKEN(TKWITH);
+INITIAL = DEFS.SCOPE.NUMWITHVARS;
+do {
+READTOKEN();
+ADDWITHVAR(PSEXPRESSION());
+WANTTOKEN2(TKCOMMA, TKDO);
+} while (!(LEXER.TOKEN.ID == TKDO));
+WANTTOKENANDREAD(TKDO);
+PSSTATEMENT();
+DEFS.SCOPE.NUMWITHVARS = INITIAL;
+}
 void PSSTATEMENT() {
 if (LEXER.TOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
  else if (LEXER.TOKEN.ID == TKBEGIN) PSSTATEMENTSEQUENCE();
@@ -2689,15 +2207,8 @@ if (LEXER.TOKEN.ID == TKSEMICOLON) OUTEMPTYSTATEMENT();
  else if (LEXER.TOKEN.ID == TKREPEAT) PSREPEATSTATEMENT();
  else if (LEXER.TOKEN.ID == TKWHILE) PSWHILESTATEMENT();
  else if (LEXER.TOKEN.ID == TKFOR) PSFORSTATEMENT();
- else {
-{
-write_s(&STDERR, str_make(17, "Unexpected token "));
-write_s(&STDERR, LXTOKENSTR());
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else if (LEXER.TOKEN.ID == TKWITH) PSWITHSTATEMENT();
+ else COMPILEERROR(cat_ss(str_make(17, "Unexpected token "), LXTOKENSTR()));
 }
 void PSPROGRAMBLOCK() {
 PSDEFINITIONS(GLOBALSCOPE);
@@ -2832,7 +2343,7 @@ FUN.ARGS[(1) - 1] = MAKEVARIABLE(str_make(3, "CHR"), PRIMITIVETYPES.PTCHAR, 0);
 FUN.RETURNTYPEINDEX = PRIMITIVETYPES.PTCHAR;
 ADDFUNCTION(FUN);
 }
-struct record20 { PFile OUTPUT; } CODEGEN;
+struct record21 { PFile OUTPUT; } CODEGEN;
 void OUTBEGIN() {
 {
 write_c(&CODEGEN.OUTPUT, '{');
@@ -2945,15 +2456,7 @@ OUTTYPEREFERENCE(DEFS.ARRAYS[(TYP.ARRAYINDEX) - 1].TYPEINDEX);
 write_c(&CODEGEN.OUTPUT, '*');
 }
 }
- else {
-{
-write_s(&STDERR, str_make(30, "Error writing type reference: "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(str_make(30, "Error writing type reference: "), TYPENAME(TYPEINDEX)));
 }
 void OUTNAMEANDRECORD(PString NAME, TPSRECORDINDEX RECORDINDEX) {
 TPSRECORDDEF REC;
@@ -3006,7 +2509,6 @@ write_s(&CODEGEN.OUTPUT, NAME);
 void OUTNAMEANDTYPE(PString NAME, TPSTYPEINDEX TYPEINDEX) {
 TPSTYPE TYP;
 TPSENUMDEF ENUM;
-TPSRECORDDEF REC;
 TPSARRAYDEF ARR;
 int POS;
 if (TYPEINDEX != 0) TYP = DEFS.TYPES[(TYPEINDEX) - 1];
@@ -3089,31 +2591,12 @@ write_s(&CODEGEN.OUTPUT, ARR.LOWBOUND);
 write_c(&CODEGEN.OUTPUT, ']');
 }
 }
- else {
-{
-write_s(&STDERR, str_make(29, "Error writing name and type: "));
-write_s(&STDERR, NAME);
-write_s(&STDERR, str_make(2, ", "));
-write_s(&STDERR, TYPENAME(TYPEINDEX));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+ else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Error writing name and type: "), NAME), str_make(2, ", ")), TYPENAME(TYPEINDEX)));
 }
 void OUTTYPEDEFINITION(TPSTYPEINDEX TYPEINDEX) {
 PString NAME;
 NAME = DEFS.TYPES[(TYPEINDEX) - 1].NAME;
-if (DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR == 0) {
-{
-write_s(&STDERR, str_make(5, "Type "));
-write_s(&STDERR, NAME);
-write_s(&STDERR, str_make(16, " is not an alias"));
-write_s(&STDERR, LXWHERESTR());
-writeln(&STDERR);
-}
-HALT(1);
-}
+if (DEFS.TYPES[(TYPEINDEX) - 1].ALIASFOR == 0) COMPILEERROR(cat_ss(cat_ss(str_make(5, "Type "), NAME), str_make(16, " is not an alias")));
 {
 write_s(&CODEGEN.OUTPUT, str_make(8, "typedef "));
 }
@@ -3630,9 +3113,9 @@ void PARSECMDLINE() {
 int POS;
 PString INPUTFILE;
 PString OUTPUTFILE;
-enum enum7 { FLAGNONE, FLAGOUTPUT} FLAG;
+enum enum6 { FLAGNONE, FLAGOUTPUT} FLAG;
 PString PARAM;
-const char* EnumValues7[] = { "FLAGNONE", "FLAGOUTPUT" };
+const char* EnumValues6[] = { "FLAGNONE", "FLAGOUTPUT" };
 INPUTFILE = str_make(0, "");
 OUTPUTFILE = str_make(0, "");
 FLAG = FLAGNONE;
