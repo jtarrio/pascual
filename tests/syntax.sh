@@ -185,6 +185,7 @@ echo 'packed array[1..10] of char' | testtype | will_be_valid
 echo 'record A : integer end' | testtype | is_valid
 echo 'record A : integer; B : string end' | testtype | is_valid
 echo 'record A : integer; B : string; end' | testtype | is_valid
+echo 'record A : integer; A : string end' | testtype | is_not_valid
 echo 'record A : integer; B : record C : char end end' | testtype | is_valid
 echo 'packed record A : integer; B : char end' | testtype | will_be_valid
 echo 'record A,B : integer; C : char end' | testtype | is_valid
@@ -192,37 +193,46 @@ echo 'record A : integer;
              case J : boolean of
                  true : (B : char; C : integer);
                  false : (D : boolean)
-      end' | testtype | will_be_valid
+      end' | testtype | is_valid
+echo 'record A : integer;
+             case J : boolean of
+                 true : (A : char; B : integer);
+                 false : (C : boolean)
+      end' | testtype | is_not_valid
+echo 'record case J : boolean of 
+                 true : (B : char; C : integer);
+                 false : (D : boolean)
+      end' | testtype | is_valid
 echo 'record A : integer;
              case boolean of
                  true : (B : char; C : integer);
                  false : (D : boolean)
-      end' | testtype | will_be_valid
+      end' | testtype | is_valid
 echo 'record A : integer;
              case J : boolean of
                  true : (B : char);
                  false : ()
-      end' | testtype | will_be_valid
+      end' | testtype | is_valid
 echo '(One, Two, Three);
       X = record A : integer;
                  case J : T of
                    One : (B : char; C : integer);
                    Two : (D : string);
                    Three : (E : char)
-          end' | testtype | will_be_valid
+          end' | testtype | is_valid
 echo '(One, Two, Three);
       X = record A : integer;
                  case T of
                    One : (B : char; C : integer);
                    Two : (D : string);
                    Three : (E : char)
-          end' | testtype | will_be_valid
+          end' | testtype | is_valid
 echo '(One, Two, Three);
       X = record A : integer;
                  case T of
                    One, Two : (B : char; C : integer);
                    Three : (D : string)
-          end' | testtype | will_be_valid
+          end' | testtype | is_valid
 echo '1..5;
       X = record A : integer;
              case T of

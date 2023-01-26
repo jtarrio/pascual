@@ -38,7 +38,9 @@ type
   end;
   TPsRecordDef = record
     Size : integer;
-    Fields : array[1..MaxRecordFields] of TPsRecordField
+    Fields : array[1..MaxRecordFields] of TPsRecordField;
+    NumVariants : integer;
+    VariantBounds : array[1..MaxRecordFields] of integer
   end;
   TPsArrayDef = record
     LowBound, HighBound : string;

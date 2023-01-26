@@ -78,6 +78,35 @@ begin
   end
 end;
 
+procedure OutNameAndRecord(Name : string; RecordIndex : TPsRecordIndex);
+var 
+  Rec : TPsRecordDef;
+  Pos : integer;
+  NumVariant : integer;
+begin
+  Rec := Defs.Records[RecordIndex];
+  NumVariant := 0;
+  write(Codegen.Output, 'struct record', RecordIndex, ' { ');
+  for Pos := 1 to Rec.Size do
+  begin
+    if (Rec.NumVariants > NumVariant)
+       and (Rec.VariantBounds[NumVariant + 1] = Pos) then
+    begin
+      NumVariant := NumVariant + 1;
+      if NumVariant = 1 then
+        write(Codegen.Output, 'union { ')
+      else
+        write(Codegen.Output, '}; ');
+      write(Codegen.Output, 'struct { ')
+    end;
+    OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
+    write(Codegen.Output, '; ')
+  end;
+  if NumVariant > 0 then
+    write(Codegen.Output, '}; }; ');
+  write(Codegen.Output, '} ', Name)
+end;
+
 procedure OutNameAndType;
 var 
   Typ : TPsType;
@@ -113,17 +142,7 @@ begin
     end;
     write(Codegen.Output, '} ', Name)
   end
-  else if Typ.Cls = TtcRecord then
-  begin
-    Rec := Defs.Records[Typ.RecordIndex];
-    write(Codegen.Output, 'struct record', Typ.RecordIndex, ' { ');
-    for Pos := 1 to Rec.Size do
-    begin
-      OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
-      write(Codegen.Output, '; ')
-    end;
-    write(Codegen.Output, '} ', Name)
-  end
+  else if Typ.Cls = TtcRecord then OutNameAndRecord(Name, Typ.RecordIndex)
   else if Typ.Cls = TtcArray then
   begin
     Arr := Defs.Arrays[Typ.ArrayIndex];

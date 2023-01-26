@@ -31,7 +31,6 @@ begin
   end
 end;
 
-
 procedure WantTokenAndRead(Id : TLxTokenId);
 begin
   WantToken(Id);
@@ -53,20 +52,36 @@ end;
 function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
 forward;
 
-function PsTypeIdentifier : TPsTypeIndex;
+function PsFindType(Name : string) : TPsTypeIndex;
 var 
   Found : TPsName;
 begin
-  WantToken(TkIdentifier);
-  Found := Defs.Names[FindName(Lexer.Token.Value, true)];
+  Found := Defs.Names[FindName(Name, true)];
   if Found.Cls <> TncType then
   begin
     writeln(StdErr, 'Not a type: ', Found.Name, LxWhereStr);
     halt(1)
   end;
-  PsTypeIdentifier := Found.TypeIndex;
+  PsFindType := Found.TypeIndex;
+end;
+
+function PsTypeIdentifier : TPsTypeIndex;
+begin
+  WantToken(TkIdentifier);
+  PsTypeIdentifier := PsFindType(Lexer.Token.Value);
   ReadToken
 end;
+
+function PsIdentifier : TPsIdentifier;
+var 
+  Ident : TPsIdentifier;
+begin
+  Ident.Name := GetTokenValueAndRead(TkIdentifier);
+  PsIdentifier := Ident
+end;
+
+function PsExpression : TPsExpression;
+forward;
 
 function PsEnumeratedType(Scope : TPsScope) : TPsTypeIndex;
 var 
@@ -93,39 +108,103 @@ begin
   SkipToken(TkRparen)
 end;
 
-function PsRecordType(Scope : TPsScope) : TPsTypeIndex;
+procedure PsRecordField(var Rec : TPsRecordDef; Delimiter : TLxTokenId;
+                        Scope : TPsScope);
 var 
-  Typ : TPsType;
+  Name : string;
   LastField, Field : integer;
   TypeIndex : TPsTypeIndex;
-  Rec : TPsRecordDef;
 begin
-  WantTokenAndRead(TkRecord);
-  Rec.Size := 0;
+  LastField := Rec.Size;
   repeat
-    LastField := Rec.Size;
-    repeat
-      Rec.Size := Rec.Size + 1;
-      if Rec.Size > MaxRecordFields then
+    Name := GetTokenValueAndRead(TkIdentifier);
+    for Field := 1 to Rec.Size do
+    begin
+      if Rec.Fields[Field].Name = Name then
       begin
-        writeln(StdErr, 'Too many fields in record', LxWhereStr);
+        writeln(StdErr, 'A field named ', Name, ' has already been defined',
+                LxWhereStr);
+        halt(1)
+      end
+    end;
+    Rec.Size := Rec.Size + 1;
+    if Rec.Size > MaxRecordFields then
+    begin
+      writeln(StdErr, 'Too many fields in record', LxWhereStr);
+      halt(1)
+    end;
+    Rec.Fields[Rec.Size].Name := Name;
+    WantToken2(TkComma, TkColon);
+    SkipToken(TkComma)
+  until Lexer.Token.Id = TkColon;
+  WantTokenAndRead(TkColon);
+  TypeIndex := PsTypeDenoter(Scope);
+  for Field := LastField + 1 to Rec.Size do
+    Rec.Fields[Field].TypeIndex := TypeIndex;
+  WantToken2(TkSemicolon, Delimiter);
+  SkipToken(TkSemicolon);
+end;
+
+procedure PsRecordVariants(var Rec : TPsRecordDef; Scope : TPsScope);
+var 
+  Tag : TPsIdentifier;
+  TagType : TPsTypeIndex;
+  CaseLabel : TPsExpression;
+begin
+  WantTokenAndRead(TkCase);
+  Tag := PsIdentifier;
+  WantToken2(TkColon, TkOf);
+  if Lexer.Token.Id = TkColon then
+  begin
+    ReadToken;
+    TagType := PsTypeIdentifier;
+    Rec.Size := Rec.Size + 1;
+    Rec.Fields[Rec.Size].Name := Tag.Name;
+    Rec.Fields[Rec.Size].TypeIndex := TagType;
+  end
+  else
+    TagType := PsFindType(Tag.Name);
+  WantTokenAndRead(TkOf);
+  repeat
+    Rec.NumVariants := Rec.NumVariants + 1;
+    Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
+    repeat
+      CaseLabel := CoerceType(PsExpression, TagType);
+      if not CaseLabel.IsConstant then
+      begin
+        writeln(StdErr, 'The label of the case statement is not constant',
+                LxWhereStr);
         halt(1)
       end;
-      Rec.Fields[Rec.Size].Name := GetTokenValueAndRead(TkIdentifier);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
     WantTokenAndRead(TkColon);
-    TypeIndex := PsTypeDenoter(Scope);
-    for Field := LastField + 1 to Rec.Size do
-      Rec.Fields[Field].TypeIndex := TypeIndex;
+    WantTokenAndRead(TkLParen);
+    while Lexer.Token.Id <> TkRparen do
+      PsRecordField(Rec, TkRParen, Scope);
+    WantTokenAndRead(TkRParen);
     WantToken2(TkSemicolon, TkEnd);
-    SkipToken(TkSemicolon);
+    SkipToken(TkSemicolon)
   until Lexer.Token.Id = TkEnd;
+end;
+
+function PsRecordType(Scope : TPsScope) : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  Rec : TPsRecordDef;
+begin
+  WantTokenAndRead(TkRecord);
+  Rec.Size := 0;
+  Rec.NumVariants := 0;
+  while (Lexer.Token.Id <> TkCase) and (Lexer.Token.Id <> TkEnd) do
+    PsRecordField(Rec, TkEnd, Scope);
+  if Lexer.Token.Id = TkCase then
+    PsRecordVariants(Rec, Scope);
+  WantTokenAndRead(TkEnd);
   Typ := TypeOfClass(TtcRecord);
   Typ.RecordIndex := AddRecord(Rec);
   PsRecordType := AddType(Typ, Scope);
-  SkipToken(TkEnd)
 end;
 
 function PsArrayType(Scope : TPsScope) : TPsTypeIndex;
@@ -509,17 +588,6 @@ begin
     SkipToken(TkRparen);
   end;
   WantTokenAndRead(TkSemicolon);
-end;
-
-function PsExpression : TPsExpression;
-forward;
-
-function PsIdentifier : TPsIdentifier;
-var 
-  Ident : TPsIdentifier;
-begin
-  Ident.Name := GetTokenValueAndRead(TkIdentifier);
-  PsIdentifier := Ident
 end;
 
 function PsFunctionCall(Fn : TPsExpression) : TPsExpression;

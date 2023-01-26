@@ -9,7 +9,6 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
     * Missing arrays indexed by non-integer ordinal subranges.
     * Missing comma syntax for multidimensional arrays.
     * Missing packed arrays and records.
-    * Missing variants.
     * Missing `with` statement.
     * Missing bounds checking.
     * Missing active I/O result checking.
