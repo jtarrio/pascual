@@ -26,12 +26,11 @@ begin
   writeln(Codegen.Output, ' };')
 end;
 
-procedure OutEnumValuesInScope;
+procedure OutEnumValuesFromBase;
 var 
   Pos : TPsEnumIndex;
 begin
-  for Pos := Scope.NumEnums + 1 to Defs.Scope.NumEnums do
-    OutEnumValues(Pos)
+  for Pos := Base + 1 to Defs.Bounds.Enums do OutEnumValues(Pos)
 end;
 
 function OutVariableName;

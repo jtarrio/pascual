@@ -40,14 +40,14 @@ begin
   if Lexer.Token.Id = Id then ReadToken
 end;
 
-function PsTypeDenoter(Scope : TPsScope) : TPsTypeIndex;
+function PsTypeDenoter : TPsTypeIndex;
 forward;
 
 function PsFindType(Name : string) : TPsTypeIndex;
 var 
   Found : TPsName;
 begin
-  Found := Defs.Names[FindName(Name, true)];
+  Found := Defs.Names[FindName(Name, {Required=}true)];
   if Found.Cls <> TncType then
     CompileError('Not a type: ' + Found.Name);
   PsFindType := Found.TypeIndex;
@@ -71,7 +71,7 @@ end;
 function PsExpression : TPsExpression;
 forward;
 
-function PsEnumeratedType(Scope : TPsScope) : TPsTypeIndex;
+function PsEnumeratedType : TPsTypeIndex;
 var 
   Typ : TPsType;
   Enum : TPsEnumDef;
@@ -89,12 +89,11 @@ begin
   Typ := EmptyType;
   Typ.Cls := TtcEnum;
   Typ.EnumIndex := AddEnum(Enum);
-  PsEnumeratedType := AddType(Typ, Scope);
+  PsEnumeratedType := AddType(Typ);
   SkipToken(TkRparen)
 end;
 
-procedure PsRecordField(var Rec : TPsRecordDef; Delimiter : TLxTokenId;
-                        Scope : TPsScope);
+procedure PsRecordField(var Rec : TPsRecordDef; Delimiter : TLxTokenId);
 var 
   Name : string;
   LastField, Field : integer;
@@ -116,14 +115,14 @@ begin
     SkipToken(TkComma)
   until Lexer.Token.Id = TkColon;
   WantTokenAndRead(TkColon);
-  TypeIndex := PsTypeDenoter(Scope);
+  TypeIndex := PsTypeDenoter;
   for Field := LastField + 1 to Rec.Size do
     Rec.Fields[Field].TypeIndex := TypeIndex;
   WantToken2(TkSemicolon, Delimiter);
   SkipToken(TkSemicolon);
 end;
 
-procedure PsRecordVariants(var Rec : TPsRecordDef; Scope : TPsScope);
+procedure PsRecordVariants(var Rec : TPsRecordDef);
 var 
   Tag : TPsIdentifier;
   TagType : TPsTypeIndex;
@@ -158,14 +157,14 @@ begin
     WantTokenAndRead(TkColon);
     WantTokenAndRead(TkLParen);
     while Lexer.Token.Id <> TkRparen do
-      PsRecordField(Rec, TkRParen, Scope);
+      PsRecordField(Rec, TkRParen);
     WantTokenAndRead(TkRParen);
     WantToken2(TkSemicolon, TkEnd);
     SkipToken(TkSemicolon)
   until Lexer.Token.Id = TkEnd;
 end;
 
-function PsRecordType(Scope : TPsScope) : TPsTypeIndex;
+function PsRecordType : TPsTypeIndex;
 var 
   Typ : TPsType;
   Rec : TPsRecordDef;
@@ -174,16 +173,16 @@ begin
   Rec.Size := 0;
   Rec.NumVariants := 0;
   while (Lexer.Token.Id <> TkCase) and (Lexer.Token.Id <> TkEnd) do
-    PsRecordField(Rec, TkEnd, Scope);
+    PsRecordField(Rec, TkEnd);
   if Lexer.Token.Id = TkCase then
-    PsRecordVariants(Rec, Scope);
+    PsRecordVariants(Rec);
   WantTokenAndRead(TkEnd);
   Typ := TypeOfClass(TtcRecord);
   Typ.RecordIndex := AddRecord(Rec);
-  PsRecordType := AddType(Typ, Scope);
+  PsRecordType := AddType(Typ);
 end;
 
-function PsArrayType(Scope : TPsScope) : TPsTypeIndex;
+function PsArrayType : TPsTypeIndex;
 var 
   Typ : TPsType;
   Arr : TPsArrayDef;
@@ -195,13 +194,13 @@ begin
   Arr.HighBound := GetTokenValueAndRead(TkNumber);
   WantTokenAndRead(TkRbracket);
   WantTokenAndRead(TkOf);
-  Arr.TypeIndex := PsTypeDenoter(Scope);
+  Arr.TypeIndex := PsTypeDenoter;
   Typ := TypeOfClass(TtcArray);
   Typ.ArrayIndex := AddArray(Arr);
-  PsArrayType := AddType(Typ, Scope)
+  PsArrayType := AddType(Typ)
 end;
 
-function PsPointerType(Scope : TPsScope) : TPsTypeIndex;
+function PsPointerType : TPsTypeIndex;
 var 
   Typ : TPsType;
   TypeIndex : TPsTypeIndex;
@@ -209,12 +208,12 @@ var
 begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
-  NameIndex := FindName(Lexer.Token.Value, false);
+  NameIndex := FindName(Lexer.Token.Value, {Required=}false);
   if NameIndex = 0 then
   begin
     Typ := PlaceholderType;
     Typ.Name := Lexer.Token.Value;
-    TypeIndex := AddType(Typ, Scope)
+    TypeIndex := AddType(Typ)
   end
   else if Defs.Names[NameIndex].Cls = TncType then
          TypeIndex := Defs.Names[NameIndex].TypeIndex
@@ -222,7 +221,7 @@ begin
     CompileError('Not a type: ' + Lexer.Token.Value);
   ReadToken;
   Typ := PointerType(TypeIndex);
-  PsPointerType := AddType(Typ, Scope)
+  PsPointerType := AddType(Typ)
 end;
 
 function PsTypeDenoter;
@@ -231,35 +230,37 @@ var
 begin
   TypeIndex := 0;
   if Lexer.Token.Id = TkIdentifier then TypeIndex := PsTypeIdentifier
-  else if Lexer.Token.Id = TkLparen then TypeIndex := PsEnumeratedType(Scope)
-  else if Lexer.Token.Id = TkRecord then TypeIndex := PsRecordType(Scope)
-  else if Lexer.Token.Id = TkArray then TypeIndex := PsArrayType(Scope)
-  else if Lexer.Token.Id = TkCaret then TypeIndex := PsPointerType(Scope)
+  else if Lexer.Token.Id = TkLparen then TypeIndex := PsEnumeratedType
+  else if Lexer.Token.Id = TkRecord then TypeIndex := PsRecordType
+  else if Lexer.Token.Id = TkArray then TypeIndex := PsArrayType
+  else if Lexer.Token.Id = TkCaret then TypeIndex := PsPointerType
   else
     CompileError('Wanted type definition, found ' + LxTokenStr);
   PsTypeDenoter := TypeIndex;
 end;
 
-procedure PsTypeDefinitions(Scope : TPsScope);
+procedure PsTypeDefinitions;
 var 
   Name : string;
   TypeIndex : TPsTypeIndex;
   NewType : TPsType;
-  PreviousScope : TPsScope;
+  TypeBase : TPsTypeIndex;
+  EnumBase : TPsEnumIndex;
 begin
-  PreviousScope := GetCurrentScope;
+  TypeBase := Defs.Bounds.Types;
+  EnumBase := Defs.Bounds.Enums;
   WantTokenAndRead(TkType);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkEquals);
-    TypeIndex := PsTypeDenoter(Scope);
+    TypeIndex := PsTypeDenoter;
     NewType := Defs.Types[TypeIndex];
     NewType.Name := Name;
     NewType.AliasFor := TypeIndex;
-    TypeIndex := AddType(NewType, Scope);
+    TypeIndex := AddType(NewType);
     WantTokenAndRead(TkSemicolon)
   until Lexer.Token.Id <> TkIdentifier;
-  for TypeIndex := PreviousScope.NumTypes + 1 to Defs.Scope.NumTypes do
+  for TypeIndex := TypeBase + 1 to Defs.Bounds.Types do
   begin
     if IsPlaceholderType(TypeIndex) then
       CompileError('Type has been mentioned but not defined: ' +
@@ -267,10 +268,10 @@ begin
     if Defs.Types[TypeIndex].AliasFor <> 0 then
       OutTypeDefinition(TypeIndex)
   end;
-  OutEnumValuesInScope(PreviousScope)
+  OutEnumValuesFromBase(EnumBase)
 end;
 
-procedure PsConstant(Name : string; Scope : TPsScope);
+procedure PsConstant(Name : string);
 var 
   Constant : TPsConstant;
 begin
@@ -281,7 +282,7 @@ begin
     Constant.Replacement := Lexer.Token
   else
     CompileError('Expected constant value, found ' + LxTokenStr);
-  AddConstant(Constant, Scope);
+  AddConstant(Constant);
   ReadToken;
 end;
 
@@ -332,20 +333,19 @@ begin
     CompileError('Invalid type for constant: ' + TypeName(TypeIndex))
 end;
 
-procedure PsTypedConstant(Name : string; Scope : TPsScope);
+procedure PsTypedConstant(Name : string);
 var 
   TypeIndex : TPsTypeIndex;
 begin
   WantTokenAndRead(TkColon);
-  TypeIndex := PsTypeDenoter(Scope);
+  TypeIndex := PsTypeDenoter;
   WantTokenAndRead(TkEquals);
-  OutConstantDefinitionBegin(AddVariable(MakeTypedConstant(Name, TypeIndex),
-  Scope));
+  OutConstantDefinitionBegin(AddVariable(MakeTypedConstant(Name, TypeIndex)));
   PsConstantValue(TypeIndex);
   OutConstantDefinitionEnd
 end;
 
-procedure PsConstDefinitions(Scope : TPsScope);
+procedure PsConstDefinitions;
 var 
   Name : string;
 begin
@@ -354,23 +354,23 @@ begin
     Name := GetTokenValueAndRead(TkIdentifier);
     WantToken2(TkEquals, TkColon);
     if Lexer.Token.Id = TkEquals then
-      PsConstant(Name, Scope)
+      PsConstant(Name)
     else
-      PsTypedConstant(Name, Scope);
+      PsTypedConstant(Name);
     WantTokenAndRead(TkSemicolon)
   until Lexer.Token.Id <> TkIdentifier;
 end;
 
-procedure PsVarDefinitions(Scope : TPsScope);
+procedure PsVarDefinitions;
 const 
   MaxVarNames = 8;
 var 
   NumNames : integer;
   Names : array[1..MaxVarNames] of string;
   TypeIndex : TPsTypeIndex;
-  PreviousScope : TPsScope;
+  EnumBase : TPsEnumIndex;
 begin
-  PreviousScope := GetCurrentScope;
+  EnumBase := Defs.Bounds.Enums;
   WantTokenAndRead(TkVar);
   repeat
     NumNames := 0;
@@ -383,32 +383,31 @@ begin
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
     WantTokenAndRead(TkColon);
-    TypeIndex := PsTypeDenoter(Scope);
+    TypeIndex := PsTypeDenoter;
     WantTokenAndRead(TkSemicolon);
     for NumNames := 1 to NumNames do
       OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
-                            TypeIndex, false), Scope));
+                            TypeIndex, false)));
   until Lexer.Token.Id <> TkIdentifier;
-  OutEnumValuesInScope(PreviousScope)
+  OutEnumValuesFromBase(EnumBase)
 end;
 
 procedure PsStatement;
 forward;
 
-procedure PsDefinitions(Scope : TPsScope);
+procedure PsDefinitions;
 forward;
 
 procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
 var 
-  PreviousScope : TPsScope;
   Pos : integer;
 begin
-  PreviousScope := GetCurrentScope;
+  StartLocalScope;
   for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
-    AddVariable(Defs.Functions[FnIndex].Args[Pos], PreviousScope);
+    AddVariable(Defs.Functions[FnIndex].Args[Pos]);
   OutFunctionDefinition(FnIndex);
-  OutEnumValuesInScope(PreviousScope);
-  PsDefinitions(PreviousScope);
+  OutEnumValuesFromBase(Defs.ScopeBase.Enums);
+  PsDefinitions;
   WantTokenAndRead(TkBegin);
   while Lexer.Token.Id <> TkEnd do
   begin
@@ -419,7 +418,7 @@ begin
   WantTokenAndRead(TkEnd);
   WantTokenAndRead(TkSemicolon);
   OutFunctionEnd(FnIndex);
-  SetCurrentScope(PreviousScope);
+  CloseLocalScope
 end;
 
 procedure PsArguments(var Def : TPsFunction);
@@ -512,9 +511,9 @@ var
 begin
   Done := false;
   repeat
-    if Lexer.Token.Id = TkType then PsTypeDefinitions(Scope)
-    else if Lexer.Token.Id = TkConst then PsConstDefinitions(Scope)
-    else if Lexer.Token.Id = TkVar then PsVarDefinitions(Scope)
+    if Lexer.Token.Id = TkType then PsTypeDefinitions
+    else if Lexer.Token.Id = TkConst then PsConstDefinitions
+    else if Lexer.Token.Id = TkVar then PsVarDefinitions
     else if Lexer.Token.Id = TkProcedure then PsProcedureDefinition
     else if Lexer.Token.Id = TkFunction then PsFunctionDefinition
     else
@@ -545,8 +544,7 @@ var
   Expr : TPsExpression;
   ArgNum : integer;
 begin
-  if Fn.Cls <> TecFunction then
-    CompileError('Not a function');
+  if Fn.Cls <> TecFunction then CompileError('Not a function');
   Fun := Defs.Functions[Fn.FunctionIndex];
   Fn.Value := GenFunctionCallStart(Fn.Value);
   WantTokenAndRead(TkLparen);
@@ -763,7 +761,7 @@ begin
   end
   else
   begin
-    Found := Defs.Names[FindName(Id.Name, true)];
+    Found := Defs.Names[FindName(Id.Name, {Required=}true)];
     if Found.Cls = TncVariable then
     begin
       if Defs.Variables[Found.VariableIndex].IsReference then
@@ -1059,21 +1057,18 @@ end;
 
 procedure PsWithStatement;
 var 
-  Initial : TPsWithVarIndex;
-  Base : TPsExpression;
-  Pos : TPsWithVarIndex;
+  WithVarsBase : TPsWithVarIndex;
 begin
   WantToken(TkWith);
-  Initial := Defs.Scope.NumWithVars;
+  WithVarsBase := Defs.Bounds.WithVars;
   repeat
     ReadToken;
     AddWithVar(PsExpression);
-    
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
   PsStatement;
-  Defs.Scope.NumWithVars := Initial
+  Defs.Bounds.WithVars := WithVarsBase
 end;
 
 procedure PsStatement;
@@ -1093,7 +1088,7 @@ end;
 
 procedure PsProgramBlock;
 begin
-  PsDefinitions(GlobalScope);
+  PsDefinitions;
   WantTokenAndRead(TkBegin);
   OutProgramBegin;
   while Lexer.Token.Id <> TkEnd do

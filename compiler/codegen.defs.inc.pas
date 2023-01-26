@@ -8,7 +8,7 @@ procedure OutEnd;
 forward;
 procedure OutEnumValues(Pos : TPsEnumIndex);
 forward;
-procedure OutEnumValuesInScope(Scope : TPsScope);
+procedure OutEnumValuesFromBase(Base : TPsEnumIndex);
 forward;
 function OutVariableName(Name : string; IsReference : boolean) : string;
 forward;

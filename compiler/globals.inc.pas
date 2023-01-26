@@ -2,28 +2,22 @@ procedure StartGlobalScope;
 var 
   Fun : TPsFunction;
 begin
-  ClearDefs;
-  GlobalScope := GetCurrentScope;
+  InitDefs;
 
-  PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil), GlobalScope);
-  PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean),
-                              GlobalScope);
-  PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger),
-                              GlobalScope);
-  PrimitiveTypes.PtChar := AddType(MakeType('CHAR', TtcChar), GlobalScope);
-  PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString),
-                             GlobalScope);
-  PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText), GlobalScope);
+  PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil));
+  PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean));
+  PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger));
+  PrimitiveTypes.PtChar := AddType(MakeType('CHAR', TtcChar));
+  PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString));
+  PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText));
 
-  AddConstant(MakeConstant('FALSE', TkFalse, 'FALSE'), GlobalScope);
-  AddConstant(MakeConstant('TRUE', TkTrue, 'TRUE'), GlobalScope);
-  AddConstant(MakeConstant('MAXINT', TkNumber, '2147483647'), GlobalScope);
+  AddConstant(MakeConstant('FALSE', TkFalse, 'FALSE'));
+  AddConstant(MakeConstant('TRUE', TkTrue, 'TRUE'));
+  AddConstant(MakeConstant('MAXINT', TkNumber, '2147483647'));
 
-  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false), GlobalScope);
-  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false),
-  GlobalScope);
-  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false),
-  GlobalScope);
+  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false));
+  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
+  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
 
   AddSpecialFunction('READ', TsfRead);
   AddSpecialFunction('READLN', TsfReadln);

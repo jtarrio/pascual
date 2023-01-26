@@ -86,7 +86,6 @@ type
                         TsfNew, TsfDispose);
   TPsName = record
     Name : string;
-
     case Cls : TPsNameClass of 
       TncType : (TypeIndex : TPsTypeIndex);
       TncVariable : (VariableIndex : TPsVariableIndex);
@@ -94,19 +93,21 @@ type
       TncFunction : (FunctionIndex : TPsFunctionIndex);
       TncSpecialFunction : (SpecialFunction : TPsSpecialFunction)
   end;
-  TPsScope = record
-    NumNames,
-    NumTypes,
-    NumEnums,
-    NumRecords,
-    NumArrays,
-    NumConstants,
-    NumVariables,
-    NumFunctions,
-    NumWithVars : integer
+  TPsDefBounds = record
+    Names,
+    Types,
+    Enums,
+    Records,
+    Arrays,
+    Constants,
+    Variables,
+    Functions,
+    WithVars : integer
   end;
   TPsDefs = record
-    Scope : TPsScope;
+    Bounds : TPsDefBounds;
+    InLocalScope : boolean;
+    ScopeBase : TPsDefBounds;
     Names : array[1..MaxNames] of TPsName;
     Types : array[1..MaxTypes] of TPsType;
     Enums : array[1..MaxEnums] of TPsEnumDef;
@@ -125,55 +126,84 @@ var
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtChar, PtString, PtText : TPsTypeIndex
   end;
-  GlobalScope : TPsScope;
 
-procedure ClearDefs;
+function ClearBounds : TPsDefBounds;
+var 
+  Ret : TPsDefBounds;
 begin
-  Defs.Scope.NumNames := 0;
-  Defs.Scope.NumTypes := 0;
-  Defs.Scope.NumEnums := 0;
-  Defs.Scope.NumRecords := 0;
-  Defs.Scope.NumArrays := 0;
-  Defs.Scope.NumConstants := 0;
-  Defs.Scope.NumVariables := 0;
-  Defs.Scope.NumFunctions := 0;
-  Defs.Scope.NumWithVars := 0;
+  Ret.Names := 0;
+  Ret.Types := 0;
+  Ret.Enums := 0;
+  Ret.Records := 0;
+  Ret.Arrays := 0;
+  Ret.Constants := 0;
+  Ret.Variables := 0;
+  Ret.Functions := 0;
+  Ret.WithVars := 0;
+  ClearBounds := Ret
 end;
 
-function GetCurrentScope: TPsScope;
+procedure InitDefs;
 begin
-  GetCurrentScope := Defs.Scope
+  Defs.Bounds := ClearBounds;
+  Defs.ScopeBase := ClearBounds;
+  Defs.InLocalScope := false
 end;
 
-procedure SetCurrentScope(Scope : TPsScope);
+procedure StartLocalScope;
 begin
-  Defs.Scope := Scope
+  if Defs.InLocalScope then
+    CompileError('Internal error: Already in local scope');
+  Defs.InLocalScope := true;
+  Defs.ScopeBase := Defs.Bounds
 end;
 
-function FindName(Name : string; Required : boolean) : TPsNameIndex;
+procedure CloseLocalScope;
+begin
+  if not Defs.InLocalScope then
+    CompileError('Internal error: Already in global scope');
+  Defs.InLocalScope := false;
+  Defs.Bounds := Defs.ScopeBase;
+  Defs.ScopeBase := ClearBounds
+end;
+
+function _FindNameFromBase(Name : string; Required : boolean;
+                           Base : TPsNameIndex) : TPsNameIndex;
 var 
   Pos, Ret : TPsNameIndex;
 begin
   Ret := 0;
-  for Pos := 1 to Defs.Scope.NumNames do
+  Pos := Defs.Bounds.Names;
+  while (Pos > Base) and (Ret = 0) do
+  begin
     if Name = Defs.Names[Pos].Name then Ret := Pos;
-  if Required and (Ret = 0) then
-    CompileError('Unknown identifier: ' + Name);
-  FindName := Ret
+    Pos := Pos - 1
+  end;
+  if Required and (Ret = 0) then CompileError('Unknown identifier: ' + Name);
+  _FindNameFromBase := Ret
 end;
 
-function AddName(Def : TPsName; Scope : TPsScope) : TPsNameIndex;
+function FindNameInLocalScope(Name : string; Required : boolean) : TPsNameIndex;
+begin
+  FindNameInLocalScope := _FindNameFromBase(Name, Required,
+                          Defs.ScopeBase.Names)
+end;
+
+function FindName(Name : string; Required : boolean) : TPsNameIndex;
+begin
+  FindName := _FindNameFromBase(Name, Required, 0)
+end;
+
+function AddName(Def : TPsName) : TPsNameIndex;
 var 
   Pos : TPsNameIndex;
 begin
-  Pos := FindName(Def.Name, false);
-  if Pos > Scope.NumNames then
-    CompileError('Identifier ' + Def.Name + ' already defined');
-  Pos := Defs.Scope.NumNames + 1;
-  if Pos > MaxNames then
-    CompileError('Too many identifiers have been defined');
+  Pos := FindNameInLocalScope(Def.Name, {Required=}false);
+  if Pos <> 0 then CompileError('Identifier ' + Def.Name + ' already defined');
+  Pos := Defs.Bounds.Names + 1;
+  if Pos > MaxNames then CompileError('Too many identifiers have been defined');
   Defs.Names[Pos] := Def;
-  Defs.Scope.NumNames := Pos;
+  Defs.Bounds.Names := Pos;
   AddName := Pos
 end;
 
@@ -192,17 +222,6 @@ begin
       CompileError('Cannot use MakeName for special functions')
   end;
   MakeName := Def
-end;
-
-function MakeSpecialFunctionName(Name : string;
-                                 Fn : TPsSpecialFunction) : TPsName;
-var 
-  Def : TPsName;
-begin
-  Def.Name := Name;
-  Def.Cls := TncSpecialFunction;
-  Def.SpecialFunction := Fn;
-  MakeSpecialFunctionName := Def
 end;
 
 function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;
@@ -433,59 +452,62 @@ begin
                            or IsSameType(AIndex, BIndex))
 end;
 
-function AddType(Typ : TPsType; Scope : TPsScope) : TPsTypeIndex;
+function AddType(Typ : TPsType) : TPsTypeIndex;
 var 
   Pos, EnumPos : integer;
 begin
   if Typ.Name = '' then Pos := 0
-  else Pos := FindName(Typ.Name, false);
-  if Pos <= Scope.NumNames then
+  else Pos := FindNameInLocalScope(Typ.Name, {Required=}false);
+
+  if Pos <> 0 then
   begin
-    Pos := Defs.Scope.NumTypes + 1;
-    if Pos > MaxTypes then
-      CompileError('Too many types have been defined');
-    Defs.Scope.NumTypes := Pos;
-    if Typ.Name <> '' then
-      AddName(MakeName(Typ.Name, TncType, Pos), Scope);
+    with Defs.Names[Pos] do
+      if (Cls = TncType) and IsPlaceholderType(TypeIndex) then
+        Pos := TypeIndex
+      else
+        CompileError('Identifier ' + Typ.Name + ' already defined')
   end
-  else if (Defs.Names[Pos].Cls = TncType)
-          and IsPlaceholderType(Defs.Names[Pos].TypeIndex) then
-         Pos := Defs.Names[Pos].TypeIndex
   else
-    CompileError('Identifier ' + Typ.Name + ' already defined');
+  begin
+    Pos := Defs.Bounds.Types + 1;
+    if Pos > MaxTypes then CompileError('Too many types have been defined');
+    Defs.Bounds.Types := Pos;
+    if Typ.Name <> '' then AddName(MakeName(Typ.Name, TncType, Pos));
+  end;
+
   Defs.Types[Pos] := Typ;
   AddType := Pos;
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = 0) then
-    for EnumPos := 1 to Defs.Enums[Typ.EnumIndex].Size do
-      AddName(MakeName(Defs.Enums[Typ.EnumIndex].Values[EnumPos],
-              TncEnumValue, Pos), Scope)
+    with Defs.Enums[Typ.EnumIndex] do
+      for EnumPos := 1 to Size do
+        AddName(MakeName(Values[EnumPos], TncEnumValue, Pos))
 end;
 
 function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;
 begin
-  Defs.Scope.NumEnums := Defs.Scope.NumEnums + 1;
-  if Defs.Scope.NumEnums > MaxEnums then
+  Defs.Bounds.Enums := Defs.Bounds.Enums + 1;
+  if Defs.Bounds.Enums > MaxEnums then
     CompileError('Too many enums have been defined');
-  Defs.Enums[Defs.Scope.NumEnums] := Enum;
-  AddEnum := Defs.Scope.NumEnums
+  Defs.Enums[Defs.Bounds.Enums] := Enum;
+  AddEnum := Defs.Bounds.Enums
 end;
 
 function AddRecord(Rec : TPsRecordDef) : TPsRecordIndex;
 begin
-  Defs.Scope.NumRecords := Defs.Scope.NumRecords + 1;
-  if Defs.Scope.NumRecords > MaxRecords then
+  Defs.Bounds.Records := Defs.Bounds.Records + 1;
+  if Defs.Bounds.Records > MaxRecords then
     CompileError('Too many records have been defined');
-  Defs.Records[Defs.Scope.NumRecords] := Rec;
-  AddRecord := Defs.Scope.NumRecords
+  Defs.Records[Defs.Bounds.Records] := Rec;
+  AddRecord := Defs.Bounds.Records
 end;
 
 function AddArray(Arr : TPsArrayDef) : TPsArrayIndex;
 begin
-  Defs.Scope.NumArrays := Defs.Scope.NumArrays + 1;
-  if Defs.Scope.NumArrays > MaxArrays then
+  Defs.Bounds.Arrays := Defs.Bounds.Arrays + 1;
+  if Defs.Bounds.Arrays > MaxArrays then
     CompileError('Too many arrays have been defined');
-  Defs.Arrays[Defs.Scope.NumArrays] := Arr;
-  AddArray := Defs.Scope.NumArrays
+  Defs.Arrays[Defs.Bounds.Arrays] := Arr;
+  AddArray := Defs.Bounds.Arrays
 end;
 
 function FindConstant(Name : string) : TPsConstantIndex;
@@ -494,49 +516,47 @@ var
   Ret : TPsConstantIndex;
 begin
   Ret := 0;
-  for Pos := 1 to Defs.Scope.NumConstants do
+  Pos := Defs.Bounds.Constants;
+  while (Pos >= 1) and (Ret = 0) do
+  begin
     if Name = Defs.Constants[Pos].Name then Ret := Pos;
+    Pos := Pos - 1
+  end;
   FindConstant := Ret
 end;
 
-function AddConstant(Constant : TPsConstant; Scope : TPsScope)
-: TPsConstantIndex;
+function AddConstant(Constant : TPsConstant) : TPsConstantIndex;
 var 
   Pos : integer;
 begin
-  if Constant.Name <> '' then
-  begin
-    Pos := FindConstant(Constant.Name);
-    if Pos > Scope.NumConstants then
-      CompileError('Constant ' + Constant.Name + ' already defined')
-  end;
-  Pos := Defs.Scope.NumConstants + 1;
+  if Constant.Name = '' then CompileError('Constant has no name');
+  Pos := FindConstant(Constant.Name);
+  if Pos > 0 then
+    CompileError('Constant ' + Constant.Name + ' already defined');
+  Pos := Defs.Bounds.Constants + 1;
   if Pos > MaxConstants then
     CompileError('Too many constants have been defined');
   Defs.Constants[Pos] := Constant;
-  Defs.Scope.NumConstants := Pos;
+  Defs.Bounds.Constants := Pos;
   AddConstant := Pos
 end;
 
-function AddVariable(VarDef : TPsVariable; Scope : TPsScope)
+function AddVariable(VarDef : TPsVariable)
 : TPsVariableIndex;
 var 
   Pos : integer;
 begin
-  if VarDef.Name <> '' then
-  begin
-    Pos := FindName(VarDef.Name, false);
-    if Pos > Scope.NumNames then
-      CompileError('Identifier ' + VarDef.Name + ' already defined')
-  end;
-  Pos := Defs.Scope.NumVariables + 1;
+  if VarDef.Name = '' then CompileError('Variable has no name');
+  Pos := FindNameInLocalScope(VarDef.Name, {Required=}false);
+  if Pos <> 0 then
+    CompileError('Identifier ' + VarDef.Name + ' already defined');
+  Pos := Defs.Bounds.Variables + 1;
   if Pos > MaxVariables then
     CompileError('Too many variables have been defined');
   Defs.Variables[Pos] := VarDef;
-  Defs.Scope.NumVariables := Pos;
+  Defs.Bounds.Variables := Pos;
   AddVariable := Pos;
-  if VarDef.Name <> '' then
-    AddName(MakeName(VarDef.Name, TncVariable, Pos), Scope)
+  AddName(MakeName(VarDef.Name, TncVariable, Pos))
 end;
 
 function EmptyFunction : TPsFunction;
@@ -576,7 +596,7 @@ function HasForwardDeclaration(Name : string) : boolean;
 var 
   Pos : integer;
 begin
-  Pos := FindName(Name, false);
+  Pos := FindNameInLocalScope(Name, {Required=}false);
   HasForwardDeclaration := (Pos <> 0)
                            and (Defs.Names[Pos].Cls = TncFunction)
                            and (Defs.Functions[Defs.Names[Pos].FunctionIndex].
@@ -588,14 +608,29 @@ var
   Pos : integer;
   IsNew : boolean;
 begin
-  Pos := FindName(Fun.Name, false);
-  if Pos <> 0 then
+  Pos := FindNameInLocalScope(Fun.Name, {Required=}false);
+  if Pos = 0 then
+  begin
+    IsNew := true;
+    Pos := Defs.Bounds.Functions + 1;
+    if Pos > MaxFunctions then
+      CompileError('Too many functions have been defined');
+    Defs.Bounds.Functions := Pos
+  end
+  else
   begin
     if (Defs.Names[Pos].Cls <> TncFunction) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
     IsNew := false;
     Pos := Defs.Names[Pos].FunctionIndex;
-    if Defs.Functions[Pos].IsDeclaration then
+    if not Defs.Functions[Pos].IsDeclaration then
+    begin
+      if Fun.ReturnTypeIndex = 0 then
+        CompileError('Procedure ' + Fun.Name + ' already defined')
+      else
+        CompileError('Function ' + Fun.Name + ' already defined')
+    end
+    else
     begin
       if (Fun.ArgCount = 0) and (Fun.ReturnTypeIndex = 0) then
       begin
@@ -612,26 +647,11 @@ begin
                        ' incompatible with its forward declaration')
       end
     end
-    else
-    begin
-      if Fun.ReturnTypeIndex = 0 then
-        CompileError('Procedure ' + Fun.Name + ' already defined')
-      else
-        CompileError('Function ' + Fun.Name + ' already defined')
-    end
-  end
-  else
-  begin
-    IsNew := true;
-    Pos := Defs.Scope.NumFunctions + 1;
-    if Pos > MaxFunctions then
-      CompileError('Too many functions have been defined');
-    Defs.Scope.NumFunctions := Pos
   end;
   Defs.Functions[Pos] := Fun;
   AddFunction := Pos;
   if IsNew and (Fun.Name <> '') then
-    AddName(MakeName(Fun.Name, TncFunction, Pos), GlobalScope)
+    AddName(MakeName(Fun.Name, TncFunction, Pos))
 end;
 
 procedure AddSpecialFunction(Name : string; Fn : TPsSpecialFunction);
@@ -641,27 +661,29 @@ begin
   Def.Name := Name;
   Def.Cls := TncSpecialFunction;
   Def.SpecialFunction := Fn;
-  AddName(Def, GlobalScope)
+  AddName(Def)
 end;
 
-function FindFieldType(TypeIndex : TPsTypeIndex; Name : string; Required :
-                       boolean) : TPsTypeIndex;
+function FindFieldType(TypeIndex : TPsTypeIndex; Name : string;
+                       Required : boolean) : TPsTypeIndex;
 var 
-  Typ : TPsType;
-  Rec : TPsRecordDef;
   Pos : integer;
+  Ret : integer;
 begin
-  Typ := Defs.Types[TypeIndex];
-  if Typ.Cls <> TtcRecord then
-    CompileError('Not a record: ' + Typ.Name);
-  TypeIndex := 0;
-  Rec := Defs.Records[Typ.RecordIndex];
-  for Pos := 1 to Rec.Size do
-    if Rec.Fields[Pos].Name = Name then
-      TypeIndex := Rec.Fields[Pos].TypeIndex;
-  if Required and (TypeIndex = 0) then
-    CompileError('Field not found: ' + Name);
-  FindFieldType := TypeIndex
+  if Defs.Types[TypeIndex].Cls <> TtcRecord then
+    CompileError('Not a record: ' + Defs.Types[TypeIndex].Name);
+  with Defs.Records[Defs.Types[TypeIndex].RecordIndex] do
+  begin
+    Ret := 0;
+    Pos := Size;
+    while (Pos >= 1) and (Ret = 0) do
+    begin
+      if Name = Fields[Pos].Name then Ret := Fields[Pos].TypeIndex;
+      Pos := Pos - 1
+    end;
+  end;
+  if Required and (Ret = 0) then CompileError('Field not found: ' + Name);
+  FindFieldType := Ret
 end;
 
 function FindWithVar(Name : string) : TPsWithVarIndex;
@@ -670,9 +692,13 @@ var
   Pos : TPsWithVarIndex;
 begin
   Ret := 0;
-  for Pos := 1 to Defs.Scope.NumWithVars do
+  Pos := Defs.Bounds.WithVars;
+  while (Pos >= 1) and (Ret = 0) do
+  begin
     if FindFieldType(Defs.WithVars[Pos].Expr.TypeIndex, Name, false) <> 0 then
       Ret := Pos;
+    Pos := Pos - 1
+  end;
   FindWithVar := Ret
 end;
 
@@ -680,10 +706,11 @@ function AddWithVar(Base : TPsExpression) : TPsWithVarIndex;
 begin
   if not IsRecordType(Base.TypeIndex) then
     CompileError('''With'' variable is not a record');
-  Defs.Scope.NumWithVars := Defs.Scope.NumWithVars + 1;
-  if Defs.Scope.NumWithVars > MaxWithVars then
+  Defs.Bounds.WithVars := Defs.Bounds.WithVars + 1;
+  if Defs.Bounds.WithVars > MaxWithVars then
     CompileError('Too many nesting levels for ''with''');
-  Defs.WithVars[Defs.Scope.NumWithVars].Expr := Base;
+  Defs.WithVars[Defs.Bounds.WithVars].Expr := Base;
+  AddWithVar := Defs.Bounds.WithVars
 end;
 
 function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;
