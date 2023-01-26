@@ -37,7 +37,7 @@ begin
                     and not Expr.IsConstant
 end;
 
-function ExprMakeNilConstant : TPsExpression;
+function ExprNilConstant : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
@@ -45,10 +45,10 @@ begin
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
   Expr.Value := '((void*)0)';
-  ExprMakeNilConstant := Expr
+  ExprNilConstant := Expr
 end;
 
-function ExprMakeBooleanConstant(Value : boolean) : TPsExpression;
+function ExprBooleanConstant(Value : boolean) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
@@ -59,10 +59,10 @@ begin
     Expr.Value := '1'
   else
     Expr.Value := '0';
-  ExprMakeBooleanConstant := Expr
+  ExprBooleanConstant := Expr
 end;
 
-function ExprMakeStringConstant(Value : string) : TPsExpression;
+function ExprStringConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
   Size : string;
@@ -109,10 +109,10 @@ begin
     Expr.Value := 'str_make(' + Size + ', "' + Expr.Value + '")';
     Expr.TypeIndex := PrimitiveTypes.PtString;
   end;
-  ExprMakeStringConstant := Expr
+  ExprStringConstant := Expr
 end;
 
-function ExprMakeNumberConstant(Value : string) : TPsExpression;
+function ExprNumberConstant(Value : string) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
@@ -120,10 +120,108 @@ begin
   Expr.Value := Value;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprMakeNumberConstant := Expr
+  ExprNumberConstant := Expr
 end;
 
-function ExprBinaryOpInteger(Left : TPsExpression; Op : TLxTokenId;
+function ExprVariableAccess(VarIndex : TPsVariableIndex) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  with Defs.Variables[VarIndex] do
+  begin
+    if IsReference then Expr.Value := '*' + Name
+    else Expr.Value := Name;
+    Expr.Cls := TecValue;
+    Expr.TypeIndex := TypeIndex;
+    Expr.IsConstant := false
+  end;
+  ExprVariableAccess := Expr
+end;
+
+function ExprFunctionReference(FnIndex : TPsFunctionIndex) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  Expr.Value := Defs.Functions[FnIndex].Name;
+  Expr.Cls := TecFunction;
+  Expr.FunctionIndex := FnIndex;
+  Expr.IsConstant := false;
+  ExprFunctionReference := Expr
+end;
+
+function ExprEnumValue(Ordinal : integer; TypeIndex : TPsTypeIndex)
+: TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  with Defs.Enums[Defs.Types[TypeIndex].EnumIndex] do
+  begin
+    Expr.Value := Values[Ordinal];
+    Expr.Cls := TecValue;
+    Expr.TypeIndex := TypeIndex;
+    Expr.IsConstant := true
+  end;
+  ExprEnumValue := Expr
+end;
+
+function ExprFieldAccess(Base : TPsExpression; Name : string) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  if (Base.Cls <> TecValue) or not IsRecordType(Base.TypeIndex) then
+    CompileError('Not a record');
+  Expr.Value := Base.Value;
+  if Expr.Value[1] = '*' then Expr.Value := '(' + Expr.Value + ')';
+  Expr.Value := Expr.Value + '.' + Name;
+  Expr.Cls := TecValue;
+  Expr.TypeIndex := FindFieldType(Base.TypeIndex, Name, {Required=}true);
+  Expr.IsConstant := Base.IsConstant;
+  ExprFieldAccess := Expr;
+end;
+
+function ExprArrayAccess(Base : TPsExpression; Idx : TPsExpression)
+: TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  if (Base.Cls = TecValue) and IsStringType(Base.TypeIndex) then
+  begin
+    if (Idx.Cls <> TecValue) or not IsIntegerType(Idx.TypeIndex) then
+      CompileError('String subscript is not an integer');
+    Expr.Value := Base.Value + '.chr[' + Idx.Value + ']';
+    Expr.TypeIndex := PrimitiveTypes.PtChar;
+    Expr.IsConstant := Base.IsConstant;
+  end
+  else if (Base.Cls = TecValue) and IsArrayType(Base.TypeIndex) then
+  begin
+    if (Idx.Cls <> TecValue) or not IsIntegerType(Idx.TypeIndex) then
+      CompileError('Array subscript is not an integer');
+    with Defs.Arrays[Defs.Types[Base.TypeIndex].ArrayIndex] do
+    begin
+      Expr.Value := Base.Value + '[(' + Idx.Value + ') - ' + LowBound + ']';
+      Expr.Cls := TecValue;
+      Expr.TypeIndex := TypeIndex;
+      Expr.IsConstant := Base.IsConstant
+    end;
+  end
+  else CompileError('Not a string or array');
+  ExprArrayAccess := Expr
+end;
+
+function ExprPointerDeref(Ptr : TPsExpression) : TPsExpression;
+var 
+  Expr : TPsExpression;
+begin
+  if (Ptr.Cls <> TecValue) or not IsPointerType(Ptr.TypeIndex) then
+    CompileError('Not a pointer');
+  Expr.Value := '*(' + Ptr.Value + ')';
+  Expr.Cls := TecValue;
+  Expr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
+  Expr.IsConstant := Ptr.IsConstant;
+  ExprPointerDeref := Ptr
+end;
+
+function _ExprBinaryOpInteger(Left : TPsExpression; Op : TLxTokenId;
                              Right : TPsExpression) : TPsExpression;
 var 
   Oper, Cmp : string;
@@ -155,10 +253,10 @@ begin
   Expr.Value := Left.Value + ' ' + Oper + Cmp + ' ' + Right.Value;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprBinaryOpInteger := Expr
+  _ExprBinaryOpInteger := Expr
 end;
 
-function ExprBinaryOpBoolean(Left : TPsExpression; Op : TLxTokenId;
+function _ExprBinaryOpBoolean(Left : TPsExpression; Op : TLxTokenId;
                              Right : TPsExpression) : TPsExpression;
 var 
   Oper : string;
@@ -180,11 +278,11 @@ begin
   Expr.Value := Left.Value + ' ' + Oper + ' ' + Right.Value;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprBinaryOpBoolean := Expr
+  _ExprBinaryOpBoolean := Expr
 end;
 
 
-function ExprBinaryOpStringy(Left : TPsExpression; Op : TLxTokenId;
+function _ExprBinaryOpStringy(Left : TPsExpression; Op : TLxTokenId;
                              Right : TPsExpression) : TPsExpression;
 var 
   FName, Cmp : string;
@@ -220,10 +318,10 @@ begin
   end;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprBinaryOpStringy := Expr
+  _ExprBinaryOpStringy := Expr
 end;
 
-function ExprBinaryOpEnum(Left : TPsExpression; Op : TLxTokenId;
+function _ExprBinaryOpEnum(Left : TPsExpression; Op : TLxTokenId;
                           Right : TPsExpression) : TPsExpression;
 var 
   Cmp : string;
@@ -244,10 +342,10 @@ begin
   Expr.Value := Left.Value + ' ' + Cmp + ' ' + Right.Value;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprBinaryOpEnum := Expr
+  _ExprBinaryOpEnum := Expr
 end;
 
-function ExprBinaryOpPointer(Left : TPsExpression; Op : TLxTokenId;
+function _ExprBinaryOpPointer(Left : TPsExpression; Op : TLxTokenId;
                              Right : TPsExpression) : TPsExpression;
 var 
   Cmp : string;
@@ -264,34 +362,33 @@ begin
   Expr.Value := Left.Value + ' ' + Cmp + ' ' + Right.Value;
   Expr.Cls := TecValue;
   Expr.IsConstant := true;
-  ExprBinaryOpPointer := Expr
+  _ExprBinaryOpPointer := Expr
 end;
 
-function ExprBinaryOp(Left : TPsExpression; Op : TLxTokenId; Right :
-                      TPsExpression) : TPsExpression;
+function ExprBinaryOp(Left : TPsExpression; Op : TLxTokenId;
+                      Right : TPsExpression) : TPsExpression;
 begin
   Left := ExprEvaluate(Left);
   Right := ExprEvaluate(Right);
   if IsBooleanType(Left.TypeIndex) and IsBooleanType(Right.TypeIndex) then
-    ExprBinaryOp := ExprBinaryOpBoolean(Left, Op, Right)
+    ExprBinaryOp := _ExprBinaryOpBoolean(Left, Op, Right)
   else if IsIntegerType(Left.TypeIndex)
           and IsIntegerType(Right.TypeIndex) then
-         ExprBinaryOp := ExprBinaryOpInteger(Left, Op, Right)
+         ExprBinaryOp := _ExprBinaryOpInteger(Left, Op, Right)
   else if IsStringyType(Left.TypeIndex)
           and IsStringyType(Right.TypeIndex) then
-         ExprBinaryOp := ExprBinaryOpStringy(Left, Op, Right)
+         ExprBinaryOp := _ExprBinaryOpStringy(Left, Op, Right)
   else if IsEnumType(Left.TypeIndex)
           and IsSameType(Left.TypeIndex, Right.TypeIndex) then
-         ExprBinaryOp := ExprBinaryOpEnum(Left, Op, Right)
+         ExprBinaryOp := _ExprBinaryOpEnum(Left, Op, Right)
   else if ArePointersCompatible(Left.TypeIndex, Right.TypeIndex) then
-         ExprBinaryOp := ExprBinaryOpPointer(Left, Op, Right)
+         ExprBinaryOp := _ExprBinaryOpPointer(Left, Op, Right)
   else
     CompileError('Type mismatch for operator ' + LxTokenName(Op) + ': ' +
     TypeName(Left.TypeIndex) + ' and ' + TypeName(Right.TypeIndex))
 end;
 
-function ExprUnaryOp(Op : TLxTokenId; Expr : TPsExpression)
-: TPsExpression;
+function ExprUnaryOp(Op : TLxTokenId; Expr : TPsExpression) : TPsExpression;
 begin
   Expr := ExprEvaluate(Expr);
   if Op = TkNot then
@@ -312,4 +409,10 @@ begin
     CompileError('Expected unary operator, found ' + LxTokenName(Op));
   Expr.IsConstant := true;
   ExprUnaryOp := Expr
+end;
+
+function ExprParentheses(Expr : TPsExpression) : TPsExpression;
+begin
+  Expr.Value := '(' + Expr.Value + ')';
+  ExprParentheses := Expr
 end;

@@ -293,26 +293,26 @@ begin
   if IsBooleanType(TypeIndex) then
   begin
     WantToken2(TkFalse, TkTrue);
-    Expr := ExprMakeBooleanConstant(Lexer.Token.Id = TkTrue);
+    Expr := ExprBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken;
-    OutConstantValue(Expr.Value)
+    OutConstantValue(Expr)
   end
   else if IsIntegerType(TypeIndex) then
   begin
-    Expr := ExprMakeNumberConstant(GetTokenValueAndRead(TkNumber));
-    OutConstantValue(Expr.Value)
+    Expr := ExprNumberConstant(GetTokenValueAndRead(TkNumber));
+    OutConstantValue(Expr)
   end
   else if IsCharType(TypeIndex) then
   begin
-    Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString));
+    Expr := ExprStringConstant(GetTokenValueAndRead(TkString));
     if not IsCharType(Expr.TypeIndex) then
       CompileError('Expected char constant, got ' + TypeName(Expr.TypeIndex));
-    OutConstantValue(Expr.Value)
+    OutConstantValue(Expr)
   end
   else if IsStringType(TypeIndex) then
   begin
-    Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString));
-    OutConstantValue(Expr.Value)
+    Expr := ExprStringConstant(GetTokenValueAndRead(TkString));
+    OutConstantValue(Expr)
   end
   else if IsArrayType(TypeIndex) then
   begin
@@ -565,23 +565,18 @@ end;
 
 function PsPointerDeref(Ptr : TPsExpression) : TPsExpression;
 begin
-  Ptr := ExprEvaluate(Ptr);
-  if (Ptr.Cls <> TecValue) or not IsPointerType(Ptr.TypeIndex) then
-    CompileError('Not a pointer');
   WantTokenAndRead(TkCaret);
-  Ptr.Value := '*(' + Ptr.Value + ')';
-  Ptr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
-  PsPointerDeref := Ptr
+  PsPointerDeref := ExprPointerDeref(ExprEvaluate(Ptr))
 end;
 
 procedure PsRead(Fn : TPsSpecialFunction);
 var 
-  Src : string;
+  Src : TPsExpression;
   LineFeed : boolean;
   OutVar : TPsExpression;
 begin
   LineFeed := Fn = TsfReadln;
-  Src := 'INPUT';
+  Src := ExprVariableAccess(Defs.Names[FindName('INPUT', true)].VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutReadln(Src);
@@ -594,7 +589,7 @@ begin
     begin
       OutVar := PsExpression;
       if ExprIsVariable(OutVar) and IsTextType(OutVar.TypeIndex) then
-        Src := OutVar.Value
+        Src := OutVar
       else
       begin
         if not ExprIsVariable(OutVar)
@@ -624,12 +619,12 @@ end;
 
 procedure PsWrite(Fn : TPsSpecialFunction);
 var 
-  Dst : string;
+  Dst : TPsExpression;
   LineFeed : boolean;
   Expr : TPsExpression;
 begin
   LineFeed := Fn = TsfWriteln;
-  Dst := 'OUTPUT';
+  Dst := ExprVariableAccess(Defs.Names[FindName('OUTPUT', true)].VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutWriteln(Dst);
@@ -642,7 +637,7 @@ begin
     begin
       Expr := PsExpression;
       if ExprIsVariable(Expr) and IsTextType(Expr.TypeIndex) then
-        Dst := Expr.Value
+        Dst := Expr
       else
         OutWrite(Dst, Expr);
       WantToken2(TkComma, TkRparen);
@@ -706,21 +701,7 @@ begin
   WantTokenAndRead(TkLbracket);
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
-  if (Idx.Cls <> TecValue) or not IsIntegerType(Idx.TypeIndex) then
-    CompileError('Subscript must be an integer');
-  if (Arr.Cls = TecValue) and IsStringType(Arr.TypeIndex) then
-  begin
-    SetStringIndex(Arr, Idx);
-    Arr.TypeIndex := PrimitiveTypes.PtChar
-  end
-  else if (Arr.Cls = TecValue) and IsArrayType(Arr.TypeIndex) then
-  begin
-    SetArrayIndex(Arr, Idx);
-    Arr.TypeIndex := Defs.Arrays[Defs.Types[Arr.TypeIndex].ArrayIndex].TypeIndex
-  end
-  else
-    CompileError('Not a string or array');
-  PsArrayAccess := Arr
+  PsArrayAccess := ExprArrayAccess(Arr, Idx)
 end;
 
 function PsFieldAccess(Rec : TPsExpression) : TPsExpression;
@@ -728,16 +709,9 @@ var
   Fld : TPsIdentifier;
   FldType : TPsTypeIndex;
 begin
-  if (Rec.Cls <> TecValue) or (Defs.Types[Rec.TypeIndex].Cls <> TtcRecord) then
-    CompileError('Not a record');
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
-  FldType := FindFieldType(Rec.TypeIndex, Fld.Name, true);
-  if FldType = 0 then
-    CompileError('Field ' + Fld.Name + ' not found in record');
-  SetFieldAccess(Rec, Fld.Name);
-  Rec.TypeIndex := FldType;
-  PsFieldAccess := Rec
+  PsFieldAccess := ExprFieldAccess(Rec, Fld.Name)
 end;
 
 function PsVariableOrFunctionCall : TPsExpression;
@@ -749,41 +723,19 @@ var
   Done : boolean;
 begin
   Done := false;
-  Expr.Value := '';
-  Expr.IsConstant := false;
   Id := PsIdentifier;
   WithVarIndex := FindWithVar(Id.Name);
   if WithVarIndex <> 0 then
-  begin
-    Expr := Defs.WithVars[WithVarIndex].Expr;
-    SetFieldAccess(Expr, Id.Name);
-    Expr.TypeIndex := FindFieldType(Expr.TypeIndex, Id.Name, true)
-  end
+    Expr := ExprFieldAccess(Defs.WithVars[WithVarIndex].Expr, Id.Name)
   else
   begin
     Found := Defs.Names[FindName(Id.Name, {Required=}true)];
     if Found.Cls = TncVariable then
-    begin
-      if Defs.Variables[Found.VariableIndex].IsReference then
-        Expr.Value := '*' + Id.Name
-      else
-        Expr.Value := Id.Name;
-      Expr.Cls := TecValue;
-      Expr.TypeIndex := Defs.Variables[Found.VariableIndex].TypeIndex;
-    end
+      Expr := ExprVariableAccess(Found.VariableIndex)
     else if Found.Cls = TncFunction then
-    begin
-      Expr.Value := Id.Name;
-      Expr.Cls := TecFunction;
-      Expr.FunctionIndex := Found.FunctionIndex
-    end
+           Expr := ExprFunctionReference(Found.FunctionIndex)
     else if Found.Cls = TncEnumValue then
-    begin
-      Expr.Value := Id.Name;
-      Expr.Cls := TecValue;
-      Expr.TypeIndex := Found.EnumTypeIndex;
-      Expr.IsConstant := true
-    end
+           Expr := ExprEnumValue(Found.Ordinal, Found.EnumTypeIndex)
     else if Found.Cls = TncSpecialFunction then
     begin
       Expr.Cls := TecStatement;
@@ -837,23 +789,23 @@ var
 begin
   if Lexer.Token.Id = TkNil then
   begin
-    Expr := ExprMakeNilConstant;
+    Expr := ExprNilConstant;
     ReadToken
   end
   else if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
   begin
-    Expr := ExprMakeBooleanConstant(Lexer.Token.Id = TkTrue);
+    Expr := ExprBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken
   end
   else if Lexer.Token.Id = TkString then
-         Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString))
+         Expr := ExprStringConstant(GetTokenValueAndRead(TkString))
   else if Lexer.Token.Id = TkNumber then
-         Expr := ExprMakeNumberConstant(GetTokenValueAndRead(TkNumber))
+         Expr := ExprNumberConstant(GetTokenValueAndRead(TkNumber))
   else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
-    Expr := GenParens(PsExpression);
+    Expr := ExprParentheses(PsExpression);
     WantTokenAndRead(TkRparen)
   end
   else if Lexer.Token.Id = TkNot then

@@ -28,6 +28,10 @@ type
       TecValue : (TypeIndex : TPsTypeIndex);
       TecFunction : (FunctionIndex : TPsFunctionIndex)
   end;
+  TPsExpressionFnArgs = record
+    Size : integer;
+    Args : array[1..MaxFunctionArguments] of TPsExpression
+  end;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRecord, TtcArray, TtcPointer, TtcNil,
                   TtcPlaceholder);
@@ -89,7 +93,8 @@ type
     case Cls : TPsNameClass of 
       TncType : (TypeIndex : TPsTypeIndex);
       TncVariable : (VariableIndex : TPsVariableIndex);
-      TncEnumValue : (EnumTypeIndex : TPsTypeIndex);
+      TncEnumValue : (EnumTypeIndex : TPsTypeIndex;
+                      Ordinal : integer);
       TncFunction : (FunctionIndex : TPsFunctionIndex);
       TncSpecialFunction : (SpecialFunction : TPsSpecialFunction)
   end;
@@ -216,12 +221,27 @@ begin
   case Cls of 
     TncType : Def.TypeIndex := Idx;
     TncVariable : Def.VariableIndex := Idx;
-    TncEnumValue : Def.EnumTypeIndex := Idx;
     TncFunction : Def.FunctionIndex := Idx;
     else
-      CompileError('Cannot use MakeName for special functions')
+      CompileError('Cannot use MakeName for special functions or enums')
   end;
   MakeName := Def
+end;
+
+function MakeOrdinalName(Name : string; Ordinal : integer; Cls : TPsNameClass;
+                         Idx : integer) : TPsName;
+var 
+  Def : TPsName;
+begin
+  Def.Name := Name;
+  Def.Cls := Cls;
+  if Cls = TncEnumValue then
+  begin
+    Def.EnumTypeIndex := Idx;
+    Def.Ordinal := Ordinal
+  end
+  else CompileError('Can only use MakeOrdinalName for enums');
+  MakeOrdinalName := Def
 end;
 
 function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;
@@ -480,7 +500,7 @@ begin
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = 0) then
     with Defs.Enums[Typ.EnumIndex] do
       for EnumPos := 1 to Size do
-        AddName(MakeName(Values[EnumPos], TncEnumValue, Pos))
+        AddName(MakeOrdinalName(Values[EnumPos], EnumPos, TncEnumValue, Pos))
 end;
 
 function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;

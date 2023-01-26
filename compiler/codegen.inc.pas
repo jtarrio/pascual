@@ -163,7 +163,7 @@ end;
 
 procedure OutConstantValue;
 begin
-  write(Codegen.Output, Value)
+  write(Codegen.Output, Expr.Value)
 end;
 
 procedure OutConstantArrayBegin;
@@ -256,24 +256,6 @@ begin
   writeln(Codegen.Output, '#include "pascual.h"')
 end;
 
-procedure SetStringIndex;
-begin
-  Str.Value := Str.Value + '.chr[' + Idx.Value + ']';
-end;
-
-procedure SetArrayIndex;
-begin
-  Arr.Value := Arr.Value + '[(' + Idx.Value + ') - '
-               + Defs.Arrays[Defs.Types[Arr.TypeIndex].ArrayIndex].LowBound
-               + ']'
-end;
-
-procedure SetFieldAccess;
-begin
-  if Rec.Value[1] = '*' then Rec.Value := '(' + Rec.Value + ')';
-  Rec.Value := Rec.Value + '.' + Fld
-end;
-
 function GenFunctionCallStart;
 begin
   GenFunctionCallStart := Fn + '('
@@ -292,12 +274,6 @@ begin
   GenFunctionCallArgument := Fn
 end;
 
-function GenParens;
-begin
-  Expr.Value := '(' + Expr.Value + ')';
-  GenParens := Expr
-end;
-
 function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
 begin
   if IsBooleanType(TypeIndex) then ShortTypeName := 'b'
@@ -311,28 +287,28 @@ end;
 procedure OutRead;
 begin
   writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(&',
-  Src, ', &', OutVar.Value, ');')
+  Src.Value, ', &', OutVar.Value, ');')
 end;
 
 procedure OutReadln;
 begin
-  writeln(Codegen.Output, 'readln(&', Src, ');')
+  writeln(Codegen.Output, 'readln(&', Src.Value, ');')
 end;
 
 procedure OutWrite;
 begin
   Expr := ExprEvaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
-    writeln(Codegen.Output, 'write_e(&', Dst, ', ', Expr.Value, ', EnumValues',
-            Defs.Types[Expr.TypeIndex].EnumIndex, ');')
+    writeln(Codegen.Output, 'write_e(&', Dst.Value, ', ', Expr.Value,
+            ', EnumValues', Defs.Types[Expr.TypeIndex].EnumIndex, ');')
   else
     writeln(Codegen.Output, 'write_', ShortTypeName(Expr.TypeIndex),
-    '(&', Dst, ', ', Expr.Value, ');')
+    '(&', Dst.Value, ', ', Expr.Value, ');')
 end;
 
 procedure OutWriteln;
 begin
-  writeln(Codegen.Output, 'writeln(&', Dst, ');')
+  writeln(Codegen.Output, 'writeln(&', Dst.Value, ');')
 end;
 
 procedure OutStr;
