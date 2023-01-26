@@ -248,6 +248,10 @@ echo 'record A : integer;
                4 : (D : string);
                5 : (E : boolean)
       end' | testtype | is_not_valid
+echo "record A : integer;
+             case string of
+               'foo' : (B : char)
+      end" | testtype | is_not_valid
 echo 'set of char' | testtype | will_be_valid
 echo 'set of (One, Two, Three)' | testtype | will_be_valid
 echo '(One, Two, Three); X = set of T' | testtype | will_be_valid

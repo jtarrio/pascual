@@ -164,6 +164,12 @@ begin
   end
   else
     TagType := PsFindType(Tag.Name);
+  if not IsOrdinalType(TagType) then
+  begin
+    writeln(StdErr, 'The index of the case statement is not ordinal',
+            LxWhereStr);
+    halt(1)
+  end;
   WantTokenAndRead(TkOf);
   repeat
     Rec.NumVariants := Rec.NumVariants + 1;
