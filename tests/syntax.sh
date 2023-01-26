@@ -601,7 +601,7 @@ echo 'program foo; var a : record b : integer end;
         begin
           writeln(b)
         end
-      end.' | will_be_valid
+      end.' | is_valid
 echo 'program foo; var a : record b : integer end; c : record d : integer end;
       begin
         with a, c do
@@ -609,7 +609,7 @@ echo 'program foo; var a : record b : integer end; c : record d : integer end;
           writeln(b);
           writeln(d)
         end
-      end.' | will_be_valid
+      end.' | is_valid
 
 # I/O
 testwrite() {

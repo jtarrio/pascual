@@ -39,3 +39,38 @@ testrecord 'A : integer;
               false: (C : char; D : char)' \
            "R.A := 1; R.B := 'abcdefghijklmnopqrstuvwxyzabcdefg'; write(R.A, ' ', R.C, ' ', R.D)" |
 outputs '1 ! a'
+
+# With statement
+echo "program foo;
+      var A : record
+                B : integer;
+                C : string
+              end;
+          B : string;
+      begin
+        A.B := 1;
+        A.C := 'two';
+        B := 'three';
+        write(A.B, ' ', A.C, ' ', B, ' ');
+        with A do
+          write(A.B, ' ', A.C, ' ', B)
+      end." | outputs '1 two three 1 two 1'
+# With statement
+echo "program foo;
+      var A : record
+                B : integer;
+                C : record
+                    A : string;
+                    C : integer
+                end
+              end;
+          B : string;
+      begin
+        A.B := 1;
+        A.C.A := 'two';
+        A.C.C := 3;
+        B := 'four';
+        write(A.B, ' ', A.C.A, ' ', A.C.C, ' ', B, ' ');
+        with A, C do
+          write(A, ' ', B)
+      end." | outputs '1 two 3 four two 1'

@@ -2,7 +2,6 @@ program compiler;
 
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
-{$I expression.defs.inc.pas}
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
 {$I parser.inc.pas}

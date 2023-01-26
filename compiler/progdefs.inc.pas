@@ -10,19 +10,31 @@ const
   MaxVariables = 32;
   MaxFunctions = 256;
   MaxFunctionArguments = 4;
+  MaxWithVars = 8;
 
 type 
+  TPsTypeIndex = integer;
   TPsEnumIndex = integer;
   TPsRecordIndex = integer;
   TPsArrayIndex = integer;
-  TPsTypeIndex = integer;
+  TPsConstantIndex = integer;
+  TPsVariableIndex = integer;
+  TPsFunctionIndex = integer;
+  TPsExpressionClass = (TecValue, TecFunction, TecStatement);
+  TPsExpression = record
+    Value : string;
+    IsConstant : boolean;
+    case Cls : TPsExpressionClass of 
+      TecValue : (TypeIndex : TPsTypeIndex);
+      TecFunction : (FunctionIndex : TPsFunctionIndex)
+  end;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRecord, TtcArray, TtcPointer, TtcNil,
                   TtcPlaceholder);
   TPsType = record
     Name : string;
     AliasFor : TPsTypeIndex;
-    case Cls : TPsTypeClass of
+    case Cls : TPsTypeClass of 
       TtcEnum : (EnumIndex : TPsEnumIndex);
       TtcRecord : (RecordIndex : TPsRecordIndex);
       TtcArray : (ArrayIndex : TPsArrayIndex);
@@ -46,25 +58,26 @@ type
     LowBound, HighBound : string;
     TypeIndex : TPsTypeIndex
   end;
-  TPsConstantIndex = integer;
   TPsConstant = record
     Name : string;
     Replacement : TLxToken
   end;
-  TPsVariableIndex = integer;
   TPsVariable = record
     Name : string;
     TypeIndex : TPsTypeIndex;
     IsReference : boolean;
     IsConstant : boolean
   end;
-  TPsFunctionIndex = integer;
   TPsFunction = record
     Name : string;
     ArgCount : integer;
     Args : array[1..MaxFunctionArguments] of TPsVariable;
     ReturnTypeIndex : TPsTypeIndex;
     IsDeclaration : boolean;
+  end;
+  TPsWithVarIndex = integer;
+  TPsWithVar = record
+    Expr : TPsExpression
   end;
   TPsNameIndex = integer;
   TPsNameClass = (TncType, TncVariable, TncEnumValue, TncFunction,
@@ -74,7 +87,7 @@ type
   TPsName = record
     Name : string;
 
-    case Cls : TPsNameClass of
+    case Cls : TPsNameClass of 
       TncType : (TypeIndex : TPsTypeIndex);
       TncVariable : (VariableIndex : TPsVariableIndex);
       TncEnumValue : (EnumTypeIndex : TPsTypeIndex);
@@ -89,7 +102,8 @@ type
     NumArrays,
     NumConstants,
     NumVariables,
-    NumFunctions : integer
+    NumFunctions,
+    NumWithVars : integer
   end;
   TPsDefs = record
     Scope : TPsScope;
@@ -101,6 +115,7 @@ type
     Constants : array[1..MaxConstants] of TPsConstant;
     Variables : array[1..MaxVariables] of TPsVariable;
     Functions : array[1..MaxFunctions] of TPsFunction;
+    WithVars : array[1..MaxWithVars] of TPsWithVar;
   end;
   TPsIdentifier = record
     Name : string;
@@ -122,6 +137,7 @@ begin
   Defs.Scope.NumConstants := 0;
   Defs.Scope.NumVariables := 0;
   Defs.Scope.NumFunctions := 0;
+  Defs.Scope.NumWithVars := 0;
 end;
 
 function GetCurrentScope: TPsScope;
@@ -677,7 +693,7 @@ begin
   AddName(Def, GlobalScope)
 end;
 
-function FindFieldType(TypeIndex : TPsTypeIndex; Name : string) : TPsTypeIndex;
+function FindFieldType(TypeIndex : TPsTypeIndex; Name : string; Required : boolean) : TPsTypeIndex;
 var 
   Typ : TPsType;
   Rec : TPsRecordDef;
@@ -694,12 +710,40 @@ begin
   for Pos := 1 to Rec.Size do
     if Rec.Fields[Pos].Name = Name then
       TypeIndex := Rec.Fields[Pos].TypeIndex;
-  if TypeIndex = 0 then
+  if Required and (TypeIndex = 0) then
   begin
     writeln(StdErr, 'Field not found: ', Name, LxWhereStr);
     halt(1)
   end;
   FindFieldType := TypeIndex
+end;
+
+function FindWithVar(Name : string) : TPsWithVarIndex;
+var 
+  Ret : TPsWithVarIndex;
+  Pos : TPsWithVarIndex;
+begin
+  Ret := 0;
+  for Pos := 1 to Defs.Scope.NumWithVars do
+    if FindFieldType(Defs.WithVars[Pos].Expr.TypeIndex, Name, false) <> 0 then
+      Ret := Pos;
+  FindWithVar := Ret
+end;
+
+function AddWithVar(Base : TPsExpression) : TPsWithVarIndex;
+begin
+  if not IsRecordType(Base.TypeIndex) then
+  begin
+    writeln(StdErr, '''With'' variable is not a record', LxWhereStr);
+    halt(1)
+  end;
+  Defs.Scope.NumWithVars := Defs.Scope.NumWithVars + 1;
+  if Defs.Scope.NumWithVars > MaxWithVars then
+  begin
+    writeln(StdErr, 'Too many nesting levels for ''with''', LxWhereStr);
+    halt(1)
+  end;
+  Defs.WithVars[Defs.Scope.NumWithVars].Expr := Base;
 end;
 
 function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;

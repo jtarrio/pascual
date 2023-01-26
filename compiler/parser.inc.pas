@@ -822,7 +822,7 @@ begin
   end;
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
-  FldType := FindFieldType(Rec.TypeIndex, Fld.Name);
+  FldType := FindFieldType(Rec.TypeIndex, Fld.Name, true);
   if FldType = 0 then
   begin
     writeln(StdErr, 'Field ', Fld.Name, ' not found in record', LxWhereStr);
@@ -836,6 +836,7 @@ end;
 function PsVariableOrFunctionCall : TPsExpression;
 var 
   Id : TPsIdentifier;
+  WithVarIndex : TPsWithVarIndex;
   Found : TPsName;
   Expr : TPsExpression;
   Done : boolean;
@@ -844,47 +845,57 @@ begin
   Expr.Value := '';
   Expr.IsConstant := false;
   Id := PsIdentifier;
-  Found := Defs.Names[FindName(Id.Name, true)];
-  if Found.Cls = TncVariable then
+  WithVarIndex := FindWithVar(Id.Name);
+  if WithVarIndex <> 0 then
   begin
-    if Defs.Variables[Found.VariableIndex].IsReference then
-      Expr.Value := '*' + Id.Name
-    else
-      Expr.Value := Id.Name;
-    Expr.Cls := TecValue;
-    Expr.TypeIndex := Defs.Variables[Found.VariableIndex].TypeIndex;
-  end
-  else if Found.Cls = TncFunction then
-  begin
-    Expr.Value := Id.Name;
-    Expr.Cls := TecFunction;
-    Expr.FunctionIndex := Found.FunctionIndex
-  end
-  else if Found.Cls = TncEnumValue then
-  begin
-    Expr.Value := Id.Name;
-    Expr.Cls := TecValue;
-    Expr.TypeIndex := Found.EnumTypeIndex;
-    Expr.IsConstant := true
-  end
-  else if Found.Cls = TncSpecialFunction then
-  begin
-    Expr.Cls := TecStatement;
-    Expr.TypeIndex := 0;
-    if (Found.SpecialFunction = TsfRead)
-       or (Found.SpecialFunction = TsfReadln) then
-      PsRead(Found.SpecialFunction)
-    else if (Found.SpecialFunction = TsfWrite)
-            or (Found.SpecialFunction = TsfWriteln) then
-           PsWrite(Found.SpecialFunction)
-    else if Found.SpecialFunction = TsfStr then PsStr
-    else if Found.SpecialFunction = TsfNew then PsNew
-    else if Found.SpecialFunction = TsfDispose then PsDispose
+    Expr := Defs.WithVars[WithVarIndex].Expr;
+    SetFieldAccess(Expr, Id.Name);
+    Expr.TypeIndex := FindFieldType(Expr.TypeIndex, Id.Name, true)
   end
   else
   begin
-    writeln(StdErr, 'Invalid identifier: ', Id.Name, LxWhereStr);
-    halt(1)
+    Found := Defs.Names[FindName(Id.Name, true)];
+    if Found.Cls = TncVariable then
+    begin
+      if Defs.Variables[Found.VariableIndex].IsReference then
+        Expr.Value := '*' + Id.Name
+      else
+        Expr.Value := Id.Name;
+      Expr.Cls := TecValue;
+      Expr.TypeIndex := Defs.Variables[Found.VariableIndex].TypeIndex;
+    end
+    else if Found.Cls = TncFunction then
+    begin
+      Expr.Value := Id.Name;
+      Expr.Cls := TecFunction;
+      Expr.FunctionIndex := Found.FunctionIndex
+    end
+    else if Found.Cls = TncEnumValue then
+    begin
+      Expr.Value := Id.Name;
+      Expr.Cls := TecValue;
+      Expr.TypeIndex := Found.EnumTypeIndex;
+      Expr.IsConstant := true
+    end
+    else if Found.Cls = TncSpecialFunction then
+    begin
+      Expr.Cls := TecStatement;
+      Expr.TypeIndex := 0;
+      if (Found.SpecialFunction = TsfRead)
+         or (Found.SpecialFunction = TsfReadln) then
+        PsRead(Found.SpecialFunction)
+      else if (Found.SpecialFunction = TsfWrite)
+              or (Found.SpecialFunction = TsfWriteln) then
+             PsWrite(Found.SpecialFunction)
+      else if Found.SpecialFunction = TsfStr then PsStr
+      else if Found.SpecialFunction = TsfNew then PsNew
+      else if Found.SpecialFunction = TsfDispose then PsDispose
+    end
+    else
+    begin
+      writeln(StdErr, 'Invalid identifier: ', Id.Name, LxWhereStr);
+      halt(1)
+    end;
   end;
   repeat
     if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
@@ -1163,6 +1174,24 @@ begin
   OutForEnd(Iter, Ascending)
 end;
 
+procedure PsWithStatement;
+var
+  Initial : TPsWithVarIndex;
+  Base : TPsExpression;
+  Pos : TPsWithVarIndex;
+begin
+  WantToken(TkWith);
+  Initial := Defs.Scope.NumWithVars;
+  repeat
+    ReadToken;
+    AddWithVar(PsExpression);
+    WantToken2(TkComma, TkDo)
+  until Lexer.Token.Id = TkDo;
+  WantTokenAndRead(TkDo);
+  PsStatement;
+  Defs.Scope.NumWithVars := Initial
+end;
+
 procedure PsStatement;
 begin
   if Lexer.Token.Id = TkSemicolon then OutEmptyStatement
@@ -1173,6 +1202,7 @@ begin
   else if Lexer.Token.Id = TkRepeat then PsRepeatStatement
   else if Lexer.Token.Id = TkWhile then PsWhileStatement
   else if Lexer.Token.Id = TkFor then PsForStatement
+  else if Lexer.Token.Id = TkWith then PsWithStatement
   else
   begin
     writeln(StdErr, 'Unexpected token ', LxTokenStr, LxWhereStr);
