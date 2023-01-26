@@ -21,12 +21,12 @@ type
                   TtcPlaceholder);
   TPsType = record
     Name : string;
-    Cls : TPsTypeClass;
-    EnumIndex : TPsEnumIndex;
-    RecordIndex : TPsRecordIndex;
-    ArrayIndex : TPsArrayIndex;
-    PointedTypeIndex : TPsTypeIndex;
     AliasFor : TPsTypeIndex;
+    case Cls : TPsTypeClass of
+      TtcEnum : (EnumIndex : TPsEnumIndex);
+      TtcRecord : (RecordIndex : TPsRecordIndex);
+      TtcArray : (ArrayIndex : TPsArrayIndex);
+      TtcPointer : (PointedTypeIndex : TPsTypeIndex)
   end;
   TPsEnumDef = record
     Size : integer;
@@ -73,11 +73,13 @@ type
                         TsfNew, TsfDispose);
   TPsName = record
     Name : string;
-    Cls : TPsNameClass;
-    TypeIndex : TPsTypeIndex;
-    VariableIndex : TPsVariableIndex;
-    FunctionIndex : TPsFunctionIndex;
-    SpecialFunction : TPsSpecialFunction;
+
+    case Cls : TPsNameClass of
+      TncType : (TypeIndex : TPsTypeIndex);
+      TncVariable : (VariableIndex : TPsVariableIndex);
+      TncEnumValue : (EnumTypeIndex : TPsTypeIndex);
+      TncFunction : (FunctionIndex : TPsFunctionIndex);
+      TncSpecialFunction : (SpecialFunction : TPsSpecialFunction)
   end;
   TPsScope = record
     NumNames,
@@ -100,8 +102,6 @@ type
     Variables : array[1..MaxVariables] of TPsVariable;
     Functions : array[1..MaxFunctions] of TPsFunction;
   end;
-  TPsIdClass = (IdcVariable, IdcFunction,
-                IdcRead, IdcReadln, IdcWrite, IdcWriteln, IdcStr);
   TPsIdentifier = record
     Name : string;
   end;
@@ -179,7 +179,7 @@ begin
   case Cls of 
     TncType : Def.TypeIndex := Idx;
     TncVariable : Def.VariableIndex := Idx;
-    TncEnumValue : Def.TypeIndex := Idx;
+    TncEnumValue : Def.EnumTypeIndex := Idx;
     TncFunction : Def.FunctionIndex := Idx;
     else
       writeln(StdErr, 'Cannot use MakeName for special functions', LxWhereStr);

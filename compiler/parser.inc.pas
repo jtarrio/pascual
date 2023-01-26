@@ -858,7 +858,7 @@ begin
   begin
     Expr.Value := Id.Name;
     Expr.Cls := TecValue;
-    Expr.TypeIndex := Found.TypeIndex;
+    Expr.TypeIndex := Found.EnumTypeIndex;
     Expr.IsConstant := true
   end
   else if Found.Cls = TncSpecialFunction then

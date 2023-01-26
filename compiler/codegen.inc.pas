@@ -111,7 +111,6 @@ procedure OutNameAndType;
 var 
   Typ : TPsType;
   Enum : TPsEnumDef;
-  Rec : TPsRecordDef;
   Arr : TPsArrayDef;
   Pos : integer;
 begin

@@ -2,8 +2,8 @@ type
   TPsExpressionClass = (TecValue, TecFunction, TecStatement);
   TPsExpression = record
     Value : string;
-    Cls : TPsExpressionClass;
     IsConstant : boolean;
-    TypeIndex : TPsTypeIndex;
-    FunctionIndex : TPsFunctionIndex
+    case Cls : TPsExpressionClass of
+      TecValue : (TypeIndex : TPsTypeIndex);
+      TecFunction : (FunctionIndex : TPsFunctionIndex)
   end;
