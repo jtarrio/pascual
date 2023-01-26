@@ -30,7 +30,8 @@ procedure OutEnumValuesFromBase;
 var 
   Pos : TPsEnumIndex;
 begin
-  for Pos := Base + 1 to Defs.Bounds.Enums do OutEnumValues(Pos)
+  for Pos := Base + 1 to Defs.Bounds.Enums do
+    OutEnumValues(Pos)
 end;
 
 function OutVariableName;
@@ -297,6 +298,16 @@ begin
   GenParens := Expr
 end;
 
+function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
+begin
+  if IsBooleanType(TypeIndex) then ShortTypeName := 'b'
+  else if IsIntegerType(TypeIndex) then ShortTypeName := 'i'
+  else if IsCharType(TypeIndex) then ShortTypeName := 'c'
+  else if IsStringType(TypeIndex) then ShortTypeName := 's'
+  else if IsEnumType(TypeIndex) then ShortTypeName := 'e'
+  else CompileError('No short type name exists for ' + TypeName(TypeIndex))
+end;
+
 procedure OutRead;
 begin
   writeln(Codegen.Output, 'read_', ShortTypeName(OutVar.TypeIndex), '(&',
@@ -310,7 +321,7 @@ end;
 
 procedure OutWrite;
 begin
-  Expr := Evaluate(Expr);
+  Expr := ExprEvaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
     writeln(Codegen.Output, 'write_e(&', Dst, ', ', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')
@@ -326,7 +337,7 @@ end;
 
 procedure OutStr;
 begin
-  Expr := Evaluate(Expr);
+  Expr := ExprEvaluate(Expr);
   if Defs.Types[Expr.TypeIndex].Cls = TtcEnum then
     writeln(Codegen.Output, Dst, ' = to_str_e(', Expr.Value, ', EnumValues',
             Defs.Types[Expr.TypeIndex].EnumIndex, ');')

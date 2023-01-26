@@ -148,7 +148,7 @@ begin
     Rec.NumVariants := Rec.NumVariants + 1;
     Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
     repeat
-      CaseLabel := CoerceType(PsExpression, TagType);
+      CaseLabel := ExprCoerce(PsExpression, TagType);
       if not CaseLabel.IsConstant then
         CompileError('The label of the case statement is not constant');
       WantToken2(TkComma, TkColon);
@@ -293,25 +293,25 @@ begin
   if IsBooleanType(TypeIndex) then
   begin
     WantToken2(TkFalse, TkTrue);
-    Expr := GenBooleanConstant(Lexer.Token.Id = TkTrue);
+    Expr := ExprMakeBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken;
     OutConstantValue(Expr.Value)
   end
   else if IsIntegerType(TypeIndex) then
   begin
-    Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber));
+    Expr := ExprMakeNumberConstant(GetTokenValueAndRead(TkNumber));
     OutConstantValue(Expr.Value)
   end
   else if IsCharType(TypeIndex) then
   begin
-    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
+    Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString));
     if not IsCharType(Expr.TypeIndex) then
       CompileError('Expected char constant, got ' + TypeName(Expr.TypeIndex));
     OutConstantValue(Expr.Value)
   end
   else if IsStringType(TypeIndex) then
   begin
-    Expr := GenStringConstant(GetTokenValueAndRead(TkString));
+    Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString));
     OutConstantValue(Expr.Value)
   end
   else if IsArrayType(TypeIndex) then
@@ -551,7 +551,7 @@ begin
   for ArgNum := 1 to Fun.ArgCount do
   begin
     if ArgNum <> 1 then WantTokenAndRead(TkComma);
-    Expr := CoerceType(PsExpression, Fun.Args[ArgNum].TypeIndex);
+    Expr := ExprCoerce(PsExpression, Fun.Args[ArgNum].TypeIndex);
     Fn.Value := GenFunctionCallArgument(Fn.Value, Expr,
                 Fun.Args[ArgNum].IsReference, ArgNum)
   end;
@@ -565,7 +565,7 @@ end;
 
 function PsPointerDeref(Ptr : TPsExpression) : TPsExpression;
 begin
-  Ptr := Evaluate(Ptr);
+  Ptr := ExprEvaluate(Ptr);
   if (Ptr.Cls <> TecValue) or not IsPointerType(Ptr.TypeIndex) then
     CompileError('Not a pointer');
   WantTokenAndRead(TkCaret);
@@ -593,11 +593,11 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       OutVar := PsExpression;
-      if IsVariableExpression(OutVar) and IsTextType(OutVar.TypeIndex) then
+      if ExprIsVariable(OutVar) and IsTextType(OutVar.TypeIndex) then
         Src := OutVar.Value
       else
       begin
-        if not IsVariableExpression(OutVar)
+        if not ExprIsVariable(OutVar)
            or not IsStringyType(OutVar.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
@@ -607,7 +607,7 @@ begin
       while Lexer.Token.Id <> TkRparen do
       begin
         OutVar := PsExpression;
-        if not IsVariableExpression(OutVar)
+        if not ExprIsVariable(OutVar)
            or not IsStringyType(OutVar.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
@@ -641,7 +641,7 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       Expr := PsExpression;
-      if IsVariableExpression(Expr) and IsTextType(Expr.TypeIndex) then
+      if ExprIsVariable(Expr) and IsTextType(Expr.TypeIndex) then
         Dst := Expr.Value
       else
         OutWrite(Dst, Expr);
@@ -669,7 +669,7 @@ begin
   Expr := PsExpression;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
-  if not IsVariableExpression(Dest) or not IsStringType(Dest.TypeIndex) then
+  if not ExprIsVariable(Dest) or not IsStringType(Dest.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
   OutStr(Dest.Value, Expr)
@@ -682,7 +682,7 @@ begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
+  if not ExprIsVariable(Dest) or not IsPointerType(Dest.TypeIndex) then
     CompileError('Argument is not a pointer');
   OutNew(Dest)
 end;
@@ -694,7 +694,7 @@ begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not IsVariableExpression(Dest) or not IsPointerType(Dest.TypeIndex) then
+  if not ExprIsVariable(Dest) or not IsPointerType(Dest.TypeIndex) then
     CompileError('Argument is not a pointer');
   OutDispose(Dest)
 end;
@@ -837,18 +837,18 @@ var
 begin
   if Lexer.Token.Id = TkNil then
   begin
-    Expr := GenNilConstant;
+    Expr := ExprMakeNilConstant;
     ReadToken
   end
   else if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
   begin
-    Expr := GenBooleanConstant(Lexer.Token.Id = TkTrue);
+    Expr := ExprMakeBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken
   end
   else if Lexer.Token.Id = TkString then
-         Expr := GenStringConstant(GetTokenValueAndRead(TkString))
+         Expr := ExprMakeStringConstant(GetTokenValueAndRead(TkString))
   else if Lexer.Token.Id = TkNumber then
-         Expr := GenNumberConstant(GetTokenValueAndRead(TkNumber))
+         Expr := ExprMakeNumberConstant(GetTokenValueAndRead(TkNumber))
   else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall
   else if Lexer.Token.Id = TkLparen then
   begin
@@ -859,7 +859,7 @@ begin
   else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
-    Expr := UnaryExpression(TkNot, PsFactor);
+    Expr := ExprUnaryOp(TkNot, PsFactor);
   end
   else
     CompileError('Invalid token in expression: ' + LxTokenStr);
@@ -876,7 +876,7 @@ begin
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := BinaryExpression(Expr, Op, PsFactor)
+    Expr := ExprBinaryOp(Expr, Op, PsFactor)
   end;
   PsTerm := Expr
 end;
@@ -890,12 +890,12 @@ begin
   Negative := Lexer.Token.Id = TkMinus;
   if Negative then ReadToken;
   Expr := PsTerm;
-  if Negative then Expr := UnaryExpression(TkMinus, Expr);
+  if Negative then Expr := ExprUnaryOp(TkMinus, Expr);
   while IsOpAdding(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := BinaryExpression(Expr, Op, PsTerm)
+    Expr := ExprBinaryOp(Expr, Op, PsTerm)
   end;
   PsSimpleExpression := Expr
 end;
@@ -910,7 +910,7 @@ begin
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := BinaryExpression(Expr, Op, PsSimpleExpression)
+    Expr := ExprBinaryOp(Expr, Op, PsSimpleExpression)
   end;
   PsExpression := Expr
 end;
@@ -920,10 +920,10 @@ begin
   if Lhs.IsConstant then
     CompileError('Cannot assign to a constant value');
   if Lhs.Cls = TecFunction then
-    OutAssignReturnValue(Lhs, CoerceType(Rhs,
+    OutAssignReturnValue(Lhs, ExprCoerce(Rhs,
                          Defs.Functions[Lhs.FunctionIndex].ReturnTypeIndex))
   else if Lhs.Cls = TecValue then
-         OutAssign(Lhs, CoerceType(Rhs, Lhs.TypeIndex))
+         OutAssign(Lhs, ExprCoerce(Rhs, Lhs.TypeIndex))
   else
     CompileError('Cannot assign to result of statement')
 end;
@@ -954,7 +954,7 @@ begin
   end
   else if Lhs.Cls <> TecStatement then
   begin
-    if Lhs.Cls = TecFunction then Lhs := Evaluate(Lhs);
+    if Lhs.Cls = TecFunction then Lhs := ExprEvaluate(Lhs);
     OutProcedureCall(Lhs)
   end
 end;
@@ -962,7 +962,7 @@ end;
 procedure PsIfStatement;
 begin
   WantTokenAndRead(TkIf);
-  OutIf(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
+  OutIf(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
   WantTokenAndRead(TkThen);
   if Lexer.Token.Id = TkElse then OutEmptyStatement
   else PsStatement;
@@ -986,7 +986,7 @@ begin
   OutCaseBegin(CaseIndex);
   WantTokenAndRead(TkOf);
   repeat
-    CaseLabel := CoerceType(PsExpression, CaseIndex.TypeIndex);
+    CaseLabel := ExprCoerce(PsExpression, CaseIndex.TypeIndex);
     if not CaseLabel.IsConstant then
       CompileError('The label of the case statement is not constant');
     WantTokenAndRead(TkColon);
@@ -1019,13 +1019,13 @@ begin
     SkipToken(TkSemicolon)
   end;
   WantTokenAndRead(TkUntil);
-  OutRepeatEnd(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
+  OutRepeatEnd(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
 end;
 
 procedure PsWhileStatement;
 begin
   WantTokenAndRead(TkWhile);
-  OutWhileBegin(CoerceType(PsExpression, PrimitiveTypes.PtBoolean));
+  OutWhileBegin(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
   WantTokenAndRead(TkDo);
   PsStatement;
   OutWhileEnd
@@ -1038,17 +1038,17 @@ var
 begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
-  if not IsVariableExpression(Iter) then
+  if not ExprIsVariable(Iter) then
     CompileError('Expected variable');
   if not IsOrdinalType(Iter.TypeIndex) then
     CompileError('Type of iterator is not ordinal: ' +
                  TypeName(Iter.TypeIndex));
   WantTokenAndRead(TkAssign);
-  First := Evaluate(PsExpression);
+  First := ExprEvaluate(PsExpression);
   WantToken2(TkTo, TkDownto);
   Ascending := Lexer.Token.Id = TkTo;
   ReadToken;
-  Last := Evaluate(PsExpression);
+  Last := ExprEvaluate(PsExpression);
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;
