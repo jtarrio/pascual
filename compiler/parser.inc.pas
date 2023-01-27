@@ -78,6 +78,7 @@ var
 begin
   WantTokenAndRead(TkLparen);
   Enum.Size := 0;
+  Enum.HasBeenDefined := false;
   repeat
     Enum.Size := Enum.Size + 1;
     if Enum.Size > MaxEnumValues then
@@ -172,6 +173,7 @@ begin
   WantTokenAndRead(TkRecord);
   Rec.Size := 0;
   Rec.NumVariants := 0;
+  Rec.HasBeenDefined := false;
   while (Lexer.Token.Id <> TkCase) and (Lexer.Token.Id <> TkEnd) do
     PsRecordField(Rec, TkEnd);
   if Lexer.Token.Id = TkCase then
@@ -707,7 +709,6 @@ end;
 function PsFieldAccess(Rec : TPsExpression) : TPsExpression;
 var 
   Fld : TPsIdentifier;
-  FldType : TPsTypeIndex;
 begin
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
@@ -726,7 +727,10 @@ begin
   Id := PsIdentifier;
   WithVarIndex := FindWithVar(Id.Name);
   if WithVarIndex <> 0 then
-    Expr := ExprFieldAccess(Defs.WithVars[WithVarIndex].Expr, Id.Name)
+  begin
+    Expr := ExprVariableAccess(Defs.WithVars[WithVarIndex].VariableIndex);
+    Expr := ExprFieldAccess(Expr, Id.Name)
+  end
   else
   begin
     Found := Defs.Names[FindName(Id.Name, {Required=}true)];
@@ -1009,18 +1013,23 @@ end;
 
 procedure PsWithStatement;
 var 
-  WithVarsBase : TPsWithVarIndex;
+  Base : TPsExpression;
+  VarIndex : TPsVariableIndex;
 begin
   WantToken(TkWith);
-  StartLocalScope;
+  StartTemporaryScope;
+  OutBegin;
   repeat
     ReadToken;
-    AddWithVar(PsExpression);
+    Base := PsExpression;
+    VarIndex := AddWithVar(Base);
+    OutAssignToReference(VarIndex, Base);
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
   PsStatement;
-  CloseLocalScope
+  OutEnd;
+  CloseTemporaryScope
 end;
 
 procedure PsStatement;

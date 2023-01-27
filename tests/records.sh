@@ -9,6 +9,8 @@ testrecord() {
 
 testrecord 'A : integer' \
            "R.A := 1; write(R.A)" | outputs "1"
+testrecord 'A : integer' \
+           "R.A := 1; write(R.A)" | outputs "1"
 testrecord 'A : integer; B : string' \
            "R.A := 1; R.B := 'two'; write(R.A, ' ', R.B)" | outputs '1 two'
 testrecord 'A : string; B : integer' \
@@ -40,6 +42,9 @@ testrecord 'A : integer;
            "R.A := 1; R.B := 'abcdefghijklmnopqrstuvwxyzabcdefg'; write(R.A, ' ', R.C, ' ', R.D)" |
 outputs '1 ! a'
 
+echo "program foo; var A, B : record C : integer end;
+      begin A.C := 1; B.C := 2; write(A.C, ' ', B.C) end." | outputs '1 2'
+
 # With statement
 echo "program foo;
       var A : record
@@ -55,7 +60,6 @@ echo "program foo;
         with A do
           write(A.B, ' ', A.C, ' ', B)
       end." | outputs '1 two three 1 two 1'
-# With statement
 echo "program foo;
       var A : record
                 B : integer;

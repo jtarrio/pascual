@@ -47,6 +47,7 @@ type
   TPsEnumDef = record
     Size : integer;
     Values : array[1..MaxEnumValues] of string;
+    HasBeenDefined : boolean
   end;
   TPsRecordField = record
     Name : string;
@@ -56,7 +57,8 @@ type
     Size : integer;
     Fields : array[1..MaxRecordFields] of TPsRecordField;
     NumVariants : integer;
-    VariantBounds : array[1..MaxRecordFields] of integer
+    VariantBounds : array[1..MaxRecordFields] of integer;
+    HasBeenDefined : boolean
   end;
   TPsArrayDef = record
     LowBound, HighBound : string;
@@ -81,7 +83,7 @@ type
   end;
   TPsWithVarIndex = integer;
   TPsWithVar = record
-    Expr : TPsExpression
+    VariableIndex : TPsVariableIndex
   end;
   TPsNameIndex = integer;
   TPsNameClass = (TncType, TncVariable, TncEnumValue, TncFunction,
@@ -112,7 +114,8 @@ type
   TPsScopeStack = ^TPsScopeElement;
   TPsScopeElement = record
     Base : TPsDefBounds;
-    Prev : TPsScopeStack
+    Prev : TPsScopeStack;
+    IsTemporary : boolean
   end;
   TPsDefs = record
     Bounds : TPsDefBounds;
@@ -160,28 +163,53 @@ begin
   Defs.ScopeBase := ClearBounds;
 end;
 
-procedure StartLocalScope;
-var
+procedure _StartScope(Temporary : boolean);
+var 
   Prev : TPsScopeStack;
 begin
   Prev := Defs.ScopeStack;
   new(Defs.ScopeStack);
   Defs.ScopeStack^.Prev := Prev;
   Defs.ScopeStack^.Base := Defs.ScopeBase;
+  Defs.ScopeStack^.IsTemporary := Temporary;
   Defs.ScopeBase := Defs.Bounds
 end;
 
-procedure CloseLocalScope;
-var
+procedure _CloseScope(Temporary : boolean);
+var 
   Prev : TPsScopeStack;
+  WasTemporary : boolean;
 begin
-  if Defs.ScopeStack = nil then
-    CompileError('Internal error: Already in global scope');
-  Defs.Bounds := Defs.ScopeBase;
-  Defs.ScopeBase := Defs.ScopeStack^.Base;
-  Prev := Defs.ScopeStack^.Prev;
-  dispose(Defs.ScopeStack);
-  Defs.ScopeStack := Prev;
+  repeat
+    if Defs.ScopeStack = nil then
+      CompileError('Internal error: Already in global scope');
+    Defs.Bounds := Defs.ScopeBase;
+    Defs.ScopeBase := Defs.ScopeStack^.Base;
+    WasTemporary := Defs.ScopeStack^.IsTemporary;
+    Prev := Defs.ScopeStack^.Prev;
+    dispose(Defs.ScopeStack);
+    Defs.ScopeStack := Prev;
+  until Temporary or not WasTemporary
+end;
+
+procedure StartLocalScope;
+begin
+  _StartScope({Temporary=}false)
+end;
+
+procedure CloseLocalScope;
+begin
+  _CloseScope({Temporary=}false)
+end;
+
+procedure StartTemporaryScope;
+begin
+  _StartScope({Temporary=}true)
+end;
+
+procedure CloseTemporaryScope;
+begin
+  _CloseScope({Temporary=}true)
 end;
 
 function _FindNameFromBase(Name : string; Required : boolean;
@@ -722,27 +750,40 @@ function FindWithVar(Name : string) : TPsWithVarIndex;
 var 
   Ret : TPsWithVarIndex;
   Pos : TPsWithVarIndex;
+  TypeIndex : TPsTypeIndex;
 begin
   Ret := 0;
   Pos := Defs.Bounds.WithVars;
   while (Pos >= 1) and (Ret = 0) do
   begin
-    if FindFieldType(Defs.WithVars[Pos].Expr.TypeIndex, Name, false) <> 0 then
+    TypeIndex := Defs.Variables[Defs.WithVars[Pos].VariableIndex].TypeIndex;
+    if FindFieldType(TypeIndex, Name, false) <> 0 then
       Ret := Pos;
     Pos := Pos - 1
   end;
   FindWithVar := Ret
 end;
 
-function AddWithVar(Base : TPsExpression) : TPsWithVarIndex;
+function AddWithVar(Base : TPsExpression) : TPsVariableIndex;
+var 
+  TmpVarNum : string;
+  TmpVar : TPsVariable;
+  TmpVarIndex : TPsVariableIndex;
 begin
-  if not IsRecordType(Base.TypeIndex) then
+  if (Base.Cls <> TecValue) or not IsRecordType(Base.TypeIndex) then
     CompileError('''With'' variable is not a record');
   Defs.Bounds.WithVars := Defs.Bounds.WithVars + 1;
   if Defs.Bounds.WithVars > MaxWithVars then
     CompileError('Too many nesting levels for ''with''');
-  Defs.WithVars[Defs.Bounds.WithVars].Expr := Base;
-  AddWithVar := Defs.Bounds.WithVars
+
+  Str(Defs.Bounds.WithVars, TmpVarNum);
+  TmpVar.Name := '_with_' + TmpVarNum;
+  TmpVar.TypeIndex := Base.TypeIndex;
+  TmpVar.IsConstant := Base.IsConstant;
+  TmpVar.IsReference := true;
+  TmpVarIndex := AddVariable(TmpVar);
+  Defs.WithVars[Defs.Bounds.WithVars].VariableIndex := TmpVarIndex;
+  AddWithVar := TmpVarIndex
 end;
 
 function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;

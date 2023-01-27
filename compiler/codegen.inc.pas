@@ -76,39 +76,67 @@ end;
 
 procedure OutNameAndRecord(Name : string; RecordIndex : TPsRecordIndex);
 var 
-  Rec : TPsRecordDef;
   Pos : integer;
   NumVariant : integer;
 begin
-  Rec := Defs.Records[RecordIndex];
-  NumVariant := 0;
-  write(Codegen.Output, 'struct record', RecordIndex, ' { ');
-  for Pos := 1 to Rec.Size do
+  with Defs.Records[RecordIndex] do
   begin
-    if (Rec.NumVariants > NumVariant)
-       and (Rec.VariantBounds[NumVariant + 1] = Pos) then
+    NumVariant := 0;
+    write(Codegen.Output, 'struct record', RecordIndex);
+    if not HasBeenDefined then
     begin
-      NumVariant := NumVariant + 1;
-      if NumVariant = 1 then
-        write(Codegen.Output, 'union { ')
-      else
-        write(Codegen.Output, '}; ');
-      write(Codegen.Output, 'struct { ')
+      write(Codegen.Output, ' { ');
+      for Pos := 1 to Size do
+      begin
+        if (NumVariants > NumVariant)
+           and (VariantBounds[NumVariant + 1] = Pos) then
+        begin
+          NumVariant := NumVariant + 1;
+          if NumVariant = 1 then
+            write(Codegen.Output, 'union { ')
+          else
+            write(Codegen.Output, '}; ');
+          write(Codegen.Output, 'struct { ')
+        end;
+        OutNameAndType(Fields[Pos].Name, Fields[Pos].TypeIndex);
+        write(Codegen.Output, '; ')
+      end;
+      if NumVariant > 0 then
+        write(Codegen.Output, '}; }; ');
+      write(Codegen.Output, '}');
+      HasBeenDefined := true
     end;
-    OutNameAndType(Rec.Fields[Pos].Name, Rec.Fields[Pos].TypeIndex);
-    write(Codegen.Output, '; ')
-  end;
-  if NumVariant > 0 then
-    write(Codegen.Output, '}; }; ');
-  write(Codegen.Output, '} ', Name)
+    write(Codegen.Output, ' ', Name)
+  end
+end;
+
+procedure OutNameAndEnum(Name : string; EnumIndex : TPsEnumIndex);
+var 
+  Pos : integer;
+begin
+  with Defs.Enums[EnumIndex] do
+  begin
+    write(Codegen.Output, 'enum enum', EnumIndex);
+    if not HasBeenDefined then
+    begin
+      write(Codegen.Output, ' { ');
+      for Pos := 1 to Size do
+      begin
+        if Pos > 1 then
+          write(Codegen.Output, ', ');
+        write(Codegen.Output, Values[Pos])
+      end;
+      write(Codegen.Output, '}');
+      HasBeenDefined := true
+    end;
+    write(Codegen.Output, ' ', Name)
+  end
 end;
 
 procedure OutNameAndType;
 var 
   Typ : TPsType;
-  Enum : TPsEnumDef;
   Arr : TPsArrayDef;
-  Pos : integer;
 begin
   if TypeIndex <> 0 then
     Typ := Defs.Types[TypeIndex];
@@ -125,18 +153,7 @@ begin
   else if Typ.Cls = TtcChar then write(Codegen.Output, 'char ', Name)
   else if Typ.Cls = TtcString then write(Codegen.Output, 'PString ', Name)
   else if Typ.Cls = TtcText then write(Codegen.Output, 'PFile ', Name)
-  else if Typ.Cls = TtcEnum then
-  begin
-    Enum := Defs.Enums[Typ.EnumIndex];
-    write(Codegen.Output, 'enum enum', Typ.EnumIndex, ' { ');
-    for Pos := 1 to Enum.Size do
-    begin
-      if Pos > 1 then
-        write(Codegen.Output, ', ');
-      write(Codegen.Output, Enum.Values[Pos])
-    end;
-    write(Codegen.Output, '} ', Name)
-  end
+  else if Typ.Cls = TtcEnum then OutNameAndEnum(Name, Typ.EnumIndex)
   else if Typ.Cls = TtcRecord then OutNameAndRecord(Name, Typ.RecordIndex)
   else if Typ.Cls = TtcArray then
   begin
@@ -348,6 +365,12 @@ procedure OutAssignReturnValue;
 begin
   writeln(Codegen.Output, 'return_', Defs.Functions[Lhs.FunctionIndex].Name,
           ' = ', Rhs.Value, ';')
+end;
+
+procedure OutAssignToReference;
+begin
+  OutVariableDeclaration(Defs.Variables[VarIndex]);
+  writeln(Codegen.Output, ' = &(', Rhs.Value, ');')
 end;
 
 procedure OutIf;
