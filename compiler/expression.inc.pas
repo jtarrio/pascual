@@ -218,7 +218,7 @@ begin
   Expr.Cls := TecValue;
   Expr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
   Expr.IsConstant := Ptr.IsConstant;
-  ExprPointerDeref := Ptr
+  ExprPointerDeref := Expr
 end;
 
 function _ExprBinaryOpInteger(Left : TPsExpression; Op : TLxTokenId;
