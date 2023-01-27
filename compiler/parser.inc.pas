@@ -1012,7 +1012,7 @@ var
   WithVarsBase : TPsWithVarIndex;
 begin
   WantToken(TkWith);
-  WithVarsBase := Defs.Bounds.WithVars;
+  StartLocalScope;
   repeat
     ReadToken;
     AddWithVar(PsExpression);
@@ -1020,7 +1020,7 @@ begin
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
   PsStatement;
-  Defs.Bounds.WithVars := WithVarsBase
+  CloseLocalScope
 end;
 
 procedure PsStatement;

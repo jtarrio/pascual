@@ -109,9 +109,14 @@ type
     Functions,
     WithVars : integer
   end;
+  TPsScopeStack = ^TPsScopeElement;
+  TPsScopeElement = record
+    Base : TPsDefBounds;
+    Prev : TPsScopeStack
+  end;
   TPsDefs = record
     Bounds : TPsDefBounds;
-    InLocalScope : boolean;
+    ScopeStack : TPsScopeStack;
     ScopeBase : TPsDefBounds;
     Names : array[1..MaxNames] of TPsName;
     Types : array[1..MaxTypes] of TPsType;
@@ -151,25 +156,32 @@ end;
 procedure InitDefs;
 begin
   Defs.Bounds := ClearBounds;
+  Defs.ScopeStack := nil;
   Defs.ScopeBase := ClearBounds;
-  Defs.InLocalScope := false
 end;
 
 procedure StartLocalScope;
+var
+  Prev : TPsScopeStack;
 begin
-  if Defs.InLocalScope then
-    CompileError('Internal error: Already in local scope');
-  Defs.InLocalScope := true;
+  Prev := Defs.ScopeStack;
+  new(Defs.ScopeStack);
+  Defs.ScopeStack^.Prev := Prev;
+  Defs.ScopeStack^.Base := Defs.ScopeBase;
   Defs.ScopeBase := Defs.Bounds
 end;
 
 procedure CloseLocalScope;
+var
+  Prev : TPsScopeStack;
 begin
-  if not Defs.InLocalScope then
+  if Defs.ScopeStack = nil then
     CompileError('Internal error: Already in global scope');
-  Defs.InLocalScope := false;
   Defs.Bounds := Defs.ScopeBase;
-  Defs.ScopeBase := ClearBounds
+  Defs.ScopeBase := Defs.ScopeStack^.Base;
+  Prev := Defs.ScopeStack^.Prev;
+  dispose(Defs.ScopeStack);
+  Defs.ScopeStack := Prev;
 end;
 
 function _FindNameFromBase(Name : string; Required : boolean;
