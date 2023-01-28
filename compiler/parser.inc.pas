@@ -43,20 +43,11 @@ end;
 function PsTypeDenoter : TPsTypeIndex;
 forward;
 
-function PsFindType(Name : string) : TPsTypeIndex;
-var 
-  Found : TPsName;
-begin
-  Found := Defs.Names[FindName(Name, {Required=}true)];
-  if Found.Cls <> TncType then
-    CompileError('Not a type: ' + Found.Name);
-  PsFindType := Found.TypeIndex;
-end;
-
 function PsTypeIdentifier : TPsTypeIndex;
 begin
   WantToken(TkIdentifier);
-  PsTypeIdentifier := PsFindType(Lexer.Token.Value);
+  PsTypeIdentifier := Defs.Names[FindNameOfClass(
+                      Lexer.Token.Value, TncType, {Required=}true)].TypeIndex;
   ReadToken
 end;
 
@@ -141,7 +132,8 @@ begin
     Rec.Fields[Rec.Size].TypeIndex := TagType;
   end
   else
-    TagType := PsFindType(Tag.Name);
+    TagType := Defs.Names[FindNameOfClass(
+               Tag.Name, TncType, {Required=}true)].TypeIndex;
   if not IsOrdinalType(TagType) then
     CompileError('The index of the case statement is not ordinal');
   WantTokenAndRead(TkOf);
@@ -210,13 +202,9 @@ var
 begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
-  NameIndex := FindName(Lexer.Token.Value, {Required=}false);
-  if NameIndex = 0 then
-    Typ := PointerUnknownType(Lexer.Token.Value)
-  else if Defs.Names[NameIndex].Cls = TncType then
-         Typ := PointerType(Defs.Names[NameIndex].TypeIndex)
-  else
-    CompileError('Not a type: ' + Lexer.Token.Value);
+  NameIndex := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
+  if NameIndex = 0 then Typ := PointerUnknownType(Lexer.Token.Value)
+  else Typ := PointerType(Defs.Names[NameIndex].TypeIndex);
   ReadToken;
   PsPointerType := AddType(Typ)
 end;
@@ -244,7 +232,8 @@ begin
   begin
     if Cls = TtcPointerUnknown then
     begin
-      TargetIndex := PsFindType(TargetName^);
+      TargetIndex := Defs.Names[FindNameOfClass(
+                     TargetName^, TncType, {Required=}true)].TypeIndex;
       dispose(TargetName);
       Cls := TtcPointer;
       PointedTypeIndex := TargetIndex
@@ -587,7 +576,8 @@ var
   OutVar : TPsExpression;
 begin
   LineFeed := Fn = TsfReadln;
-  Src := ExprVariableAccess(Defs.Names[FindName('INPUT', true)].VariableIndex);
+  Src := ExprVariableAccess(Defs.Names[
+         FindNameOfClass('INPUT', TncVariable, {Required=}true)].VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutReadln(Src);
@@ -635,7 +625,9 @@ var
   Expr : TPsExpression;
 begin
   LineFeed := Fn = TsfWriteln;
-  Dst := ExprVariableAccess(Defs.Names[FindName('OUTPUT', true)].VariableIndex);
+  Dst := ExprVariableAccess(Defs.Names[
+         FindNameOfClass('OUTPUT', TncVariable, {Required=}true)]
+         .VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutWriteln(Dst);

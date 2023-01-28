@@ -229,15 +229,47 @@ begin
   _FindNameFromBase := Ret
 end;
 
+function _CheckNameClass(NameIndex : TPsNameIndex; Cls : TPsNameClass)
+: TPSNameIndex;
+var 
+  Name : string;
+begin
+  if (NameIndex <> 0) and (Defs.Names[NameIndex].Cls <> Cls) then
+    with Defs.Names[NameIndex] do
+      case Cls of 
+        TncType : CompileError('Not a type: ' + Name);
+        TncVariable : CompileError('Not a variable: ' + Name);
+        TncEnumValue : CompileError('Not an enumeration value: ' + Name);
+        TncFunction : CompileError('Not a procedure or function: ' + Name);
+        TncSpecialFunction : CompileError('Not a procedure or function: ' + Name
+                             );
+        else CompileError('Internal error: name class mismatch')
+      end;
+  _CheckNameClass := NameIndex
+end;
+
 function FindNameInLocalScope(Name : string; Required : boolean) : TPsNameIndex;
 begin
   FindNameInLocalScope := _FindNameFromBase(Name, Required,
                           Defs.ScopeBase.Names)
 end;
 
+function FindNameOfClassInLocalScope(Name : string; Cls : TPsNameClass;
+                                     Required : boolean) : TPsNameIndex;
+begin
+  FindNameOfClassInLocalScope := _CheckNameClass(
+                                 FindNameInLocalScope(Name, Required), Cls)
+end;
+
 function FindName(Name : string; Required : boolean) : TPsNameIndex;
 begin
   FindName := _FindNameFromBase(Name, Required, 0)
+end;
+
+function FindNameOfClass(Name : string; Cls : TPsNameClass; Required : boolean)
+: TPsNameIndex;
+begin
+  FindNameOfClass := _CheckNameClass(FindName(Name, Required), Cls)
 end;
 
 function AddName(Def : TPsName) : TPsNameIndex;
@@ -353,7 +385,7 @@ begin
 end;
 
 function CopyType(var Typ : TPsType) : TPsType;
-var
+var 
   NewTyp : TPsType;
 begin
   NewTyp := Typ;
@@ -665,9 +697,8 @@ function HasForwardDeclaration(Name : string) : boolean;
 var 
   Pos : integer;
 begin
-  Pos := FindNameInLocalScope(Name, {Required=}false);
+  Pos := FindNameOfClassInLocalScope(Name, TncFunction, {Required=}false);
   HasForwardDeclaration := (Pos <> 0)
-                           and (Defs.Names[Pos].Cls = TncFunction)
                            and (Defs.Functions[Defs.Names[Pos].FunctionIndex].
                            IsDeclaration)
 end;
