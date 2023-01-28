@@ -19,6 +19,15 @@ echo "program foo; type TP = ^T; T = integer; var P : TP;
 echo "program foo; type TP = ^T; type T = integer; var P : TP;
       begin new(P); P^ := 3; write(P^); dispose(P) end." | is_not_valid
 
+# Placeholders do not alter the order of definitions.
+echo "program foo;
+      type TP = ^T;
+           E = (One, Two);
+           T = record
+               A : E
+           end;
+      begin end." | outputs ''
+
 # Longer program showing pointer manipulation.
 echo "program foo;
       type TP = ^T;

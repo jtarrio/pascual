@@ -34,7 +34,7 @@ type
   end;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRecord, TtcArray, TtcPointer, TtcNil,
-                  TtcPlaceholder);
+                  TtcPointerUnknown);
   TPsType = record
     Name : string;
     AliasFor : TPsTypeIndex;
@@ -42,7 +42,8 @@ type
       TtcEnum : (EnumIndex : TPsEnumIndex);
       TtcRecord : (RecordIndex : TPsRecordIndex);
       TtcArray : (ArrayIndex : TPsArrayIndex);
-      TtcPointer : (PointedTypeIndex : TPsTypeIndex)
+      TtcPointer : (PointedTypeIndex : TPsTypeIndex);
+      TtcPointerUnknown : (TargetName : ^string);
   end;
   TPsEnumDef = record
     Size : integer;
@@ -347,12 +348,21 @@ var
 begin
   Ret.Name := '';
   Ret.Cls := TtcBoolean;
-  Ret.EnumIndex := 0;
-  Ret.RecordIndex := 0;
-  Ret.ArrayIndex := 0;
-  Ret.PointedTypeIndex := 0;
   Ret.AliasFor := 0;
   EmptyType := Ret
+end;
+
+function CopyType(var Typ : TPsType) : TPsType;
+var
+  NewTyp : TPsType;
+begin
+  NewTyp := Typ;
+  if NewTyp.Cls = TtcPointerUnknown then
+  begin
+    new(NewTyp.TargetName);
+    NewTyp.TargetName^ := Typ.TargetName^
+  end;
+  CopyType := NewTyp
 end;
 
 function TypeOfClass(Cls : TPsTypeClass) : TPsType;
@@ -468,14 +478,19 @@ begin
   IsPointeryType := IsPointerType(TypeIndex) or IsNilType(TypeIndex)
 end;
 
-function PlaceholderType : TPsType;
+function PointerUnknownType(TargetName : string) : TPsType;
+var 
+  Typ : TPsType;
 begin
-  PlaceholderType := TypeOfClass(TtcPlaceholder)
+  Typ := TypeOfClass(TtcPointerUnknown);
+  new(Typ.TargetName);
+  Typ.TargetName^ := TargetName;
+  PointerUnknownType := Typ
 end;
 
-function IsPlaceholderType(TypeIndex : TPsTypeIndex) : boolean;
+function IsPointerUnknownType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsPlaceholderType := TypeHasClass(TypeIndex, TtcPlaceholder)
+  IsPointerUnknownType := TypeHasClass(TypeIndex, TtcPointerUnknown)
 end;
 
 function IsOrdinalType(TypeIndex : TPsTypeIndex) : boolean;
@@ -520,13 +535,7 @@ begin
   else Pos := FindNameInLocalScope(Typ.Name, {Required=}false);
 
   if Pos <> 0 then
-  begin
-    with Defs.Names[Pos] do
-      if (Cls = TncType) and IsPlaceholderType(TypeIndex) then
-        Pos := TypeIndex
-      else
-        CompileError('Identifier ' + Typ.Name + ' already defined')
-  end
+    CompileError('Identifier ' + Typ.Name + ' already defined')
   else
   begin
     Pos := Defs.Bounds.Types + 1;

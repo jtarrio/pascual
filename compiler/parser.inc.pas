@@ -212,17 +212,12 @@ begin
   WantToken(TkIdentifier);
   NameIndex := FindName(Lexer.Token.Value, {Required=}false);
   if NameIndex = 0 then
-  begin
-    Typ := PlaceholderType;
-    Typ.Name := Lexer.Token.Value;
-    TypeIndex := AddType(Typ)
-  end
+    Typ := PointerUnknownType(Lexer.Token.Value)
   else if Defs.Names[NameIndex].Cls = TncType then
-         TypeIndex := Defs.Names[NameIndex].TypeIndex
+         Typ := PointerType(Defs.Names[NameIndex].TypeIndex)
   else
     CompileError('Not a type: ' + Lexer.Token.Value);
   ReadToken;
-  Typ := PointerType(TypeIndex);
   PsPointerType := AddType(Typ)
 end;
 
@@ -241,6 +236,22 @@ begin
   PsTypeDenoter := TypeIndex;
 end;
 
+procedure _ResolvePointerUnknown(TypeIndex : TPsTypeIndex);
+var 
+  TargetIndex : TPsTypeIndex;
+begin
+  with Defs.Types[TypeIndex] do
+  begin
+    if Cls = TtcPointerUnknown then
+    begin
+      TargetIndex := PsFindType(TargetName^);
+      dispose(TargetName);
+      Cls := TtcPointer;
+      PointedTypeIndex := TargetIndex
+    end
+  end
+end;
+
 procedure PsTypeDefinitions;
 var 
   Name : string;
@@ -256,7 +267,7 @@ begin
     Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkEquals);
     TypeIndex := PsTypeDenoter;
-    NewType := Defs.Types[TypeIndex];
+    NewType := CopyType(Defs.Types[TypeIndex]);
     NewType.Name := Name;
     NewType.AliasFor := TypeIndex;
     TypeIndex := AddType(NewType);
@@ -264,9 +275,7 @@ begin
   until Lexer.Token.Id <> TkIdentifier;
   for TypeIndex := TypeBase + 1 to Defs.Bounds.Types do
   begin
-    if IsPlaceholderType(TypeIndex) then
-      CompileError('Type has been mentioned but not defined: ' +
-                   TypeName(TypeIndex));
+    _ResolvePointerUnknown(TypeIndex);
     if Defs.Types[TypeIndex].AliasFor <> 0 then
       OutTypeDefinition(TypeIndex)
   end;
