@@ -46,8 +46,8 @@ forward;
 function PsTypeIdentifier : TPsTypeIndex;
 begin
   WantToken(TkIdentifier);
-  PsTypeIdentifier := Defs.Names[FindNameOfClass(
-                      Lexer.Token.Value, TncType, {Required=}true)].TypeIndex;
+  PsTypeIdentifier := FindNameOfClass(Lexer.Token.Value,
+                      TncType, {Required=}true)^.TypeIndex;
   ReadToken
 end;
 
@@ -132,8 +132,7 @@ begin
     Rec.Fields[Rec.Size].TypeIndex := TagType;
   end
   else
-    TagType := Defs.Names[FindNameOfClass(
-               Tag.Name, TncType, {Required=}true)].TypeIndex;
+    TagType := FindNameOfClass(Tag.Name, TncType, {Required=}true)^.TypeIndex;
   if not IsOrdinalType(TagType) then
     CompileError('The index of the case statement is not ordinal');
   WantTokenAndRead(TkOf);
@@ -197,14 +196,13 @@ end;
 function PsPointerType : TPsTypeIndex;
 var 
   Typ : TPsType;
-  TypeIndex : TPsTypeIndex;
   NameIndex : TPsNameIndex;
 begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
   NameIndex := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
-  if NameIndex = 0 then Typ := PointerUnknownType(Lexer.Token.Value)
-  else Typ := PointerType(Defs.Names[NameIndex].TypeIndex);
+  if NameIndex = nil then Typ := PointerUnknownType(Lexer.Token.Value)
+  else Typ := PointerType(NameIndex^.TypeIndex);
   ReadToken;
   PsPointerType := AddType(Typ)
 end;
@@ -213,7 +211,7 @@ function PsTypeDenoter;
 var 
   TypeIndex : TPsTypeIndex;
 begin
-  TypeIndex := 0;
+  TypeIndex := nil;
   if Lexer.Token.Id = TkIdentifier then TypeIndex := PsTypeIdentifier
   else if Lexer.Token.Id = TkLparen then TypeIndex := PsEnumeratedType
   else if Lexer.Token.Id = TkRecord then TypeIndex := PsRecordType
@@ -228,16 +226,13 @@ procedure _ResolvePointerUnknown(TypeIndex : TPsTypeIndex);
 var 
   TargetIndex : TPsTypeIndex;
 begin
-  with Defs.Types[TypeIndex] do
+  if TypeIndex^.Cls = TtcPointerUnknown then
   begin
-    if Cls = TtcPointerUnknown then
-    begin
-      TargetIndex := Defs.Names[FindNameOfClass(
-                     TargetName^, TncType, {Required=}true)].TypeIndex;
-      dispose(TargetName);
-      Cls := TtcPointer;
-      PointedTypeIndex := TargetIndex
-    end
+    TargetIndex := FindNameOfClass(TypeIndex^.TargetName^,
+                   TncType, {Required=}true)^.TypeIndex;
+    dispose(TypeIndex^.TargetName);
+    TypeIndex^.Cls := TtcPointer;
+    TypeIndex^.PointedTypeIndex := TargetIndex
   end
 end;
 
@@ -246,29 +241,22 @@ var
   Name : string;
   TypeIndex : TPsTypeIndex;
   NewType : TPsType;
-  TypeBase : TPsTypeIndex;
-  EnumBase : TPsEnumIndex;
+  Checkpoint : TPsDefPtr;
 begin
-  TypeBase := Defs.Bounds.Types;
-  EnumBase := Defs.Bounds.Enums;
+  Checkpoint := Defs.Latest;
   WantTokenAndRead(TkType);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkEquals);
     TypeIndex := PsTypeDenoter;
-    NewType := CopyType(Defs.Types[TypeIndex]);
+    NewType := CopyType(TypeIndex);
     NewType.Name := Name;
     NewType.AliasFor := TypeIndex;
     TypeIndex := AddType(NewType);
     WantTokenAndRead(TkSemicolon)
   until Lexer.Token.Id <> TkIdentifier;
-  for TypeIndex := TypeBase + 1 to Defs.Bounds.Types do
-  begin
-    _ResolvePointerUnknown(TypeIndex);
-    if Defs.Types[TypeIndex].AliasFor <> 0 then
-      OutTypeDefinition(TypeIndex)
-  end;
-  OutEnumValuesFromBase(EnumBase)
+  OutTypeDefinitionsFromCheckpoint(Checkpoint);
+  OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
 procedure PsConstant(Name : string);
@@ -317,7 +305,7 @@ begin
   else if IsArrayType(TypeIndex) then
   begin
     WantTokenAndRead(TkLparen);
-    TypeIndex := Defs.Arrays[Defs.Types[TypeIndex].ArrayIndex].TypeIndex;
+    TypeIndex := TypeIndex^.ArrayIndex^.TypeIndex;
     OutConstantArrayBegin;
     while Lexer.Token.Id <> TkRparen do
     begin
@@ -368,9 +356,9 @@ var
   NumNames : integer;
   Names : array[1..MaxVarNames] of string;
   TypeIndex : TPsTypeIndex;
-  EnumBase : TPsEnumIndex;
+  Checkpoint : TPsDefPtr;
 begin
-  EnumBase := Defs.Bounds.Enums;
+  Checkpoint := Defs.Latest;
   WantTokenAndRead(TkVar);
   repeat
     NumNames := 0;
@@ -389,7 +377,7 @@ begin
       OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
                             TypeIndex, false)));
   until Lexer.Token.Id <> TkIdentifier;
-  OutEnumValuesFromBase(EnumBase)
+  OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
 procedure PsStatement;
@@ -401,12 +389,14 @@ forward;
 procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
 var 
   Pos : integer;
+  Checkpoint : TPsDefPtr;
 begin
   StartLocalScope;
-  for Pos := 1 to Defs.Functions[FnIndex].ArgCount do
-    AddVariable(Defs.Functions[FnIndex].Args[Pos]);
+  Checkpoint := Defs.Latest;
+  for Pos := 1 to FnIndex^.ArgCount do
+    AddVariable(FnIndex^.Args[Pos]);
   OutFunctionDefinition(FnIndex);
-  OutEnumValuesFromBase(Defs.ScopeBase.Enums);
+  OutEnumValuesFromCheckpoint(Checkpoint);
   PsDefinitions;
   WantTokenAndRead(TkBegin);
   while Lexer.Token.Id <> TkEnd do
@@ -485,7 +475,7 @@ begin
   WantTokenAndRead(TkFunction);
   Def.Name := GetTokenValueAndRead(TkIdentifier);
   if (Lexer.Token.Id = TkSemicolon) and HasForwardDeclaration(Def.Name) then
-    Def.ReturnTypeIndex := 0
+    Def.ReturnTypeIndex := nil
   else
   begin
     WantToken2(TkLparen, TkColon);
@@ -540,25 +530,23 @@ end;
 
 function PsFunctionCall(Fn : TPsExpression) : TPsExpression;
 var 
-  Fun : TPsFunction;
   Expr : TPsExpression;
   ArgNum : integer;
 begin
   if Fn.Cls <> TecFunction then CompileError('Not a function');
-  Fun := Defs.Functions[Fn.FunctionIndex];
   Fn.Value := GenFunctionCallStart(Fn.Value);
   WantTokenAndRead(TkLparen);
-  for ArgNum := 1 to Fun.ArgCount do
+  for ArgNum := 1 to Fn.FunctionIndex^.ArgCount do
   begin
     if ArgNum <> 1 then WantTokenAndRead(TkComma);
-    Expr := ExprCoerce(PsExpression, Fun.Args[ArgNum].TypeIndex);
+    Expr := ExprCoerce(PsExpression, Fn.FunctionIndex^.Args[ArgNum].TypeIndex);
     Fn.Value := GenFunctionCallArgument(Fn.Value, Expr,
-                Fun.Args[ArgNum].IsReference, ArgNum)
+                Fn.FunctionIndex^.Args[ArgNum].IsReference, ArgNum)
   end;
   WantTokenAndRead(TkRparen);
   Fn.Value := GenFunctionCallEnd(Fn.Value);
   Fn.Cls := TecValue;
-  Fn.TypeIndex := Fun.ReturnTypeIndex;
+  Fn.TypeIndex := Fn.FunctionIndex^.ReturnTypeIndex;
   Fn.IsConstant := true;
   PsFunctionCall := Fn
 end;
@@ -576,8 +564,8 @@ var
   OutVar : TPsExpression;
 begin
   LineFeed := Fn = TsfReadln;
-  Src := ExprVariableAccess(Defs.Names[
-         FindNameOfClass('INPUT', TncVariable, {Required=}true)].VariableIndex);
+  Src := ExprVariableAccess(FindNameOfClass('INPUT',
+         TncVariable, {Required=}true)^.VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutReadln(Src);
@@ -625,9 +613,8 @@ var
   Expr : TPsExpression;
 begin
   LineFeed := Fn = TsfWriteln;
-  Dst := ExprVariableAccess(Defs.Names[
-         FindNameOfClass('OUTPUT', TncVariable, {Required=}true)]
-         .VariableIndex);
+  Dst := ExprVariableAccess(FindNameOfClass('OUTPUT',
+         TncVariable, {Required=}true)^.VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
     if LineFeed then OutWriteln(Dst);
@@ -727,14 +714,14 @@ begin
   Done := false;
   Id := PsIdentifier;
   WithVarIndex := FindWithVar(Id.Name);
-  if WithVarIndex <> 0 then
+  if WithVarIndex <> nil then
   begin
-    Expr := ExprVariableAccess(Defs.WithVars[WithVarIndex].VariableIndex);
+    Expr := ExprVariableAccess(WithVarIndex^.VariableIndex);
     Expr := ExprFieldAccess(Expr, Id.Name)
   end
   else
   begin
-    Found := Defs.Names[FindName(Id.Name, {Required=}true)];
+    Found := FindName(Id.Name, {Required=}true)^;
     if Found.Cls = TncVariable then
       Expr := ExprVariableAccess(Found.VariableIndex)
     else if Found.Cls = TncFunction then
@@ -744,7 +731,7 @@ begin
     else if Found.Cls = TncSpecialFunction then
     begin
       Expr.Cls := TecStatement;
-      Expr.TypeIndex := 0;
+      Expr.TypeIndex := nil;
       if (Found.SpecialFunction = TsfRead)
          or (Found.SpecialFunction = TsfReadln) then
         PsRead(Found.SpecialFunction)
@@ -878,7 +865,7 @@ begin
     CompileError('Cannot assign to a constant value');
   if Lhs.Cls = TecFunction then
     OutAssignReturnValue(Lhs, ExprCoerce(Rhs,
-                         Defs.Functions[Lhs.FunctionIndex].ReturnTypeIndex))
+                         Lhs.FunctionIndex^.ReturnTypeIndex))
   else if Lhs.Cls = TecValue then
          OutAssign(Lhs, ExprCoerce(Rhs, Lhs.TypeIndex))
   else
@@ -1081,10 +1068,10 @@ begin
     if Lexer.Token.Id = TkIdentifier then
     begin
       ConstIndex := FindConstant(Lexer.Token.Value);
-      if ConstIndex <> 0 then
+      if ConstIndex <> nil then
       begin
         TokenPos := Lexer.Token.Pos;
-        Lexer.Token := Defs.Constants[ConstIndex].Replacement;
+        Lexer.Token := ConstIndex^.Replacement;
         Lexer.Token.Pos := TokenPos
       end
     end;

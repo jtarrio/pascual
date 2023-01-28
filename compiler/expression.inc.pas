@@ -2,11 +2,11 @@ function ExprEvaluate(Expr : TPsExpression) : TPsExpression;
 begin
   if Expr.Cls = TecFunction then
   begin
-    if Defs.Functions[Expr.FunctionIndex].ArgCount <> 0 then
+    if Expr.FunctionIndex^.ArgCount <> 0 then
       CompileError('Function requires arguments');
     Expr.Value := Expr.Value + '()';
-    Expr.TypeIndex := Defs.Functions[Expr.FunctionIndex].ReturnTypeIndex;
-    if Expr.TypeIndex = 0 then Expr.Cls := TecStatement
+    Expr.TypeIndex := Expr.FunctionIndex^.ReturnTypeIndex;
+    if Expr.TypeIndex = nil then Expr.Cls := TecStatement
     else Expr.Cls := TecValue
   end;
   ExprEvaluate := Expr
@@ -33,7 +33,7 @@ end;
 
 function ExprIsVariable(Expr : TPsExpression) : boolean;
 begin
-  ExprIsVariable := (Expr.Cls = TecValue) and (Expr.TypeIndex <> 0)
+  ExprIsVariable := (Expr.Cls = TecValue) and (Expr.TypeIndex <> nil)
                     and not Expr.IsConstant
 end;
 
@@ -127,14 +127,11 @@ function ExprVariableAccess(VarIndex : TPsVariableIndex) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  with Defs.Variables[VarIndex] do
-  begin
-    if IsReference then Expr.Value := '*' + Name
-    else Expr.Value := Name;
-    Expr.Cls := TecValue;
-    Expr.TypeIndex := TypeIndex;
-    Expr.IsConstant := false
-  end;
+  if VarIndex^.IsReference then Expr.Value := '*' + VarIndex^.Name
+  else Expr.Value := VarIndex^.Name;
+  Expr.Cls := TecValue;
+  Expr.TypeIndex := VarIndex^.TypeIndex;
+  Expr.IsConstant := false;
   ExprVariableAccess := Expr
 end;
 
@@ -142,7 +139,7 @@ function ExprFunctionReference(FnIndex : TPsFunctionIndex) : TPsExpression;
 var 
   Expr : TPsExpression;
 begin
-  Expr.Value := Defs.Functions[FnIndex].Name;
+  Expr.Value := FnIndex^.Name;
   Expr.Cls := TecFunction;
   Expr.FunctionIndex := FnIndex;
   Expr.IsConstant := false;
@@ -154,7 +151,7 @@ function ExprEnumValue(Ordinal : integer; TypeIndex : TPsTypeIndex)
 var 
   Expr : TPsExpression;
 begin
-  with Defs.Enums[Defs.Types[TypeIndex].EnumIndex] do
+  with TypeIndex^.EnumIndex^ do
   begin
     Expr.Value := Values[Ordinal];
     Expr.Cls := TecValue;
@@ -196,7 +193,7 @@ begin
   begin
     if (Idx.Cls <> TecValue) or not IsIntegerType(Idx.TypeIndex) then
       CompileError('Array subscript is not an integer');
-    with Defs.Arrays[Defs.Types[Base.TypeIndex].ArrayIndex] do
+    with Base.TypeIndex^.ArrayIndex^ do
     begin
       Expr.Value := Base.Value + '[(' + Idx.Value + ') - ' + LowBound + ']';
       Expr.Cls := TecValue;
@@ -216,13 +213,13 @@ begin
     CompileError('Not a pointer');
   Expr.Value := '*(' + Ptr.Value + ')';
   Expr.Cls := TecValue;
-  Expr.TypeIndex := Defs.Types[Ptr.TypeIndex].PointedTypeIndex;
-  Expr.IsConstant := Ptr.IsConstant;
+  Expr.TypeIndex := Ptr.TypeIndex^.PointedTypeIndex;
+  Expr.IsConstant := false;
   ExprPointerDeref := Expr
 end;
 
 function _ExprBinaryOpInteger(Left : TPsExpression; Op : TLxTokenId;
-                             Right : TPsExpression) : TPsExpression;
+                              Right : TPsExpression) : TPsExpression;
 var 
   Oper, Cmp : string;
   Expr : TPsExpression;
@@ -257,7 +254,7 @@ begin
 end;
 
 function _ExprBinaryOpBoolean(Left : TPsExpression; Op : TLxTokenId;
-                             Right : TPsExpression) : TPsExpression;
+                              Right : TPsExpression) : TPsExpression;
 var 
   Oper : string;
   Expr : TPsExpression;
@@ -283,7 +280,7 @@ end;
 
 
 function _ExprBinaryOpStringy(Left : TPsExpression; Op : TLxTokenId;
-                             Right : TPsExpression) : TPsExpression;
+                              Right : TPsExpression) : TPsExpression;
 var 
   FName, Cmp : string;
   Expr : TPsExpression;
@@ -322,7 +319,7 @@ begin
 end;
 
 function _ExprBinaryOpEnum(Left : TPsExpression; Op : TLxTokenId;
-                          Right : TPsExpression) : TPsExpression;
+                           Right : TPsExpression) : TPsExpression;
 var 
   Cmp : string;
   Expr : TPsExpression;
@@ -346,7 +343,7 @@ begin
 end;
 
 function _ExprBinaryOpPointer(Left : TPsExpression; Op : TLxTokenId;
-                             Right : TPsExpression) : TPsExpression;
+                              Right : TPsExpression) : TPsExpression;
 var 
   Cmp : string;
   Expr : TPsExpression;

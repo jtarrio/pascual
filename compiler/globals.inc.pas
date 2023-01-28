@@ -19,24 +19,24 @@ begin
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
 
-  AddSpecialFunction('READ', TsfRead);
-  AddSpecialFunction('READLN', TsfReadln);
-  AddSpecialFunction('WRITE', TsfWrite);
-  AddSpecialFunction('WRITELN', TsfWriteln);
-  AddSpecialFunction('STR', TsfStr);
-  AddSpecialFunction('NEW', TsfNew);
-  AddSpecialFunction('DISPOSE', TsfDispose);
+  AddSpecialFunctionName('READ', TsfRead);
+  AddSpecialFunctionName('READLN', TsfReadln);
+  AddSpecialFunctionName('WRITE', TsfWrite);
+  AddSpecialFunctionName('WRITELN', TsfWriteln);
+  AddSpecialFunctionName('STR', TsfStr);
+  AddSpecialFunctionName('NEW', TsfNew);
+  AddSpecialFunctionName('DISPOSE', TsfDispose);
 
   Fun.Name := 'ASSIGN';
   Fun.ArgCount := 2;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
   Fun.Args[2] := MakeVariable('NAME', PrimitiveTypes.PtString, false);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'CLOSE';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'COPY';
   Fun.ArgCount := 3;
@@ -50,7 +50,7 @@ begin
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, true);
   Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
   Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'EOF';
   Fun.ArgCount := 1;
@@ -60,7 +60,7 @@ begin
   Fun.Name := 'HALT';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('CODE', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
@@ -79,12 +79,12 @@ begin
   Fun.Name := 'RESET';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'REWRITE';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypeIndex := 0;
+  Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
   Fun.Name := 'UPCASE';
   Fun.ArgCount := 1;
