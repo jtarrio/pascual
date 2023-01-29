@@ -136,3 +136,16 @@ echo "program foo;
       procedure Proc(n : string);
       begin end;
       begin end." | is_not_valid
+
+# Items passed by reference must be assignable
+echo "program foo;
+      function Make : integer;
+      begin Make := 1 end;
+      procedure Change(var t : integer);
+      begin t := 2 end;
+      begin Change(Make) end." | is_not_valid
+echo "program foo;
+      const x : integer = 1;
+      procedure Change(var t : integer);
+      begin t := 2 end;
+      begin Change(x) end." | is_not_valid

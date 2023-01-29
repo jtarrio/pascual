@@ -134,3 +134,25 @@ echo "program foo;
       function Fun(n : integer) : string;
       begin end;
       begin end." | is_not_valid
+
+# Items passed by reference must be assignable
+echo "program foo;
+      function Make : integer;
+      begin Make := 1 end;
+      function Change(var t : integer) : integer;
+      begin t := 2; Change := t end;
+      begin write(Change(Make)) end." | is_not_valid
+echo "program foo;
+      const x : integer = 1;
+      function Change(var t : integer) : integer;
+      begin t := 2; Change := t end;
+      begin write(Change(x)) end." | is_not_valid
+# The result of a function is not assignable
+echo "program foo;
+      function Make : integer;
+      begin Make := 1 end;
+      begin Make := 2; write(Make) end." | is_not_valid
+echo "program foo;
+      function Make : integer;
+      begin Make := 1 end;
+      begin Make() := 2; write(Make()) end." | is_not_valid
