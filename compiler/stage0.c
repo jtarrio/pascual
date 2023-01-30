@@ -1256,6 +1256,7 @@ TPSEXPRESSION EXPR;
 if ((BASE.CLS == TECVALUE) && ISSTRINGTYPE(BASE.TYPEINDEX)) {
 if ((IDX.CLS != TECVALUE) || !ISINTEGERTYPE(IDX.TYPEINDEX)) COMPILEERROR(str_make(34, "String subscript is not an integer"));
 EXPR.VALUE = cat_sc(cat_ss(cat_ss(cat_sc(cat_cs('(', BASE.VALUE), ')'), str_make(5, ".chr[")), IDX.VALUE), ']');
+EXPR.CLS = TECVALUE;
 EXPR.TYPEINDEX = PRIMITIVETYPES.PTCHAR;
 EXPR.ISCONSTANT = BASE.ISCONSTANT;
 }
