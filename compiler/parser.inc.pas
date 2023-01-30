@@ -59,7 +59,7 @@ begin
   PsIdentifier := Ident
 end;
 
-function PsExpression : TPsExpression;
+function PsExpression : TExpression;
 forward;
 
 function PsEnumeratedType : TPsTypeIndex;
@@ -118,7 +118,7 @@ procedure PsRecordVariants(var Rec : TPsRecordDef);
 var 
   Tag : TPsIdentifier;
   TagType : TPsTypeIndex;
-  CaseLabel : TPsExpression;
+  CaseLabel : TExpression;
 begin
   WantTokenAndRead(TkCase);
   Tag := PsIdentifier;
@@ -140,9 +140,10 @@ begin
     Rec.NumVariants := Rec.NumVariants + 1;
     Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
     repeat
-      CaseLabel := ExprCoerce(PsExpression, TagType);
-      if not CaseLabel.IsConstant then
+      CaseLabel := ExCoerce(PsExpression, TagType);
+      if not CaseLabel^.IsConstant then
         CompileError('The label of the case statement is not constant');
+      DisposeExpr(CaseLabel);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
@@ -175,6 +176,15 @@ begin
   PsRecordType := AddType(Typ);
 end;
 
+function PsImmediate : TExpression;
+var Expr : TExpression;
+begin
+  Expr := PsExpression;
+  if Expr^.cls <> XcImmediate then
+    CompileError('Expected an immediate value');
+  PsImmediate := Expr
+end;
+
 function PsArrayType : TPsTypeIndex;
 var 
   Typ : TPsType;
@@ -182,9 +192,9 @@ var
 begin
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
-  Arr.LowBound := GetTokenValueAndRead(TkNumber);
+  Arr.LowBound := PsImmediate;
   WantTokenAndRead(TkRange);
-  Arr.HighBound := GetTokenValueAndRead(TkNumber);
+  Arr.HighBound := PsImmediate;
   WantTokenAndRead(TkRbracket);
   WantTokenAndRead(TkOf);
   Arr.TypeIndex := PsTypeDenoter;
@@ -276,33 +286,9 @@ end;
 
 procedure PsConstantValue(TypeIndex : TPsTypeIndex);
 var 
-  Expr : TPsExpression;
+  Expr : TExpression;
 begin
-  if IsBooleanType(TypeIndex) then
-  begin
-    WantToken2(TkFalse, TkTrue);
-    Expr := ExprBooleanConstant(Lexer.Token.Id = TkTrue);
-    ReadToken;
-    OutConstantValue(Expr)
-  end
-  else if IsIntegerType(TypeIndex) then
-  begin
-    Expr := ExprNumberConstant(GetTokenValueAndRead(TkNumber));
-    OutConstantValue(Expr)
-  end
-  else if IsCharType(TypeIndex) then
-  begin
-    Expr := ExprStringConstant(GetTokenValueAndRead(TkString));
-    if not IsCharType(Expr.TypeIndex) then
-      CompileError('Expected char constant, got ' + TypeName(Expr.TypeIndex));
-    OutConstantValue(Expr)
-  end
-  else if IsStringType(TypeIndex) then
-  begin
-    Expr := ExprStringConstant(GetTokenValueAndRead(TkString));
-    OutConstantValue(Expr)
-  end
-  else if IsArrayType(TypeIndex) then
+  if IsArrayType(TypeIndex) then
   begin
     WantTokenAndRead(TkLparen);
     TypeIndex := TypeIndex^.ArrayIndex^.TypeIndex;
@@ -318,7 +304,11 @@ begin
     WantTokenAndRead(TkRparen);
   end
   else
-    CompileError('Invalid type for constant: ' + TypeName(TypeIndex))
+  begin
+    Expr := ExCoerce(PsImmediate, TypeIndex);
+    OutExpression(Expr);
+    DisposeExpr(Expr)
+  end
 end;
 
 procedure PsTypedConstant(Name : string);
@@ -528,43 +518,37 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
-function PsFunctionCall(Fn : TPsExpression) : TPsExpression;
+function PsFunctionCall(Fn : TExpression) : TExpression;
 var 
-  Expr : TPsExpression;
-  ArgNum : integer;
+  Expr : TExpression;
+  Args : TExFunctionArgs;
 begin
-  if Fn.Cls <> TecFunction then CompileError('Not a function');
-  Fn.Value := GenFunctionCallStart(Fn.Value);
-  WantTokenAndRead(TkLparen);
-  for ArgNum := 1 to Fn.FunctionIndex^.ArgCount do
+  WantTokenAndRead(TkLParen);
+  while Lexer.Token.Id <> TkRParen do
   begin
-    if ArgNum <> 1 then WantTokenAndRead(TkComma);
-    Expr := ExprCoerce(PsExpression, Fn.FunctionIndex^.Args[ArgNum].TypeIndex);
-    Fn.Value := GenFunctionCallArgument(Fn.Value, Expr,
-                Fn.FunctionIndex^.Args[ArgNum].IsReference, ArgNum)
+    Args.Size := Args.Size + 1;
+    Args.Values[Args.Size] := PsExpression;
+    WantToken2(TkComma, TkRParen);
+    SkipToken(TkComma)
   end;
   WantTokenAndRead(TkRparen);
-  Fn.Value := GenFunctionCallEnd(Fn.Value);
-  Fn.Cls := TecValue;
-  Fn.TypeIndex := Fn.FunctionIndex^.ReturnTypeIndex;
-  Fn.IsConstant := true;
-  PsFunctionCall := Fn
+  PsFunctionCall := ExFunctionCall(Fn, Args)
 end;
 
-function PsPointerDeref(Ptr : TPsExpression) : TPsExpression;
+function PsPointerDeref(Ptr : TExpression) : TExpression;
 begin
   WantTokenAndRead(TkCaret);
-  PsPointerDeref := ExprPointerDeref(ExprEvaluate(Ptr))
+  PsPointerDeref := ExPointerAccess(Ptr)
 end;
 
 procedure PsRead(Fn : TPsSpecialFunction);
 var 
-  Src : TPsExpression;
+  Src : TExpression;
   LineFeed : boolean;
-  OutVar : TPsExpression;
+  OutVar : TExpression;
 begin
   LineFeed := Fn = TsfReadln;
-  Src := ExprVariableAccess(FindNameOfClass('INPUT',
+  Src := ExVariable(FindNameOfClass('INPUT',
          TncVariable, {Required=}true)^.VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
@@ -577,24 +561,29 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       OutVar := PsExpression;
-      if ExprIsVariable(OutVar) and IsTextType(OutVar.TypeIndex) then
+      if (OutVar^.Cls = XcVariableAccess) and IsTextType(OutVar^.TypeIndex) then
+      begin
+        DisposeExpr(Src);
         Src := OutVar
+      end
       else
       begin
-        if not ExprIsVariable(OutVar)
-           or not IsStringyType(OutVar.TypeIndex) then
+        if (OutVar^.Cls <> XcVariableAccess)
+           or not IsStringyType(OutVar^.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
+        DisposeExpr(OutVar);
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
       while Lexer.Token.Id <> TkRparen do
       begin
         OutVar := PsExpression;
-        if not ExprIsVariable(OutVar)
-           or not IsStringyType(OutVar.TypeIndex) then
+        if (OutVar^.Cls <> XcVariableAccess)
+           or not IsStringyType(OutVar^.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
+        DisposeExpr(OutVar);
         WantToken2(TkComma, TkRparen);
         SkipToken(TkComma)
       end;
@@ -602,18 +591,19 @@ begin
     WantTokenAndRead(TkRparen);
     if LineFeed then
       OutReadln(Src);
-    OutEnd
+    DisposeExpr(Src);
+    OutEnd;
   end
 end;
 
 procedure PsWrite(Fn : TPsSpecialFunction);
 var 
-  Dst : TPsExpression;
+  Dst : TExpression;
   LineFeed : boolean;
-  Expr : TPsExpression;
+  Expr : TExpression;
 begin
   LineFeed := Fn = TsfWriteln;
-  Dst := ExprVariableAccess(FindNameOfClass('OUTPUT',
+  Dst := ExVariable(FindNameOfClass('OUTPUT',
          TncVariable, {Required=}true)^.VariableIndex);
   if Lexer.Token.Id <> TkLparen then
   begin
@@ -626,15 +616,23 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       Expr := PsExpression;
-      if ExprIsVariable(Expr) and IsTextType(Expr.TypeIndex) then
+      if (Expr^.Cls = XcVariableAccess) and IsTextType(Expr^.TypeIndex) then
+      begin
+        DisposeExpr(Dst);
         Dst := Expr
+      end
       else
+      begin
         OutWrite(Dst, Expr);
+        DisposeExpr(Expr);
+      end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
       while Lexer.Token.Id <> TkRParen do
       begin
-        OutWrite(Dst, PsExpression);
+        Expr := PsExpression;
+        OutWrite(Dst, Expr);
+        DisposeExpr(Expr);
         WantToken2(TkComma, TkRParen);
         SkipToken(TkComma)
       end;
@@ -642,73 +640,78 @@ begin
     WantTokenAndRead(TkRparen);
     if LineFeed then
       OutWriteln(Dst);
+    DisposeExpr(Dst);
     OutEnd
   end
 end;
 
 procedure PsStr;
 var 
-  Expr, Dest : TPsExpression;
+  Expr, Dest : TExpression;
 begin
   WantTokenAndRead(TkLparen);
   Expr := PsExpression;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
-  if not ExprIsVariable(Dest) or not IsStringType(Dest.TypeIndex) then
+  if (Dest^.Cls <> XcVariableAccess) or not IsStringType(Dest^.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
-  OutStr(Dest.Value, Expr)
+  OutStr(Dest, Expr);
+  DisposeExpr(Dest);
+  DisposeExpr(Expr)
 end;
 
 procedure PsNew;
 var 
-  Dest : TPsExpression;
+  Dest : TExpression;
 begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not ExprIsVariable(Dest) or not IsPointerType(Dest.TypeIndex) then
+  if (Dest^.Cls <> XcVariableAccess) or not IsPointerType(Dest^.TypeIndex) then
     CompileError('Argument is not a pointer');
-  OutNew(Dest)
+  OutNew(Dest);
+  DisposeExpr(Dest)
 end;
 
 procedure PsDispose;
 var 
-  Dest : TPsExpression;
+  Dest : TExpression;
 begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not ExprIsVariable(Dest) or not IsPointerType(Dest.TypeIndex) then
+  if (Dest^.Cls <> XcVariableAccess) or not IsPointerType(Dest^.TypeIndex) then
     CompileError('Argument is not a pointer');
   OutDispose(Dest)
 end;
 
-function PsArrayAccess(Arr : TPsExpression) : TPsExpression;
+function PsArrayAccess(Arr : TExpression) : TExpression;
 var 
-  Idx : TPsExpression;
+  Idx : TExpression;
 begin
   WantTokenAndRead(TkLbracket);
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
-  PsArrayAccess := ExprArrayAccess(Arr, Idx)
+  PsArrayAccess := ExArrayAccess(Arr, Idx)
 end;
 
-function PsFieldAccess(Rec : TPsExpression) : TPsExpression;
+function PsFieldAccess(Rec : TExpression) : TExpression;
 var 
   Fld : TPsIdentifier;
 begin
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
-  PsFieldAccess := ExprFieldAccess(Rec, Fld.Name)
+  PsFieldAccess := ExFieldAccess(Rec,
+                   FindField(Rec^.TypeIndex, Fld.Name, {Required=}true))
 end;
 
-function PsVariableOrFunctionCall : TPsExpression;
+function PsVariableOrFunctionCall : TExpression;
 var 
   Id : TPsIdentifier;
   WithVarIndex : TPsWithVarIndex;
   Found : TPsName;
-  Expr : TPsExpression;
+  Expr : TExpression;
   Done : boolean;
 begin
   Done := false;
@@ -716,22 +719,22 @@ begin
   WithVarIndex := FindWithVar(Id.Name);
   if WithVarIndex <> nil then
   begin
-    Expr := ExprVariableAccess(WithVarIndex^.VariableIndex);
-    Expr := ExprFieldAccess(Expr, Id.Name)
+    Expr := ExVariable(WithVarIndex^.VariableIndex);
+    Expr := ExFieldAccess(Expr,
+            FindField(Expr^.TypeIndex, Id.Name, {Required=}true))
   end
   else
   begin
     Found := FindName(Id.Name, {Required=}true)^;
     if Found.Cls = TncVariable then
-      Expr := ExprVariableAccess(Found.VariableIndex)
+      Expr := ExVariable(Found.VariableIndex)
     else if Found.Cls = TncFunction then
-           Expr := ExprFunctionReference(Found.FunctionIndex)
+           Expr := ExFunctionRef(Found.FunctionIndex)
     else if Found.Cls = TncEnumValue then
-           Expr := ExprEnumValue(Found.Ordinal, Found.EnumTypeIndex)
+           Expr := ExEnumConstant(Found.Ordinal, Found.EnumTypeIndex)
     else if Found.Cls = TncSpecialFunction then
     begin
-      Expr.Cls := TecStatement;
-      Expr.TypeIndex := nil;
+      Expr := ExNothing;
       if (Found.SpecialFunction = TsfRead)
          or (Found.SpecialFunction = TsfReadln) then
         PsRead(Found.SpecialFunction)
@@ -775,101 +778,138 @@ begin
                     or (Tok.Id = TkIn);
 end;
 
-function PsFactor : TPsExpression;
+function ParseString(Pstr : string) : string;
 var 
-  Expr : TPsExpression;
+  InStr : boolean;
+  Pos : integer;
+  Chr : char;
+  Str : string;
+begin
+  InStr := false;
+  for Pos := 1 to Length(Pstr) do
+  begin
+    Chr := Pstr[Pos];
+    if Chr = '''' then
+    begin
+      InStr := not InStr;
+      if InStr and (Pos > 1) and (Pstr[Pos - 1] = '''') then
+        Str := Str + ''''
+    end
+    else if InStr then
+    begin
+      if Chr = '"' then Str := Str + '\"'
+      else if Chr = '\' then Str := Str + '\\'
+      else Str := Str + Chr
+    end
+  end;
+  ParseString := Str
+end;
+
+function ParseInt(Pstr : string) : integer;
+var 
+  Ret : integer;
+  Pos : integer;
+begin
+  Ret := 0;
+  for Pos := 1 to Length(Pstr) do
+    Ret := Ret * 10 + Ord(Pstr[Pos]) - 48;
+  ParseInt := Ret
+end;
+
+function PsFactor : TExpression;
+var 
+  Expr : TExpression;
 begin
   if Lexer.Token.Id = TkNil then
   begin
-    Expr := ExprNilConstant;
+    Expr := ExNil;
     ReadToken
   end
   else if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
   begin
-    Expr := ExprBooleanConstant(Lexer.Token.Id = TkTrue);
+    Expr := ExBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken
   end
   else if Lexer.Token.Id = TkString then
-         Expr := ExprStringConstant(GetTokenValueAndRead(TkString))
+         Expr := ExStringConstant(ParseString(GetTokenValueAndRead(TkString)))
   else if Lexer.Token.Id = TkNumber then
-         Expr := ExprNumberConstant(GetTokenValueAndRead(TkNumber))
+         Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkNumber)))
   else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
-    Expr := ExprParentheses(PsExpression);
+    Expr := PsExpression;
     WantTokenAndRead(TkRparen)
   end
   else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
-    Expr := ExprUnaryOp(TkNot, PsFactor);
+    Expr := ExUnaryOp(PsFactor, TkNot);
   end
   else
     CompileError('Invalid token in expression: ' + LxTokenStr);
   PsFactor := Expr
 end;
 
-function PsTerm : TPsExpression;
+function PsTerm : TExpression;
 var 
   Op : TLxTokenId;
-  Expr : TPsExpression;
+  Expr : TExpression;
 begin
   Expr := PsFactor;
   while IsOpMultiplying(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := ExprBinaryOp(Expr, Op, PsFactor)
+    Expr := ExBinaryOp(Expr, PsFactor, Op)
   end;
   PsTerm := Expr
 end;
 
-function PsSimpleExpression : TPsExpression;
+function PsSimpleExpression : TExpression;
 var 
   Negative : boolean;
   Op : TLxTokenId;
-  Expr : TPsExpression;
+  Expr : TExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
   if Negative then ReadToken;
   Expr := PsTerm;
-  if Negative then Expr := ExprUnaryOp(TkMinus, Expr);
+  if Negative then Expr := ExUnaryOp(Expr, TkMinus);
   while IsOpAdding(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := ExprBinaryOp(Expr, Op, PsTerm)
+    Expr := ExBinaryOp(Expr, PsTerm, Op)
   end;
   PsSimpleExpression := Expr
 end;
 
-function PsExpression : TPsExpression;
+function PsExpression;
 var 
   Op : TLxTokenId;
-  Expr : TPsExpression;
+  Expr : TExpression;
 begin
   Expr := PsSimpleExpression;
   while IsOpRelational(Lexer.Token) do
   begin
     Op := Lexer.Token.Id;
     ReadToken;
-    Expr := ExprBinaryOp(Expr, Op, PsSimpleExpression)
+    Expr := ExBinaryOp(Expr, PsSimpleExpression, Op)
   end;
   PsExpression := Expr
 end;
 
-procedure PsAssign(Lhs, Rhs : TPsExpression);
+procedure PsAssign(Lhs, Rhs : TExpression);
 begin
-  if Lhs.IsConstant then
+  if not Lhs^.IsAssignable or Lhs^.IsConstant then
     CompileError('Cannot assign to a constant value');
-  if Lhs.Cls = TecFunction then
-    OutAssignReturnValue(Lhs, ExprCoerce(Rhs,
-                         Lhs.FunctionIndex^.ReturnTypeIndex))
-  else if Lhs.Cls = TecValue then
-         OutAssign(Lhs, ExprCoerce(Rhs, Lhs.TypeIndex))
+  if Lhs^.Cls = XcFunctionRef then
+    OutAssignReturnValue(Lhs, Rhs)
   else
-    CompileError('Cannot assign to result of statement')
+    OutAssign(Lhs, Rhs);
+  DisposeExpr(Lhs);
+  DisposeExpr(Rhs)
 end;
 
 procedure PsStatementSequence;
@@ -888,7 +928,7 @@ end;
 
 procedure PsIdentifierStatement;
 var 
-  Lhs : TPsExpression;
+  Lhs : TExpression;
 begin
   Lhs := PsExpression;
   if Lexer.Token.Id = TkAssign then
@@ -896,17 +936,16 @@ begin
     WantTokenAndRead(TkAssign);
     PsAssign(Lhs, PsExpression);
   end
-  else if Lhs.Cls <> TecStatement then
-  begin
-    if Lhs.Cls = TecFunction then Lhs := ExprEvaluate(Lhs);
-    OutProcedureCall(Lhs)
-  end
+  else OutProcedureCall(ExEnsureEvaluation(Lhs))
 end;
 
 procedure PsIfStatement;
+var Cond : TExpression;
 begin
   WantTokenAndRead(TkIf);
-  OutIf(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
+  Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
+  OutIf(Cond);
+  DisposeExpr(Cond);
   WantTokenAndRead(TkThen);
   if Lexer.Token.Id = TkElse then OutEmptyStatement
   else PsStatement;
@@ -920,21 +959,25 @@ end;
 
 procedure PsCaseStatement;
 var 
-  CaseIndex : TPsExpression;
-  CaseLabel : TPsExpression;
+  CaseIndex : TExpression;
+  CaseTypeIndex : TPsTypeIndex;
+  CaseLabel : TExpression;
 begin
   WantTokenAndRead(TkCase);
   CaseIndex := PsExpression;
-  if not IsOrdinalType(CaseIndex.TypeIndex) then
+  CaseTypeIndex := CaseIndex^.TypeIndex;
+  if not IsOrdinalType(CaseTypeIndex) then
     CompileError('The index of the case statement is not ordinal');
   OutCaseBegin(CaseIndex);
+  DisposeExpr(CaseIndex);
   WantTokenAndRead(TkOf);
   repeat
-    CaseLabel := ExprCoerce(PsExpression, CaseIndex.TypeIndex);
-    if not CaseLabel.IsConstant then
+    CaseLabel := ExCoerce(PsExpression, CaseTypeIndex);
+    if not CaseLabel^.IsConstant then
       CompileError('The label of the case statement is not constant');
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
+    DisposeExpr(CaseLabel);
     PsStatement;
     OutCaseStatementEnd;
     WantToken3(TkSemicolon, TkElse, TkEnd);
@@ -953,6 +996,7 @@ begin
 end;
 
 procedure PsRepeatStatement;
+var Cond : TExpression;
 begin
   WantTokenAndRead(TkRepeat);
   OutRepeatBegin;
@@ -963,13 +1007,18 @@ begin
     SkipToken(TkSemicolon)
   end;
   WantTokenAndRead(TkUntil);
-  OutRepeatEnd(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
+  Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
+  OutRepeatEnd(Cond);
+  DisposeExpr(Cond)
 end;
 
 procedure PsWhileStatement;
+var Cond : TExpression;
 begin
   WantTokenAndRead(TkWhile);
-  OutWhileBegin(ExprCoerce(PsExpression, PrimitiveTypes.PtBoolean));
+  Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
+  OutWhileBegin(Cond);
+  DisposeExpr(Cond);
   WantTokenAndRead(TkDo);
   PsStatement;
   OutWhileEnd
@@ -977,31 +1026,34 @@ end;
 
 procedure PsForStatement;
 var 
-  Iter, First, Last : TPsExpression;
+  Iter, First, Last : TExpression;
   Ascending : boolean;
 begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
-  if not ExprIsVariable(Iter) then
+  if Iter^.Cls <> XcVariableAccess then
     CompileError('Expected variable');
-  if not IsOrdinalType(Iter.TypeIndex) then
+  if not IsOrdinalType(Iter^.TypeIndex) then
     CompileError('Type of iterator is not ordinal: ' +
-                 TypeName(Iter.TypeIndex));
+                 TypeName(Iter^.TypeIndex));
   WantTokenAndRead(TkAssign);
-  First := ExprEvaluate(PsExpression);
+  First := ExEnsureEvaluation(PsExpression);
   WantToken2(TkTo, TkDownto);
   Ascending := Lexer.Token.Id = TkTo;
   ReadToken;
-  Last := ExprEvaluate(PsExpression);
+  Last := ExEnsureEvaluation(PsExpression);
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;
-  OutForEnd(Iter, Ascending)
+  OutForEnd(Iter, Ascending);
+  DisposeExpr(Iter);
+  DisposeExpr(First);
+  DisposeExpr(Last)
 end;
 
 procedure PsWithStatement;
 var 
-  Base : TPsExpression;
+  Base : TExpression;
   VarIndex : TPsVariableIndex;
 begin
   WantToken(TkWith);
@@ -1012,6 +1064,7 @@ begin
     Base := PsExpression;
     VarIndex := AddWithVar(Base);
     OutAssignToReference(VarIndex, Base);
+    DisposeExpr(Base);
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);

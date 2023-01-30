@@ -14,17 +14,80 @@ type
   TPsWithVarIndex = ^TPsWithVar;
   TPsNameIndex = ^TPsName;
 
-  TPsExpressionClass = (TecValue, TecFunction, TecStatement);
-  TPsExpression = record
-    Value : string;
-    IsConstant : boolean;
-    case Cls : TPsExpressionClass of 
-      TecValue : (TypeIndex : TPsTypeIndex);
-      TecFunction : (FunctionIndex : TPsFunctionIndex)
+  TExpression = ^TExpressionObj;
+  TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicChar, XicString,
+                       XicEnum);
+  TExImmediate = record
+    case Cls : TExImmediateClass of 
+      XicBoolean : (BooleanValue : boolean);
+      XicInteger : (IntegerValue : integer);
+      XicChar : (CharValue : char);
+      XicString : (StringValue : string);
+      XicEnum : (EnumOrdinal : integer)
   end;
-  TPsExpressionFnArgs = record
+  TExToString = record
+    Parent : TExpression
+  end;
+  TExVariableAccess = record
+    VariableIndex : TPsVariableIndex
+  end;
+  TExFieldAccess = record
+    Parent : TExpression;
+    FieldNumber : integer
+  end;
+  TExArrayAccess = record
+    Parent : TExpression;
+    Subscript : TExpression
+  end;
+  TExPointerAccess = record
+    Parent : TExpression
+  end;
+  TExStringChar = record
+    Parent : TExpression;
+    Subscript : TExpression
+  end;
+  TExFunctionRef = record
+    FunctionIndex : TPsFunctionIndex
+  end;
+  TExFunctionArgs = record
     Size : integer;
-    Args : array[1..MaxFunctionArguments] of TPsExpression
+    Values : array[1..MaxFunctionArguments] of TExpression
+  end;
+  TExFunctionCall = record
+    FunctionRef : TExpression;
+    Args : TExFunctionArgs
+  end;
+  TExUnaryOp = record
+    Parent : TExpression;
+    Op : TLxTokenId
+  end;
+  TExBinaryOp = record
+    Left : TExpression;
+    Right : TExpression;
+    Op : TLxTokenId
+  end;
+
+  TExpressionClass = (XcNothing, XcImmediate, XcToString,
+                      XcVariableAccess, XcFieldAccess,
+                      XcArrayAccess, XcPointerAccess, XcStringChar,
+                      XcFunctionRef, XcFunctionCall, XcUnaryOp,
+                      XcBinaryOp);
+  TExpressionObj = record
+    TypeIndex : TPsTypeIndex;
+    IsConstant : boolean;
+    IsAssignable : boolean;
+    case Cls : TExpressionClass of 
+      XcImmediate : (ImmediateEx : TExImmediate);
+      XcToString : (ToStringEx : TExToString);
+      XcVariableAccess : (VariableEx : TExVariableAccess);
+      XcFieldAccess : (FieldEx : TExFieldAccess);
+      XcArrayAccess : (ArrayEx : TExArrayAccess);
+      XcPointerAccess : (PointerEx : TExPointerAccess);
+      XcStringChar : (StringCharEx : TExStringChar);
+      XcFunctionRef : (FunctionEx : TExFunctionRef);
+      XcFunctionCall : (CallEx : TExFunctionCall);
+      XcUnaryOp : (UnaryEx : TExUnaryOp);
+      XcBinaryOp : (BinaryEx : TExBinaryOp);
   end;
 
   TPsIdentifier = record
@@ -63,7 +126,7 @@ type
     HasBeenDefined : boolean
   end;
   TPsArrayDef = record
-    LowBound, HighBound : string;
+    LowBound, HighBound : TExpression;
     TypeIndex : TPsTypeIndex
   end;
   TPsConstant = record
@@ -398,9 +461,7 @@ begin
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [' + Typ.ArrayIndex^.LowBound;
-    Ret := Ret + '..' + Typ.ArrayIndex^.HighBound;
-    Ret := Ret + '] of ' + DeepTypeName(Typ.ArrayIndex^.TypeIndex, true);
+    Ret := 'array [...] of ' + DeepTypeName(Typ.ArrayIndex^.TypeIndex, true);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
@@ -414,7 +475,8 @@ end;
 
 function TypeName(TypeIndex : TPsTypeIndex) : string;
 begin
-  TypeName := DeepTypeName(TypeIndex, false)
+  if TypeIndex = nil then TypeName := '(none)'
+  else TypeName := DeepTypeName(TypeIndex, false)
 end;
 
 function EmptyType : TPsType;
@@ -774,26 +836,37 @@ begin
   AddFunction := FnIndex;
 end;
 
+function FindField(TypeIndex : TPsTypeIndex; Name : string; Required : boolean)
+: integer;
+var 
+  Pos : integer;
+  Ret : integer;
+begin
+  if TypeIndex^.Cls <> TtcRecord then
+    CompileError('Not a record: ' + TypeIndex^.Name);
+  with TypeIndex^.RecordIndex^ do
+  begin
+    Ret := 0;
+    Pos := Size;
+    while (Pos >= 1) and (Ret = 0) do
+    begin
+      if Name = Fields[Pos].Name then Ret := Pos;
+      Pos := Pos - 1
+    end;
+  end;
+  if Required and (Ret = 0) then CompileError('Field not found: ' + Name);
+  FindField := Ret
+end;
+
 function FindFieldType(TypeIndex : TPsTypeIndex; Name : string;
                        Required : boolean) : TPsTypeIndex;
 var 
   Pos : integer;
   Ret : TPsTypeIndex;
 begin
-  if TypeIndex^.Cls <> TtcRecord then
-    CompileError('Not a record: ' + TypeIndex^.Name);
-  with TypeIndex^.RecordIndex^ do
-  begin
-    Ret := nil;
-    Pos := Size;
-    while (Pos >= 1) and (Ret = nil) do
-    begin
-      if Name = Fields[Pos].Name then Ret := Fields[Pos].TypeIndex;
-      Pos := Pos - 1
-    end;
-  end;
-  if Required and (Ret = nil) then CompileError('Field not found: ' + Name);
-  FindFieldType := Ret
+  Pos := FindField(TypeIndex, Name, Required);
+  if Pos = 0 then FindFieldType := nil
+  else FindFieldType := TypeIndex^.RecordIndex^.Fields[Pos].TypeIndex
 end;
 
 function FindWithVar(Name : string) : TPsWithVarIndex;
@@ -817,20 +890,20 @@ begin
   FindWithVar := Ret
 end;
 
-function AddWithVar(Base : TPsExpression) : TPsVariableIndex;
+function AddWithVar(Base : TExpression) : TPsVariableIndex;
 var 
   TmpVarNum : string;
   TmpVar : TPsVariable;
   TmpVarIndex : TPsVariableIndex;
   WithVarIndex : TPsWithVarIndex;
 begin
-  if (Base.Cls <> TecValue) or not IsRecordType(Base.TypeIndex) then
+  if not IsRecordType(Base^.TypeIndex) then
     CompileError('''With'' variable is not a record');
 
   Str(DefCounter, TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;
-  TmpVar.TypeIndex := Base.TypeIndex;
-  TmpVar.IsConstant := Base.IsConstant;
+  TmpVar.TypeIndex := Base^.TypeIndex;
+  TmpVar.IsConstant := Base^.IsConstant;
   TmpVar.IsReference := true;
   TmpVarIndex := AddVariable(TmpVar);
   WithVarIndex := _AddDef(TdcWithVar)^.WithVarIndex;

@@ -33,6 +33,11 @@ begin
   Fun.Args[2] := MakeVariable('NAME', PrimitiveTypes.PtString, false);
   Fun.ReturnTypeIndex := nil;
   AddFunction(Fun);
+  Fun.Name := 'CHR';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('POS', PrimitiveTypes.PtInteger, true);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtChar;
+  AddFunction(Fun);
   Fun.Name := 'CLOSE';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
@@ -65,6 +70,11 @@ begin
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
+  Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
+  AddFunction(Fun);
+  Fun.Name := 'ORD';
+  Fun.ArgCount := 1;
+  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, true);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
   Fun.Name := 'PARAMCOUNT';
