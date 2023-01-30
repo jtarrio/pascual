@@ -37,6 +37,14 @@ char UPCASE(char src) {
   return src;
 }
 
+char CHR(int pos) {
+  return (char) pos;
+}
+
+int ORD(char chr) {
+  return (int) ((unsigned char) chr);
+}
+
 PString str_of(char chr) {
   PString ret;
   ret.len = 1;

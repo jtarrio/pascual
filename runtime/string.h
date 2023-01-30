@@ -7,6 +7,9 @@ int LENGTH(PString s);
 PString COPY(PString src, int pos, int num);
 void DELETE(PString* src, int pos, int num);
 char UPCASE(char src);
+char CHR(int pos);
+int ORD(char chr);
+
 PString str_of(char chr);
 #define str_make(l, s) \
   (PString) { .len = l, .value = s }
