@@ -5,6 +5,7 @@ begin
   Expr^.Cls := Cls;
   Expr^.IsConstant := false;
   Expr^.IsAssignable := false;
+  Expr^.IsFunctionResult := false;
   _NewExpr := Expr
 end;
 
@@ -50,6 +51,7 @@ begin
   Copy^.TypeIndex := Expr^.TypeIndex;
   Copy^.IsConstant := Expr^.IsConstant;
   Copy^.IsAssignable := Expr^.IsAssignable;
+  Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
     XcImmediate: Copy^.ImmediateEx := Expr^.ImmediateEx;
     XcToString: Copy^.ToStringEx.Parent := CopyExpr(Expr^.ToStringEx.Parent);
@@ -186,6 +188,7 @@ var
   Expr : TExpression;
   Str : string;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if IsCharType(Parent^.TypeIndex) then
   begin
     if Parent^.Cls = XcImmediate then
@@ -201,6 +204,7 @@ begin
       Expr^.ToStringEx.Parent := Parent;
       Expr^.TypeIndex := PrimitiveTypes.PtString;
       Expr^.IsAssignable := false;
+      Expr^.IsFunctionResult := Parent^.IsFunctionResult;
       ExToString := Expr
     end
   end
@@ -224,6 +228,7 @@ function ExFieldAccess(Parent : TExpression; FieldNumber : integer)
 : TExpression;
 var Expr : TExpression;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if not IsRecordType(Parent^.TypeIndex) then
     CompileError('Cannot access field of non-record type ' +
                  TypeName(Parent^.TypeIndex));
@@ -237,6 +242,7 @@ begin
                      .Fields[FieldNumber].TypeIndex;
   Expr^.IsConstant := Parent^.IsConstant;
   Expr^.IsAssignable := Parent^.IsAssignable;
+  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
   ExFieldAccess := Expr
 end;
 
@@ -244,6 +250,7 @@ function ExArrayAccess(Parent : TExpression; Subscript : TExpression)
 : TExpression;
 var Expr : TExpression;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if not IsArrayType(Parent^.TypeIndex) then
     CompileError('Cannot access subscript of non-array type ' +
                  TypeName(Parent^.TypeIndex));
@@ -257,12 +264,14 @@ begin
   Expr^.TypeIndex := Parent^.TypeIndex^.ArrayIndex^.TypeIndex;
   Expr^.IsConstant := Parent^.IsConstant;
   Expr^.IsAssignable := Parent^.IsAssignable;
+  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
   ExArrayAccess := Expr
 end;
 
 function ExPointerAccess(Parent : TExpression) : TExpression;
 var Expr : TExpression;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if not IsPointerType(Parent^.TypeIndex) then
     CompileError('Cannot dereference non-pointer type ' +
                  TypeName(Parent^.TypeIndex));
@@ -271,6 +280,7 @@ begin
   Expr^.TypeIndex := Parent^.TypeIndex^.PointedTypeIndex;
   Expr^.IsConstant := false;
   Expr^.IsAssignable := true;
+  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
   ExPointerAccess := Expr
 end;
 
@@ -278,6 +288,7 @@ function ExStringChar(Parent : TExpression; Subscript : TExpression)
 : TExpression;
 var Expr : TExpression;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if not IsStringyType(Parent^.TypeIndex) then
     CompileError('Cannot access subscript of non-string type ' +
                  TypeName(Parent^.TypeIndex));
@@ -290,6 +301,7 @@ begin
   Expr^.TypeIndex := PrimitiveTypes.PtChar;
   Expr^.IsConstant := Parent^.IsConstant;
   Expr^.IsAssignable := Parent^.IsAssignable;
+  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
   ExStringChar := Expr
 end;
 
@@ -300,7 +312,6 @@ begin
   Expr^.FunctionEx.FunctionIndex := FunctionIndex;
   Expr^.TypeIndex := nil;
   Expr^.IsConstant := true;
-  Expr^.IsAssignable := false;
   ExFunctionRef := Expr
 end;
 
@@ -320,13 +331,20 @@ begin
     Expr^.CallEx.FunctionRef := FunctionRef;
     Expr^.CallEx.Args.Size := Args.Size;
     for Pos := 1 to Args.Size do
+    begin
       Expr^.CallEx.Args.Values[Pos] := ExCoerce(
                                        ExEnsureEvaluation(Args.Values[Pos]),
                                        FunctionIndex^.Args[Pos].TypeIndex);
+      if FunctionIndex^.Args[Pos].IsReference
+         and (Expr^.CallEx.Args.Values[Pos]^.IsConstant
+         or not Expr^.CallEx.Args.Values[Pos]^.IsAssignable) then
+        CompileError('Pass-by-reference argument must be assignable')
+    end;
     Expr^.TypeIndex := FunctionIndex^.ReturnTypeIndex;
   end;
   Expr^.IsConstant := false;
   Expr^.IsAssignable := false;
+  Expr^.IsFunctionResult := true;
   ExFunctionCall := Expr
 end;
 
@@ -337,18 +355,18 @@ forward;
 function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
   Parent := ExEnsureEvaluation(Parent);
-  if Op = TkMinus then
+  if (Op = TkMinus) or (Op = TkPlus) then
   begin
     if not IsIntegerType(Parent^.TypeIndex) then
-      CompileError('Invalid type for negation operator: ' +
-                   TypeName(Parent^.TypeIndex))
+      CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
+      TypeName(Parent^.TypeIndex))
   end
   else if Op = TkNot then
   begin
     if not IsBooleanType(Parent^.TypeIndex)
        and not IsIntegerType(Parent^.TypeIndex) then
-      CompileError('Invalid type for negation operator: ' + TypeName(Parent^.
-                   TypeIndex))
+      CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
+      TypeName(Parent^.TypeIndex))
   end
   else CompileError('Invalid unary operator: ' + LxTokenName(Op));
 
@@ -360,9 +378,13 @@ function _ExUnOpImm;
 begin
   if (Op = TkMinus) and (Parent^.ImmediateEx.Cls = XicInteger) then
     Parent^.ImmediateEx.IntegerValue := -Parent^.ImmediateEx.IntegerValue
+  else if (Op = TkPlus) and (Parent^.ImmediateEx.Cls = XicInteger) then
+    { do nothing }
   else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicBoolean) then
          Parent^.ImmediateEx.BooleanValue := not Parent^.ImmediateEx.
                                              BooleanValue
+
+
 
 
 { TODO: Bootstrap does not recognize this yet
@@ -383,6 +405,7 @@ begin
   Expr^.TypeIndex := Parent^.TypeIndex;
   Expr^.IsConstant := true;
   Expr^.IsAssignable := false;
+  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
   _ExUnOpCmp := Expr
 end;
 
@@ -528,6 +551,7 @@ begin
   DisposeExpr(Right);
   if Op = TkPlus then
   begin
+    Left^.ImmediateEx.Cls := XicString;
     Lt := Lt + Rt;
   end
   else
@@ -591,6 +615,8 @@ begin
     Expr^.BinaryEx.Right := Right;
     Expr^.BinaryEx.Op := Op;
     Expr^.TypeIndex := PrimitiveTypes.PtBoolean;
+    Expr^.IsConstant := true;
+    Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
     _ExBinOpBoolCmp := Expr
   end
   else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
@@ -603,6 +629,8 @@ begin
   Expr^.BinaryEx.Left := Left;
   Expr^.BinaryEx.Right := Right;
   Expr^.BinaryEx.Op := Op;
+  Expr^.IsConstant := true;
+  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkDiv)
      or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) then
     Expr^.TypeIndex := PrimitiveTypes.PtInteger
@@ -621,6 +649,8 @@ begin
   Expr^.BinaryEx.Left := Left;
   Expr^.BinaryEx.Right := Right;
   Expr^.BinaryEx.Op := Op;
+  Expr^.IsConstant := true;
+  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if Op = TkPlus then
     Expr^.TypeIndex := PrimitiveTypes.PtString
   else if (Op = TkEquals) or (Op = TkNotEquals)
@@ -638,6 +668,8 @@ begin
   Expr^.BinaryEx.Left := Left;
   Expr^.BinaryEx.Right := Right;
   Expr^.BinaryEx.Op := Op;
+  Expr^.IsConstant := true;
+  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals)
      or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
      or (Op = TkMoreOrEquals) then
@@ -653,6 +685,8 @@ begin
   Expr^.BinaryEx.Left := Left;
   Expr^.BinaryEx.Right := Right;
   Expr^.BinaryEx.Op := Op;
+  Expr^.IsConstant := true;
+  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals) then
     Expr^.TypeIndex := PrimitiveTypes.PtBoolean
   else CompileError('Invalid string operator: ' + LxTokenName(Op));
@@ -664,6 +698,8 @@ begin
   if IsCharType(Expr^.TypeIndex) and IsStringType(TypeIndex) then
     ExCoerce := ExToString(Expr)
   else if IsSameType(Expr^.TypeIndex, TypeIndex) then
+         ExCoerce := Expr
+  else if IsNilType(Expr^.TypeIndex) and IsPointeryType(TypeIndex) then
          ExCoerce := Expr
   else
     CompileError('Type mismatch: expected ' + TypeName(TypeIndex) +

@@ -5,8 +5,9 @@ var
 
 procedure _OutChar(Chr : char);
 begin
-  if (Chr = '''') then write(Codegen.Output, '''\''''')
-  else if (Chr >= ' ') then write(Codegen.Output, '''', Chr, '''')
+  if Chr = '''' then write(Codegen.Output, '''\''''')
+  else if Chr = '\' then write(Codegen.Output, '''\\''')
+  else if Chr >= ' ' then write(Codegen.Output, '''', Chr, '''')
   else CompileError('Internal error: escaped chars are not supported yet')
 end;
 
@@ -15,16 +16,25 @@ var
   Pos : integer;
   Chr : char;
 begin
-  write(Codegen.Output, '"');
-  for Pos := 1 to Length(Str) do
+  if Length(Str) = 1 then
   begin
-    Chr := Str[Pos];
-    if Chr = '"' then write(Codegen.Output, '\"')
-    else if Chr = '\' then write(Codegen.Output, '\\')
-    else if Chr >= ' ' then write(Codegen.Output, Chr)
-    else CompileError('Internal error: escaped chars are not supported yet')
-  end;
-  write(Codegen.Output, '"')
+    write(Codegen.Output, 'str_of(');
+    _OutChar(Str[1]);
+    write(Codegen.Output, ')')
+  end
+  else
+  begin
+    write(Codegen.Output, 'str_make(', Length(Str), ', "');
+    for Pos := 1 to Length(Str) do
+    begin
+      Chr := Str[Pos];
+      if Chr = '"' then write(Codegen.Output, '\"')
+      else if Chr = '\' then write(Codegen.Output, '\\')
+      else if Chr >= ' ' then write(Codegen.Output, Chr)
+      else CompileError('Internal error: escaped chars are not supported yet')
+    end;
+    write(Codegen.Output, '")')
+  end
 end;
 
 function _BinOpPrec(Expr : TExpression) : integer;
@@ -57,7 +67,10 @@ begin
   case Expr^.Cls of 
     XcImmediate : _Precedence := 0;
     XcToString : _Precedence := 0;
-    XcVariableAccess : _Precedence := 0;
+    XcVariableAccess : if Expr^.VariableEx.VariableIndex^.IsReference then
+                         _Precedence := 2
+                       else
+                         _Precedence := 0;
     XcFieldAccess : _Precedence := 1;
     XcArrayAccess : _Precedence := 1;
     XcPointerAccess : _Precedence := 2;
@@ -70,28 +83,30 @@ begin
   end
 end;
 
-procedure _OutExpressionParens(Expr, Ref : TExpression);
+procedure _OutExpressionParensPrec(Expr : TExpression; Prec : integer);
 var UseParens : boolean;
 begin
-  UseParens := _Precedence(Expr) > _Precedence(Ref);
+  UseParens := _Precedence(Expr) > Prec;
   if UseParens then write(Codegen.Output, '(');
   OutExpression(Expr);
   if UseParens then write(Codegen.Output, ')')
 end;
 
-procedure _OutExpressionParensExtra(Expr, Ref : TExpression);
-var UseParens : boolean;
+procedure _OutExpressionParens(Expr, Ref : TExpression);
 begin
-  UseParens := _Precedence(Expr) >= _Precedence(Ref);
-  if UseParens then write(Codegen.Output, '(');
-  OutExpression(Expr);
-  if UseParens then write(Codegen.Output, ')')
+  _OutExpressionParensPrec(Expr, _Precedence(Ref))
+end;
+
+procedure _OutExpressionParensExtra(Expr, Ref : TExpression);
+begin
+  _OutExpressionParensPrec(Expr, _Precedence(Ref) - 1)
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
 begin
   with Expr^.ImmediateEx do
     case Cls of 
+      XicNil : write(Codegen.Output, '(void*)0');
       XicBoolean : if BooleanValue then write(Codegen.Output, '1')
                    else write(Codegen.Output, '0');
       XicInteger : write(Codegen.Output, IntegerValue);
@@ -102,6 +117,32 @@ begin
     end
 end;
 
+procedure _OutExVariable(Expr : TExpression);
+begin
+  if Expr^.VariableEx.VariableIndex^.IsReference then
+    write(Codegen.Output,
+          '*', Expr^.VariableEx.VariableIndex^.Name)
+  else
+    write(Codegen.Output,
+          Expr^.VariableEx.VariableIndex^.Name);
+end;
+
+procedure _OutExFieldAccess(Expr : TExpression);
+begin
+  if Expr^.FieldEx.Parent^.Cls = XcPointerAccess then
+  begin
+    _OutExpressionParens(Expr^.FieldEx.Parent^.PointerEx.Parent, Expr);
+    write(Codegen.Output, '->')
+  end
+  else
+  begin
+    _OutExpressionParens(Expr^.FieldEx.Parent, Expr);
+    write(Codegen.Output, '.')
+  end;
+  write(Codegen.Output, Expr^.FieldEx.Parent^.TypeIndex^.RecordIndex^
+        .Fields[Expr^.FieldEx.FieldNumber].Name)
+end;
+
 procedure _OutExFunctionCall(Expr : TExpression);
 var Pos : integer;
 begin
@@ -110,7 +151,16 @@ begin
   for Pos := 1 to Expr^.CallEx.Args.Size do
   begin
     if Pos <> 1 then write(Codegen.Output, ', ');
-    OutExpression(Expr^.CallEx.Args.Values[Pos])
+    if Expr^.CallEx.FunctionRef^.FunctionEx.FunctionIndex^.Args[Pos].IsReference
+      then
+    begin
+      if not Expr^.CallEx.Args.Values[Pos]^.IsAssignable then
+        CompileError('Pass-by-reference argument must be assignable');
+      write(Codegen.Output, '&');
+      _OutExpressionParensPrec(Expr^.CallEx.Args.Values[Pos], 2)
+    end
+    else
+      OutExpression(Expr^.CallEx.Args.Values[Pos])
   end;
   write(Codegen.Output, ')')
 end;
@@ -256,15 +306,8 @@ begin
                   OutExpression(Expr^.ToStringEx.Parent);
                   write(Codegen.Output, ')')
                 end;
-    XcVariableAccess : write(Codegen.Output,
-                             Expr^.VariableEx.VariableIndex^.Name);
-    XcFieldAccess:
-                   begin
-                     _OutExpressionParens(Expr^.FieldEx.Parent, Expr);
-                     write(Codegen.Output, '.',
-                           Expr^.FieldEx.Parent^.TypeIndex^.RecordIndex^
-                           .Fields[Expr^.FieldEx.FieldNumber].Name)
-                   end;
+    XcVariableAccess : _OutExVariable(Expr);
+    XcFieldAccess: _OutExFieldAccess(Expr);
     XcArrayAccess:
                    begin
                      _OutExpressionParens(Expr^.ArrayEx.Parent, Expr);
@@ -459,8 +502,9 @@ begin
     OutNameAndType(Name, Arr.TypeIndex);
     write(Codegen.Output, '[');
     SizeExpr := ExBinaryOp(
-      ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound), TkPlus),
-      CopyExpr(Arr.LowBound), TkMinus);
+                ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound), TkPlus
+                ),
+                CopyExpr(Arr.LowBound), TkMinus);
     OutExpression(SizeExpr);
     DisposeExpr(SizeExpr);
     write(Codegen.Output, ']')
@@ -600,16 +644,16 @@ end;
 procedure OutRead;
 begin
   write(Codegen.Output, 'read_', ShortTypeName(OutVar^.TypeIndex), '(&');
-  OutExpression(Src);
+  _OutExpressionParensPrec(Src, 2);
   write(Codegen.Output,', &');
-  OutExpression(OutVar);
+  _OutExpressionParensPrec(OutVar, 2);
   writeln(Codegen.Output, ');')
 end;
 
 procedure OutReadln;
 begin
   write(Codegen.Output, 'readln(&');
-  OutExpression(Src);
+  _OutExpressionParensPrec(Src, 2);
   writeln(Codegen.Output, ');')
 end;
 
@@ -619,7 +663,7 @@ begin
   if IsEnumType(Expr^.TypeIndex) then
   begin
     write(Codegen.Output, 'write_e(&');
-    OutExpression(Dst);
+    _OutExpressionParensPrec(Dst, 2);
     write(Codegen.Output, ', ');
     OutExpression(Expr);
     writeln(Codegen.Output, ', enumvalues',
@@ -628,7 +672,7 @@ begin
   else
   begin
     write(Codegen.Output, 'write_', ShortTypeName(Expr^.TypeIndex), '(&');
-    OutExpression(Dst);
+    _OutExpressionParensPrec(Dst, 2);
     write(Codegen.Output, ', ');
     OutExpression(Expr);
     writeln(Codegen.output, ');')
@@ -638,7 +682,7 @@ end;
 procedure OutWriteln;
 begin
   write(Codegen.Output, 'writeln(&');
-  OutExpression(Dst);
+  _OutExpressionParensPrec(Dst, 2);
   writeln(Codegen.Output, ');')
 end;
 
@@ -696,9 +740,9 @@ end;
 procedure OutAssignToReference;
 begin
   OutVariableDeclaration(VarIndex^);
-  write(Codegen.Output, ' = &(');
-  OutExpression(Rhs);
-  writeln(Codegen.Output, ');')
+  write(Codegen.Output, ' = &');
+  _OutExpressionParensPrec(Rhs, 2);
+  writeln(Codegen.Output, ';')
 end;
 
 procedure OutIf;
@@ -753,10 +797,13 @@ begin
 end;
 
 procedure OutRepeatEnd;
+var TmpExpr : TExpression;
 begin
-  write(Codegen.Output, '} while (!(');
-  OutExpression(Expr);
-  writeln(Codegen.Output, '));')
+  write(Codegen.Output, '} while (');
+  TmpExpr := ExUnaryOp(CopyExpr(Expr), TkNot);
+  OutExpression(TmpExpr);
+  DisposeExpr(TmpExpr);
+  writeln(Codegen.Output, ');')
 end;
 
 procedure OutWhileBegin;

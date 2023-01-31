@@ -76,6 +76,7 @@ type
     TypeIndex : TPsTypeIndex;
     IsConstant : boolean;
     IsAssignable : boolean;
+    IsFunctionResult : boolean;
     case Cls : TExpressionClass of 
       XcImmediate : (ImmediateEx : TExImmediate);
       XcToString : (ToStringEx : TExToString);

@@ -74,7 +74,7 @@ begin
   AddFunction(Fun);
   Fun.Name := 'ORD';
   Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, true);
+  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
   Fun.Name := 'PARAMCOUNT';

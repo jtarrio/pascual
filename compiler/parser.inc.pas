@@ -59,6 +59,9 @@ begin
   PsIdentifier := Ident
 end;
 
+type 
+  ExpressionType = (Lhs, Rhs);
+
 function PsExpression : TExpression;
 forward;
 
@@ -695,6 +698,7 @@ begin
   WantTokenAndRead(TkLbracket);
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
+  Arr := ExEnsureEvaluation(Arr);
   if IsStringyType(Arr^.TypeIndex) then
     PsArrayAccess := ExStringChar(Arr, Idx)
   else
@@ -801,12 +805,7 @@ begin
       if InStr and (Pos > 1) and (Pstr[Pos - 1] = '''') then
         Str := Str + ''''
     end
-    else if InStr then
-    begin
-      if Chr = '"' then Str := Str + '\"'
-      else if Chr = '\' then Str := Str + '\\'
-      else Str := Str + Chr
-    end
+    else if InStr then Str := Str + Chr
   end;
   ParseString := Str
 end;
@@ -914,11 +913,20 @@ end;
 procedure PsAssign(Lhs, Rhs : TExpression);
 begin
   if Lhs^.Cls = XcFunctionRef then
+    Rhs := ExCoerce(Rhs, Lhs^.FunctionEx.FunctionIndex^.ReturnTypeIndex)
+  else
+    Rhs := ExCoerce(Rhs, Lhs^.TypeIndex);
+  if Lhs^.Cls = XcFunctionRef then
     OutAssignReturnValue(Lhs, Rhs)
   else
   begin
     if not Lhs^.IsAssignable or Lhs^.IsConstant then
-      CompileError('Cannot assign to a constant value');
+    begin
+      if Lhs^.IsFunctionResult then
+        CompileError('Cannot assign to the result of a function')
+      else
+        CompileError('Cannot assign to a constant value');
+    end;
     OutAssign(Lhs, Rhs)
   end;
   DisposeExpr(Lhs);
@@ -1057,9 +1065,13 @@ var
   Ascending : boolean;
 begin
   WantTokenAndRead(TkFor);
-  Iter := PsExpression;
+  Iter := ExEnsureEvaluation(PsExpression);
   if not Iter^.IsAssignable then
-    CompileError('Expected iterator to be assignable');
+    CompileError('Iterator variable must be assignable');
+  if Iter^.IsConstant then
+    CompileError('Iterator must not be a constant');
+  if Iter^.IsFunctionResult then
+    CompileError('Iterator must not be the result of a function');
   if not IsOrdinalType(Iter^.TypeIndex) then
     CompileError('Type of iterator is not ordinal: ' +
                  TypeName(Iter^.TypeIndex));

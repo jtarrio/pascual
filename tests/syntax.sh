@@ -53,8 +53,8 @@ testinteger() {
 }
 testinteger 1 | is_valid
 testinteger 1234 | is_valid
-testinteger -1 | will_be_valid
-testinteger -1234 | will_be_valid
+testinteger -1 | is_valid
+testinteger -1234 | is_valid
 testinteger +1 | will_be_valid
 testinteger +1234 | will_be_valid
 testinteger '$1234' | will_be_valid
@@ -138,7 +138,7 @@ echo 'const A = 1 + 2;' | testdef | will_be_valid
 echo 'const A : integer = 123;' | testdef | is_valid
 echo 'const A : integer;' | testdef | is_not_valid
 echo 'const A : integer = 123; B : integer = A;' | testdef | is_not_valid
-echo 'const A : integer = 1 + 2;' | testdef | will_be_valid
+echo 'const A : integer = 1 + 2;' | testdef | is_valid
 echo 'const A : array[1..5] of integer = (1, 2, 3, 4, 5);' | testdef | is_valid
 echo 'const A : array[1..5] of integer = 5;' | testdef | is_not_valid
 
@@ -175,7 +175,7 @@ echo "'a'..'z'" | testtype | will_be_valid
 echo '(One, Two, Three); X = One..Two' | testtype | will_be_valid
 echo 'array[1..10] of integer' | testtype | is_valid
 echo 'array[6..15] of integer' | testtype | is_valid
-echo 'array[-4..5] of integer' | testtype | will_be_valid
+echo 'array[-4..5] of integer' | testtype | is_valid
 echo 'array[1..10] of array[1..20] of integer' | testtype | is_valid
 echo 'array[1..10,1..20] of integer' | testtype | will_be_valid
 echo '(One, Two, Three);
