@@ -862,7 +862,6 @@ function FindFieldType(TypeIndex : TPsTypeIndex; Name : string;
                        Required : boolean) : TPsTypeIndex;
 var 
   Pos : integer;
-  Ret : TPsTypeIndex;
 begin
   Pos := FindField(TypeIndex, Name, Required);
   if Pos = 0 then FindFieldType := nil

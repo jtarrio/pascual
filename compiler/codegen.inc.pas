@@ -16,7 +16,7 @@ var
   Chr : char;
 begin
   write(Codegen.Output, '"');
-  for Pos := 1 to length(Str) do
+  for Pos := 1 to Length(Str) do
   begin
     Chr := Str[Pos];
     if Chr = '"' then write(Codegen.Output, '\"')
@@ -76,7 +76,7 @@ begin
   UseParens := _Precedence(Expr) > _Precedence(Ref);
   if UseParens then write(Codegen.Output, '(');
   OutExpression(Expr);
-  if UseParens then   write(Codegen.Output, ')')
+  if UseParens then write(Codegen.Output, ')')
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
@@ -85,7 +85,7 @@ begin
     case Cls of 
       XicBoolean : if BooleanValue then write(Codegen.Output, '1')
                    else write(Codegen.Output, '0');
-      XicInteger : writeln(Codegen.Output, IntegerValue);
+      XicInteger : write(Codegen.Output, IntegerValue);
       XicChar : _OutChar(CharValue);
       XicString : _OutString(StringValue);
       XicEnum : write(Codegen.Output,
@@ -225,10 +225,17 @@ begin
         write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
       _OutExpressionParens(Right, Expr)
     end
+    else
+    begin
+      _OutExpressionParens(Left, Expr);
+      write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ');
+      _OutExpressionParens(Right, Expr)
+    end
   end
 end;
 
 procedure OutExpression;
+var TmpExpr : TExpression;
 begin
   case Expr^.Cls of 
     XcNothing: CompileError('Internal error: ' +
@@ -246,16 +253,20 @@ begin
                    begin
                      _OutExpressionParens(Expr^.FieldEx.Parent, Expr);
                      write(Codegen.Output, '.',
-                           Expr^.TypeIndex^.RecordIndex^
+                           Expr^.FieldEx.Parent^.TypeIndex^.RecordIndex^
                            .Fields[Expr^.FieldEx.FieldNumber].Name)
                    end;
     XcArrayAccess:
                    begin
                      _OutExpressionParens(Expr^.ArrayEx.Parent, Expr);
                      write(Codegen.Output, '[');
-                     OutExpression(ExBinaryOp(Expr^.ArrayEx.Subscript,
-                                   Expr^.TypeIndex^.ArrayIndex^.LowBound,
-                                   TkMinus));
+                     TmpExpr := ExBinaryOp(
+                                CopyExpr(Expr^.ArrayEx.Subscript),
+                                CopyExpr(Expr^.ArrayEx.Parent^.TypeIndex^
+                                .ArrayIndex^.LowBound),
+                                TkMinus);
+                     OutExpression(TmpExpr);
+                     DisposeExpr(TmpExpr);
                      write(Codegen.Output, ']')
                    end;
     XcPointerAccess:
@@ -409,6 +420,7 @@ end;
 procedure OutNameAndType;
 var 
   Arr : TPsArrayDef;
+  SizeExpr : TExpression;
 begin
   if TypeIndex = nil then write(Codegen.Output, 'void ', Name)
   else if TypeIndex^.Cls = TtcPointer then
@@ -436,10 +448,12 @@ begin
   begin
     Arr := TypeIndex^.ArrayIndex^;
     OutNameAndType(Name, Arr.TypeIndex);
-    write(Codegen.Output, '[1 + ');
-    OutExpression(Arr.HighBound);
-    write(Codegen.Output, ' - ');
-    OutExpression(Arr.LowBound);
+    write(Codegen.Output, '[');
+    SizeExpr := ExBinaryOp(
+      ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound), TkPlus),
+      CopyExpr(Arr.LowBound), TkMinus);
+    OutExpression(SizeExpr);
+    DisposeExpr(SizeExpr);
     write(Codegen.Output, ']')
   end
   else
@@ -664,8 +678,8 @@ end;
 
 procedure OutAssignReturnValue;
 begin
-  write(Codegen.Output, 'return_', Lhs^.FunctionEx.FunctionIndex^.Name, ' = ')
-  ;
+  write(Codegen.Output, 'return_',
+        Lhs^.FunctionEx.FunctionIndex^.Name, ' = ');
   OutExpression(Rhs);
   writeln(Codegen.Output, ';')
 end;
@@ -673,7 +687,7 @@ end;
 procedure OutAssignToReference;
 begin
   OutVariableDeclaration(VarIndex^);
-  write(Codegen.Output, ' = &(', );
+  write(Codegen.Output, ' = &(');
   OutExpression(Rhs);
   writeln(Codegen.Output, ');')
 end;

@@ -2,6 +2,7 @@ function _NewExpr(Cls : TExpressionClass) : TExpression;
 var Expr : TExpression;
 begin
   new(Expr);
+  Expr^.Cls := Cls;
   Expr^.IsConstant := false;
   Expr^.IsAssignable := false;
   _NewExpr := Expr
@@ -40,7 +41,69 @@ begin
   dispose(Expr);
 end;
 
+function CopyExpr(Expr : TExpression) : TExpression;
+var 
+  Copy : TExpression;
+  Pos : integer;
+begin
+  Copy := _NewExpr(Expr^.Cls);
+  Copy^.TypeIndex := Expr^.TypeIndex;
+  Copy^.IsConstant := Expr^.IsConstant;
+  Copy^.IsAssignable := Expr^.IsAssignable;
+  case Expr^.Cls of 
+    XcImmediate: Copy^.ImmediateEx := Expr^.ImmediateEx;
+    XcToString: Copy^.ToStringEx.Parent := CopyExpr(Expr^.ToStringEx.Parent);
+    XcVariableAccess: Copy^.VariableEx := Expr^.VariableEx;
+    XcFieldAccess:
+                   begin
+                     Copy^.FieldEx.Parent := CopyExpr(Expr^.FieldEx.Parent);
+                     Copy^.FieldEx.FieldNumber := Expr^.FieldEx.FieldNumber
+                   end;
+    XcArrayAccess:
+                   begin
+                     Copy^.ArrayEx.Parent := CopyExpr(Expr^.ArrayEx.Parent);
+                     Copy^.ArrayEx.Subscript := CopyExpr(Expr^.ArrayEx
+                                                .Subscript)
+                   end;
+    XcPointerAccess: Copy^.PointerEx.Parent := CopyExpr(Expr^.PointerEx.Parent);
+    XcStringChar:
+                  begin
+                    Copy^.StringCharEx.Parent := CopyExpr(Expr^.StringCharEx
+                                                 .Parent);
+                    Copy^.StringCharEx.Subscript := CopyExpr(Expr^.StringCharEx
+                                                    .Subscript)
+                  end;
+    XcFunctionRef:
+                   Copy^.FunctionEx.FunctionIndex := Expr^.FunctionEx
+                                                     .FunctionIndex;
+    XcFunctionCall:
+                    begin
+                      Copy^.CallEx.FunctionRef := CopyExpr(Expr^.CallEx
+                                                  .FunctionRef);
+                      Copy^.CallEx.Args.Size := Expr^.CallEx.Args.Size;
+                      for Pos := 1 to Expr^.CallEx.Args.Size do
+                        Copy^.CallEx.Args.Values[Pos] := CopyExpr(Expr^.CallEx
+                                                         .Args.Values[Pos])
+                    end;
+    XcUnaryOp:
+               begin
+                 Copy^.UnaryEx.Parent := CopyExpr(Expr^.UnaryEx.Parent);
+                 Copy^.UnaryEx.Op := Expr^.UnaryEx.Op
+               end;
+    XcBinaryOp:
+                begin
+                  Copy^.BinaryEx.Left := CopyExpr(Expr^.BinaryEx.Left);
+                  Copy^.BinaryEx.Right := CopyExpr(Expr^.BinaryEx.Right);
+                  Copy^.BinaryEx.Op := Expr^.BinaryEx.Op
+                end;
+  end;
+  CopyExpr := Copy
+end;
+
 function ExCoerce(Expr : TExpression; TypeIndex : TPsTypeIndex) : TExpression;
+forward;
+
+function ExEnsureEvaluation(Expr : TExpression) : TExpression;
 forward;
 
 function ExNothing : TExpression;
@@ -128,7 +191,7 @@ begin
     if Parent^.Cls = XcImmediate then
     begin
       Str := Parent^.ImmediateEx.CharValue;
-      Parent^.ImmediateEx.Cls = XicString;
+      Parent^.ImmediateEx.Cls := XicString;
       Parent^.ImmediateEx.StringValue := Str;
       ExToString := Parent
     end
@@ -224,7 +287,7 @@ begin
   Expr := _NewExpr(XcStringChar);
   Expr^.ArrayEx.Parent := ExToString(Parent);
   Expr^.ArrayEx.Subscript := Subscript;
-  Expr^.TypeIndex := Parent^.TypeIndex^.ArrayIndex^.TypeIndex;
+  Expr^.TypeIndex := PrimitiveTypes.PtChar;
   Expr^.IsConstant := Parent^.IsConstant;
   Expr^.IsAssignable := Parent^.IsAssignable;
   ExStringChar := Expr
@@ -257,7 +320,8 @@ begin
     Expr^.CallEx.FunctionRef := FunctionRef;
     Expr^.CallEx.Args.Size := Args.Size;
     for Pos := 1 to Args.Size do
-      Expr^.CallEx.Args.Values[Pos] := ExCoerce(Args.Values[Pos],
+      Expr^.CallEx.Args.Values[Pos] := ExCoerce(
+                                       ExEnsureEvaluation(Args.Values[Pos]),
                                        FunctionIndex^.Args[Pos].TypeIndex);
     Expr^.TypeIndex := FunctionIndex^.ReturnTypeIndex;
   end;
@@ -272,6 +336,7 @@ function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 forward;
 function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
+  Parent := ExEnsureEvaluation(Parent);
   if Op = TkMinus then
   begin
     if not IsIntegerType(Parent^.TypeIndex) then
@@ -299,10 +364,6 @@ begin
          Parent^.ImmediateEx.BooleanValue := not Parent^.ImmediateEx.
                                              BooleanValue
 
-
-
-
-
 { TODO: Bootstrap does not recognize this yet
     else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicInteger) then
          Parent^.ImmediateEx.IntegerValue := not Parent^.ImmediateEx.
@@ -318,6 +379,9 @@ begin
   Expr := _NewExpr(XcUnaryOp);
   Expr^.UnaryEx.Parent := Parent;
   Expr^.UnaryEx.Op := Op;
+  Expr^.TypeIndex := Parent^.TypeIndex;
+  Expr^.IsConstant := true;
+  Expr^.IsAssignable := false;
   _ExUnOpCmp := Expr
 end;
 
@@ -353,6 +417,8 @@ function ExBinaryOp(Left : TExpression; Right : TExpression; Op : TLxTokenId)
 var 
   Immediate : boolean;
 begin
+  Left := ExEnsureEvaluation(Left);
+  Right := ExEnsureEvaluation(Right);
   Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
   if IsBooleanType(Left^.TypeIndex) and IsBooleanType(Right^.TypeIndex) then
   begin
@@ -603,7 +669,7 @@ begin
     ', got ' + TypeName(Expr^.TypeIndex))
 end;
 
-function ExEnsureEvaluation(Expr : TExpression) : TExpression;
+function ExEnsureEvaluation;
 var Args : TExFunctionArgs;
 begin
   if Expr^.Cls = XcFunctionRef then

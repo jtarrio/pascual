@@ -408,6 +408,7 @@ var
   TypeIndex : TPsTypeIndex;
 begin
   WantTokenAndRead(TkLparen);
+  Def.ArgCount := 0;
   repeat
     IsReference := Lexer.Token.Id = TkVar;
     SkipToken(TkVar);
@@ -418,6 +419,7 @@ begin
         CompileError('Too many arguments declared for function ' + Def.Name);
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
       Def.Args[Def.ArgCount].IsReference := IsReference;
+      Def.Args[Def.ArgCount].IsConstant := false;
       WantToken2(TkColon, TkComma);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
@@ -520,10 +522,10 @@ end;
 
 function PsFunctionCall(Fn : TExpression) : TExpression;
 var 
-  Expr : TExpression;
   Args : TExFunctionArgs;
 begin
   WantTokenAndRead(TkLParen);
+  Args.Size := 0;
   while Lexer.Token.Id <> TkRParen do
   begin
     Args.Size := Args.Size + 1;
@@ -561,14 +563,14 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       OutVar := PsExpression;
-      if (OutVar^.Cls = XcVariableAccess) and IsTextType(OutVar^.TypeIndex) then
+      if OutVar^.IsAssignable and IsTextType(OutVar^.TypeIndex) then
       begin
         DisposeExpr(Src);
         Src := OutVar
       end
       else
       begin
-        if (OutVar^.Cls <> XcVariableAccess)
+        if not OutVar^.IsAssignable
            or not IsStringyType(OutVar^.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
@@ -579,7 +581,7 @@ begin
       while Lexer.Token.Id <> TkRparen do
       begin
         OutVar := PsExpression;
-        if (OutVar^.Cls <> XcVariableAccess)
+        if not OutVar^.IsAssignable
            or not IsStringyType(OutVar^.TypeIndex) then
           CompileError('Invalid expression for read argument');
         OutRead(Src, OutVar);
@@ -616,7 +618,7 @@ begin
     if Lexer.Token.Id <> TkRparen then
     begin
       Expr := PsExpression;
-      if (Expr^.Cls = XcVariableAccess) and IsTextType(Expr^.TypeIndex) then
+      if Expr^.IsAssignable and IsTextType(Expr^.TypeIndex) then
       begin
         DisposeExpr(Dst);
         Dst := Expr
@@ -653,7 +655,7 @@ begin
   Expr := PsExpression;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
-  if (Dest^.Cls <> XcVariableAccess) or not IsStringType(Dest^.TypeIndex) then
+  if not Dest^.IsAssignable or not IsStringType(Dest^.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
   OutStr(Dest, Expr);
@@ -668,7 +670,7 @@ begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if (Dest^.Cls <> XcVariableAccess) or not IsPointerType(Dest^.TypeIndex) then
+  if not Dest^.IsAssignable or not IsPointerType(Dest^.TypeIndex) then
     CompileError('Argument is not a pointer');
   OutNew(Dest);
   DisposeExpr(Dest)
@@ -681,7 +683,7 @@ begin
   WantTokenAndRead(TkLparen);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if (Dest^.Cls <> XcVariableAccess) or not IsPointerType(Dest^.TypeIndex) then
+  if not Dest^.IsAssignable or not IsPointerType(Dest^.TypeIndex) then
     CompileError('Argument is not a pointer');
   OutDispose(Dest)
 end;
@@ -693,7 +695,10 @@ begin
   WantTokenAndRead(TkLbracket);
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
-  PsArrayAccess := ExArrayAccess(Arr, Idx)
+  if IsStringyType(Arr^.TypeIndex) then
+    PsArrayAccess := ExStringChar(Arr, Idx)
+  else
+    PsArrayAccess := ExArrayAccess(Arr, Idx)
 end;
 
 function PsFieldAccess(Rec : TExpression) : TExpression;
@@ -785,6 +790,7 @@ var
   Chr : char;
   Str : string;
 begin
+  Str := '';
   InStr := false;
   for Pos := 1 to Length(Pstr) do
   begin
@@ -819,6 +825,7 @@ end;
 function PsFactor : TExpression;
 var 
   Expr : TExpression;
+  Str : string;
 begin
   if Lexer.Token.Id = TkNil then
   begin
@@ -831,7 +838,11 @@ begin
     ReadToken
   end
   else if Lexer.Token.Id = TkString then
-         Expr := ExStringConstant(ParseString(GetTokenValueAndRead(TkString)))
+  begin
+    Str := ParseString(GetTokenValueAndRead(TkString));
+    if Length(Str) = 1 then Expr := ExCharConstant(Str[1])
+    else Expr := ExStringConstant(Str)
+  end
   else if Lexer.Token.Id = TkNumber then
          Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkNumber)))
   else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall
@@ -902,12 +913,14 @@ end;
 
 procedure PsAssign(Lhs, Rhs : TExpression);
 begin
-  if not Lhs^.IsAssignable or Lhs^.IsConstant then
-    CompileError('Cannot assign to a constant value');
   if Lhs^.Cls = XcFunctionRef then
     OutAssignReturnValue(Lhs, Rhs)
   else
-    OutAssign(Lhs, Rhs);
+  begin
+    if not Lhs^.IsAssignable or Lhs^.IsConstant then
+      CompileError('Cannot assign to a constant value');
+    OutAssign(Lhs, Rhs)
+  end;
   DisposeExpr(Lhs);
   DisposeExpr(Rhs)
 end;
@@ -934,9 +947,14 @@ begin
   if Lexer.Token.Id = TkAssign then
   begin
     WantTokenAndRead(TkAssign);
-    PsAssign(Lhs, PsExpression);
+    PsAssign(Lhs, ExEnsureEvaluation(PsExpression));
   end
-  else OutProcedureCall(ExEnsureEvaluation(Lhs))
+  else if Lhs^.TypeIndex <> nil then
+  begin
+    Lhs := ExEnsureEvaluation(Lhs);
+    OutProcedureCall(Lhs);
+    DisposeExpr(Lhs)
+  end;
 end;
 
 procedure PsIfStatement;
@@ -1031,8 +1049,8 @@ var
 begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
-  if Iter^.Cls <> XcVariableAccess then
-    CompileError('Expected variable');
+  if not Iter^.IsAssignable then
+    CompileError('Expected iterator to be assignable');
   if not IsOrdinalType(Iter^.TypeIndex) then
     CompileError('Type of iterator is not ordinal: ' +
                  TypeName(Iter^.TypeIndex));
