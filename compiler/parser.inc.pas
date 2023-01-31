@@ -384,7 +384,7 @@ var
   Pos : integer;
   Checkpoint : TPsDefPtr;
 begin
-  StartLocalScope;
+  StartLocalScope(FnIndex);
   Checkpoint := Defs.Latest;
   for Pos := 1 to FnIndex^.ArgCount do
     AddVariable(FnIndex^.Args[Pos]);
@@ -913,13 +913,15 @@ end;
 procedure PsAssign(Lhs, Rhs : TExpression);
 begin
   if Lhs^.Cls = XcFunctionRef then
-    Rhs := ExCoerce(Rhs, Lhs^.FunctionEx.FunctionIndex^.ReturnTypeIndex)
-  else
-    Rhs := ExCoerce(Rhs, Lhs^.TypeIndex);
-  if Lhs^.Cls = XcFunctionRef then
+  begin
+    if Lhs^.FunctionEx.FunctionIndex <> Defs.CurrentFunction then
+      CompileError('Cannot assign a value to a function');
+    Rhs := ExCoerce(Rhs, Lhs^.FunctionEx.FunctionIndex^.ReturnTypeIndex);
     OutAssignReturnValue(Lhs, Rhs)
+  end
   else
   begin
+    Rhs := ExCoerce(Rhs, Lhs^.TypeIndex);
     if not Lhs^.IsAssignable or Lhs^.IsConstant then
     begin
       if Lhs^.IsFunctionResult then

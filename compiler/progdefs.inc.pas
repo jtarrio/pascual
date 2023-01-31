@@ -181,11 +181,13 @@ type
       TdcVariable : (VariableIndex : TPsVariableIndex);
       TdcFunction : (FunctionIndex : TPsFunctionIndex);
       TdcWithVar : (WithVarIndex : TPsWithVarIndex);
-      TdcScopeBoundary : (TemporaryScope : boolean)
+      TdcScopeBoundary : (TemporaryScope : boolean;
+                          CurrentFunction : TPsFunctionIndex)
   end;
 
   TPsDefs = record
     Latest : TPsDefPtr;
+    CurrentFunction : TPsFunctionIndex;
     Counter : integer;
   end;
 var 
@@ -203,6 +205,7 @@ end;
 procedure InitDefs;
 begin
   Defs.Latest := nil;
+  Defs.CurrentFunction := nil;
   Defs.Counter := 0
 end;
 
@@ -224,7 +227,11 @@ begin
     TdcVariable : new(Def^.VariableIndex);
     TdcFunction : new(Def^.FunctionIndex);
     TdcWithVar : new(Def^.WithVarIndex);
-    TdcScopeBoundary : Def^.TemporaryScope := false;
+    TdcScopeBoundary :
+                       begin
+                         Def^.TemporaryScope := false;
+                         Def^.CurrentFunction := nil
+                       end
   end;
   _NewDef := Def
 end;
@@ -268,12 +275,15 @@ begin
   end
 end;
 
-procedure _StartScope(Temporary : boolean);
+procedure _StartScope(Temporary : boolean; NewFunction : TPsFunctionIndex);
 var 
   Def : TPsDefPtr;
 begin
   Def := _AddDef(TdcScopeBoundary);
-  Def^.TemporaryScope := Temporary
+  Def^.TemporaryScope := Temporary;
+  Def^.CurrentFunction := Defs.CurrentFunction;
+  if not Temporary then
+    Defs.CurrentFunction := NewFunction
 end;
 
 procedure _CloseScope(Temporary : boolean);
@@ -286,11 +296,12 @@ begin
   until not Deleted
         or ((DeletedDef.Cls = TdcScopeBoundary)
         and (Temporary or not DeletedDef.TemporaryScope));
+  Defs.CurrentFunction := DeletedDef.CurrentFunction
 end;
 
-procedure StartLocalScope;
+procedure StartLocalScope(NewFunction : TPsFunctionIndex);
 begin
-  _StartScope({Temporary=}false)
+  _StartScope({Temporary=}false, NewFunction)
 end;
 
 procedure CloseLocalScope;
@@ -300,7 +311,7 @@ end;
 
 procedure StartTemporaryScope;
 begin
-  _StartScope({Temporary=}true)
+  _StartScope({Temporary=}true, nil)
 end;
 
 procedure CloseTemporaryScope;
