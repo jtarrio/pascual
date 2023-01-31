@@ -142,7 +142,7 @@ void write_e(PFile* file, int value, const char** names) {
   check_ioresult();
   clearerr(file->file);
   if (!is_open(file)) return;
-  fputs(names[value], file->file);
+  fputs(names[value - 1], file->file);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 

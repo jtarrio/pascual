@@ -459,9 +459,9 @@ begin
     write(Codegen.Output, ' { ');
     for Pos := 1 to EnumIndex^.Size do
     begin
-      if Pos > 1 then
-        write(Codegen.Output, ', ');
-      write(Codegen.Output, EnumIndex^.Values[Pos])
+      if Pos > 1 then write(Codegen.Output, ', ');
+      write(Codegen.Output, EnumIndex^.Values[Pos]);
+      if Pos = 1 then write(Codegen.Output, ' = 1')
     end;
     write(Codegen.Output, '}');
     EnumIndex^.HasBeenDefined := true
