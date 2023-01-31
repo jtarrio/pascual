@@ -79,6 +79,15 @@ begin
   if UseParens then write(Codegen.Output, ')')
 end;
 
+procedure _OutExpressionParensExtra(Expr, Ref : TExpression);
+var UseParens : boolean;
+begin
+  UseParens := _Precedence(Expr) >= _Precedence(Ref);
+  if UseParens then write(Codegen.Output, '(');
+  OutExpression(Expr);
+  if UseParens then write(Codegen.Output, ')')
+end;
+
 procedure _OutExImmediate(Expr : TExpression);
 begin
   with Expr^.ImmediateEx do
@@ -194,7 +203,7 @@ begin
       begin
         _OutExpressionParens(Left, Expr);
         write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ');
-        _OutExpressionParens(Right, Expr)
+        _OutExpressionParensExtra(Right, Expr)
       end
       else
       begin
@@ -212,7 +221,7 @@ begin
         write(Codegen.Output, ' ', _GetLogicalOp(Op), ' ')
       else
         write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
-      _OutExpressionParens(Right, Expr)
+      _OutExpressionParensExtra(Right, Expr)
     end
     else if IsIntegerType(Left^.TypeIndex) then
     begin
@@ -223,13 +232,13 @@ begin
              write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
       else
         write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
-      _OutExpressionParens(Right, Expr)
+      _OutExpressionParensExtra(Right, Expr)
     end
     else
     begin
       _OutExpressionParens(Left, Expr);
       write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ');
-      _OutExpressionParens(Right, Expr)
+      _OutExpressionParensExtra(Right, Expr)
     end
   end
 end;

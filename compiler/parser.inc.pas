@@ -949,12 +949,21 @@ begin
     WantTokenAndRead(TkAssign);
     PsAssign(Lhs, ExEnsureEvaluation(PsExpression));
   end
-  else if Lhs^.TypeIndex <> nil then
+  else
   begin
     Lhs := ExEnsureEvaluation(Lhs);
-    OutProcedureCall(Lhs);
-    DisposeExpr(Lhs)
-  end;
+    if Lhs^.Cls = XcFunctionCall then
+    begin
+      OutProcedureCall(Lhs);
+      DisposeExpr(Lhs)
+    end
+    else if Lhs^.Cls <> XcNothing then
+           if Lhs^.Cls = XcBinaryOp then
+             CompileError('Invalid statement' +
+                          ' (maybe you wrote ''='' instead of '':=''?')
+    else
+      CompileError('Invalid statement')
+  end
 end;
 
 procedure PsIfStatement;

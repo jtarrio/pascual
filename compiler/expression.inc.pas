@@ -364,6 +364,7 @@ begin
          Parent^.ImmediateEx.BooleanValue := not Parent^.ImmediateEx.
                                              BooleanValue
 
+
 { TODO: Bootstrap does not recognize this yet
     else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicInteger) then
          Parent^.ImmediateEx.IntegerValue := not Parent^.ImmediateEx.
@@ -422,13 +423,13 @@ begin
   Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
   if IsBooleanType(Left^.TypeIndex) and IsBooleanType(Right^.TypeIndex) then
   begin
-    if Immediate then _ExBinOpBoolImm(Left, Right, Op)
+    if Immediate then ExBinaryOp := _ExBinOpBoolImm(Left, Right, Op)
     else ExBinaryOp := _ExBinOpBoolCmp(Left, Right, Op)
   end
   else if IsIntegerType(Left^.TypeIndex)
           and IsIntegerType(Right^.TypeIndex) then
   begin
-    if Immediate then _ExBinOpIntImm(Left, Right, Op)
+    if Immediate then ExBinaryOp := _ExBinOpIntImm(Left, Right, Op)
     else ExBinaryOp := _ExBinOpIntCmp(Left, Right, Op)
   end
   else if IsStringyType(Left^.TypeIndex)
@@ -440,7 +441,7 @@ begin
   else if IsEnumType(Left^.TypeIndex)
           and IsSameType(Left^.TypeIndex, Right^.TypeIndex) then
   begin
-    if Immediate then _ExBinOpEnumImm(Left, Right, Op)
+    if Immediate then ExBinaryOp := _ExBinOpEnumImm(Left, Right, Op)
     else ExBinaryOp := _ExBinOpEnumCmp(Left, Right, Op)
   end
   else if ArePointersCompatible(Left^.TypeIndex, Right^.TypeIndex) then
