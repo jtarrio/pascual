@@ -383,15 +383,9 @@ begin
   else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicBoolean) then
          Parent^.ImmediateEx.BooleanValue := not Parent^.ImmediateEx.
                                              BooleanValue
-
-
-
-
-{ TODO: Bootstrap does not recognize this yet
-    else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicInteger) then
+  else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicInteger) then
          Parent^.ImmediateEx.IntegerValue := not Parent^.ImmediateEx.
                                              IntegerValue
-}
   else CompileError('Internal error: invalid immediate unary operation');
   _ExUnOpImm := Parent
 end;
