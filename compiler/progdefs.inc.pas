@@ -530,7 +530,7 @@ end;
 
 function IsIntegerType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsIntegerType := TypeIndex^.Cls = TtcInteger
+  IsIntegerType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcInteger)
 end;
 
 function StringType : TPsType;
@@ -545,12 +545,12 @@ end;
 
 function IsStringType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsStringType := TypeIndex^.Cls = TtcString
+  IsStringType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcString)
 end;
 
 function IsCharType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsCharType := TypeIndex^.Cls = TtcChar
+  IsCharType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcChar)
 end;
 
 function IsStringyType(TypeIndex : TPsTypeIndex) : boolean;
@@ -565,7 +565,7 @@ end;
 
 function IsBooleanType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsBooleanType := TypeIndex^.Cls = TtcBoolean
+  IsBooleanType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcBoolean)
 end;
 
 function TextType : TPsType;
@@ -575,22 +575,22 @@ end;
 
 function IsTextType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsTextType := TypeIndex^.Cls = TtcText
+  IsTextType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcText)
 end;
 
 function IsEnumType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsEnumType := TypeIndex^.Cls = TtcEnum
+  IsEnumType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcEnum)
 end;
 
 function IsRecordType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsRecordType := TypeIndex^.Cls = TtcRecord
+  IsRecordType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcRecord)
 end;
 
 function IsArrayType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsArrayType := TypeIndex^.Cls = TtcArray
+  IsArrayType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcArray)
 end;
 
 function PointerType(TypeIndex : TPsTypeIndex) : TPsType;
@@ -604,7 +604,7 @@ end;
 
 function IsPointerType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsPointerType := TypeIndex^.Cls = TtcPointer
+  IsPointerType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcPointer)
 end;
 
 function NilType : TPsType;
@@ -614,7 +614,7 @@ end;
 
 function IsNilType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsNilType := TypeIndex^.Cls = TtcNil
+  IsNilType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcNil)
 end;
 
 function IsPointeryType(TypeIndex : TPsTypeIndex) : boolean;
@@ -634,7 +634,8 @@ end;
 
 function IsPointerUnknownType(TypeIndex : TPsTypeIndex) : boolean;
 begin
-  IsPointerUnknownType := TypeIndex^.Cls = TtcPointerUnknown
+  IsPointerUnknownType := (TypeIndex <> nil)
+                          and (TypeIndex^.Cls = TtcPointerUnknown)
 end;
 
 function IsOrdinalType(TypeIndex : TPsTypeIndex) : boolean;

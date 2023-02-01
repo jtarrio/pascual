@@ -105,9 +105,6 @@ end;
 function ExCoerce(Expr : TExpression; TypeIndex : TPsTypeIndex) : TExpression;
 forward;
 
-function ExEnsureEvaluation(Expr : TExpression) : TExpression;
-forward;
-
 function ExNothing : TExpression;
 var Expr : TExpression;
 begin
@@ -188,7 +185,6 @@ var
   Expr : TExpression;
   Str : string;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if IsCharType(Parent^.TypeIndex) then
   begin
     if Parent^.Cls = XcImmediate then
@@ -228,7 +224,6 @@ function ExFieldAccess(Parent : TExpression; FieldNumber : integer)
 : TExpression;
 var Expr : TExpression;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if not IsRecordType(Parent^.TypeIndex) then
     CompileError('Cannot access field of non-record type ' +
                  TypeName(Parent^.TypeIndex));
@@ -250,7 +245,6 @@ function ExArrayAccess(Parent : TExpression; Subscript : TExpression)
 : TExpression;
 var Expr : TExpression;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if not IsArrayType(Parent^.TypeIndex) then
     CompileError('Cannot access subscript of non-array type ' +
                  TypeName(Parent^.TypeIndex));
@@ -271,7 +265,6 @@ end;
 function ExPointerAccess(Parent : TExpression) : TExpression;
 var Expr : TExpression;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if not IsPointerType(Parent^.TypeIndex) then
     CompileError('Cannot dereference non-pointer type ' +
                  TypeName(Parent^.TypeIndex));
@@ -288,7 +281,6 @@ function ExStringChar(Parent : TExpression; Subscript : TExpression)
 : TExpression;
 var Expr : TExpression;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if not IsStringyType(Parent^.TypeIndex) then
     CompileError('Cannot access subscript of non-string type ' +
                  TypeName(Parent^.TypeIndex));
@@ -332,8 +324,7 @@ begin
     Expr^.CallEx.Args.Size := Args.Size;
     for Pos := 1 to Args.Size do
     begin
-      Expr^.CallEx.Args.Values[Pos] := ExCoerce(
-                                       ExEnsureEvaluation(Args.Values[Pos]),
+      Expr^.CallEx.Args.Values[Pos] := ExCoerce(Args.Values[Pos],
                                        FunctionIndex^.Args[Pos].TypeIndex);
       if FunctionIndex^.Args[Pos].IsReference
          and (Expr^.CallEx.Args.Values[Pos]^.IsConstant
@@ -354,7 +345,6 @@ function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 forward;
 function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
-  Parent := ExEnsureEvaluation(Parent);
   if (Op = TkMinus) or (Op = TkPlus) then
   begin
     if not IsIntegerType(Parent^.TypeIndex) then
@@ -435,8 +425,6 @@ function ExBinaryOp(Left : TExpression; Right : TExpression; Op : TLxTokenId)
 var 
   Immediate : boolean;
 begin
-  Left := ExEnsureEvaluation(Left);
-  Right := ExEnsureEvaluation(Right);
   Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
   if IsBooleanType(Left^.TypeIndex) and IsBooleanType(Right^.TypeIndex) then
   begin
@@ -700,16 +688,11 @@ begin
     ', got ' + TypeName(Expr^.TypeIndex))
 end;
 
-function ExEnsureEvaluation;
+function ExEvaluateFunction(Fn : TExpression) : TExpression;
 var Args : TExFunctionArgs;
 begin
-  if Expr^.Cls = XcFunctionRef then
-  begin
-    if Expr^.FunctionEx.FunctionIndex^.ArgCount <> 0 then
-      CompileError('Function requires arguments');
-    Args.Size := 0;
-    ExEnsureEvaluation := ExFunctionCall(Expr, Args)
-  end
-  else
-    ExEnsureEvaluation := Expr
+  if Fn^.FunctionEx.FunctionIndex^.ArgCount <> 0 then
+    CompileError('Function requires arguments');
+  Args.Size := 0;
+  ExEvaluateFunction := ExFunctionCall(Fn, Args)
 end;

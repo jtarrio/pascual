@@ -659,7 +659,6 @@ end;
 
 procedure OutWrite;
 begin
-  Expr := ExEnsureEvaluation(Expr);
   if IsEnumType(Expr^.TypeIndex) then
   begin
     write(Codegen.Output, 'write_e(&');
@@ -688,7 +687,6 @@ end;
 
 procedure OutStr;
 begin
-  Expr := ExEnsureEvaluation(Expr);
   if IsEnumType(Expr^.TypeIndex) then
   begin
     OutExpression(Dst);

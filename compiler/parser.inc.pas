@@ -698,7 +698,6 @@ begin
   WantTokenAndRead(TkLbracket);
   Idx := PsExpression;
   WantTokenAndRead(TkRbracket);
-  Arr := ExEnsureEvaluation(Arr);
   if IsStringyType(Arr^.TypeIndex) then
     PsArrayAccess := ExStringChar(Arr, Idx)
   else
@@ -715,7 +714,7 @@ begin
                    FindField(Rec^.TypeIndex, Fld.Name, {Required=}true))
 end;
 
-function PsVariableOrFunctionCall : TExpression;
+function PsVariable : TExpression;
 var 
   Id : TPsIdentifier;
   WithVarIndex : TPsWithVarIndex;
@@ -723,7 +722,6 @@ var
   Expr : TExpression;
   Done : boolean;
 begin
-  Done := false;
   Id := PsIdentifier;
   WithVarIndex := FindWithVar(Id.Name);
   if WithVarIndex <> nil then
@@ -757,14 +755,23 @@ begin
     else
       CompileError('Invalid identifier: ' + Id.Name)
   end;
+  PsVariable := Expr
+end;
+
+function PsVariableOrFunctionExtension(Expr : TExpression) : TExpression;
+var 
+  Done : boolean;
+begin
+  Done := false;
   repeat
-    if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
+    if Lexer.Token.Id = TkLparen then Expr := PsFunctionCall(Expr)
+    else if Expr^.Cls = XcFunctionRef then Expr := ExEvaluateFunction(Expr)
+    else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
-    else if Lexer.Token.Id = TkLparen then Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
     else Done := true
   until Done;
-  PsVariableOrFunctionCall := Expr
+  PsVariableOrFunctionExtension := Expr
 end;
 
 function IsOpAdding(Tok : TLxToken) : boolean;
@@ -844,7 +851,8 @@ begin
   end
   else if Lexer.Token.Id = TkNumber then
          Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkNumber)))
-  else if Lexer.Token.Id = TkIdentifier then Expr := PsVariableOrFunctionCall
+  else if Lexer.Token.Id = TkIdentifier then
+         Expr := PsVariableOrFunctionExtension(PsVariable)
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
@@ -953,15 +961,19 @@ procedure PsIdentifierStatement;
 var 
   Lhs : TExpression;
 begin
-  Lhs := PsExpression;
+  Lhs := PsVariable;
+  if (Lhs^.Cls <> XcFunctionRef)
+     or (Lhs^.FunctionEx.FunctionIndex <> Defs.CurrentFunction)
+     or (Lexer.Token.Id <> TkAssign) then
+    Lhs := PsVariableOrFunctionExtension(Lhs);
+
   if Lexer.Token.Id = TkAssign then
   begin
     WantTokenAndRead(TkAssign);
-    PsAssign(Lhs, ExEnsureEvaluation(PsExpression));
+    PsAssign(Lhs, PsExpression);
   end
   else
   begin
-    Lhs := ExEnsureEvaluation(Lhs);
     if Lhs^.Cls = XcFunctionCall then
     begin
       OutProcedureCall(Lhs);
@@ -1067,7 +1079,7 @@ var
   Ascending : boolean;
 begin
   WantTokenAndRead(TkFor);
-  Iter := ExEnsureEvaluation(PsExpression);
+  Iter := PsExpression;
   if not Iter^.IsAssignable then
     CompileError('Iterator variable must be assignable');
   if Iter^.IsConstant then
@@ -1078,11 +1090,11 @@ begin
     CompileError('Type of iterator is not ordinal: ' +
                  TypeName(Iter^.TypeIndex));
   WantTokenAndRead(TkAssign);
-  First := ExEnsureEvaluation(PsExpression);
+  First := PsExpression;
   WantToken2(TkTo, TkDownto);
   Ascending := Lexer.Token.Id = TkTo;
   ReadToken;
-  Last := ExEnsureEvaluation(PsExpression);
+  Last := PsExpression;
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;
