@@ -1,7 +1,59 @@
+type 
+  TOutputType = (TotNone, TotType, TotVar, TotEnumVal, TotFunDec, TotFunDef);
+
 var 
   Codegen : record
     Output : text;
+    IsMultiStatement : boolean;
+    Indent : integer;
+    Newline : boolean;
+    LastOut : TOutputType
   end;
+
+procedure _OutNewline;
+begin
+  writeln(Codegen.Output);
+  Codegen.Newline := true
+end;
+
+procedure _OutBlankline(NewOut : TOutputType);
+begin
+  if (Codegen.Indent = 0) and
+     ((Codegen.LastOut <> NewOut) or (NewOut = TotFunDef)) then _OutNewline;
+  Codegen.LastOut := NewOut
+end;
+
+procedure _OutIndent;
+var Ct : integer;
+begin
+  if Codegen.Newline then
+    for Ct := 1 to Codegen.Indent do
+      write(Codegen.Output, '  ');
+  Codegen.Newline := false
+end;
+
+procedure OutBegin;
+begin
+  Codegen.IsMultiStatement := true;
+  write(Codegen.Output, '{');
+  _OutNewline;
+  Codegen.Indent := Codegen.Indent + 1
+end;
+
+procedure OutEnd;
+begin
+  Codegen.Indent := Codegen.Indent - 1;
+  _OutIndent;
+  write(Codegen.Output, '}');
+  _OutNewline
+end;
+
+procedure OutEndSameLine;
+begin
+  Codegen.Indent := Codegen.Indent - 1;
+  _OutIndent;
+  write(Codegen.Output, '}')
+end;
 
 procedure _OutChar(Chr : char);
 begin
@@ -124,7 +176,7 @@ begin
           '*', Expr^.VariableEx.VariableIndex^.Name)
   else
     write(Codegen.Output,
-          Expr^.VariableEx.VariableIndex^.Name);
+          Expr^.VariableEx.VariableIndex^.Name)
 end;
 
 procedure _OutExFieldAccess(Expr : TExpression);
@@ -225,8 +277,8 @@ begin
     TkLessthan : _GetRelationalOp := '<';
     TkMorethan : _GetRelationalOp := '>';
     TkLessOrEquals : _GetRelationalOp := '<=';
-    TkMoreOrEquals : _GetRelationalOp := '>=';
-  end;
+    TkMoreOrEquals : _GetRelationalOp := '>='
+  end
 end;
 
 procedure _OutExBinaryOp(Expr : TExpression);
@@ -322,7 +374,7 @@ begin
     XcPointerAccess:
                      begin
                        write(Codegen.Output, '*');
-                       _OutExpressionParens(Expr^.PointerEx.Parent, Expr);
+                       _OutExpressionParens(Expr^.PointerEx.Parent, Expr)
                      end;
     XcStringChar:
                   begin
@@ -334,24 +386,16 @@ begin
     XcFunctionRef: write(Codegen.Output, Expr^.FunctionEx.FunctionIndex^.Name);
     XcFunctionCall: _OutExFunctionCall(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
-    XcBinaryOp: _OutExBinaryOp(Expr);
+    XcBinaryOp: _OutExBinaryOp(Expr)
   end
-end;
-
-procedure OutBegin;
-begin
-  writeln(Codegen.Output, '{')
-end;
-
-procedure OutEnd;
-begin
-  writeln(Codegen.Output, '}')
 end;
 
 procedure OutEnumValues;
 var 
   PosInEnum : integer;
 begin
+  _OutBlankline(TotEnumVal);
+  _OutIndent;
   write(Codegen.Output, 'const char* enumvalues',
         EnumIndex^.Id,
         '[] = { ');
@@ -361,7 +405,8 @@ begin
     write(Codegen.Output, '"', EnumIndex^.Values[PosInEnum],
           '"')
   end;
-  writeln(Codegen.Output, ' };')
+  write(Codegen.Output, ' };');
+  _OutNewline
 end;
 
 procedure OutEnumValuesFromCheckpoint;
@@ -422,7 +467,8 @@ begin
   write(Codegen.Output, 'struct record', RecordIndex^.Id);
   if not RecordIndex^.HasBeenDefined then
   begin
-    write(Codegen.Output, ' { ');
+    write(Codegen.Output, ' ');
+    OutBegin;
     for Pos := 1 to RecordIndex^.Size do
     begin
       if (RecordIndex^.NumVariants > NumVariant)
@@ -430,18 +476,37 @@ begin
       begin
         NumVariant := NumVariant + 1;
         if NumVariant = 1 then
-          write(Codegen.Output, 'union { ')
+        begin
+          _OutIndent;
+          write(Codegen.Output, 'union ');
+          OutBegin
+        end
         else
-          write(Codegen.Output, '}; ');
-        write(Codegen.Output, 'struct { ')
+        begin
+          OutEndSameLine;
+          write(Codegen.Output, ';');
+          _OutNewline
+        end;
+        _OutIndent;
+        write(Codegen.Output, 'struct ');
+        OutBegin;
       end;
+      _OutIndent;
       OutNameAndType(RecordIndex^.Fields[Pos].Name,
                      RecordIndex^.Fields[Pos].TypeIndex);
-      write(Codegen.Output, '; ')
+      write(Codegen.Output, ';');
+      _OutNewline;
     end;
     if NumVariant > 0 then
-      write(Codegen.Output, '}; }; ');
-    write(Codegen.Output, '}');
+    begin
+      OutEndSameLine;
+      write(Codegen.Output, ';');
+      _OutNewline;
+      OutEndSameLine;
+      write(Codegen.Output, ';');
+      _OutNewline
+    end;
+    OutEndSameLine;
     RecordIndex^.HasBeenDefined := true
   end;
   write(Codegen.Output, ' ', Name)
@@ -461,7 +526,7 @@ begin
         write(Codegen.Output, ', ');
       write(Codegen.Output, EnumIndex^.Values[Pos])
     end;
-    write(Codegen.Output, '}');
+    write(Codegen.Output, ' }');
     EnumIndex^.HasBeenDefined := true
   end;
   write(Codegen.Output, ' ', Name)
@@ -516,12 +581,15 @@ procedure OutTypeDefinition;
 var 
   Name : string;
 begin
+  _OutBlankline(TotType);
+  _OutIndent;
   Name := TypeIndex^.Name;
   if TypeIndex^.AliasFor = nil then
     CompileError('Type ' + Name + ' is not an alias');
   write(Codegen.Output, 'typedef ');
   OutNameAndType(Name, TypeIndex^.AliasFor);
-  writeln(Codegen.Output, ';');
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutTypeDefinitionsFromCheckpoint;
@@ -564,28 +632,35 @@ end;
 
 procedure OutVariableDefinition;
 begin
+  _OutBlankline(TotVar);
+  _OutIndent;
   if VarIndex^.IsConstant then
     write(Codegen.Output, 'const ');
   OutVariableDeclaration(VarIndex^);
-  writeln(Codegen.Output, ';');
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutConstantDefinitionBegin;
 begin
+  _OutBlankline(TotVar);
+  _OutIndent;
   write(Codegen.Output, 'const ');
   OutVariableDeclaration(VarIndex^);
-  write(Codegen.Output, ' = ');
+  write(Codegen.Output, ' = ')
 end;
 
 procedure OutConstantDefinitionEnd;
 begin
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutFunctionPrototype;
 var 
   Pos : integer;
 begin
+  _OutIndent;
   OutNameAndType(Def.Name, Def.ReturnTypeIndex);
   write(Codegen.Output, '(');
   for Pos := 1 to Def.ArgCount do
@@ -599,34 +674,46 @@ end;
 
 procedure OutFunctionDeclaration;
 begin
+  _OutBlankline(TotFunDec);
   OutFunctionPrototype(FnIndex^);
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutFunctionDefinition;
 begin
+  _OutBlankline(TotFunDef);
   OutFunctionPrototype(FnIndex^);
-  writeln(Codegen.Output, ' {');
+  write(Codegen.Output, ' ');
+  OutBegin;
   if FnIndex^.ReturnTypeIndex <> nil then
   begin
+    _OutIndent;
     OutNameAndType(OutReturnVariableName(FnIndex^.Name),
     FnIndex^.ReturnTypeIndex);
-    writeln(Codegen.Output, ';')
+    write(Codegen.Output, ';');
+    _OutNewline
   end
 end;
 
 procedure OutFunctionEnd;
 begin
   if FnIndex^.ReturnTypeIndex <> nil then
-    writeln(Codegen.Output, 'return ',
-            OutReturnVariableName(FnIndex^.Name), ';');
-  writeln(Codegen.Output, '}')
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'return ',
+          OutReturnVariableName(FnIndex^.Name), ';');
+    _OutNewline
+  end;
+  OutEnd
 end;
 
 procedure OutProgramHeading;
 begin
-  writeln(Codegen.Output, '/* Program: ', Name, ' */');
-  writeln(Codegen.Output, '#include "pascual.h"')
+  write(Codegen.Output, '/* Program: ', Name, ' */');
+  _OutNewline;
+  write(Codegen.Output, '#include "pascual.h"');
+  _OutNewline
 end;
 
 function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
@@ -649,23 +736,28 @@ begin
   Src := Expr^.SpecialFunctionCallEx.Src;
   Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfReadln;
   ReadArg := Expr^.SpecialFunctionCallEx.ReadArgs;
-  Braces := (ReadArg <> nil) and ((ReadArg^.Next <> nil) or Linefeed);
+  Braces := (not Codegen.IsMultiStatement) and (ReadArg <> nil)
+            and ((ReadArg^.Next <> nil) or Linefeed);
   if Braces then OutBegin;
   while ReadArg <> nil do
   begin
+    _OutIndent;
     write(Codegen.Output, 'read_',
           ShortTypeName(ReadArg^.Arg^.TypeIndex), '(&');
     _OutExpressionParensPrec(Src, 2);
     write(Codegen.Output,', &');
     _OutExpressionParensPrec(ReadArg^.Arg, 2);
-    writeln(Codegen.Output, ');');
+    write(Codegen.Output, ');');
+    _OutNewline;
     ReadArg := ReadArg^.Next
   end;
   if Linefeed then
   begin
+    _OutIndent;
     write(Codegen.Output, 'readln(&');
     _OutExpressionParensPrec(Src, 2);
-    writeln(Codegen.Output, ');')
+    write(Codegen.Output, ');');
+    _OutNewline
   end;
   if Braces then OutEnd
 end;
@@ -680,35 +772,42 @@ begin
   Dst := Expr^.SpecialFunctionCallEx.Dst;
   Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfWriteln;
   WriteArg := Expr^.SpecialFunctionCallEx.WriteArgs;
-  Braces := (WriteArg <> nil) and ((WriteArg^.Next <> nil) or Linefeed);
+  Braces := (not Codegen.IsMultiStatement) and (WriteArg <> nil)
+            and ((WriteArg^.Next <> nil) or Linefeed);
   if Braces then OutBegin;
   while WriteArg <> nil do
   begin
     if IsEnumType(WriteArg^.Arg^.TypeIndex) then
     begin
+      _OutIndent;
       write(Codegen.Output, 'write_e(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      writeln(Codegen.Output, ', enumvalues',
-              WriteArg^.Arg^.TypeIndex^.EnumIndex^.Id, ');')
+      write(Codegen.Output, ', enumvalues',
+            WriteArg^.Arg^.TypeIndex^.EnumIndex^.Id, ');');
+      _OutNewline
     end
     else
     begin
+      _OutIndent;
       write(Codegen.Output, 'write_',
             ShortTypeName(WriteArg^.Arg^.TypeIndex), '(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      writeln(Codegen.output, ');')
+      write(Codegen.output, ');');
+      _OutNewline
     end;
     WriteArg := WriteArg^.Next
   end;
   if Linefeed then
   begin
+    _OutIndent;
     write(Codegen.Output, 'writeln(&');
     _OutExpressionParensPrec(Dst, 2);
-    writeln(Codegen.Output, ');')
+    write(Codegen.Output, ');');
+    _OutNewline
   end;
   if Braces then OutEnd
 end;
@@ -720,134 +819,190 @@ begin
   Dst := Expr^.SpecialFunctionCallEx.Dst;
   if IsEnumType(Src^.TypeIndex) then
   begin
+    _OutIndent;
     OutExpression(Dst);
     write(Codegen.Output, ' = to_str_e(');
     OutExpression(Src);
-    writeln(Codegen.Output, ', enumvalues',
-            Src^.TypeIndex^.EnumIndex^.Id, ');')
+    write(Codegen.Output, ', enumvalues',
+          Src^.TypeIndex^.EnumIndex^.Id, ');');
+    _OutNewline
   end
   else
   begin
+    _OutIndent;
     OutExpression(Dst);
     write(Codegen.Output, ' = to_str_', ShortTypeName(Src^.TypeIndex), '(');
     OutExpression(Src);
-    writeln(Codegen.Output, ');')
-  end;
+    write(Codegen.Output, ');');
+    _OutNewline
+  end
 end;
 
 procedure _OutNew(Expr : TExpression);
 var Ptr : TExpression;
 begin
   Ptr := Expr^.SpecialFunctionCallEx.Ptr;
+  _OutIndent;
   OutExpression(Ptr);
   write(Codegen.Output, ' = malloc(sizeof(');
   OutTypeReference(Ptr^.TypeIndex^.PointedTypeIndex);
-  writeln(Codegen.Output, '));')
+  write(Codegen.Output, '));');
+  _OutNewline
 end;
 
 procedure _OutDispose(Expr : TExpression);
 var Ptr : TExpression;
 begin
   Ptr := Expr^.SpecialFunctionCallEx.Ptr;
+  _OutIndent;
   write(Codegen.Output, 'free(');
   OutExpression(Ptr);
-  writeln(Codegen.Output, ');')
+  write(Codegen.Output, ');');
+  _OutNewline
 end;
 
 procedure OutAssign;
 begin
+  _OutIndent;
   OutExpression(Lhs);
   write(Codegen.Output, ' = ');
   OutExpression(Rhs);
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutAssignReturnValue;
 begin
+  _OutIndent;
   write(Codegen.Output, 'return_',
         Lhs^.FunctionEx.FunctionIndex^.Name, ' = ');
   OutExpression(Rhs);
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutAssignToReference;
 begin
+  _OutIndent;
   OutVariableDeclaration(VarIndex^);
   write(Codegen.Output, ' = &');
   _OutExpressionParensPrec(Rhs, 2);
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutIf;
 begin
+  _OutIndent;
   write(Codegen.Output, 'if (');
   OutExpression(Expr);
-  write(Codegen.Output, ') ')
+  write(Codegen.Output, ') ');
+  Codegen.IsMultiStatement := false
 end;
 
 procedure OutElse;
 begin
-  write(Codegen.Output, 'else ')
+  _OutIndent;
+  write(Codegen.Output, 'else ');
+  Codegen.IsMultiStatement := false
+end;
+
+procedure OutIfEnd;
+begin
+  codegen.IsMultiStatement := true
+end;
+
+procedure OutSequenceBegin;
+begin
+  _OutIndent;
+  OutBegin
+end;
+
+procedure OutSequenceEnd;
+begin
+  OutEnd
 end;
 
 procedure OutCaseBegin;
 begin
+  _OutIndent;
   write(Codegen.Output, 'switch (');
   OutExpression(CaseIndex);
-  writeln(Codegen.Output, ') {')
+  write(Codegen.Output, ') ');
+  OutBegin
 end;
 
 procedure OutCaseStatementBegin;
 begin
+  _OutIndent;
   write(Codegen.Output, 'case ');
   OutExpression(CaseLabel);
-  write(Codegen.Output, ': ')
+  write(Codegen.Output, ':');
+  write(Codegen.Output);
+  Codegen.Indent := Codegen.Indent + 1;
+  _OutNewline
 end;
 
 procedure OutCaseStatementEnd;
 begin
-  writeln(CodeGen.Output, 'break;')
+  _OutIndent;
+  write(CodeGen.Output, 'break;');
+  Codegen.Indent := Codegen.Indent - 1;
+  _OutNewline
 end;
 
 procedure OutCaseElseBegin;
 begin
-  write(CodeGen.Output, 'default: ')
+  _OutIndent;
+  write(CodeGen.Output, 'default:');
+  Codegen.Indent := Codegen.Indent + 1;
+  _OutNewline
 end;
 
 procedure OutCaseElseEnd;
 begin
-  writeln(CodeGen.Output, 'break;')
+  _OutIndent;
+  write(CodeGen.Output, 'break;');
+  Codegen.Indent := Codegen.Indent - 1;
+  _OutNewline
 end;
 
 procedure OutCaseEnd;
 begin
-  writeln(CodeGen.Output, '}')
+  OutEnd
 end;
 
 procedure OutRepeatBegin;
 begin
-  writeln(Codegen.Output, 'do {')
+  _OutIndent;
+  write(Codegen.Output, 'do ');
+  OutBegin
 end;
 
 procedure OutRepeatEnd;
 var TmpExpr : TExpression;
 begin
-  write(Codegen.Output, '} while (');
+  OutEndSameLine;
+  write(Codegen.Output, ' while (');
   TmpExpr := ExUnaryOp(CopyExpr(Expr), TkNot);
   OutExpression(TmpExpr);
   DisposeExpr(TmpExpr);
-  writeln(Codegen.Output, ');')
+  write(Codegen.Output, ');');
+  _OutNewline
 end;
 
 procedure OutWhileBegin;
 begin
+  _OutIndent;
   write(Codegen.Output, 'while (');
   OutExpression(Expr);
-  write(Codegen.Output, ') ')
+  write(Codegen.Output, ') ');
+  Codegen.IsMultiStatement := false
 end;
 
 procedure OutWhileEnd;
 begin
+  codegen.IsMultiStatement := true
 end;
 
 procedure OutForBegin;
@@ -859,46 +1014,66 @@ begin
   if IsEnumType(LimitType) then LimitType := PrimitiveTypes.PtInteger;
   First := MakeVariable('first', LimitType, false);
   Last := MakeVariable('last', LimitType, false);
-  writeln(Codegen.Output, '{');
+  _OutIndent;
+  write(Codegen.Output, 'do ');
+  OutBegin;
+  _OutIndent;
   OutVariableDeclaration(First);
   write(Codegen.Output, ' = ');
   OutExpression(FirstExpr);
-  writeln(Codegen.Output, ';');
+  write(Codegen.Output, ';');
+  _OutNewline;
+  _OutIndent;
   OutVariableDeclaration(Last);
   write(Codegen.Output, ' = ');
   OutExpression(LastExpr);
-  writeln(Codegen.Output, ';');
+  write(Codegen.Output, ';');
+  _OutNewline;
+  _OutIndent;
   write(Codegen.Output, 'if (first ');
   if Ascending then
     write(Codegen.Output, '<=')
   else
     write(Codegen.Output, '>=');
-  writeln(Codegen.Output, ' last) {');
+  write(Codegen.Output, ' last) ');
+  OutBegin;
+  _OutIndent;
   OutExpression(Iter);
-  writeln(Codegen.Output, ' = first;');
-  writeln(Codegen.Output, 'while (1) {');
+  write(Codegen.Output, ' = first;');
+  _OutNewline;
+  _OutIndent;
+  write(Codegen.Output, 'while (1) ');
+  OutBegin
 end;
 
 procedure OutForEnd;
 begin
+  _OutIndent;
   write(Codegen.Output, 'if (');
   OutExpression(Iter);
-  writeln(Codegen.Output, ' == last) break;');
+  write(Codegen.Output, ' == last) break;');
+  _OutNewline;
+  _OutIndent;
   if Ascending then
     write(Codegen.Output, '++')
   else
     write(Codegen.Output, '--');
   OutExpression(Iter);
-  writeln(Codegen.Output, ';');
-  writeln(Codegen.Output, '}');
-  writeln(Codegen.Output, '}');
-  writeln(Codegen.Output, '}');
+  write(Codegen.Output, ';');
+  _OutNewline;
+  OutEnd;
+  OutEnd;
+  OutEndSameLine;
+  write(Codegen.Output, ' while(0);');
+  _OutNewline
 end;
 
 procedure OutProcedureCall;
 begin
+  _OutIndent;
   OutExpression(Expr);
-  writeln(Codegen.Output, ';')
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutSpecialProcedureCall;
@@ -910,28 +1085,37 @@ begin
     TsfReadln : _OutRead(Expr);
     TsfStr : _OutStr(Expr);
     TsfNew : _OutNew(Expr);
-    TsfDispose : _OutDispose(Expr);
+    TsfDispose : _OutDispose(Expr)
   end
 end;
 
 procedure OutEmptyStatement;
 begin
-  writeln(Codegen.Output, ';')
+  _OutIndent;
+  write(Codegen.Output, ';');
+  _OutNewline
 end;
 
 procedure OutProgramBegin;
 begin
-  writeln(Codegen.Output, 'void pascual_main() {');
+  _OutBlankline(TotFunDef);
+  _OutIndent;
+  write(Codegen.Output, 'void pascual_main() ');
+  OutBegin
 end;
 
 procedure OutProgramEnd;
 begin
-  writeln(Codegen.Output, '}')
+  OutEnd
 end;
 
 procedure CodegenReset;
 begin
-  Codegen.Output := Output
+  Codegen.Output := Output;
+  Codegen.IsMultiStatement := false;
+  Codegen.Indent := 0;
+  Codegen.Newline := true;
+  Codegen.LastOut := TotNone
 end;
 
 procedure CodegenSetOutput;

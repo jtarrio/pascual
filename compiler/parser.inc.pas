@@ -951,7 +951,7 @@ end;
 
 procedure PsStatementSequence;
 begin
-  OutBegin;
+  OutSequenceBegin;
   SkipToken(TkBegin);
   while Lexer.Token.Id <> TkEnd do
   begin
@@ -959,7 +959,7 @@ begin
     WantToken2(TkSemicolon, TkEnd);
     SkipToken(TkSemicolon);
   end;
-  OutEnd;
+  OutSequenceEnd;
   SkipToken(TkEnd)
 end;
 
@@ -1013,7 +1013,8 @@ begin
     WantTokenAndRead(TkElse);
     OutElse;
     PsStatement;
-  end
+  end;
+  OutIfEnd;
 end;
 
 procedure PsCaseStatement;
@@ -1121,7 +1122,7 @@ var
 begin
   WantToken(TkWith);
   StartTemporaryScope;
-  OutBegin;
+  OutSequenceBegin;
   repeat
     ReadToken;
     Base := PsExpression;
@@ -1132,7 +1133,7 @@ begin
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
   PsStatement;
-  OutEnd;
+  OutSequenceEnd;
   CloseTemporaryScope
 end;
 
