@@ -323,7 +323,7 @@ typedef enum enum23 { TTCBOOLEAN, TTCINTEGER, TTCCHAR, TTCSTRING, TTCTEXT, TTCEN
 typedef struct record24 { PString NAME; struct record24 *ALIASFOR; TPSTYPECLASS CLS; union { struct { struct record25 *ENUMINDEX; }; struct { struct record27 *RECORDINDEX; }; struct { struct record28 *ARRAYINDEX; }; struct { struct record24 *POINTEDTYPEINDEX; }; struct { PString *TARGETNAME; }; }; } TPSTYPE;
 typedef struct record25 { int SIZE; PString VALUES[128]; int ID; PBoolean HASBEENDEFINED; } TPSENUMDEF;
 typedef struct record26 { PString NAME; struct record24 *TYPEINDEX; } TPSRECORDFIELD;
-typedef struct record27 { int SIZE; TPSRECORDFIELD FIELDS[16]; int NUMVARIANTS; int VARIANTBOUNDS[16]; int ID; PBoolean HASBEENDEFINED; } TPSRECORDDEF;
+typedef struct record27 { int SIZE; TPSRECORDFIELD FIELDS[32]; int NUMVARIANTS; int VARIANTBOUNDS[32]; int ID; PBoolean HASBEENDEFINED; } TPSRECORDDEF;
 typedef struct record28 { struct record21 *LOWBOUND; struct record21 *HIGHBOUND; struct record24 *TYPEINDEX; } TPSARRAYDEF;
 typedef struct record29 { PString NAME; TLXTOKEN REPLACEMENT; } TPSCONSTANT;
 typedef struct record30 { PString NAME; struct record24 *TYPEINDEX; PBoolean ISREFERENCE; PBoolean ISCONSTANT; } TPSVARIABLE;
@@ -1858,7 +1858,7 @@ if (FIELD == last) break;
 }
 }
 (*REC).SIZE = (*REC).SIZE + 1;
-if ((*REC).SIZE > 16) COMPILEERROR(str_make(25, "Too many fields in record"));
+if ((*REC).SIZE > 32) COMPILEERROR(str_make(25, "Too many fields in record"));
 (*REC).FIELDS[(*REC).SIZE - 1].NAME = NAME;
 WANTTOKEN2(TKCOMMA, TKCOLON);
 SKIPTOKEN(TKCOMMA);
