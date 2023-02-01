@@ -970,7 +970,7 @@ begin
     else if Lhs^.Cls <> XcNothing then
            if Lhs^.Cls = XcBinaryOp then
              CompileError('Invalid statement' +
-                          ' (maybe you wrote ''='' instead of '':=''?')
+                          ' (maybe you wrote ''='' instead of '':=''?)')
     else
       CompileError('Invalid statement')
   end
