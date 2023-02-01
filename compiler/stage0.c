@@ -4179,7 +4179,7 @@ void OUTTYPEREFERENCE(struct record29 *TYPEINDEX) {
     OUTTYPEREFERENCE(TYPEINDEX->POINTEDTYPEINDEX);
     write_c(&CODEGEN.OUTPUT, '*');
   }
-  else if (TYPEINDEX->CLS == TTCBOOLEAN) write_s(&CODEGEN.OUTPUT, str_make(8, "PBoolean"));
+  else if (TYPEINDEX->CLS == TTCBOOLEAN) write_s(&CODEGEN.OUTPUT, str_make(3, "int"));
   else if (TYPEINDEX->CLS == TTCINTEGER) write_s(&CODEGEN.OUTPUT, str_make(3, "int"));
   else if (TYPEINDEX->CLS == TTCCHAR) write_s(&CODEGEN.OUTPUT, str_make(4, "char"));
   else if (TYPEINDEX->CLS == TTCSTRING) write_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
@@ -4302,7 +4302,7 @@ void OUTNAMEANDTYPE(PString NAME, struct record29 *TYPEINDEX) {
     write_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEINDEX->CLS == TTCBOOLEAN) {
-    write_s(&CODEGEN.OUTPUT, str_make(9, "PBoolean "));
+    write_s(&CODEGEN.OUTPUT, str_make(4, "int "));
     write_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEINDEX->CLS == TTCINTEGER) {
