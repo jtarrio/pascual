@@ -787,7 +787,7 @@ end;
 
 procedure OutElse;
 begin
-  write(Codegen.Output, ' else ')
+  write(Codegen.Output, 'else ')
 end;
 
 procedure OutCaseBegin;
