@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-typedef int PBoolean;
-
 typedef struct {
   union {
     char chr[256];
