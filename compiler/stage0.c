@@ -1471,7 +1471,6 @@ void OUTEND();
 void OUTENUMVALUES(struct record30 *ENUMINDEX);
 void OUTENUMVALUESFROMCHECKPOINT(struct record41 *CHECKPOINT);
 PString OUTVARIABLENAME(PString NAME, int ISREFERENCE);
-PString OUTRETURNVARIABLENAME(PString NAME);
 void OUTTYPEREFERENCE(struct record29 *TYPEINDEX);
 void OUTNAMEANDTYPE(PString NAME, struct record29 *TYPEINDEX);
 void OUTTYPEDEFINITION(struct record29 *TYPEINDEX);
@@ -2723,6 +2722,7 @@ void PSDEFINITIONS();
 void PSFUNCTIONBODY(struct record36 *FNINDEX) {
   int POS;
   struct record41 *CHECKPOINT;
+  TPSVARIABLE RETURNVAR;
   STARTLOCALSCOPE(FNINDEX);
   CHECKPOINT = DEFS.LATEST;
   do {
@@ -2739,6 +2739,7 @@ void PSFUNCTIONBODY(struct record36 *FNINDEX) {
   } while(0);
   OUTFUNCTIONDEFINITION(FNINDEX);
   OUTENUMVALUESFROMCHECKPOINT(CHECKPOINT);
+  if (FNINDEX->RETURNTYPEINDEX != (void*)0) OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(str_make(6, "RESULT"), FNINDEX->RETURNTYPEINDEX, 0)));
   PSDEFINITIONS();
   WANTTOKENANDREAD(TKBEGIN);
   while (LEXER.TOKEN.ID != TKEND) {
@@ -4167,12 +4168,6 @@ PString OUTVARIABLENAME(PString NAME, int ISREFERENCE) {
   return return_OUTVARIABLENAME;
 }
 
-PString OUTRETURNVARIABLENAME(PString NAME) {
-  PString return_OUTRETURNVARIABLENAME;
-  return_OUTRETURNVARIABLENAME = cat_ss(str_make(7, "return_"), NAME);
-  return return_OUTRETURNVARIABLENAME;
-}
-
 void OUTTYPEREFERENCE(struct record29 *TYPEINDEX) {
   if (TYPEINDEX == (void*)0) write_s(&CODEGEN.OUTPUT, str_make(4, "void"));
   else if (TYPEINDEX->CLS == TTCPOINTER) {
@@ -4185,12 +4180,18 @@ void OUTTYPEREFERENCE(struct record29 *TYPEINDEX) {
   else if (TYPEINDEX->CLS == TTCSTRING) write_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
   else if (TYPEINDEX->CLS == TTCTEXT) write_s(&CODEGEN.OUTPUT, str_make(5, "PFile"));
   else if (TYPEINDEX->CLS == TTCENUM) {
-    write_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"));
-    write_i(&CODEGEN.OUTPUT, TYPEINDEX->ENUMINDEX->ID);
+    if (TYPEINDEX->ENUMINDEX->HASBEENDEFINED && cmp_ss(TYPEINDEX->NAME, str_make(0, "")) != 0) write_s(&CODEGEN.OUTPUT, TYPEINDEX->NAME);
+    else {
+      write_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"));
+      write_i(&CODEGEN.OUTPUT, TYPEINDEX->ENUMINDEX->ID);
+    }
   }
   else if (TYPEINDEX->CLS == TTCRECORD) {
-    write_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
-    write_i(&CODEGEN.OUTPUT, TYPEINDEX->RECORDINDEX->ID);
+    if (TYPEINDEX->RECORDINDEX->HASBEENDEFINED && cmp_ss(TYPEINDEX->NAME, str_make(0, "")) != 0) write_s(&CODEGEN.OUTPUT, TYPEINDEX->NAME);
+    else {
+      write_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
+      write_i(&CODEGEN.OUTPUT, TYPEINDEX->RECORDINDEX->ID);
+    }
   }
   else if (TYPEINDEX->CLS == TTCARRAY) {
     OUTTYPEREFERENCE(TYPEINDEX->ARRAYINDEX->TYPEINDEX);
@@ -4432,20 +4433,12 @@ void OUTFUNCTIONDEFINITION(struct record36 *FNINDEX) {
   OUTFUNCTIONPROTOTYPE(*FNINDEX);
   write_c(&CODEGEN.OUTPUT, ' ');
   OUTBEGIN();
-  if (FNINDEX->RETURNTYPEINDEX != (void*)0) {
-    _OUTINDENT();
-    OUTNAMEANDTYPE(OUTRETURNVARIABLENAME(FNINDEX->NAME), FNINDEX->RETURNTYPEINDEX);
-    write_c(&CODEGEN.OUTPUT, ';');
-    _OUTNEWLINE();
-  }
 }
 
 void OUTFUNCTIONEND(struct record36 *FNINDEX) {
   if (FNINDEX->RETURNTYPEINDEX != (void*)0) {
     _OUTINDENT();
-    write_s(&CODEGEN.OUTPUT, str_make(7, "return "));
-    write_s(&CODEGEN.OUTPUT, OUTRETURNVARIABLENAME(FNINDEX->NAME));
-    write_c(&CODEGEN.OUTPUT, ';');
+    write_s(&CODEGEN.OUTPUT, str_make(14, "return RESULT;"));
     _OUTNEWLINE();
   }
   OUTEND();
@@ -4607,9 +4600,7 @@ void OUTASSIGN(struct record26 *LHS, struct record26 *RHS) {
 
 void OUTASSIGNRETURNVALUE(struct record26 *LHS, struct record26 *RHS) {
   _OUTINDENT();
-  write_s(&CODEGEN.OUTPUT, str_make(7, "return_"));
-  write_s(&CODEGEN.OUTPUT, LHS->FUNCTIONEX.FUNCTIONINDEX->NAME);
-  write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  write_s(&CODEGEN.OUTPUT, str_make(9, "RESULT = "));
   OUTEXPRESSION(RHS);
   write_c(&CODEGEN.OUTPUT, ';');
   _OUTNEWLINE();
