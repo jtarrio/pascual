@@ -26,7 +26,7 @@ int cmp_cs(char a, PString b);
 int cmp_sc(PString a, char b);
 int cmp_ss(PString a, PString b);
 
-PString to_str_b(PBoolean val);
+PString to_str_b(int val);
 PString to_str_i(int num);
 PString to_str_c(char chr);
 PString to_str_s(PString str);

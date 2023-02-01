@@ -440,7 +440,7 @@ begin
     OutTypeReference(TypeIndex^.PointedTypeIndex);
     write(Codegen.Output, '*')
   end
-  else if TypeIndex^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
+  else if TypeIndex^.Cls = TtcBoolean then write(Codegen.Output, 'int')
   else if TypeIndex^.Cls = TtcInteger then write(Codegen.Output, 'int')
   else if TypeIndex^.Cls = TtcChar then write(Codegen.Output, 'char')
   else if TypeIndex^.Cls = TtcString then write(Codegen.Output, 'PString')
@@ -546,7 +546,7 @@ begin
   else if (TypeIndex^.AliasFor <> nil) and (TypeIndex^.Name <> '') then
          write(Codegen.Output, TypeIndex^.Name, ' ', Name)
   else if TypeIndex^.Cls = TtcBoolean then
-         write(Codegen.Output, 'PBoolean ', Name)
+         write(Codegen.Output, 'int ', Name)
   else if TypeIndex^.Cls = TtcInteger then
          write(Codegen.Output, 'int ', Name)
   else if TypeIndex^.Cls = TtcChar then

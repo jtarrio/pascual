@@ -119,7 +119,7 @@ int cmp_ss(PString a, PString b) {
   return a.len - b.len;
 }
 
-PString to_str_b(PBoolean val) {
+PString to_str_b(int val) {
   if (val)
     return str_make(4, "TRUE");
   else

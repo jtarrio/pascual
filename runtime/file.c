@@ -44,7 +44,7 @@ void CLOSE(PFile* file) {
   file->file = NULL;
 }
 
-PBoolean EOF(PFile* file) {
+int EOF(PFile* file) {
   check_ioresult();
   if (!is_open(file)) return 1;
   clearerr(file->file);
@@ -106,7 +106,7 @@ void writeln(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_b(PFile* file, PBoolean val) {
+void write_b(PFile* file, int val) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
