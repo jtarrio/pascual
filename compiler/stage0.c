@@ -30,33 +30,33 @@ struct record6 {
 } LEXER;
 
 PString LXTOKENNAME(TLXTOKENID ID) {
-  PString return_LXTOKENNAME;
+  PString RESULT;
   PString NAME;
   NAME = to_str_e(ID, enumvalues1);
-  return_LXTOKENNAME = NAME;
-  return return_LXTOKENNAME;
+  RESULT = NAME;
+  return RESULT;
 }
 
 PString LXPOSSTR(TLXPOS POS) {
-  PString return_LXPOSSTR;
+  PString RESULT;
   PString ROW;
   PString COL;
   ROW = to_str_i(POS.ROW);
   COL = to_str_i(POS.COL);
-  return_LXPOSSTR = cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "row "), ROW), str_make(5, " col ")), COL), str_make(4, " in ")), LEXER.INPUT.NAME);
-  return return_LXPOSSTR;
+  RESULT = cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "row "), ROW), str_make(5, " col ")), COL), str_make(4, " in ")), LEXER.INPUT.NAME);
+  return RESULT;
 }
 
 PString LXWHERESTR() {
-  PString return_LXWHERESTR;
-  return_LXWHERESTR = cat_ss(str_make(6, " near "), LXPOSSTR(LEXER.TOKEN.POS));
-  return return_LXWHERESTR;
+  PString RESULT;
+  RESULT = cat_ss(str_make(6, " near "), LXPOSSTR(LEXER.TOKEN.POS));
+  return RESULT;
 }
 
 PString LXTOKENSTR() {
-  PString return_LXTOKENSTR;
-  return_LXTOKENSTR = cat_sc(cat_ss(cat_ss(LXTOKENNAME(LEXER.TOKEN.ID), str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
-  return return_LXTOKENSTR;
+  PString RESULT;
+  RESULT = cat_sc(cat_ss(cat_ss(LXTOKENNAME(LEXER.TOKEN.ID), str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
+  return RESULT;
 }
 
 void COMPILEERROR(PString MSG) {
@@ -67,37 +67,37 @@ void COMPILEERROR(PString MSG) {
 }
 
 int LXISALPHA(char CHR) {
-  int return_LXISALPHA;
-  return_LXISALPHA = CHR >= 'a' && CHR <= 'z' || CHR >= 'A' && CHR <= 'Z';
-  return return_LXISALPHA;
+  int RESULT;
+  RESULT = CHR >= 'a' && CHR <= 'z' || CHR >= 'A' && CHR <= 'Z';
+  return RESULT;
 }
 
 int LXISDIGIT(char CHR) {
-  int return_LXISDIGIT;
-  return_LXISDIGIT = CHR >= '0' && CHR <= '9';
-  return return_LXISDIGIT;
+  int RESULT;
+  RESULT = CHR >= '0' && CHR <= '9';
+  return RESULT;
 }
 
 int LXISALPHANUM(char CHR) {
-  int return_LXISALPHANUM;
-  return_LXISALPHANUM = LXISALPHA(CHR) || LXISDIGIT(CHR);
-  return return_LXISALPHANUM;
+  int RESULT;
+  RESULT = LXISALPHA(CHR) || LXISDIGIT(CHR);
+  return RESULT;
 }
 
 int LXISIDENTIFIERFIRST(char CHR) {
-  int return_LXISIDENTIFIERFIRST;
-  return_LXISIDENTIFIERFIRST = LXISALPHA(CHR) || CHR == '_';
-  return return_LXISIDENTIFIERFIRST;
+  int RESULT;
+  RESULT = LXISALPHA(CHR) || CHR == '_';
+  return RESULT;
 }
 
 int LXISIDENTIFIERCHAR(char CHR) {
-  int return_LXISIDENTIFIERCHAR;
-  return_LXISIDENTIFIERCHAR = LXISALPHANUM(CHR) || CHR == '_';
-  return return_LXISIDENTIFIERCHAR;
+  int RESULT;
+  RESULT = LXISALPHANUM(CHR) || CHR == '_';
+  return RESULT;
 }
 
 int LXISTOKENWAITING() {
-  int return_LXISTOKENWAITING;
+  int RESULT;
   do {
     while (LENGTH(LEXER.LINE) == 0 && !EOF(&LEXER.INPUT.SRC)) {
       LEXER.INPUT.POS.ROW = LEXER.INPUT.POS.ROW + 1;
@@ -110,8 +110,8 @@ int LXISTOKENWAITING() {
       DELETE(&LEXER.LINE, 1, 1);
     }
   } while (!(EOF(&LEXER.INPUT.SRC) || LENGTH(LEXER.LINE) > 0));
-  return_LXISTOKENWAITING = LENGTH(LEXER.LINE) > 0;
-  return return_LXISTOKENWAITING;
+  RESULT = LENGTH(LEXER.LINE) > 0;
+  return RESULT;
 }
 
 void LXGETSYMBOL(TLXTOKENID ID, int LENGTH) {
@@ -431,10 +431,10 @@ typedef struct record22 {
   TPSSPECIALFUNCTION SPECIALFUNCTION;
   union {
     struct {
-      struct record20 *READARGS;
+      TEXREADARGS *READARGS;
     };
     struct {
-      struct record21 *WRITEARGS;
+      TEXWRITEARGS *WRITEARGS;
     };
   };
 } TEXSPECIALFUNCTIONCALL;
@@ -530,7 +530,7 @@ typedef struct record30 {
 } TPSENUMDEF;
 typedef struct record31 {
   PString NAME;
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
 } TPSRECORDFIELD;
 typedef struct record32 {
   int SIZE;
@@ -541,9 +541,9 @@ typedef struct record32 {
   int HASBEENDEFINED;
 } TPSRECORDDEF;
 typedef struct record33 {
-  struct record26 *LOWBOUND;
-  struct record26 *HIGHBOUND;
-  struct record29 *TYPEINDEX;
+  TEXPRESSIONOBJ *LOWBOUND;
+  TEXPRESSIONOBJ *HIGHBOUND;
+  TPSTYPE *TYPEINDEX;
 } TPSARRAYDEF;
 typedef struct record34 {
   PString NAME;
@@ -551,7 +551,7 @@ typedef struct record34 {
 } TPSCONSTANT;
 typedef struct record35 {
   PString NAME;
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
   int ISREFERENCE;
   int ISCONSTANT;
 } TPSVARIABLE;
@@ -559,11 +559,11 @@ typedef struct record36 {
   PString NAME;
   int ARGCOUNT;
   TPSVARIABLE ARGS[4];
-  struct record29 *RETURNTYPEINDEX;
+  TPSTYPE *RETURNTYPEINDEX;
   int ISDECLARATION;
 } TPSFUNCTION;
 typedef struct record37 {
-  struct record35 *VARIABLEINDEX;
+  TPSVARIABLE *VARIABLEINDEX;
 } TPSWITHVAR;
 typedef enum enum38 { TNCTYPE, TNCVARIABLE, TNCENUMVALUE, TNCFUNCTION, TNCSPECIALFUNCTION } TPSNAMECLASS;
 typedef struct record39 {
@@ -571,17 +571,17 @@ typedef struct record39 {
   TPSNAMECLASS CLS;
   union {
     struct {
-      struct record29 *TYPEINDEX;
+      TPSTYPE *TYPEINDEX;
     };
     struct {
-      struct record35 *VARIABLEINDEX;
+      TPSVARIABLE *VARIABLEINDEX;
     };
     struct {
-      struct record29 *ENUMTYPEINDEX;
+      TPSTYPE *ENUMTYPEINDEX;
       int ORDINAL;
     };
     struct {
-      struct record36 *FUNCTIONINDEX;
+      TPSFUNCTION *FUNCTIONINDEX;
     };
     struct {
       TPSSPECIALFUNCTION SPECIALFUNCTION;
@@ -596,41 +596,41 @@ typedef struct record41 {
   TPSDEFCLASS CLS;
   union {
     struct {
-      struct record39 *NAMEINDEX;
+      TPSNAME *NAMEINDEX;
     };
     struct {
-      struct record29 *TYPEINDEX;
+      TPSTYPE *TYPEINDEX;
     };
     struct {
-      struct record30 *ENUMINDEX;
+      TPSENUMDEF *ENUMINDEX;
     };
     struct {
-      struct record32 *RECORDINDEX;
+      TPSRECORDDEF *RECORDINDEX;
     };
     struct {
-      struct record33 *ARRAYINDEX;
+      TPSARRAYDEF *ARRAYINDEX;
     };
     struct {
-      struct record34 *CONSTANTINDEX;
+      TPSCONSTANT *CONSTANTINDEX;
     };
     struct {
-      struct record35 *VARIABLEINDEX;
+      TPSVARIABLE *VARIABLEINDEX;
     };
     struct {
-      struct record36 *FUNCTIONINDEX;
+      TPSFUNCTION *FUNCTIONINDEX;
     };
     struct {
-      struct record37 *WITHVARINDEX;
+      TPSWITHVAR *WITHVARINDEX;
     };
     struct {
       int TEMPORARYSCOPE;
-      struct record36 *CURRENTFUNCTION;
+      TPSFUNCTION *CURRENTFUNCTION;
     };
   };
 } TPSDEFENTRY;
 typedef struct record42 {
-  struct record41 *LATEST;
-  struct record36 *CURRENTFUNCTION;
+  TPSDEFENTRY *LATEST;
+  TPSFUNCTION *CURRENTFUNCTION;
   int COUNTER;
 } TPSDEFS;
 
@@ -643,19 +643,19 @@ const char* enumvalues40[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRECORD", "TD
 
 TPSDEFS DEFS;
 struct record43 {
-  struct record29 *PTNIL;
-  struct record29 *PTBOOLEAN;
-  struct record29 *PTINTEGER;
-  struct record29 *PTCHAR;
-  struct record29 *PTSTRING;
-  struct record29 *PTTEXT;
+  TPSTYPE *PTNIL;
+  TPSTYPE *PTBOOLEAN;
+  TPSTYPE *PTINTEGER;
+  TPSTYPE *PTCHAR;
+  TPSTYPE *PTSTRING;
+  TPSTYPE *PTTEXT;
 } PRIMITIVETYPES;
 
 int DEFCOUNTER() {
-  int return_DEFCOUNTER;
+  int RESULT;
   DEFS.COUNTER = DEFS.COUNTER + 1;
-  return_DEFCOUNTER = DEFS.COUNTER;
-  return return_DEFCOUNTER;
+  RESULT = DEFS.COUNTER;
+  return RESULT;
 }
 
 void INITDEFS() {
@@ -664,40 +664,40 @@ void INITDEFS() {
   DEFS.COUNTER = 0;
 }
 
-struct record41 *_NEWDEF(TPSDEFCLASS CLS) {
-  struct record41 *return__NEWDEF;
-  struct record41 *DEF;
-  DEF = malloc(sizeof(struct record41));
+TPSDEFENTRY *_NEWDEF(TPSDEFCLASS CLS) {
+  TPSDEFENTRY *RESULT;
+  TPSDEFENTRY *DEF;
+  DEF = malloc(sizeof(TPSDEFENTRY));
   DEF->PREV = (void*)0;
   DEF->NEXT = (void*)0;
   DEF->CLS = CLS;
   switch (CLS) {
     case TDCNAME:
-      DEF->NAMEINDEX = malloc(sizeof(struct record39));
+      DEF->NAMEINDEX = malloc(sizeof(TPSNAME));
       break;
     case TDCTYPE:
-      DEF->TYPEINDEX = malloc(sizeof(struct record29));
+      DEF->TYPEINDEX = malloc(sizeof(TPSTYPE));
       break;
     case TDCENUM:
-      DEF->ENUMINDEX = malloc(sizeof(struct record30));
+      DEF->ENUMINDEX = malloc(sizeof(TPSENUMDEF));
       break;
     case TDCRECORD:
-      DEF->RECORDINDEX = malloc(sizeof(struct record32));
+      DEF->RECORDINDEX = malloc(sizeof(TPSRECORDDEF));
       break;
     case TDCARRAY:
-      DEF->ARRAYINDEX = malloc(sizeof(struct record33));
+      DEF->ARRAYINDEX = malloc(sizeof(TPSARRAYDEF));
       break;
     case TDCCONSTANT:
-      DEF->CONSTANTINDEX = malloc(sizeof(struct record34));
+      DEF->CONSTANTINDEX = malloc(sizeof(TPSCONSTANT));
       break;
     case TDCVARIABLE:
-      DEF->VARIABLEINDEX = malloc(sizeof(struct record35));
+      DEF->VARIABLEINDEX = malloc(sizeof(TPSVARIABLE));
       break;
     case TDCFUNCTION:
-      DEF->FUNCTIONINDEX = malloc(sizeof(struct record36));
+      DEF->FUNCTIONINDEX = malloc(sizeof(TPSFUNCTION));
       break;
     case TDCWITHVAR:
-      DEF->WITHVARINDEX = malloc(sizeof(struct record37));
+      DEF->WITHVARINDEX = malloc(sizeof(TPSWITHVAR));
       break;
     case TDCSCOPEBOUNDARY:
       {
@@ -708,11 +708,11 @@ struct record41 *_NEWDEF(TPSDEFCLASS CLS) {
     default:
       break;
   }
-  return__NEWDEF = DEF;
-  return return__NEWDEF;
+  RESULT = DEF;
+  return RESULT;
 }
 
-void _DISPOSEDEF(struct record41 *DEF) {
+void _DISPOSEDEF(TPSDEFENTRY *DEF) {
   switch (DEF->CLS) {
     case TDCNAME:
       free(DEF->NAMEINDEX);
@@ -747,31 +747,31 @@ void _DISPOSEDEF(struct record41 *DEF) {
   free(DEF);
 }
 
-struct record41 *_ADDDEF(TPSDEFCLASS CLS) {
-  struct record41 *return__ADDDEF;
-  struct record41 *DEF;
+TPSDEFENTRY *_ADDDEF(TPSDEFCLASS CLS) {
+  TPSDEFENTRY *RESULT;
+  TPSDEFENTRY *DEF;
   DEF = _NEWDEF(CLS);
   DEF->PREV = DEFS.LATEST;
   if (DEFS.LATEST != (void*)0) DEFS.LATEST->NEXT = DEF;
   DEFS.LATEST = DEF;
-  return__ADDDEF = DEF;
-  return return__ADDDEF;
+  RESULT = DEF;
+  return RESULT;
 }
 
 int _DELETEDEF(TPSDEFENTRY *DELETEDDEF) {
-  int return__DELETEDEF;
-  if (DEFS.LATEST == (void*)0) return__DELETEDEF = 0;
+  int RESULT;
+  if (DEFS.LATEST == (void*)0) RESULT = 0;
   else {
     *DELETEDDEF = *DEFS.LATEST;
     _DISPOSEDEF(DEFS.LATEST);
     DEFS.LATEST = (*DELETEDDEF).PREV;
-    return__DELETEDEF = 1;
+    RESULT = 1;
   }
-  return return__DELETEDEF;
+  return RESULT;
 }
 
-void _STARTSCOPE(int TEMPORARY, struct record36 *NEWFUNCTION) {
-  struct record41 *DEF;
+void _STARTSCOPE(int TEMPORARY, TPSFUNCTION *NEWFUNCTION) {
+  TPSDEFENTRY *DEF;
   DEF = _ADDDEF(TDCSCOPEBOUNDARY);
   DEF->TEMPORARYSCOPE = TEMPORARY;
   DEF->CURRENTFUNCTION = DEFS.CURRENTFUNCTION;
@@ -787,7 +787,7 @@ void _CLOSESCOPE(int TEMPORARY) {
   DEFS.CURRENTFUNCTION = DELETEDDEF.CURRENTFUNCTION;
 }
 
-void STARTLOCALSCOPE(struct record36 *NEWFUNCTION) {
+void STARTLOCALSCOPE(TPSFUNCTION *NEWFUNCTION) {
   _STARTSCOPE(0, NEWFUNCTION);
 }
 
@@ -803,10 +803,10 @@ void CLOSETEMPORARYSCOPE() {
   _CLOSESCOPE(1);
 }
 
-struct record39 *_FINDNAME(PString NAME, int REQUIRED, int FROMLOCALSCOPE) {
-  struct record39 *return__FINDNAME;
-  struct record41 *DEF;
-  struct record39 *RET;
+TPSNAME *_FINDNAME(PString NAME, int REQUIRED, int FROMLOCALSCOPE) {
+  TPSNAME *RESULT;
+  TPSDEFENTRY *DEF;
+  TPSNAME *RET;
   RET = (void*)0;
   DEF = DEFS.LATEST;
   while (RET == (void*)0 && DEF != (void*)0 && (!FROMLOCALSCOPE || DEF->CLS != TDCSCOPEBOUNDARY)) {
@@ -814,12 +814,12 @@ struct record39 *_FINDNAME(PString NAME, int REQUIRED, int FROMLOCALSCOPE) {
     DEF = DEF->PREV;
   }
   if (REQUIRED && RET == (void*)0) COMPILEERROR(cat_ss(str_make(20, "Unknown identifier: "), NAME));
-  return__FINDNAME = RET;
-  return return__FINDNAME;
+  RESULT = RET;
+  return RESULT;
 }
 
-struct record39 *_CHECKNAMECLASS(struct record39 *NAMEINDEX, TPSNAMECLASS CLS) {
-  struct record39 *return__CHECKNAMECLASS;
+TPSNAME *_CHECKNAMECLASS(TPSNAME *NAMEINDEX, TPSNAMECLASS CLS) {
+  TPSNAME *RESULT;
   if (NAMEINDEX != (void*)0 && NAMEINDEX->CLS != CLS) switch (NAMEINDEX->CLS) {
     case TNCTYPE:
       COMPILEERROR(cat_ss(str_make(12, "Not a type: "), NAMEINDEX->NAME));
@@ -840,93 +840,93 @@ struct record39 *_CHECKNAMECLASS(struct record39 *NAMEINDEX, TPSNAMECLASS CLS) {
       COMPILEERROR(str_make(35, "Internal error: name class mismatch"));
       break;
   }
-  return__CHECKNAMECLASS = NAMEINDEX;
-  return return__CHECKNAMECLASS;
+  RESULT = NAMEINDEX;
+  return RESULT;
 }
 
-struct record39 *FINDNAMEINLOCALSCOPE(PString NAME, int REQUIRED) {
-  struct record39 *return_FINDNAMEINLOCALSCOPE;
-  return_FINDNAMEINLOCALSCOPE = _FINDNAME(NAME, REQUIRED, 1);
-  return return_FINDNAMEINLOCALSCOPE;
+TPSNAME *FINDNAMEINLOCALSCOPE(PString NAME, int REQUIRED) {
+  TPSNAME *RESULT;
+  RESULT = _FINDNAME(NAME, REQUIRED, 1);
+  return RESULT;
 }
 
-struct record39 *FINDNAMEOFCLASSINLOCALSCOPE(PString NAME, TPSNAMECLASS CLS, int REQUIRED) {
-  struct record39 *return_FINDNAMEOFCLASSINLOCALSCOPE;
-  return_FINDNAMEOFCLASSINLOCALSCOPE = _CHECKNAMECLASS(FINDNAMEINLOCALSCOPE(NAME, REQUIRED), CLS);
-  return return_FINDNAMEOFCLASSINLOCALSCOPE;
+TPSNAME *FINDNAMEOFCLASSINLOCALSCOPE(PString NAME, TPSNAMECLASS CLS, int REQUIRED) {
+  TPSNAME *RESULT;
+  RESULT = _CHECKNAMECLASS(FINDNAMEINLOCALSCOPE(NAME, REQUIRED), CLS);
+  return RESULT;
 }
 
-struct record39 *FINDNAME(PString NAME, int REQUIRED) {
-  struct record39 *return_FINDNAME;
-  return_FINDNAME = _FINDNAME(NAME, REQUIRED, 0);
-  return return_FINDNAME;
+TPSNAME *FINDNAME(PString NAME, int REQUIRED) {
+  TPSNAME *RESULT;
+  RESULT = _FINDNAME(NAME, REQUIRED, 0);
+  return RESULT;
 }
 
-struct record39 *FINDNAMEOFCLASS(PString NAME, TPSNAMECLASS CLS, int REQUIRED) {
-  struct record39 *return_FINDNAMEOFCLASS;
-  return_FINDNAMEOFCLASS = _CHECKNAMECLASS(FINDNAME(NAME, REQUIRED), CLS);
-  return return_FINDNAMEOFCLASS;
+TPSNAME *FINDNAMEOFCLASS(PString NAME, TPSNAMECLASS CLS, int REQUIRED) {
+  TPSNAME *RESULT;
+  RESULT = _CHECKNAMECLASS(FINDNAME(NAME, REQUIRED), CLS);
+  return RESULT;
 }
 
-struct record39 *_ADDNAME(PString NAME, TPSNAMECLASS CLS) {
-  struct record39 *return__ADDNAME;
-  struct record39 *POS;
+TPSNAME *_ADDNAME(PString NAME, TPSNAMECLASS CLS) {
+  TPSNAME *RESULT;
+  TPSNAME *POS;
   if (FINDNAMEINLOCALSCOPE(NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), NAME), str_make(16, " already defined")));
   POS = _ADDDEF(TDCNAME)->NAMEINDEX;
   POS->NAME = NAME;
   POS->CLS = CLS;
-  return__ADDNAME = POS;
-  return return__ADDNAME;
+  RESULT = POS;
+  return RESULT;
 }
 
-struct record39 *ADDTYPENAME(PString NAME, struct record29 *IDX) {
-  struct record39 *return_ADDTYPENAME;
-  struct record39 *DEF;
+TPSNAME *ADDTYPENAME(PString NAME, TPSTYPE *IDX) {
+  TPSNAME *RESULT;
+  TPSNAME *DEF;
   DEF = _ADDNAME(NAME, TNCTYPE);
   DEF->TYPEINDEX = IDX;
-  return_ADDTYPENAME = DEF;
-  return return_ADDTYPENAME;
+  RESULT = DEF;
+  return RESULT;
 }
 
-struct record39 *ADDVARIABLENAME(PString NAME, struct record35 *IDX) {
-  struct record39 *return_ADDVARIABLENAME;
-  struct record39 *DEF;
+TPSNAME *ADDVARIABLENAME(PString NAME, TPSVARIABLE *IDX) {
+  TPSNAME *RESULT;
+  TPSNAME *DEF;
   DEF = _ADDNAME(NAME, TNCVARIABLE);
   DEF->VARIABLEINDEX = IDX;
-  return_ADDVARIABLENAME = DEF;
-  return return_ADDVARIABLENAME;
+  RESULT = DEF;
+  return RESULT;
 }
 
-struct record39 *ADDFUNCTIONNAME(PString NAME, struct record36 *IDX) {
-  struct record39 *return_ADDFUNCTIONNAME;
-  struct record39 *DEF;
+TPSNAME *ADDFUNCTIONNAME(PString NAME, TPSFUNCTION *IDX) {
+  TPSNAME *RESULT;
+  TPSNAME *DEF;
   DEF = _ADDNAME(NAME, TNCFUNCTION);
   DEF->FUNCTIONINDEX = IDX;
-  return_ADDFUNCTIONNAME = DEF;
-  return return_ADDFUNCTIONNAME;
+  RESULT = DEF;
+  return RESULT;
 }
 
-struct record39 *ADDENUMVALUENAME(int ORDINAL, struct record29 *TYPEIDX) {
-  struct record39 *return_ADDENUMVALUENAME;
-  struct record39 *DEF;
+TPSNAME *ADDENUMVALUENAME(int ORDINAL, TPSTYPE *TYPEIDX) {
+  TPSNAME *RESULT;
+  TPSNAME *DEF;
   DEF = _ADDNAME(TYPEIDX->ENUMINDEX->VALUES[ORDINAL - 1], TNCENUMVALUE);
   DEF->ENUMTYPEINDEX = TYPEIDX;
   DEF->ORDINAL = ORDINAL;
-  return_ADDENUMVALUENAME = DEF;
-  return return_ADDENUMVALUENAME;
+  RESULT = DEF;
+  return RESULT;
 }
 
-struct record39 *ADDSPECIALFUNCTIONNAME(PString NAME, TPSSPECIALFUNCTION FN) {
-  struct record39 *return_ADDSPECIALFUNCTIONNAME;
-  struct record39 *DEF;
+TPSNAME *ADDSPECIALFUNCTIONNAME(PString NAME, TPSSPECIALFUNCTION FN) {
+  TPSNAME *RESULT;
+  TPSNAME *DEF;
   DEF = _ADDNAME(NAME, TNCSPECIALFUNCTION);
   DEF->SPECIALFUNCTION = FN;
-  return_ADDSPECIALFUNCTIONNAME = DEF;
-  return return_ADDSPECIALFUNCTIONNAME;
+  RESULT = DEF;
+  return RESULT;
 }
 
-PString DEEPTYPENAME(struct record29 *TYPEINDEX, int USEORIGINAL) {
-  PString return_DEEPTYPENAME;
+PString DEEPTYPENAME(TPSTYPE *TYPEINDEX, int USEORIGINAL) {
+  PString RESULT;
   TPSTYPE TYP;
   PString RET;
   int POS;
@@ -934,7 +934,7 @@ PString DEEPTYPENAME(struct record29 *TYPEINDEX, int USEORIGINAL) {
     TYP = *TYPEINDEX;
     TYPEINDEX = TYP.ALIASFOR;
   } while (!(!USEORIGINAL || TYPEINDEX == (void*)0));
-  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) return_DEEPTYPENAME = TYP.NAME;
+  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) RESULT = TYP.NAME;
   else if (TYP.CLS == TTCENUM) {
     RET = str_of('(');
     do {
@@ -952,7 +952,7 @@ PString DEEPTYPENAME(struct record29 *TYPEINDEX, int USEORIGINAL) {
         }
       }
     } while(0);
-    return_DEEPTYPENAME = cat_sc(RET, ')');
+    RESULT = cat_sc(RET, ')');
   }
   else if (TYP.CLS == TTCRECORD) {
     RET = str_make(7, "record ");
@@ -972,227 +972,227 @@ PString DEEPTYPENAME(struct record29 *TYPEINDEX, int USEORIGINAL) {
         }
       }
     } while(0);
-    return_DEEPTYPENAME = cat_ss(RET, str_make(4, " end"));
+    RESULT = cat_ss(RET, str_make(4, " end"));
   }
   else if (TYP.CLS == TTCARRAY) {
     RET = cat_ss(str_make(15, "array [...] of "), DEEPTYPENAME(TYP.ARRAYINDEX->TYPEINDEX, 1));
-    return_DEEPTYPENAME = RET;
+    RESULT = RET;
   }
-  else if (TYP.CLS == TTCPOINTER) return_DEEPTYPENAME = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEINDEX, 1));
+  else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEINDEX, 1));
   else {
     RET = to_str_e(TYP.CLS, enumvalues28);
     COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
   }
-  return return_DEEPTYPENAME;
+  return RESULT;
 }
 
-PString TYPENAME(struct record29 *TYPEINDEX) {
-  PString return_TYPENAME;
-  if (TYPEINDEX == (void*)0) return_TYPENAME = str_make(6, "(none)");
-  else return_TYPENAME = DEEPTYPENAME(TYPEINDEX, 0);
-  return return_TYPENAME;
+PString TYPENAME(TPSTYPE *TYPEINDEX) {
+  PString RESULT;
+  if (TYPEINDEX == (void*)0) RESULT = str_make(6, "(none)");
+  else RESULT = DEEPTYPENAME(TYPEINDEX, 0);
+  return RESULT;
 }
 
 TPSTYPE EMPTYTYPE() {
-  TPSTYPE return_EMPTYTYPE;
+  TPSTYPE RESULT;
   TPSTYPE RET;
   RET.NAME = str_make(0, "");
   RET.CLS = TTCBOOLEAN;
   RET.ALIASFOR = (void*)0;
-  return_EMPTYTYPE = RET;
-  return return_EMPTYTYPE;
+  RESULT = RET;
+  return RESULT;
 }
 
-TPSTYPE COPYTYPE(struct record29 *TYPEINDEX) {
-  TPSTYPE return_COPYTYPE;
+TPSTYPE COPYTYPE(TPSTYPE *TYPEINDEX) {
+  TPSTYPE RESULT;
   TPSTYPE NEWTYP;
   NEWTYP = *TYPEINDEX;
   if (NEWTYP.CLS == TTCPOINTERUNKNOWN) {
     NEWTYP.TARGETNAME = malloc(sizeof(PString));
     *NEWTYP.TARGETNAME = *TYPEINDEX->TARGETNAME;
   }
-  return_COPYTYPE = NEWTYP;
-  return return_COPYTYPE;
+  RESULT = NEWTYP;
+  return RESULT;
 }
 
 TPSTYPE TYPEOFCLASS(TPSTYPECLASS CLS) {
-  TPSTYPE return_TYPEOFCLASS;
+  TPSTYPE RESULT;
   TPSTYPE RET;
   RET = EMPTYTYPE();
   RET.CLS = CLS;
-  return_TYPEOFCLASS = RET;
-  return return_TYPEOFCLASS;
+  RESULT = RET;
+  return RESULT;
 }
 
 TPSTYPE INTEGERTYPE() {
-  TPSTYPE return_INTEGERTYPE;
-  return_INTEGERTYPE = TYPEOFCLASS(TTCINTEGER);
-  return return_INTEGERTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCINTEGER);
+  return RESULT;
 }
 
-int ISINTEGERTYPE(struct record29 *TYPEINDEX) {
-  int return_ISINTEGERTYPE;
-  return_ISINTEGERTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCINTEGER;
-  return return_ISINTEGERTYPE;
+int ISINTEGERTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCINTEGER;
+  return RESULT;
 }
 
 TPSTYPE STRINGTYPE() {
-  TPSTYPE return_STRINGTYPE;
-  return_STRINGTYPE = TYPEOFCLASS(TTCSTRING);
-  return return_STRINGTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCSTRING);
+  return RESULT;
 }
 
 TPSTYPE CHARTYPE() {
-  TPSTYPE return_CHARTYPE;
-  return_CHARTYPE = TYPEOFCLASS(TTCCHAR);
-  return return_CHARTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCCHAR);
+  return RESULT;
 }
 
-int ISSTRINGTYPE(struct record29 *TYPEINDEX) {
-  int return_ISSTRINGTYPE;
-  return_ISSTRINGTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCSTRING;
-  return return_ISSTRINGTYPE;
+int ISSTRINGTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCSTRING;
+  return RESULT;
 }
 
-int ISCHARTYPE(struct record29 *TYPEINDEX) {
-  int return_ISCHARTYPE;
-  return_ISCHARTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCCHAR;
-  return return_ISCHARTYPE;
+int ISCHARTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCCHAR;
+  return RESULT;
 }
 
-int ISSTRINGYTYPE(struct record29 *TYPEINDEX) {
-  int return_ISSTRINGYTYPE;
-  return_ISSTRINGYTYPE = ISSTRINGTYPE(TYPEINDEX) || ISCHARTYPE(TYPEINDEX);
-  return return_ISSTRINGYTYPE;
+int ISSTRINGYTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = ISSTRINGTYPE(TYPEINDEX) || ISCHARTYPE(TYPEINDEX);
+  return RESULT;
 }
 
 TPSTYPE BOOLEANTYPE() {
-  TPSTYPE return_BOOLEANTYPE;
-  return_BOOLEANTYPE = TYPEOFCLASS(TTCBOOLEAN);
-  return return_BOOLEANTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCBOOLEAN);
+  return RESULT;
 }
 
-int ISBOOLEANTYPE(struct record29 *TYPEINDEX) {
-  int return_ISBOOLEANTYPE;
-  return_ISBOOLEANTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCBOOLEAN;
-  return return_ISBOOLEANTYPE;
+int ISBOOLEANTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCBOOLEAN;
+  return RESULT;
 }
 
 TPSTYPE TEXTTYPE() {
-  TPSTYPE return_TEXTTYPE;
-  return_TEXTTYPE = TYPEOFCLASS(TTCTEXT);
-  return return_TEXTTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCTEXT);
+  return RESULT;
 }
 
-int ISTEXTTYPE(struct record29 *TYPEINDEX) {
-  int return_ISTEXTTYPE;
-  return_ISTEXTTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCTEXT;
-  return return_ISTEXTTYPE;
+int ISTEXTTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCTEXT;
+  return RESULT;
 }
 
-int ISENUMTYPE(struct record29 *TYPEINDEX) {
-  int return_ISENUMTYPE;
-  return_ISENUMTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCENUM;
-  return return_ISENUMTYPE;
+int ISENUMTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCENUM;
+  return RESULT;
 }
 
-int ISRECORDTYPE(struct record29 *TYPEINDEX) {
-  int return_ISRECORDTYPE;
-  return_ISRECORDTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCRECORD;
-  return return_ISRECORDTYPE;
+int ISRECORDTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCRECORD;
+  return RESULT;
 }
 
-int ISARRAYTYPE(struct record29 *TYPEINDEX) {
-  int return_ISARRAYTYPE;
-  return_ISARRAYTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCARRAY;
-  return return_ISARRAYTYPE;
+int ISARRAYTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCARRAY;
+  return RESULT;
 }
 
-TPSTYPE POINTERTYPE(struct record29 *TYPEINDEX) {
-  TPSTYPE return_POINTERTYPE;
+TPSTYPE POINTERTYPE(TPSTYPE *TYPEINDEX) {
+  TPSTYPE RESULT;
   TPSTYPE TYP;
   TYP = TYPEOFCLASS(TTCPOINTER);
   TYP.POINTEDTYPEINDEX = TYPEINDEX;
-  return_POINTERTYPE = TYP;
-  return return_POINTERTYPE;
+  RESULT = TYP;
+  return RESULT;
 }
 
-int ISPOINTERTYPE(struct record29 *TYPEINDEX) {
-  int return_ISPOINTERTYPE;
-  return_ISPOINTERTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCPOINTER;
-  return return_ISPOINTERTYPE;
+int ISPOINTERTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCPOINTER;
+  return RESULT;
 }
 
 TPSTYPE NILTYPE() {
-  TPSTYPE return_NILTYPE;
-  return_NILTYPE = TYPEOFCLASS(TTCNIL);
-  return return_NILTYPE;
+  TPSTYPE RESULT;
+  RESULT = TYPEOFCLASS(TTCNIL);
+  return RESULT;
 }
 
-int ISNILTYPE(struct record29 *TYPEINDEX) {
-  int return_ISNILTYPE;
-  return_ISNILTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCNIL;
-  return return_ISNILTYPE;
+int ISNILTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCNIL;
+  return RESULT;
 }
 
-int ISPOINTERYTYPE(struct record29 *TYPEINDEX) {
-  int return_ISPOINTERYTYPE;
-  return_ISPOINTERYTYPE = ISPOINTERTYPE(TYPEINDEX) || ISNILTYPE(TYPEINDEX);
-  return return_ISPOINTERYTYPE;
+int ISPOINTERYTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = ISPOINTERTYPE(TYPEINDEX) || ISNILTYPE(TYPEINDEX);
+  return RESULT;
 }
 
 TPSTYPE POINTERUNKNOWNTYPE(PString TARGETNAME) {
-  TPSTYPE return_POINTERUNKNOWNTYPE;
+  TPSTYPE RESULT;
   TPSTYPE TYP;
   TYP = TYPEOFCLASS(TTCPOINTERUNKNOWN);
   TYP.TARGETNAME = malloc(sizeof(PString));
   *TYP.TARGETNAME = TARGETNAME;
-  return_POINTERUNKNOWNTYPE = TYP;
-  return return_POINTERUNKNOWNTYPE;
+  RESULT = TYP;
+  return RESULT;
 }
 
-int ISPOINTERUNKNOWNTYPE(struct record29 *TYPEINDEX) {
-  int return_ISPOINTERUNKNOWNTYPE;
-  return_ISPOINTERUNKNOWNTYPE = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCPOINTERUNKNOWN;
-  return return_ISPOINTERUNKNOWNTYPE;
+int ISPOINTERUNKNOWNTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = TYPEINDEX != (void*)0 && TYPEINDEX->CLS == TTCPOINTERUNKNOWN;
+  return RESULT;
 }
 
-int ISORDINALTYPE(struct record29 *TYPEINDEX) {
-  int return_ISORDINALTYPE;
-  return_ISORDINALTYPE = ISBOOLEANTYPE(TYPEINDEX) || ISINTEGERTYPE(TYPEINDEX) || ISCHARTYPE(TYPEINDEX) || ISENUMTYPE(TYPEINDEX);
-  return return_ISORDINALTYPE;
+int ISORDINALTYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = ISBOOLEANTYPE(TYPEINDEX) || ISINTEGERTYPE(TYPEINDEX) || ISCHARTYPE(TYPEINDEX) || ISENUMTYPE(TYPEINDEX);
+  return RESULT;
 }
 
-int ISSIMPLETYPE(struct record29 *TYPEINDEX) {
-  int return_ISSIMPLETYPE;
-  return_ISSIMPLETYPE = ISORDINALTYPE(TYPEINDEX) || ISSTRINGTYPE(TYPEINDEX);
-  return return_ISSIMPLETYPE;
+int ISSIMPLETYPE(TPSTYPE *TYPEINDEX) {
+  int RESULT;
+  RESULT = ISORDINALTYPE(TYPEINDEX) || ISSTRINGTYPE(TYPEINDEX);
+  return RESULT;
 }
 
-int ISSAMETYPE(struct record29 *A, struct record29 *B) {
-  int return_ISSAMETYPE;
-  if (A == (void*)0 || B == (void*)0) return_ISSAMETYPE = A == B;
+int ISSAMETYPE(TPSTYPE *A, TPSTYPE *B) {
+  int RESULT;
+  if (A == (void*)0 || B == (void*)0) RESULT = A == B;
   else {
     while (A->ALIASFOR != (void*)0) A = A->ALIASFOR;
     while (B->ALIASFOR != (void*)0) B = B->ALIASFOR;
-    return_ISSAMETYPE = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEINDEX, B->POINTEDTYPEINDEX);
+    RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEINDEX, B->POINTEDTYPEINDEX);
   }
-  return return_ISSAMETYPE;
+  return RESULT;
 }
 
-int AREPOINTERSCOMPATIBLE(struct record29 *A, struct record29 *B) {
-  int return_AREPOINTERSCOMPATIBLE;
-  return_AREPOINTERSCOMPATIBLE = ISPOINTERYTYPE(A) && ISPOINTERYTYPE(B) && (ISNILTYPE(A) || ISNILTYPE(B) || ISSAMETYPE(A, B));
-  return return_AREPOINTERSCOMPATIBLE;
+int AREPOINTERSCOMPATIBLE(TPSTYPE *A, TPSTYPE *B) {
+  int RESULT;
+  RESULT = ISPOINTERYTYPE(A) && ISPOINTERYTYPE(B) && (ISNILTYPE(A) || ISNILTYPE(B) || ISSAMETYPE(A, B));
+  return RESULT;
 }
 
-struct record29 *ADDTYPE(TPSTYPE TYP) {
-  struct record29 *return_ADDTYPE;
-  struct record29 *TYPEINDEX;
+TPSTYPE *ADDTYPE(TPSTYPE TYP) {
+  TPSTYPE *RESULT;
+  TPSTYPE *TYPEINDEX;
   int ENUMPOS;
   TYPEINDEX = _ADDDEF(TDCTYPE)->TYPEINDEX;
   *TYPEINDEX = TYP;
-  return_ADDTYPE = TYPEINDEX;
+  RESULT = TYPEINDEX;
   if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) {
     if (FINDNAMEINLOCALSCOPE(TYP.NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), TYP.NAME), str_make(16, " already defined")));
     ADDTYPENAME(TYP.NAME, TYPEINDEX);
@@ -1209,92 +1209,92 @@ struct record29 *ADDTYPE(TPSTYPE TYP) {
       }
     }
   } while(0);
-  return return_ADDTYPE;
+  return RESULT;
 }
 
-struct record30 *ADDENUM(TPSENUMDEF ENUM) {
-  struct record30 *return_ADDENUM;
-  struct record30 *ENUMINDEX;
+TPSENUMDEF *ADDENUM(TPSENUMDEF ENUM) {
+  TPSENUMDEF *RESULT;
+  TPSENUMDEF *ENUMINDEX;
   ENUMINDEX = _ADDDEF(TDCENUM)->ENUMINDEX;
   *ENUMINDEX = ENUM;
   ENUMINDEX->ID = DEFCOUNTER();
-  return_ADDENUM = ENUMINDEX;
-  return return_ADDENUM;
+  RESULT = ENUMINDEX;
+  return RESULT;
 }
 
-struct record32 *ADDRECORD(TPSRECORDDEF REC) {
-  struct record32 *return_ADDRECORD;
-  struct record32 *RECORDINDEX;
+TPSRECORDDEF *ADDRECORD(TPSRECORDDEF REC) {
+  TPSRECORDDEF *RESULT;
+  TPSRECORDDEF *RECORDINDEX;
   RECORDINDEX = _ADDDEF(TDCRECORD)->RECORDINDEX;
   *RECORDINDEX = REC;
   RECORDINDEX->ID = DEFCOUNTER();
-  return_ADDRECORD = RECORDINDEX;
-  return return_ADDRECORD;
+  RESULT = RECORDINDEX;
+  return RESULT;
 }
 
-struct record33 *ADDARRAY(TPSARRAYDEF ARR) {
-  struct record33 *return_ADDARRAY;
-  struct record33 *ARRAYINDEX;
+TPSARRAYDEF *ADDARRAY(TPSARRAYDEF ARR) {
+  TPSARRAYDEF *RESULT;
+  TPSARRAYDEF *ARRAYINDEX;
   ARRAYINDEX = _ADDDEF(TDCARRAY)->ARRAYINDEX;
   *ARRAYINDEX = ARR;
-  return_ADDARRAY = ARRAYINDEX;
-  return return_ADDARRAY;
+  RESULT = ARRAYINDEX;
+  return RESULT;
 }
 
-struct record34 *FINDCONSTANT(PString NAME) {
-  struct record34 *return_FINDCONSTANT;
-  struct record41 *DEF;
-  struct record34 *RET;
+TPSCONSTANT *FINDCONSTANT(PString NAME) {
+  TPSCONSTANT *RESULT;
+  TPSDEFENTRY *DEF;
+  TPSCONSTANT *RET;
   RET = (void*)0;
   DEF = DEFS.LATEST;
   while (RET == (void*)0 && DEF != (void*)0) {
     if (DEF->CLS == TDCCONSTANT && cmp_ss(NAME, DEF->CONSTANTINDEX->NAME) == 0) RET = DEF->CONSTANTINDEX;
     DEF = DEF->PREV;
   }
-  return_FINDCONSTANT = RET;
-  return return_FINDCONSTANT;
+  RESULT = RET;
+  return RESULT;
 }
 
-struct record34 *ADDCONSTANT(TPSCONSTANT CONSTANT) {
-  struct record34 *return_ADDCONSTANT;
-  struct record34 *CONSTANTINDEX;
+TPSCONSTANT *ADDCONSTANT(TPSCONSTANT CONSTANT) {
+  TPSCONSTANT *RESULT;
+  TPSCONSTANT *CONSTANTINDEX;
   if (FINDCONSTANT(CONSTANT.NAME) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(9, "Constant "), CONSTANT.NAME), str_make(16, " already defined")));
   CONSTANTINDEX = _ADDDEF(TDCCONSTANT)->CONSTANTINDEX;
   *CONSTANTINDEX = CONSTANT;
-  return_ADDCONSTANT = CONSTANTINDEX;
-  return return_ADDCONSTANT;
+  RESULT = CONSTANTINDEX;
+  return RESULT;
 }
 
-struct record35 *ADDVARIABLE(TPSVARIABLE VARDEF) {
-  struct record35 *return_ADDVARIABLE;
-  struct record35 *VARIABLEINDEX;
+TPSVARIABLE *ADDVARIABLE(TPSVARIABLE VARDEF) {
+  TPSVARIABLE *RESULT;
+  TPSVARIABLE *VARIABLEINDEX;
   if (FINDNAMEINLOCALSCOPE(VARDEF.NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), VARDEF.NAME), str_make(16, " already defined")));
   VARIABLEINDEX = _ADDDEF(TDCVARIABLE)->VARIABLEINDEX;
   ADDVARIABLENAME(VARDEF.NAME, VARIABLEINDEX);
   *VARIABLEINDEX = VARDEF;
-  return_ADDVARIABLE = VARIABLEINDEX;
-  return return_ADDVARIABLE;
+  RESULT = VARIABLEINDEX;
+  return RESULT;
 }
 
 TPSFUNCTION EMPTYFUNCTION() {
-  TPSFUNCTION return_EMPTYFUNCTION;
+  TPSFUNCTION RESULT;
   TPSFUNCTION RET;
   RET.NAME = str_make(0, "");
   RET.ARGCOUNT = 0;
   RET.RETURNTYPEINDEX = (void*)0;
   RET.ISDECLARATION = 0;
-  return_EMPTYFUNCTION = RET;
-  return return_EMPTYFUNCTION;
+  RESULT = RET;
+  return RESULT;
 }
 
 int ISEMPTYFUNCTION(TPSFUNCTION FN) {
-  int return_ISEMPTYFUNCTION;
-  return_ISEMPTYFUNCTION = cmp_ss(FN.NAME, str_make(0, "")) == 0;
-  return return_ISEMPTYFUNCTION;
+  int RESULT;
+  RESULT = cmp_ss(FN.NAME, str_make(0, "")) == 0;
+  return RESULT;
 }
 
-int ISSAMEFUNCTIONDEFINITION(struct record36 *DECLINDEX, TPSFUNCTION FUN) {
-  int return_ISSAMEFUNCTIONDEFINITION;
+int ISSAMEFUNCTIONDEFINITION(TPSFUNCTION *DECLINDEX, TPSFUNCTION FUN) {
+  int RESULT;
   TPSFUNCTION DECL;
   int SAME;
   int POS;
@@ -1312,22 +1312,22 @@ int ISSAMEFUNCTIONDEFINITION(struct record36 *DECLINDEX, TPSFUNCTION FUN) {
       }
     }
   } while(0);
-  return_ISSAMEFUNCTIONDEFINITION = SAME;
-  return return_ISSAMEFUNCTIONDEFINITION;
+  RESULT = SAME;
+  return RESULT;
 }
 
 int HASFORWARDDECLARATION(PString NAME) {
-  int return_HASFORWARDDECLARATION;
-  struct record39 *NAMEINDEX;
+  int RESULT;
+  TPSNAME *NAMEINDEX;
   NAMEINDEX = FINDNAMEOFCLASSINLOCALSCOPE(NAME, TNCFUNCTION, 0);
-  return_HASFORWARDDECLARATION = NAMEINDEX != (void*)0 && NAMEINDEX->FUNCTIONINDEX->ISDECLARATION;
-  return return_HASFORWARDDECLARATION;
+  RESULT = NAMEINDEX != (void*)0 && NAMEINDEX->FUNCTIONINDEX->ISDECLARATION;
+  return RESULT;
 }
 
-struct record36 *ADDFUNCTION(TPSFUNCTION FUN) {
-  struct record36 *return_ADDFUNCTION;
-  struct record39 *NAMEINDEX;
-  struct record36 *FNINDEX;
+TPSFUNCTION *ADDFUNCTION(TPSFUNCTION FUN) {
+  TPSFUNCTION *RESULT;
+  TPSNAME *NAMEINDEX;
+  TPSFUNCTION *FNINDEX;
   int ISPROCEDURE;
   ISPROCEDURE = FUN.RETURNTYPEINDEX == (void*)0;
   NAMEINDEX = FINDNAMEINLOCALSCOPE(FUN.NAME, 0);
@@ -1351,12 +1351,12 @@ struct record36 *ADDFUNCTION(TPSFUNCTION FUN) {
       else COMPILEERROR(cat_ss(cat_ss(str_make(9, "Function "), FUN.NAME), str_make(16, " already defined")));
     }
   }
-  return_ADDFUNCTION = FNINDEX;
-  return return_ADDFUNCTION;
+  RESULT = FNINDEX;
+  return RESULT;
 }
 
-int FINDFIELD(struct record29 *TYPEINDEX, PString NAME, int REQUIRED) {
-  int return_FINDFIELD;
+int FINDFIELD(TPSTYPE *TYPEINDEX, PString NAME, int REQUIRED) {
+  int RESULT;
   int POS;
   int RET;
   if (TYPEINDEX->CLS != TTCRECORD) COMPILEERROR(cat_ss(str_make(14, "Not a record: "), TYPEINDEX->NAME));
@@ -1372,24 +1372,24 @@ int FINDFIELD(struct record29 *TYPEINDEX, PString NAME, int REQUIRED) {
     }
   }
   if (REQUIRED && RET == 0) COMPILEERROR(cat_ss(str_make(17, "Field not found: "), NAME));
-  return_FINDFIELD = RET;
-  return return_FINDFIELD;
+  RESULT = RET;
+  return RESULT;
 }
 
-struct record29 *FINDFIELDTYPE(struct record29 *TYPEINDEX, PString NAME, int REQUIRED) {
-  struct record29 *return_FINDFIELDTYPE;
+TPSTYPE *FINDFIELDTYPE(TPSTYPE *TYPEINDEX, PString NAME, int REQUIRED) {
+  TPSTYPE *RESULT;
   int POS;
   POS = FINDFIELD(TYPEINDEX, NAME, REQUIRED);
-  if (POS == 0) return_FINDFIELDTYPE = (void*)0;
-  else return_FINDFIELDTYPE = TYPEINDEX->RECORDINDEX->FIELDS[POS - 1].TYPEINDEX;
-  return return_FINDFIELDTYPE;
+  if (POS == 0) RESULT = (void*)0;
+  else RESULT = TYPEINDEX->RECORDINDEX->FIELDS[POS - 1].TYPEINDEX;
+  return RESULT;
 }
 
-struct record37 *FINDWITHVAR(PString NAME) {
-  struct record37 *return_FINDWITHVAR;
-  struct record37 *RET;
-  struct record41 *DEF;
-  struct record29 *TYPEINDEX;
+TPSWITHVAR *FINDWITHVAR(PString NAME) {
+  TPSWITHVAR *RESULT;
+  TPSWITHVAR *RET;
+  TPSDEFENTRY *DEF;
+  TPSTYPE *TYPEINDEX;
   RET = (void*)0;
   DEF = DEFS.LATEST;
   while (RET == (void*)0 && DEF != (void*)0 && DEF->CLS != TDCSCOPEBOUNDARY) {
@@ -1399,16 +1399,16 @@ struct record37 *FINDWITHVAR(PString NAME) {
     }
     DEF = DEF->PREV;
   }
-  return_FINDWITHVAR = RET;
-  return return_FINDWITHVAR;
+  RESULT = RET;
+  return RESULT;
 }
 
-struct record35 *ADDWITHVAR(struct record26 *BASE) {
-  struct record35 *return_ADDWITHVAR;
+TPSVARIABLE *ADDWITHVAR(TEXPRESSIONOBJ *BASE) {
+  TPSVARIABLE *RESULT;
   PString TMPVARNUM;
   TPSVARIABLE TMPVAR;
-  struct record35 *TMPVARINDEX;
-  struct record37 *WITHVARINDEX;
+  TPSVARIABLE *TMPVARINDEX;
+  TPSWITHVAR *WITHVARINDEX;
   if (!ISRECORDTYPE(BASE->TYPEINDEX)) COMPILEERROR(str_make(31, "'With' variable is not a record"));
   TMPVARNUM = to_str_i(DEFCOUNTER());
   TMPVAR.NAME = cat_ss(str_make(4, "with"), TMPVARNUM);
@@ -1418,121 +1418,121 @@ struct record35 *ADDWITHVAR(struct record26 *BASE) {
   TMPVARINDEX = ADDVARIABLE(TMPVAR);
   WITHVARINDEX = _ADDDEF(TDCWITHVAR)->WITHVARINDEX;
   WITHVARINDEX->VARIABLEINDEX = TMPVARINDEX;
-  return_ADDWITHVAR = TMPVARINDEX;
-  return return_ADDWITHVAR;
+  RESULT = TMPVARINDEX;
+  return RESULT;
 }
 
 TPSTYPE MAKETYPE(PString NAME, TPSTYPECLASS CLS) {
-  TPSTYPE return_MAKETYPE;
+  TPSTYPE RESULT;
   TPSTYPE TYP;
   TYP = EMPTYTYPE();
   TYP.NAME = NAME;
   TYP.CLS = CLS;
-  return_MAKETYPE = TYP;
-  return return_MAKETYPE;
+  RESULT = TYP;
+  return RESULT;
 }
 
 TPSCONSTANT MAKECONSTANT(PString NAME, TLXTOKENID TOKENID, PString TOKENVALUE) {
-  TPSCONSTANT return_MAKECONSTANT;
+  TPSCONSTANT RESULT;
   TPSCONSTANT CONSTANT;
   CONSTANT.NAME = NAME;
   CONSTANT.REPLACEMENT.ID = TOKENID;
   CONSTANT.REPLACEMENT.VALUE = TOKENVALUE;
-  return_MAKECONSTANT = CONSTANT;
-  return return_MAKECONSTANT;
+  RESULT = CONSTANT;
+  return RESULT;
 }
 
-TPSVARIABLE MAKETYPEDCONSTANT(PString NAME, struct record29 *TYPEINDEX) {
-  TPSVARIABLE return_MAKETYPEDCONSTANT;
+TPSVARIABLE MAKETYPEDCONSTANT(PString NAME, TPSTYPE *TYPEINDEX) {
+  TPSVARIABLE RESULT;
   TPSVARIABLE VARDEF;
   VARDEF.NAME = NAME;
   VARDEF.TYPEINDEX = TYPEINDEX;
   VARDEF.ISREFERENCE = 0;
   VARDEF.ISCONSTANT = 1;
-  return_MAKETYPEDCONSTANT = VARDEF;
-  return return_MAKETYPEDCONSTANT;
+  RESULT = VARDEF;
+  return RESULT;
 }
 
-TPSVARIABLE MAKEVARIABLE(PString NAME, struct record29 *TYPEINDEX, int ISREF) {
-  TPSVARIABLE return_MAKEVARIABLE;
+TPSVARIABLE MAKEVARIABLE(PString NAME, TPSTYPE *TYPEINDEX, int ISREF) {
+  TPSVARIABLE RESULT;
   TPSVARIABLE VARDEF;
   VARDEF.NAME = NAME;
   VARDEF.TYPEINDEX = TYPEINDEX;
   VARDEF.ISREFERENCE = ISREF;
   VARDEF.ISCONSTANT = 0;
-  return_MAKEVARIABLE = VARDEF;
-  return return_MAKEVARIABLE;
+  RESULT = VARDEF;
+  return RESULT;
 }
 
 void CODEGENRESET();
 void CODEGENSETOUTPUT(PString FILENAME);
 void OUTBEGIN();
 void OUTEND();
-void OUTENUMVALUES(struct record30 *ENUMINDEX);
-void OUTENUMVALUESFROMCHECKPOINT(struct record41 *CHECKPOINT);
+void OUTENUMVALUES(TPSENUMDEF *ENUMINDEX);
+void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT);
 PString OUTVARIABLENAME(PString NAME, int ISREFERENCE);
-void OUTTYPEREFERENCE(struct record29 *TYPEINDEX);
-void OUTNAMEANDTYPE(PString NAME, struct record29 *TYPEINDEX);
-void OUTTYPEDEFINITION(struct record29 *TYPEINDEX);
-void OUTTYPEDEFINITIONSFROMCHECKPOINT(struct record41 *CHECKPOINT);
+void OUTTYPEREFERENCE(TPSTYPE *TYPEINDEX);
+void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEINDEX);
+void OUTTYPEDEFINITION(TPSTYPE *TYPEINDEX);
+void OUTTYPEDEFINITIONSFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT);
 void OUTCONSTANTARRAYBEGIN();
 void OUTCONSTANTARRAYSEPARATOR();
 void OUTCONSTANTARRAYEND();
 void OUTVARIABLEDECLARATION(TPSVARIABLE VARDEF);
-void OUTVARIABLEDEFINITION(struct record35 *VARINDEX);
-void OUTCONSTANTDEFINITIONBEGIN(struct record35 *VARINDEX);
+void OUTVARIABLEDEFINITION(TPSVARIABLE *VARINDEX);
+void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLE *VARINDEX);
 void OUTCONSTANTDEFINITIONEND();
 void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF);
-void OUTFUNCTIONDECLARATION(struct record36 *FNINDEX);
-void OUTFUNCTIONDEFINITION(struct record36 *FNINDEX);
-void OUTFUNCTIONEND(struct record36 *FNINDEX);
+void OUTFUNCTIONDECLARATION(TPSFUNCTION *FNINDEX);
+void OUTFUNCTIONDEFINITION(TPSFUNCTION *FNINDEX);
+void OUTFUNCTIONEND(TPSFUNCTION *FNINDEX);
 void OUTPROGRAMHEADING(PString NAME);
-void OUTEXPRESSION(struct record26 *EXPR);
-void OUTASSIGN(struct record26 *LHS, struct record26 *RHS);
-void OUTASSIGNRETURNVALUE(struct record26 *LHS, struct record26 *RHS);
-void OUTASSIGNTOREFERENCE(struct record35 *VARINDEX, struct record26 *RHS);
-void OUTIF(struct record26 *EXPR);
+void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR);
+void OUTASSIGN(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS);
+void OUTASSIGNRETURNVALUE(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS);
+void OUTASSIGNTOREFERENCE(TPSVARIABLE *VARINDEX, TEXPRESSIONOBJ *RHS);
+void OUTIF(TEXPRESSIONOBJ *EXPR);
 void OUTELSE();
 void OUTIFEND();
 void OUTSEQUENCEBEGIN();
 void OUTSEQUENCEEND();
-void OUTCASEBEGIN(struct record26 *CASEINDEX);
-void OUTCASESTATEMENTBEGIN(struct record26 *CASELABEL);
+void OUTCASEBEGIN(TEXPRESSIONOBJ *CASEINDEX);
+void OUTCASESTATEMENTBEGIN(TEXPRESSIONOBJ *CASELABEL);
 void OUTCASESTATEMENTEND();
 void OUTCASEELSEBEGIN();
 void OUTCASEELSEEND();
 void OUTCASEEND();
 void OUTREPEATBEGIN();
-void OUTREPEATEND(struct record26 *EXPR);
-void OUTWHILEBEGIN(struct record26 *EXPR);
+void OUTREPEATEND(TEXPRESSIONOBJ *EXPR);
+void OUTWHILEBEGIN(TEXPRESSIONOBJ *EXPR);
 void OUTWHILEEND();
-void OUTFORBEGIN(struct record26 *ITER, struct record26 *FIRSTEXPR, struct record26 *LASTEXPR, int ASCENDING);
-void OUTFOREND(struct record26 *ITER, int ASCENDING);
-void OUTPROCEDURECALL(struct record26 *EXPR);
-void OUTSPECIALPROCEDURECALL(struct record26 *EXPR);
+void OUTFORBEGIN(TEXPRESSIONOBJ *ITER, TEXPRESSIONOBJ *FIRSTEXPR, TEXPRESSIONOBJ *LASTEXPR, int ASCENDING);
+void OUTFOREND(TEXPRESSIONOBJ *ITER, int ASCENDING);
+void OUTPROCEDURECALL(TEXPRESSIONOBJ *EXPR);
+void OUTSPECIALPROCEDURECALL(TEXPRESSIONOBJ *EXPR);
 void OUTEMPTYSTATEMENT();
 void OUTPROGRAMBEGIN();
 void OUTPROGRAMEND();
 
-struct record26 *_NEWEXPR(TEXPRESSIONCLASS CLS) {
-  struct record26 *return__NEWEXPR;
-  struct record26 *EXPR;
-  EXPR = malloc(sizeof(struct record26));
+TEXPRESSIONOBJ *_NEWEXPR(TEXPRESSIONCLASS CLS) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
+  EXPR = malloc(sizeof(TEXPRESSIONOBJ));
   EXPR->CLS = CLS;
   EXPR->ISCONSTANT = 0;
   EXPR->ISASSIGNABLE = 0;
   EXPR->ISFUNCTIONRESULT = 0;
-  return__NEWEXPR = EXPR;
-  return return__NEWEXPR;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-void DISPOSEEXPR(struct record26 **EXPR);
+void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR);
 
 void _DISPOSESPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL) {
-  struct record20 *READARG;
-  struct record20 *NEXTREADARG;
-  struct record21 *WRITEARG;
-  struct record21 *NEXTWRITEARG;
+  TEXREADARGS *READARG;
+  TEXREADARGS *NEXTREADARG;
+  TEXWRITEARGS *WRITEARG;
+  TEXWRITEARGS *NEXTWRITEARG;
   if ((*CALL).SRC != (void*)0) DISPOSEEXPR(&(*CALL).SRC);
   if ((*CALL).DST != (void*)0) DISPOSEEXPR(&(*CALL).DST);
   if ((*CALL).PTR != (void*)0) DISPOSEEXPR(&(*CALL).PTR);
@@ -1556,7 +1556,7 @@ void _DISPOSESPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL) {
   }
 }
 
-void DISPOSEEXPR(struct record26 **EXPR) {
+void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR) {
   int POS;
   switch ((*EXPR)->CLS) {
     case XCTOSTRING:
@@ -1615,15 +1615,15 @@ void DISPOSEEXPR(struct record26 **EXPR) {
   free(*EXPR);
 }
 
-struct record26 *COPYEXPR(struct record26 *EXPR);
+TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR);
 
 void _COPYSPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL, TEXSPECIALFUNCTIONCALL *COPY) {
-  struct record20 *READARG;
-  struct record20 *NEXTREADARG;
-  struct record20 *COPYREADARG;
-  struct record21 *WRITEARG;
-  struct record21 *NEXTWRITEARG;
-  struct record21 *COPYWRITEARG;
+  TEXREADARGS *READARG;
+  TEXREADARGS *NEXTREADARG;
+  TEXREADARGS *COPYREADARG;
+  TEXWRITEARGS *WRITEARG;
+  TEXWRITEARGS *NEXTWRITEARG;
+  TEXWRITEARGS *COPYWRITEARG;
   (*COPY).SPECIALFUNCTION = (*CALL).SPECIALFUNCTION;
   if ((*CALL).SRC != (void*)0) (*COPY).SRC = COPYEXPR((*CALL).SRC);
   if ((*CALL).DST != (void*)0) (*COPY).DST = COPYEXPR((*CALL).DST);
@@ -1634,11 +1634,11 @@ void _COPYSPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL, TEXSPECIALFUNCTIONCALL *
     while (READARG != (void*)0) {
       NEXTREADARG = READARG->NEXT;
       if (COPYREADARG == (void*)0) {
-        COPYREADARG = malloc(sizeof(struct record20));
+        COPYREADARG = malloc(sizeof(TEXREADARGS));
         (*COPY).READARGS = COPYREADARG;
       }
       else {
-        COPYREADARG->NEXT = malloc(sizeof(struct record20));
+        COPYREADARG->NEXT = malloc(sizeof(TEXREADARGS));
         COPYREADARG = COPYREADARG->NEXT;
       }
       COPYREADARG->NEXT = (void*)0;
@@ -1651,11 +1651,11 @@ void _COPYSPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL, TEXSPECIALFUNCTIONCALL *
     while (WRITEARG != (void*)0) {
       NEXTWRITEARG = WRITEARG->NEXT;
       if (COPYWRITEARG == (void*)0) {
-        COPYWRITEARG = malloc(sizeof(struct record21));
+        COPYWRITEARG = malloc(sizeof(TEXWRITEARGS));
         (*COPY).WRITEARGS = COPYWRITEARG;
       }
       else {
-        COPYWRITEARG->NEXT = malloc(sizeof(struct record21));
+        COPYWRITEARG->NEXT = malloc(sizeof(TEXWRITEARGS));
         COPYWRITEARG = COPYWRITEARG->NEXT;
       }
       COPYWRITEARG->NEXT = (void*)0;
@@ -1665,9 +1665,9 @@ void _COPYSPECIALCALLEXPR(TEXSPECIALFUNCTIONCALL *CALL, TEXSPECIALFUNCTIONCALL *
   }
 }
 
-struct record26 *COPYEXPR(struct record26 *EXPR) {
-  struct record26 *return_COPYEXPR;
-  struct record26 *COPY;
+TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *COPY;
   int POS;
   COPY = _NEWEXPR(EXPR->CLS);
   COPY->TYPEINDEX = EXPR->TYPEINDEX;
@@ -1748,93 +1748,93 @@ struct record26 *COPYEXPR(struct record26 *EXPR) {
     default:
       break;
   }
-  return_COPYEXPR = COPY;
-  return return_COPYEXPR;
+  RESULT = COPY;
+  return RESULT;
 }
 
-struct record26 *EXCOERCE(struct record26 *EXPR, struct record29 *TYPEINDEX);
+TEXPRESSIONOBJ *EXCOERCE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEINDEX);
 
-struct record26 *_EXIMMEDIATE(TEXIMMEDIATECLASS CLS) {
-  struct record26 *return__EXIMMEDIATE;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXIMMEDIATE(TEXIMMEDIATECLASS CLS) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCIMMEDIATE);
   EXPR->ISCONSTANT = 1;
   EXPR->IMMEDIATEEX.CLS = CLS;
-  return__EXIMMEDIATE = EXPR;
-  return return__EXIMMEDIATE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXNIL() {
-  struct record26 *return_EXNIL;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXNIL() {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _EXIMMEDIATE(XICNIL);
   EXPR->TYPEINDEX = PRIMITIVETYPES.PTNIL;
-  return_EXNIL = EXPR;
-  return return_EXNIL;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXBOOLEANCONSTANT(int VALUE) {
-  struct record26 *return_EXBOOLEANCONSTANT;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXBOOLEANCONSTANT(int VALUE) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _EXIMMEDIATE(XICBOOLEAN);
   EXPR->IMMEDIATEEX.BOOLEANVALUE = VALUE;
   EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
-  return_EXBOOLEANCONSTANT = EXPR;
-  return return_EXBOOLEANCONSTANT;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXINTEGERCONSTANT(int VALUE) {
-  struct record26 *return_EXINTEGERCONSTANT;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXINTEGERCONSTANT(int VALUE) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _EXIMMEDIATE(XICINTEGER);
   EXPR->IMMEDIATEEX.INTEGERVALUE = VALUE;
   EXPR->TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
-  return_EXINTEGERCONSTANT = EXPR;
-  return return_EXINTEGERCONSTANT;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXCHARCONSTANT(char VALUE) {
-  struct record26 *return_EXCHARCONSTANT;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXCHARCONSTANT(char VALUE) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _EXIMMEDIATE(XICCHAR);
   EXPR->IMMEDIATEEX.CHARVALUE = VALUE;
   EXPR->TYPEINDEX = PRIMITIVETYPES.PTCHAR;
-  return_EXCHARCONSTANT = EXPR;
-  return return_EXCHARCONSTANT;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXSTRINGCONSTANT(PString VALUE) {
-  struct record26 *return_EXSTRINGCONSTANT;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXSTRINGCONSTANT(PString VALUE) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _EXIMMEDIATE(XICSTRING);
   EXPR->IMMEDIATEEX.STRINGVALUE = VALUE;
   EXPR->TYPEINDEX = PRIMITIVETYPES.PTSTRING;
-  return_EXSTRINGCONSTANT = EXPR;
-  return return_EXSTRINGCONSTANT;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXENUMCONSTANT(int ORDINAL, struct record29 *TYPEINDEX) {
-  struct record26 *return_EXENUMCONSTANT;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXENUMCONSTANT(int ORDINAL, TPSTYPE *TYPEINDEX) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (!ISENUMTYPE(TYPEINDEX)) COMPILEERROR(cat_ss(str_make(25, "Not an enumeration type: "), TYPENAME(TYPEINDEX)));
   if (ORDINAL < 1 || ORDINAL > TYPEINDEX->ENUMINDEX->SIZE) COMPILEERROR(cat_ss(str_make(18, "Invalid value for "), TYPENAME(TYPEINDEX)));
   EXPR = _EXIMMEDIATE(XICENUM);
   EXPR->IMMEDIATEEX.ENUMORDINAL = ORDINAL;
   EXPR->TYPEINDEX = TYPEINDEX;
-  return_EXENUMCONSTANT = EXPR;
-  return return_EXENUMCONSTANT;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXTOSTRING(struct record26 *PARENT) {
-  struct record26 *return_EXTOSTRING;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXTOSTRING(TEXPRESSIONOBJ *PARENT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   PString STR;
   if (ISCHARTYPE(PARENT->TYPEINDEX)) {
     if (PARENT->CLS == XCIMMEDIATE) {
       STR = str_of(PARENT->IMMEDIATEEX.CHARVALUE);
       PARENT->IMMEDIATEEX.CLS = XICSTRING;
       PARENT->IMMEDIATEEX.STRINGVALUE = STR;
-      return_EXTOSTRING = PARENT;
+      RESULT = PARENT;
     }
     else {
       EXPR = _NEWEXPR(XCTOSTRING);
@@ -1842,29 +1842,29 @@ struct record26 *EXTOSTRING(struct record26 *PARENT) {
       EXPR->TYPEINDEX = PRIMITIVETYPES.PTSTRING;
       EXPR->ISASSIGNABLE = 0;
       EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-      return_EXTOSTRING = EXPR;
+      RESULT = EXPR;
     }
   }
-  else if (ISSTRINGTYPE(PARENT->TYPEINDEX)) return_EXTOSTRING = PARENT;
+  else if (ISSTRINGTYPE(PARENT->TYPEINDEX)) RESULT = PARENT;
   else COMPILEERROR(cat_ss(str_make(47, "Cannot convert a value of this type to string: "), TYPENAME(PARENT->TYPEINDEX)));
-  return return_EXTOSTRING;
+  return RESULT;
 }
 
-struct record26 *EXVARIABLE(struct record35 *VARIABLEINDEX) {
-  struct record26 *return_EXVARIABLE;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXVARIABLE(TPSVARIABLE *VARIABLEINDEX) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCVARIABLEACCESS);
   EXPR->VARIABLEEX.VARIABLEINDEX = VARIABLEINDEX;
   EXPR->TYPEINDEX = VARIABLEINDEX->TYPEINDEX;
   EXPR->ISCONSTANT = VARIABLEINDEX->ISCONSTANT;
   EXPR->ISASSIGNABLE = 1;
-  return_EXVARIABLE = EXPR;
-  return return_EXVARIABLE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXFIELDACCESS(struct record26 *PARENT, int FIELDNUMBER) {
-  struct record26 *return_EXFIELDACCESS;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, int FIELDNUMBER) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (!ISRECORDTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(str_make(39, "Cannot access field of non-record type "), TYPENAME(PARENT->TYPEINDEX)));
   if (FIELDNUMBER < 1 || FIELDNUMBER > PARENT->TYPEINDEX->RECORDINDEX->SIZE) COMPILEERROR(cat_ss(str_make(18, "Invalid field for "), TYPENAME(PARENT->TYPEINDEX)));
   EXPR = _NEWEXPR(XCFIELDACCESS);
@@ -1874,13 +1874,13 @@ struct record26 *EXFIELDACCESS(struct record26 *PARENT, int FIELDNUMBER) {
   EXPR->ISCONSTANT = PARENT->ISCONSTANT;
   EXPR->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return_EXFIELDACCESS = EXPR;
-  return return_EXFIELDACCESS;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXARRAYACCESS(struct record26 *PARENT, struct record26 *SUBSCRIPT) {
-  struct record26 *return_EXARRAYACCESS;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXARRAYACCESS(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (!ISARRAYTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(str_make(42, "Cannot access subscript of non-array type "), TYPENAME(PARENT->TYPEINDEX)));
   if (!ISINTEGERTYPE(SUBSCRIPT->TYPEINDEX)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(30, "Invalid type for subscript of "), TYPENAME(PARENT->TYPEINDEX)), str_make(2, ": ")), TYPENAME(SUBSCRIPT->TYPEINDEX)));
   EXPR = _NEWEXPR(XCARRAYACCESS);
@@ -1890,13 +1890,13 @@ struct record26 *EXARRAYACCESS(struct record26 *PARENT, struct record26 *SUBSCRI
   EXPR->ISCONSTANT = PARENT->ISCONSTANT;
   EXPR->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return_EXARRAYACCESS = EXPR;
-  return return_EXARRAYACCESS;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXPOINTERACCESS(struct record26 *PARENT) {
-  struct record26 *return_EXPOINTERACCESS;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXPOINTERACCESS(TEXPRESSIONOBJ *PARENT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (!ISPOINTERTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(str_make(36, "Cannot dereference non-pointer type "), TYPENAME(PARENT->TYPEINDEX)));
   EXPR = _NEWEXPR(XCPOINTERACCESS);
   EXPR->POINTEREX.PARENT = PARENT;
@@ -1904,13 +1904,13 @@ struct record26 *EXPOINTERACCESS(struct record26 *PARENT) {
   EXPR->ISCONSTANT = 0;
   EXPR->ISASSIGNABLE = 1;
   EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return_EXPOINTERACCESS = EXPR;
-  return return_EXPOINTERACCESS;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXSTRINGCHAR(struct record26 *PARENT, struct record26 *SUBSCRIPT) {
-  struct record26 *return_EXSTRINGCHAR;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXSTRINGCHAR(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (!ISSTRINGYTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(str_make(43, "Cannot access subscript of non-string type "), TYPENAME(PARENT->TYPEINDEX)));
   if (!ISINTEGERTYPE(SUBSCRIPT->TYPEINDEX)) COMPILEERROR(cat_ss(str_make(38, "Invalid type for subscript of string: "), TYPENAME(SUBSCRIPT->TYPEINDEX)));
   EXPR = _NEWEXPR(XCSTRINGCHAR);
@@ -1920,24 +1920,24 @@ struct record26 *EXSTRINGCHAR(struct record26 *PARENT, struct record26 *SUBSCRIP
   EXPR->ISCONSTANT = PARENT->ISCONSTANT;
   EXPR->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return_EXSTRINGCHAR = EXPR;
-  return return_EXSTRINGCHAR;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXFUNCTIONREF(struct record36 *FUNCTIONINDEX) {
-  struct record26 *return_EXFUNCTIONREF;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXFUNCTIONREF(TPSFUNCTION *FUNCTIONINDEX) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCFUNCTIONREF);
   EXPR->FUNCTIONEX.FUNCTIONINDEX = FUNCTIONINDEX;
   EXPR->TYPEINDEX = (void*)0;
   EXPR->ISCONSTANT = 1;
-  return_EXFUNCTIONREF = EXPR;
-  return return_EXFUNCTIONREF;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXFUNCTIONCALL(struct record26 *FUNCTIONREF, TEXFUNCTIONARGS *ARGS) {
-  struct record26 *return_EXFUNCTIONCALL;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FUNCTIONREF, TEXFUNCTIONARGS *ARGS) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   int POS;
   if (FUNCTIONREF->CLS != XCFUNCTIONREF) COMPILEERROR(str_make(24, "Cannot call non-function"));
   {
@@ -1968,21 +1968,21 @@ struct record26 *EXFUNCTIONCALL(struct record26 *FUNCTIONREF, TEXFUNCTIONARGS *A
   EXPR->ISCONSTANT = 0;
   EXPR->ISASSIGNABLE = 0;
   EXPR->ISFUNCTIONRESULT = 1;
-  return_EXFUNCTIONCALL = EXPR;
-  return return_EXFUNCTIONCALL;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXSPECIALFUNCTION(TPSSPECIALFUNCTION SPECIALFN) {
-  struct record26 *return_EXSPECIALFUNCTION;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *EXSPECIALFUNCTION(TPSSPECIALFUNCTION SPECIALFN) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCSPECIALFUNCTIONREF);
   EXPR->SPECIALFUNCTIONEX.SPECIALFUNCTION = SPECIALFN;
-  return_EXSPECIALFUNCTION = EXPR;
-  return return_EXSPECIALFUNCTION;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXSPECIALFUNCTIONCALL(struct record26 *EXPR) {
-  struct record26 *return_EXSPECIALFUNCTIONCALL;
+TEXPRESSIONOBJ *EXSPECIALFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *RESULT;
   TPSSPECIALFUNCTION FN;
   if (EXPR->CLS != XCSPECIALFUNCTIONREF) COMPILEERROR(str_make(27, "Expected a special function"));
   FN = EXPR->SPECIALFUNCTIONEX.SPECIALFUNCTION;
@@ -1993,15 +1993,15 @@ struct record26 *EXSPECIALFUNCTIONCALL(struct record26 *EXPR) {
   EXPR->SPECIALFUNCTIONCALLEX.PTR = (void*)0;
   EXPR->SPECIALFUNCTIONCALLEX.READARGS = (void*)0;
   EXPR->SPECIALFUNCTIONCALLEX.WRITEARGS = (void*)0;
-  return_EXSPECIALFUNCTIONCALL = EXPR;
-  return return_EXSPECIALFUNCTIONCALL;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *_EXUNOPIMM(struct record26 *PARENT, TLXTOKENID OP);
-struct record26 *_EXUNOPCMP(struct record26 *PARENT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXUNOPIMM(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXUNOPCMP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP);
 
-struct record26 *EXUNARYOP(struct record26 *PARENT, TLXTOKENID OP) {
-  struct record26 *return_EXUNARYOP;
+TEXPRESSIONOBJ *EXUNARYOP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   if (OP == TKMINUS || OP == TKPLUS) {
     if (!ISINTEGERTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(17, "Invalid type for "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(PARENT->TYPEINDEX)));
   }
@@ -2009,25 +2009,25 @@ struct record26 *EXUNARYOP(struct record26 *PARENT, TLXTOKENID OP) {
     if (!ISBOOLEANTYPE(PARENT->TYPEINDEX) && !ISINTEGERTYPE(PARENT->TYPEINDEX)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(17, "Invalid type for "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(PARENT->TYPEINDEX)));
   }
   else COMPILEERROR(cat_ss(str_make(24, "Invalid unary operator: "), LXTOKENNAME(OP)));
-  if (PARENT->CLS == XCIMMEDIATE) return_EXUNARYOP = _EXUNOPIMM(PARENT, OP);
-  else return_EXUNARYOP = _EXUNOPCMP(PARENT, OP);
-  return return_EXUNARYOP;
+  if (PARENT->CLS == XCIMMEDIATE) RESULT = _EXUNOPIMM(PARENT, OP);
+  else RESULT = _EXUNOPCMP(PARENT, OP);
+  return RESULT;
 }
 
-struct record26 *_EXUNOPIMM(struct record26 *PARENT, TLXTOKENID OP) {
-  struct record26 *return__EXUNOPIMM;
+TEXPRESSIONOBJ *_EXUNOPIMM(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   if (OP == TKMINUS && PARENT->IMMEDIATEEX.CLS == XICINTEGER) PARENT->IMMEDIATEEX.INTEGERVALUE = -PARENT->IMMEDIATEEX.INTEGERVALUE;
   else if (OP == TKPLUS && PARENT->IMMEDIATEEX.CLS == XICINTEGER) ;
   else if (OP == TKNOT && PARENT->IMMEDIATEEX.CLS == XICBOOLEAN) PARENT->IMMEDIATEEX.BOOLEANVALUE = !PARENT->IMMEDIATEEX.BOOLEANVALUE;
   else if (OP == TKNOT && PARENT->IMMEDIATEEX.CLS == XICINTEGER) PARENT->IMMEDIATEEX.INTEGERVALUE = ~PARENT->IMMEDIATEEX.INTEGERVALUE;
   else COMPILEERROR(str_make(49, "Internal error: invalid immediate unary operation"));
-  return__EXUNOPIMM = PARENT;
-  return return__EXUNOPIMM;
+  RESULT = PARENT;
+  return RESULT;
 }
 
-struct record26 *_EXUNOPCMP(struct record26 *PARENT, TLXTOKENID OP) {
-  struct record26 *return__EXUNOPCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXUNOPCMP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCUNARYOP);
   EXPR->UNARYEX.PARENT = PARENT;
   EXPR->UNARYEX.OP = OP;
@@ -2035,47 +2035,47 @@ struct record26 *_EXUNOPCMP(struct record26 *PARENT, TLXTOKENID OP) {
   EXPR->ISCONSTANT = 1;
   EXPR->ISASSIGNABLE = 0;
   EXPR->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return__EXUNOPCMP = EXPR;
-  return return__EXUNOPCMP;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPBOOLIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPINTIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPSTRIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPENUMIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPBOOLCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPINTCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPSTRCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPENUMCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
-struct record26 *_EXBINOPPTRCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPBOOLIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPINTIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPSTRIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPENUMIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPSTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPENUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPPTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 
-struct record26 *EXBINARYOP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return_EXBINARYOP;
+TEXPRESSIONOBJ *EXBINARYOP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   int IMMEDIATE;
   IMMEDIATE = LEFT->CLS == XCIMMEDIATE && RIGHT->CLS == XCIMMEDIATE;
   if (ISBOOLEANTYPE(LEFT->TYPEINDEX) && ISBOOLEANTYPE(RIGHT->TYPEINDEX)) {
-    if (IMMEDIATE) return_EXBINARYOP = _EXBINOPBOOLIMM(LEFT, RIGHT, OP);
-    else return_EXBINARYOP = _EXBINOPBOOLCMP(LEFT, RIGHT, OP);
+    if (IMMEDIATE) RESULT = _EXBINOPBOOLIMM(LEFT, RIGHT, OP);
+    else RESULT = _EXBINOPBOOLCMP(LEFT, RIGHT, OP);
   }
   else if (ISINTEGERTYPE(LEFT->TYPEINDEX) && ISINTEGERTYPE(RIGHT->TYPEINDEX)) {
-    if (IMMEDIATE) return_EXBINARYOP = _EXBINOPINTIMM(LEFT, RIGHT, OP);
-    else return_EXBINARYOP = _EXBINOPINTCMP(LEFT, RIGHT, OP);
+    if (IMMEDIATE) RESULT = _EXBINOPINTIMM(LEFT, RIGHT, OP);
+    else RESULT = _EXBINOPINTCMP(LEFT, RIGHT, OP);
   }
   else if (ISSTRINGYTYPE(LEFT->TYPEINDEX) && ISSTRINGYTYPE(RIGHT->TYPEINDEX)) {
-    if (IMMEDIATE) return_EXBINARYOP = _EXBINOPSTRIMM(LEFT, RIGHT, OP);
-    else return_EXBINARYOP = _EXBINOPSTRCMP(LEFT, RIGHT, OP);
+    if (IMMEDIATE) RESULT = _EXBINOPSTRIMM(LEFT, RIGHT, OP);
+    else RESULT = _EXBINOPSTRCMP(LEFT, RIGHT, OP);
   }
   else if (ISENUMTYPE(LEFT->TYPEINDEX) && ISSAMETYPE(LEFT->TYPEINDEX, RIGHT->TYPEINDEX)) {
-    if (IMMEDIATE) return_EXBINARYOP = _EXBINOPENUMIMM(LEFT, RIGHT, OP);
-    else return_EXBINARYOP = _EXBINOPENUMCMP(LEFT, RIGHT, OP);
+    if (IMMEDIATE) RESULT = _EXBINOPENUMIMM(LEFT, RIGHT, OP);
+    else RESULT = _EXBINOPENUMCMP(LEFT, RIGHT, OP);
   }
-  else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEINDEX, RIGHT->TYPEINDEX)) return_EXBINARYOP = _EXBINOPPTRCMP(LEFT, RIGHT, OP);
+  else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEINDEX, RIGHT->TYPEINDEX)) RESULT = _EXBINOPPTRCMP(LEFT, RIGHT, OP);
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(27, "Type mismatch for operator "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(LEFT->TYPEINDEX)), str_make(5, " and ")), TYPENAME(RIGHT->TYPEINDEX)));
-  return return_EXBINARYOP;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPBOOLIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPBOOLIMM;
+TEXPRESSIONOBJ *_EXBINOPBOOLIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   int LT;
   int RT;
   LT = LEFT->IMMEDIATEEX.BOOLEANVALUE;
@@ -2112,12 +2112,12 @@ struct record26 *_EXBINOPBOOLIMM(struct record26 *LEFT, struct record26 *RIGHT, 
   }
   LEFT->IMMEDIATEEX.BOOLEANVALUE = LT;
   LEFT->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
-  return__EXBINOPBOOLIMM = LEFT;
-  return return__EXBINOPBOOLIMM;
+  RESULT = LEFT;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPINTIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPINTIMM;
+TEXPRESSIONOBJ *_EXBINOPINTIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   int LT;
   int RT;
   int BO;
@@ -2183,12 +2183,12 @@ struct record26 *_EXBINOPINTIMM(struct record26 *LEFT, struct record26 *RIGHT, T
     LEFT->IMMEDIATEEX.BOOLEANVALUE = BO;
     LEFT->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   }
-  return__EXBINOPINTIMM = LEFT;
-  return return__EXBINOPINTIMM;
+  RESULT = LEFT;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPSTRIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPSTRIMM;
+TEXPRESSIONOBJ *_EXBINOPSTRIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   PString LT;
   PString RT;
   int BO;
@@ -2235,12 +2235,12 @@ struct record26 *_EXBINOPSTRIMM(struct record26 *LEFT, struct record26 *RIGHT, T
     LEFT->IMMEDIATEEX.BOOLEANVALUE = BO;
     LEFT->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   }
-  return__EXBINOPSTRIMM = LEFT;
-  return return__EXBINOPSTRIMM;
+  RESULT = LEFT;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPENUMIMM(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPENUMIMM;
+TEXPRESSIONOBJ *_EXBINOPENUMIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
   int LT;
   int RT;
   int BO;
@@ -2273,13 +2273,13 @@ struct record26 *_EXBINOPENUMIMM(struct record26 *LEFT, struct record26 *RIGHT, 
   LEFT->IMMEDIATEEX.CLS = XICBOOLEAN;
   LEFT->IMMEDIATEEX.BOOLEANVALUE = BO;
   LEFT->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
-  return__EXBINOPENUMIMM = LEFT;
-  return return__EXBINOPENUMIMM;
+  RESULT = LEFT;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPBOOLCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPBOOLCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   if (OP == TKAND || OP == TKOR || OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) {
     EXPR = _NEWEXPR(XCBINARYOP);
     EXPR->BINARYEX.LEFT = LEFT;
@@ -2288,15 +2288,15 @@ struct record26 *_EXBINOPBOOLCMP(struct record26 *LEFT, struct record26 *RIGHT, 
     EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
     EXPR->ISCONSTANT = 1;
     EXPR->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-    return__EXBINOPBOOLCMP = EXPR;
+    RESULT = EXPR;
   }
   else COMPILEERROR(cat_ss(str_make(26, "Invalid boolean operator: "), LXTOKENNAME(OP)));
-  return return__EXBINOPBOOLCMP;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPINTCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPINTCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCBINARYOP);
   EXPR->BINARYEX.LEFT = LEFT;
   EXPR->BINARYEX.RIGHT = RIGHT;
@@ -2306,13 +2306,13 @@ struct record26 *_EXBINOPINTCMP(struct record26 *LEFT, struct record26 *RIGHT, T
   if (OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKDIV || OP == TKMOD || OP == TKAND || OP == TKOR) EXPR->TYPEINDEX = PRIMITIVETYPES.PTINTEGER;
   else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(26, "Invalid integer operator: "), LXTOKENNAME(OP)));
-  return__EXBINOPINTCMP = EXPR;
-  return return__EXBINOPINTCMP;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPSTRCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPSTRCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXBINOPSTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCBINARYOP);
   EXPR->BINARYEX.LEFT = LEFT;
   EXPR->BINARYEX.RIGHT = RIGHT;
@@ -2322,13 +2322,13 @@ struct record26 *_EXBINOPSTRCMP(struct record26 *LEFT, struct record26 *RIGHT, T
   if (OP == TKPLUS) EXPR->TYPEINDEX = PRIMITIVETYPES.PTSTRING;
   else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(25, "Invalid string operator: "), LXTOKENNAME(OP)));
-  return__EXBINOPSTRCMP = EXPR;
-  return return__EXBINOPSTRCMP;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPENUMCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPENUMCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXBINOPENUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCBINARYOP);
   EXPR->BINARYEX.LEFT = LEFT;
   EXPR->BINARYEX.RIGHT = RIGHT;
@@ -2337,13 +2337,13 @@ struct record26 *_EXBINOPENUMCMP(struct record26 *LEFT, struct record26 *RIGHT, 
   EXPR->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
   if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(23, "Invalid enum operator: "), LXTOKENNAME(OP)));
-  return__EXBINOPENUMCMP = EXPR;
-  return return__EXBINOPENUMCMP;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *_EXBINOPPTRCMP(struct record26 *LEFT, struct record26 *RIGHT, TLXTOKENID OP) {
-  struct record26 *return__EXBINOPPTRCMP;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *_EXBINOPPTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = _NEWEXPR(XCBINARYOP);
   EXPR->BINARYEX.LEFT = LEFT;
   EXPR->BINARYEX.RIGHT = RIGHT;
@@ -2352,17 +2352,17 @@ struct record26 *_EXBINOPPTRCMP(struct record26 *LEFT, struct record26 *RIGHT, T
   EXPR->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
   if (OP == TKEQUALS || OP == TKNOTEQUALS) EXPR->TYPEINDEX = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(25, "Invalid string operator: "), LXTOKENNAME(OP)));
-  return__EXBINOPPTRCMP = EXPR;
-  return return__EXBINOPPTRCMP;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *EXCOERCE(struct record26 *EXPR, struct record29 *TYPEINDEX) {
-  struct record26 *return_EXCOERCE;
-  if (ISCHARTYPE(EXPR->TYPEINDEX) && ISSTRINGTYPE(TYPEINDEX)) return_EXCOERCE = EXTOSTRING(EXPR);
-  else if (ISSAMETYPE(EXPR->TYPEINDEX, TYPEINDEX)) return_EXCOERCE = EXPR;
-  else if (ISNILTYPE(EXPR->TYPEINDEX) && ISPOINTERYTYPE(TYPEINDEX)) return_EXCOERCE = EXPR;
+TEXPRESSIONOBJ *EXCOERCE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEINDEX) {
+  TEXPRESSIONOBJ *RESULT;
+  if (ISCHARTYPE(EXPR->TYPEINDEX) && ISSTRINGTYPE(TYPEINDEX)) RESULT = EXTOSTRING(EXPR);
+  else if (ISSAMETYPE(EXPR->TYPEINDEX, TYPEINDEX)) RESULT = EXPR;
+  else if (ISNILTYPE(EXPR->TYPEINDEX) && ISPOINTERYTYPE(TYPEINDEX)) RESULT = EXPR;
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(24, "Type mismatch: expected "), TYPENAME(TYPEINDEX)), str_make(6, ", got ")), TYPENAME(EXPR->TYPEINDEX)));
-  return return_EXCOERCE;
+  return RESULT;
 }
 
 void READTOKEN();
@@ -2385,43 +2385,43 @@ void WANTTOKENANDREAD(TLXTOKENID ID) {
 }
 
 PString GETTOKENVALUEANDREAD(TLXTOKENID ID) {
-  PString return_GETTOKENVALUEANDREAD;
+  PString RESULT;
   WANTTOKEN(ID);
-  return_GETTOKENVALUEANDREAD = LEXER.TOKEN.VALUE;
+  RESULT = LEXER.TOKEN.VALUE;
   READTOKEN();
-  return return_GETTOKENVALUEANDREAD;
+  return RESULT;
 }
 
 void SKIPTOKEN(TLXTOKENID ID) {
   if (LEXER.TOKEN.ID == ID) READTOKEN();
 }
 
-struct record29 *PSTYPEDENOTER();
+TPSTYPE *PSTYPEDENOTER();
 
-struct record29 *PSTYPEIDENTIFIER() {
-  struct record29 *return_PSTYPEIDENTIFIER;
+TPSTYPE *PSTYPEIDENTIFIER() {
+  TPSTYPE *RESULT;
   WANTTOKEN(TKIDENTIFIER);
-  return_PSTYPEIDENTIFIER = FINDNAMEOFCLASS(LEXER.TOKEN.VALUE, TNCTYPE, 1)->TYPEINDEX;
+  RESULT = FINDNAMEOFCLASS(LEXER.TOKEN.VALUE, TNCTYPE, 1)->TYPEINDEX;
   READTOKEN();
-  return return_PSTYPEIDENTIFIER;
+  return RESULT;
 }
 
 TPSIDENTIFIER PSIDENTIFIER() {
-  TPSIDENTIFIER return_PSIDENTIFIER;
+  TPSIDENTIFIER RESULT;
   TPSIDENTIFIER IDENT;
   IDENT.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-  return_PSIDENTIFIER = IDENT;
-  return return_PSIDENTIFIER;
+  RESULT = IDENT;
+  return RESULT;
 }
 
 typedef enum enum46 { LHS, RHS } EXPRESSIONTYPE;
 
 const char* enumvalues46[] = { "LHS", "RHS" };
 
-struct record26 *PSEXPRESSION();
+TEXPRESSIONOBJ *PSEXPRESSION();
 
-struct record29 *PSENUMERATEDTYPE() {
-  struct record29 *return_PSENUMERATEDTYPE;
+TPSTYPE *PSENUMERATEDTYPE() {
+  TPSTYPE *RESULT;
   TPSTYPE TYP;
   TPSENUMDEF ENUM;
   WANTTOKENANDREAD(TKLPAREN);
@@ -2437,16 +2437,16 @@ struct record29 *PSENUMERATEDTYPE() {
   TYP = EMPTYTYPE();
   TYP.CLS = TTCENUM;
   TYP.ENUMINDEX = ADDENUM(ENUM);
-  return_PSENUMERATEDTYPE = ADDTYPE(TYP);
+  RESULT = ADDTYPE(TYP);
   SKIPTOKEN(TKRPAREN);
-  return return_PSENUMERATEDTYPE;
+  return RESULT;
 }
 
 void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
   PString NAME;
   int LASTFIELD;
   int FIELD;
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
   LASTFIELD = (*REC).SIZE;
   do {
     NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
@@ -2490,8 +2490,8 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
 
 void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
   TPSIDENTIFIER TAG;
-  struct record29 *TAGTYPE;
-  struct record26 *CASELABEL;
+  TPSTYPE *TAGTYPE;
+  TEXPRESSIONOBJ *CASELABEL;
   WANTTOKENANDREAD(TKCASE);
   TAG = PSIDENTIFIER();
   WANTTOKEN2(TKCOLON, TKOF);
@@ -2524,8 +2524,8 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
   } while (!(LEXER.TOKEN.ID == TKEND));
 }
 
-struct record29 *PSRECORDTYPE() {
-  struct record29 *return_PSRECORDTYPE;
+TPSTYPE *PSRECORDTYPE() {
+  TPSTYPE *RESULT;
   TPSTYPE TYP;
   TPSRECORDDEF REC;
   WANTTOKENANDREAD(TKRECORD);
@@ -2537,21 +2537,21 @@ struct record29 *PSRECORDTYPE() {
   WANTTOKENANDREAD(TKEND);
   TYP = TYPEOFCLASS(TTCRECORD);
   TYP.RECORDINDEX = ADDRECORD(REC);
-  return_PSRECORDTYPE = ADDTYPE(TYP);
-  return return_PSRECORDTYPE;
+  RESULT = ADDTYPE(TYP);
+  return RESULT;
 }
 
-struct record26 *PSIMMEDIATE() {
-  struct record26 *return_PSIMMEDIATE;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *PSIMMEDIATE() {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = PSEXPRESSION();
   if (EXPR->CLS != XCIMMEDIATE) COMPILEERROR(str_make(27, "Expected an immediate value"));
-  return_PSIMMEDIATE = EXPR;
-  return return_PSIMMEDIATE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record29 *PSARRAYTYPE() {
-  struct record29 *return_PSARRAYTYPE;
+TPSTYPE *PSARRAYTYPE() {
+  TPSTYPE *RESULT;
   TPSTYPE TYP;
   TPSARRAYDEF ARR;
   WANTTOKENANDREAD(TKARRAY);
@@ -2564,27 +2564,27 @@ struct record29 *PSARRAYTYPE() {
   ARR.TYPEINDEX = PSTYPEDENOTER();
   TYP = TYPEOFCLASS(TTCARRAY);
   TYP.ARRAYINDEX = ADDARRAY(ARR);
-  return_PSARRAYTYPE = ADDTYPE(TYP);
-  return return_PSARRAYTYPE;
+  RESULT = ADDTYPE(TYP);
+  return RESULT;
 }
 
-struct record29 *PSPOINTERTYPE() {
-  struct record29 *return_PSPOINTERTYPE;
+TPSTYPE *PSPOINTERTYPE() {
+  TPSTYPE *RESULT;
   TPSTYPE TYP;
-  struct record39 *NAMEINDEX;
+  TPSNAME *NAMEINDEX;
   WANTTOKENANDREAD(TKCARET);
   WANTTOKEN(TKIDENTIFIER);
   NAMEINDEX = FINDNAMEOFCLASS(LEXER.TOKEN.VALUE, TNCTYPE, 0);
   if (NAMEINDEX == (void*)0) TYP = POINTERUNKNOWNTYPE(LEXER.TOKEN.VALUE);
   else TYP = POINTERTYPE(NAMEINDEX->TYPEINDEX);
   READTOKEN();
-  return_PSPOINTERTYPE = ADDTYPE(TYP);
-  return return_PSPOINTERTYPE;
+  RESULT = ADDTYPE(TYP);
+  return RESULT;
 }
 
-struct record29 *PSTYPEDENOTER() {
-  struct record29 *return_PSTYPEDENOTER;
-  struct record29 *TYPEINDEX;
+TPSTYPE *PSTYPEDENOTER() {
+  TPSTYPE *RESULT;
+  TPSTYPE *TYPEINDEX;
   TYPEINDEX = (void*)0;
   if (LEXER.TOKEN.ID == TKIDENTIFIER) TYPEINDEX = PSTYPEIDENTIFIER();
   else if (LEXER.TOKEN.ID == TKLPAREN) TYPEINDEX = PSENUMERATEDTYPE();
@@ -2592,12 +2592,12 @@ struct record29 *PSTYPEDENOTER() {
   else if (LEXER.TOKEN.ID == TKARRAY) TYPEINDEX = PSARRAYTYPE();
   else if (LEXER.TOKEN.ID == TKCARET) TYPEINDEX = PSPOINTERTYPE();
   else COMPILEERROR(cat_ss(str_make(30, "Wanted type definition, found "), LXTOKENSTR()));
-  return_PSTYPEDENOTER = TYPEINDEX;
-  return return_PSTYPEDENOTER;
+  RESULT = TYPEINDEX;
+  return RESULT;
 }
 
-void _RESOLVEPOINTERUNKNOWN(struct record29 *TYPEINDEX) {
-  struct record29 *TARGETINDEX;
+void _RESOLVEPOINTERUNKNOWN(TPSTYPE *TYPEINDEX) {
+  TPSTYPE *TARGETINDEX;
   if (TYPEINDEX->CLS == TTCPOINTERUNKNOWN) {
     TARGETINDEX = FINDNAMEOFCLASS(*TYPEINDEX->TARGETNAME, TNCTYPE, 1)->TYPEINDEX;
     free(TYPEINDEX->TARGETNAME);
@@ -2608,9 +2608,9 @@ void _RESOLVEPOINTERUNKNOWN(struct record29 *TYPEINDEX) {
 
 void PSTYPEDEFINITIONS() {
   PString NAME;
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
   TPSTYPE NEWTYPE;
-  struct record41 *CHECKPOINT;
+  TPSDEFENTRY *CHECKPOINT;
   CHECKPOINT = DEFS.LATEST;
   WANTTOKENANDREAD(TKTYPE);
   do {
@@ -2637,8 +2637,8 @@ void PSCONSTANT(PString NAME) {
   READTOKEN();
 }
 
-void PSCONSTANTVALUE(struct record29 *TYPEINDEX) {
-  struct record26 *EXPR;
+void PSCONSTANTVALUE(TPSTYPE *TYPEINDEX) {
+  TEXPRESSIONOBJ *EXPR;
   if (ISARRAYTYPE(TYPEINDEX)) {
     WANTTOKENANDREAD(TKLPAREN);
     TYPEINDEX = TYPEINDEX->ARRAYINDEX->TYPEINDEX;
@@ -2660,7 +2660,7 @@ void PSCONSTANTVALUE(struct record29 *TYPEINDEX) {
 }
 
 void PSTYPEDCONSTANT(PString NAME) {
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
   WANTTOKENANDREAD(TKCOLON);
   TYPEINDEX = PSTYPEDENOTER();
   WANTTOKENANDREAD(TKEQUALS);
@@ -2684,8 +2684,8 @@ void PSCONSTDEFINITIONS() {
 void PSVARDEFINITIONS() {
   int NUMNAMES;
   PString NAMES[8];
-  struct record29 *TYPEINDEX;
-  struct record41 *CHECKPOINT;
+  TPSTYPE *TYPEINDEX;
+  TPSDEFENTRY *CHECKPOINT;
   CHECKPOINT = DEFS.LATEST;
   WANTTOKENANDREAD(TKVAR);
   do {
@@ -2719,9 +2719,9 @@ void PSVARDEFINITIONS() {
 void PSSTATEMENT();
 void PSDEFINITIONS();
 
-void PSFUNCTIONBODY(struct record36 *FNINDEX) {
+void PSFUNCTIONBODY(TPSFUNCTION *FNINDEX) {
   int POS;
-  struct record41 *CHECKPOINT;
+  TPSDEFENTRY *CHECKPOINT;
   TPSVARIABLE RETURNVAR;
   STARTLOCALSCOPE(FNINDEX);
   CHECKPOINT = DEFS.LATEST;
@@ -2757,7 +2757,7 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
   int ISREFERENCE;
   int LASTARG;
   int ARG;
-  struct record29 *TYPEINDEX;
+  TPSTYPE *TYPEINDEX;
   WANTTOKENANDREAD(TKLPAREN);
   (*DEF).ARGCOUNT = 0;
   do {
@@ -2810,10 +2810,10 @@ void PSPROCEDUREDEFINITION() {
   else PSFUNCTIONBODY(ADDFUNCTION(DEF));
 }
 
-struct record29 *PSRESULTTYPE() {
-  struct record29 *return_PSRESULTTYPE;
-  return_PSRESULTTYPE = PSTYPEIDENTIFIER();
-  return return_PSRESULTTYPE;
+TPSTYPE *PSRESULTTYPE() {
+  TPSTYPE *RESULT;
+  RESULT = PSTYPEIDENTIFIER();
+  return RESULT;
 }
 
 void PSFUNCTIONDEFINITION() {
@@ -2866,19 +2866,19 @@ void PSPROGRAMHEADING() {
   WANTTOKENANDREAD(TKSEMICOLON);
 }
 
-struct record26 *PSPOINTERDEREF(struct record26 *PTR) {
-  struct record26 *return_PSPOINTERDEREF;
+TEXPRESSIONOBJ *PSPOINTERDEREF(TEXPRESSIONOBJ *PTR) {
+  TEXPRESSIONOBJ *RESULT;
   WANTTOKENANDREAD(TKCARET);
-  return_PSPOINTERDEREF = EXPOINTERACCESS(PTR);
-  return return_PSPOINTERDEREF;
+  RESULT = EXPOINTERACCESS(PTR);
+  return RESULT;
 }
 
-struct record26 *PSREAD(struct record26 *FNEXPR) {
-  struct record26 *return_PSREAD;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *PSREAD(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   int FIRST;
-  struct record26 *OUTVAR;
-  struct record20 *READARG;
+  TEXPRESSIONOBJ *OUTVAR;
+  TEXREADARGS *READARG;
   EXPR = EXSPECIALFUNCTIONCALL(FNEXPR);
   EXPR->SPECIALFUNCTIONCALLEX.SRC = EXVARIABLE(FINDNAMEOFCLASS(str_make(5, "INPUT"), TNCVARIABLE, 1)->VARIABLEINDEX);
   READARG = (void*)0;
@@ -2894,11 +2894,11 @@ struct record26 *PSREAD(struct record26 *FNEXPR) {
       else {
         if (!OUTVAR->ISASSIGNABLE || !ISSTRINGYTYPE(OUTVAR->TYPEINDEX)) COMPILEERROR(str_make(36, "Invalid expression for read argument"));
         if (READARG == (void*)0) {
-          EXPR->SPECIALFUNCTIONCALLEX.READARGS = malloc(sizeof(struct record20));
+          EXPR->SPECIALFUNCTIONCALLEX.READARGS = malloc(sizeof(TEXREADARGS));
           READARG = EXPR->SPECIALFUNCTIONCALLEX.READARGS;
         }
         else {
-          READARG->NEXT = malloc(sizeof(struct record20));
+          READARG->NEXT = malloc(sizeof(TEXREADARGS));
           READARG = READARG->NEXT;
         }
         READARG->NEXT = (void*)0;
@@ -2910,16 +2910,16 @@ struct record26 *PSREAD(struct record26 *FNEXPR) {
     }
     WANTTOKENANDREAD(TKRPAREN);
   }
-  return_PSREAD = EXPR;
-  return return_PSREAD;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSWRITE(struct record26 *FNEXPR) {
-  struct record26 *return_PSWRITE;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *PSWRITE(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   int FIRST;
-  struct record26 *OUTEXPR;
-  struct record21 *WRITEARG;
+  TEXPRESSIONOBJ *OUTEXPR;
+  TEXWRITEARGS *WRITEARG;
   EXPR = EXSPECIALFUNCTIONCALL(FNEXPR);
   EXPR->SPECIALFUNCTIONCALLEX.DST = EXVARIABLE(FINDNAMEOFCLASS(str_make(6, "OUTPUT"), TNCVARIABLE, 1)->VARIABLEINDEX);
   WRITEARG = (void*)0;
@@ -2934,11 +2934,11 @@ struct record26 *PSWRITE(struct record26 *FNEXPR) {
       }
       else {
         if (WRITEARG == (void*)0) {
-          EXPR->SPECIALFUNCTIONCALLEX.WRITEARGS = malloc(sizeof(struct record21));
+          EXPR->SPECIALFUNCTIONCALLEX.WRITEARGS = malloc(sizeof(TEXWRITEARGS));
           WRITEARG = EXPR->SPECIALFUNCTIONCALLEX.WRITEARGS;
         }
         else {
-          WRITEARG->NEXT = malloc(sizeof(struct record21));
+          WRITEARG->NEXT = malloc(sizeof(TEXWRITEARGS));
           WRITEARG = WRITEARG->NEXT;
         }
         WRITEARG->NEXT = (void*)0;
@@ -2950,15 +2950,15 @@ struct record26 *PSWRITE(struct record26 *FNEXPR) {
     }
     WANTTOKENANDREAD(TKRPAREN);
   }
-  return_PSWRITE = EXPR;
-  return return_PSWRITE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSSTR(struct record26 *FNEXPR) {
-  struct record26 *return_PSSTR;
-  struct record26 *EXPR;
-  struct record26 *SRC;
-  struct record26 *DEST;
+TEXPRESSIONOBJ *PSSTR(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
+  TEXPRESSIONOBJ *SRC;
+  TEXPRESSIONOBJ *DEST;
   WANTTOKENANDREAD(TKLPAREN);
   SRC = PSEXPRESSION();
   WANTTOKENANDREAD(TKCOMMA);
@@ -2968,40 +2968,40 @@ struct record26 *PSSTR(struct record26 *FNEXPR) {
   EXPR = EXSPECIALFUNCTIONCALL(FNEXPR);
   EXPR->SPECIALFUNCTIONCALLEX.SRC = SRC;
   EXPR->SPECIALFUNCTIONCALLEX.DST = DEST;
-  return_PSSTR = EXPR;
-  return return_PSSTR;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSNEW(struct record26 *FNEXPR) {
-  struct record26 *return_PSNEW;
-  struct record26 *EXPR;
-  struct record26 *PTR;
+TEXPRESSIONOBJ *PSNEW(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
+  TEXPRESSIONOBJ *PTR;
   WANTTOKENANDREAD(TKLPAREN);
   PTR = PSEXPRESSION();
   WANTTOKENANDREAD(TKRPAREN);
   if (!PTR->ISASSIGNABLE || !ISPOINTERTYPE(PTR->TYPEINDEX)) COMPILEERROR(str_make(25, "Argument is not a pointer"));
   EXPR = EXSPECIALFUNCTIONCALL(FNEXPR);
   EXPR->SPECIALFUNCTIONCALLEX.PTR = PTR;
-  return_PSNEW = EXPR;
-  return return_PSNEW;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSDISPOSE(struct record26 *FNEXPR) {
-  struct record26 *return_PSDISPOSE;
-  struct record26 *EXPR;
-  struct record26 *PTR;
+TEXPRESSIONOBJ *PSDISPOSE(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
+  TEXPRESSIONOBJ *PTR;
   WANTTOKENANDREAD(TKLPAREN);
   PTR = PSEXPRESSION();
   WANTTOKENANDREAD(TKRPAREN);
   if (!PTR->ISASSIGNABLE || !ISPOINTERTYPE(PTR->TYPEINDEX)) COMPILEERROR(str_make(25, "Argument is not a pointer"));
   EXPR = EXSPECIALFUNCTIONCALL(FNEXPR);
   EXPR->SPECIALFUNCTIONCALLEX.PTR = PTR;
-  return_PSDISPOSE = EXPR;
-  return return_PSDISPOSE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSFUNCTIONCALL(struct record26 *FN) {
-  struct record26 *return_PSFUNCTIONCALL;
+TEXPRESSIONOBJ *PSFUNCTIONCALL(TEXPRESSIONOBJ *FN) {
+  TEXPRESSIONOBJ *RESULT;
   TEXFUNCTIONARGS ARGS;
   if (FN->CLS == XCFUNCTIONREF) {
     ARGS.SIZE = 0;
@@ -3015,64 +3015,64 @@ struct record26 *PSFUNCTIONCALL(struct record26 *FN) {
       }
       WANTTOKENANDREAD(TKRPAREN);
     }
-    return_PSFUNCTIONCALL = EXFUNCTIONCALL(FN, &ARGS);
+    RESULT = EXFUNCTIONCALL(FN, &ARGS);
   }
   else if (FN->CLS == XCSPECIALFUNCTIONREF) {
     switch (FN->SPECIALFUNCTIONEX.SPECIALFUNCTION) {
       case TSFREAD:
-        return_PSFUNCTIONCALL = PSREAD(FN);
+        RESULT = PSREAD(FN);
         break;
       case TSFREADLN:
-        return_PSFUNCTIONCALL = PSREAD(FN);
+        RESULT = PSREAD(FN);
         break;
       case TSFWRITE:
-        return_PSFUNCTIONCALL = PSWRITE(FN);
+        RESULT = PSWRITE(FN);
         break;
       case TSFWRITELN:
-        return_PSFUNCTIONCALL = PSWRITE(FN);
+        RESULT = PSWRITE(FN);
         break;
       case TSFSTR:
-        return_PSFUNCTIONCALL = PSSTR(FN);
+        RESULT = PSSTR(FN);
         break;
       case TSFNEW:
-        return_PSFUNCTIONCALL = PSNEW(FN);
+        RESULT = PSNEW(FN);
         break;
       case TSFDISPOSE:
-        return_PSFUNCTIONCALL = PSDISPOSE(FN);
+        RESULT = PSDISPOSE(FN);
         break;
       default:
         break;
     }
   }
-  return return_PSFUNCTIONCALL;
+  return RESULT;
 }
 
-struct record26 *PSARRAYACCESS(struct record26 *ARR) {
-  struct record26 *return_PSARRAYACCESS;
-  struct record26 *IDX;
+TEXPRESSIONOBJ *PSARRAYACCESS(TEXPRESSIONOBJ *ARR) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *IDX;
   WANTTOKENANDREAD(TKLBRACKET);
   IDX = PSEXPRESSION();
   WANTTOKENANDREAD(TKRBRACKET);
-  if (ISSTRINGYTYPE(ARR->TYPEINDEX)) return_PSARRAYACCESS = EXSTRINGCHAR(ARR, IDX);
-  else return_PSARRAYACCESS = EXARRAYACCESS(ARR, IDX);
-  return return_PSARRAYACCESS;
+  if (ISSTRINGYTYPE(ARR->TYPEINDEX)) RESULT = EXSTRINGCHAR(ARR, IDX);
+  else RESULT = EXARRAYACCESS(ARR, IDX);
+  return RESULT;
 }
 
-struct record26 *PSFIELDACCESS(struct record26 *REC) {
-  struct record26 *return_PSFIELDACCESS;
+TEXPRESSIONOBJ *PSFIELDACCESS(TEXPRESSIONOBJ *REC) {
+  TEXPRESSIONOBJ *RESULT;
   TPSIDENTIFIER FLD;
   WANTTOKENANDREAD(TKDOT);
   FLD = PSIDENTIFIER();
-  return_PSFIELDACCESS = EXFIELDACCESS(REC, FINDFIELD(REC->TYPEINDEX, FLD.NAME, 1));
-  return return_PSFIELDACCESS;
+  RESULT = EXFIELDACCESS(REC, FINDFIELD(REC->TYPEINDEX, FLD.NAME, 1));
+  return RESULT;
 }
 
-struct record26 *PSVARIABLE() {
-  struct record26 *return_PSVARIABLE;
+TEXPRESSIONOBJ *PSVARIABLE() {
+  TEXPRESSIONOBJ *RESULT;
   TPSIDENTIFIER ID;
-  struct record37 *WITHVARINDEX;
+  TPSWITHVAR *WITHVARINDEX;
   TPSNAME FOUND;
-  struct record26 *EXPR;
+  TEXPRESSIONOBJ *EXPR;
   int DONE;
   ID = PSIDENTIFIER();
   WITHVARINDEX = FINDWITHVAR(ID.NAME);
@@ -3088,12 +3088,12 @@ struct record26 *PSVARIABLE() {
     else if (FOUND.CLS == TNCSPECIALFUNCTION) EXPR = EXSPECIALFUNCTION(FOUND.SPECIALFUNCTION);
     else COMPILEERROR(cat_ss(str_make(20, "Invalid identifier: "), ID.NAME));
   }
-  return_PSVARIABLE = EXPR;
-  return return_PSVARIABLE;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSVARIABLEORFUNCTIONEXTENSION(struct record26 *EXPR) {
-  struct record26 *return_PSVARIABLEORFUNCTIONEXTENSION;
+TEXPRESSIONOBJ *PSVARIABLEORFUNCTIONEXTENSION(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *RESULT;
   int DONE;
   DONE = 0;
   do {
@@ -3104,30 +3104,30 @@ struct record26 *PSVARIABLEORFUNCTIONEXTENSION(struct record26 *EXPR) {
     else if (LEXER.TOKEN.ID == TKCARET) EXPR = PSPOINTERDEREF(EXPR);
     else DONE = 1;
   } while (!DONE);
-  return_PSVARIABLEORFUNCTIONEXTENSION = EXPR;
-  return return_PSVARIABLEORFUNCTIONEXTENSION;
+  RESULT = EXPR;
+  return RESULT;
 }
 
 int ISOPADDING(TLXTOKEN TOK) {
-  int return_ISOPADDING;
-  return_ISOPADDING = TOK.ID == TKPLUS || TOK.ID == TKMINUS || TOK.ID == TKOR;
-  return return_ISOPADDING;
+  int RESULT;
+  RESULT = TOK.ID == TKPLUS || TOK.ID == TKMINUS || TOK.ID == TKOR;
+  return RESULT;
 }
 
 int ISOPMULTIPLYING(TLXTOKEN TOK) {
-  int return_ISOPMULTIPLYING;
-  return_ISOPMULTIPLYING = TOK.ID == TKASTERISK || TOK.ID == TKSLASH || TOK.ID == TKDIV || TOK.ID == TKMOD || TOK.ID == TKAND;
-  return return_ISOPMULTIPLYING;
+  int RESULT;
+  RESULT = TOK.ID == TKASTERISK || TOK.ID == TKSLASH || TOK.ID == TKDIV || TOK.ID == TKMOD || TOK.ID == TKAND;
+  return RESULT;
 }
 
 int ISOPRELATIONAL(TLXTOKEN TOK) {
-  int return_ISOPRELATIONAL;
-  return_ISOPRELATIONAL = TOK.ID == TKEQUALS || TOK.ID == TKNOTEQUALS || TOK.ID == TKLESSTHAN || TOK.ID == TKMORETHAN || TOK.ID == TKLESSOREQUALS || TOK.ID == TKMOREOREQUALS || TOK.ID == TKIN;
-  return return_ISOPRELATIONAL;
+  int RESULT;
+  RESULT = TOK.ID == TKEQUALS || TOK.ID == TKNOTEQUALS || TOK.ID == TKLESSTHAN || TOK.ID == TKMORETHAN || TOK.ID == TKLESSOREQUALS || TOK.ID == TKMOREOREQUALS || TOK.ID == TKIN;
+  return RESULT;
 }
 
 PString PARSESTRING(PString PSTR) {
-  PString return_PARSESTRING;
+  PString RESULT;
   int INSTR;
   int POS;
   char CHR;
@@ -3153,12 +3153,12 @@ PString PARSESTRING(PString PSTR) {
       }
     }
   } while(0);
-  return_PARSESTRING = STR;
-  return return_PARSESTRING;
+  RESULT = STR;
+  return RESULT;
 }
 
 int PARSEINT(PString PSTR) {
-  int return_PARSEINT;
+  int RESULT;
   int RET;
   int POS;
   RET = 0;
@@ -3174,13 +3174,13 @@ int PARSEINT(PString PSTR) {
       }
     }
   } while(0);
-  return_PARSEINT = RET;
-  return return_PARSEINT;
+  RESULT = RET;
+  return RESULT;
 }
 
-struct record26 *PSFACTOR() {
-  struct record26 *return_PSFACTOR;
-  struct record26 *EXPR;
+TEXPRESSIONOBJ *PSFACTOR() {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *EXPR;
   PString STR;
   if (LEXER.TOKEN.ID == TKNIL) {
     EXPR = EXNIL();
@@ -3207,29 +3207,29 @@ struct record26 *PSFACTOR() {
     EXPR = EXUNARYOP(PSFACTOR(), TKNOT);
   }
   else COMPILEERROR(cat_ss(str_make(29, "Invalid token in expression: "), LXTOKENSTR()));
-  return_PSFACTOR = EXPR;
-  return return_PSFACTOR;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSTERM() {
-  struct record26 *return_PSTERM;
+TEXPRESSIONOBJ *PSTERM() {
+  TEXPRESSIONOBJ *RESULT;
   TLXTOKENID OP;
-  struct record26 *EXPR;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = PSFACTOR();
   while (ISOPMULTIPLYING(LEXER.TOKEN)) {
     OP = LEXER.TOKEN.ID;
     READTOKEN();
     EXPR = EXBINARYOP(EXPR, PSFACTOR(), OP);
   }
-  return_PSTERM = EXPR;
-  return return_PSTERM;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSSIMPLEEXPRESSION() {
-  struct record26 *return_PSSIMPLEEXPRESSION;
+TEXPRESSIONOBJ *PSSIMPLEEXPRESSION() {
+  TEXPRESSIONOBJ *RESULT;
   int NEGATIVE;
   TLXTOKENID OP;
-  struct record26 *EXPR;
+  TEXPRESSIONOBJ *EXPR;
   NEGATIVE = LEXER.TOKEN.ID == TKMINUS;
   if (NEGATIVE) READTOKEN();
   EXPR = PSTERM();
@@ -3239,25 +3239,25 @@ struct record26 *PSSIMPLEEXPRESSION() {
     READTOKEN();
     EXPR = EXBINARYOP(EXPR, PSTERM(), OP);
   }
-  return_PSSIMPLEEXPRESSION = EXPR;
-  return return_PSSIMPLEEXPRESSION;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-struct record26 *PSEXPRESSION() {
-  struct record26 *return_PSEXPRESSION;
+TEXPRESSIONOBJ *PSEXPRESSION() {
+  TEXPRESSIONOBJ *RESULT;
   TLXTOKENID OP;
-  struct record26 *EXPR;
+  TEXPRESSIONOBJ *EXPR;
   EXPR = PSSIMPLEEXPRESSION();
   while (ISOPRELATIONAL(LEXER.TOKEN)) {
     OP = LEXER.TOKEN.ID;
     READTOKEN();
     EXPR = EXBINARYOP(EXPR, PSSIMPLEEXPRESSION(), OP);
   }
-  return_PSEXPRESSION = EXPR;
-  return return_PSEXPRESSION;
+  RESULT = EXPR;
+  return RESULT;
 }
 
-void PSASSIGN(struct record26 *LHS, struct record26 *RHS) {
+void PSASSIGN(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS) {
   if (LHS->CLS == XCFUNCTIONREF) {
     if (LHS->FUNCTIONEX.FUNCTIONINDEX != DEFS.CURRENTFUNCTION) COMPILEERROR(str_make(35, "Cannot assign a value to a function"));
     RHS = EXCOERCE(RHS, LHS->FUNCTIONEX.FUNCTIONINDEX->RETURNTYPEINDEX);
@@ -3288,7 +3288,7 @@ void PSSTATEMENTSEQUENCE() {
 }
 
 void PSIDENTIFIERSTATEMENT() {
-  struct record26 *LHS;
+  TEXPRESSIONOBJ *LHS;
   LHS = PSVARIABLE();
   if (LHS->CLS != XCFUNCTIONREF || LHS->FUNCTIONEX.FUNCTIONINDEX != DEFS.CURRENTFUNCTION || LEXER.TOKEN.ID != TKASSIGN) LHS = PSVARIABLEORFUNCTIONEXTENSION(LHS);
   if (LEXER.TOKEN.ID == TKASSIGN) {
@@ -3310,7 +3310,7 @@ void PSIDENTIFIERSTATEMENT() {
 }
 
 void PSIFSTATEMENT() {
-  struct record26 *COND;
+  TEXPRESSIONOBJ *COND;
   WANTTOKENANDREAD(TKIF);
   COND = EXCOERCE(PSEXPRESSION(), PRIMITIVETYPES.PTBOOLEAN);
   OUTIF(COND);
@@ -3327,9 +3327,9 @@ void PSIFSTATEMENT() {
 }
 
 void PSCASESTATEMENT() {
-  struct record26 *CASEINDEX;
-  struct record29 *CASETYPEINDEX;
-  struct record26 *CASELABEL;
+  TEXPRESSIONOBJ *CASEINDEX;
+  TPSTYPE *CASETYPEINDEX;
+  TEXPRESSIONOBJ *CASELABEL;
   WANTTOKENANDREAD(TKCASE);
   CASEINDEX = PSEXPRESSION();
   CASETYPEINDEX = CASEINDEX->TYPEINDEX;
@@ -3360,7 +3360,7 @@ void PSCASESTATEMENT() {
 }
 
 void PSREPEATSTATEMENT() {
-  struct record26 *COND;
+  TEXPRESSIONOBJ *COND;
   WANTTOKENANDREAD(TKREPEAT);
   OUTREPEATBEGIN();
   while (LEXER.TOKEN.ID != TKUNTIL) {
@@ -3375,7 +3375,7 @@ void PSREPEATSTATEMENT() {
 }
 
 void PSWHILESTATEMENT() {
-  struct record26 *COND;
+  TEXPRESSIONOBJ *COND;
   WANTTOKENANDREAD(TKWHILE);
   COND = EXCOERCE(PSEXPRESSION(), PRIMITIVETYPES.PTBOOLEAN);
   OUTWHILEBEGIN(COND);
@@ -3386,9 +3386,9 @@ void PSWHILESTATEMENT() {
 }
 
 void PSFORSTATEMENT() {
-  struct record26 *ITER;
-  struct record26 *FIRST;
-  struct record26 *LAST;
+  TEXPRESSIONOBJ *ITER;
+  TEXPRESSIONOBJ *FIRST;
+  TEXPRESSIONOBJ *LAST;
   int ASCENDING;
   WANTTOKENANDREAD(TKFOR);
   ITER = PSEXPRESSION();
@@ -3412,8 +3412,8 @@ void PSFORSTATEMENT() {
 }
 
 void PSWITHSTATEMENT() {
-  struct record26 *BASE;
-  struct record35 *VARINDEX;
+  TEXPRESSIONOBJ *BASE;
+  TPSVARIABLE *VARINDEX;
   WANTTOKEN(TKWITH);
   STARTTEMPORARYSCOPE();
   OUTSEQUENCEBEGIN();
@@ -3462,7 +3462,7 @@ void EXECUTEDIRECTIVE(PString DIR) {
 }
 
 void READTOKEN() {
-  struct record34 *CONSTINDEX;
+  TPSCONSTANT *CONSTINDEX;
   TLXPOS TOKENPOS;
   int STOP;
   do {
@@ -3695,106 +3695,106 @@ void _OUTSTRING(PString *STR) {
   }
 }
 
-int _BINOPPREC(struct record26 *EXPR) {
-  int return__BINOPPREC;
+int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
   switch (EXPR->BINARYEX.OP) {
     case TKPLUS:
-      if (ISSTRINGYTYPE(EXPR->TYPEINDEX)) return__BINOPPREC = 1;
-      else return__BINOPPREC = 4;
+      if (ISSTRINGYTYPE(EXPR->TYPEINDEX)) RESULT = 1;
+      else RESULT = 4;
       break;
     case TKMINUS:
-      return__BINOPPREC = 4;
+      RESULT = 4;
       break;
     case TKASTERISK:
-      return__BINOPPREC = 3;
+      RESULT = 3;
       break;
     case TKSLASH:
-      return__BINOPPREC = 3;
+      RESULT = 3;
       break;
     case TKDIV:
-      return__BINOPPREC = 3;
+      RESULT = 3;
       break;
     case TKMOD:
-      return__BINOPPREC = 3;
+      RESULT = 3;
       break;
     case TKAND:
-      if (ISBOOLEANTYPE(EXPR->TYPEINDEX)) return__BINOPPREC = 11;
-      else return__BINOPPREC = 8;
+      if (ISBOOLEANTYPE(EXPR->TYPEINDEX)) RESULT = 11;
+      else RESULT = 8;
       break;
     case TKOR:
-      if (ISBOOLEANTYPE(EXPR->TYPEINDEX)) return__BINOPPREC = 12;
-      else return__BINOPPREC = 10;
+      if (ISBOOLEANTYPE(EXPR->TYPEINDEX)) RESULT = 12;
+      else RESULT = 10;
       break;
     case TKEQUALS:
-      return__BINOPPREC = 7;
+      RESULT = 7;
       break;
     case TKNOTEQUALS:
-      return__BINOPPREC = 7;
+      RESULT = 7;
       break;
     case TKLESSTHAN:
-      return__BINOPPREC = 6;
+      RESULT = 6;
       break;
     case TKMORETHAN:
-      return__BINOPPREC = 6;
+      RESULT = 6;
       break;
     case TKLESSOREQUALS:
-      return__BINOPPREC = 6;
+      RESULT = 6;
       break;
     case TKMOREOREQUALS:
-      return__BINOPPREC = 6;
+      RESULT = 6;
       break;
     default:
       COMPILEERROR(cat_ss(str_make(48, "Internal error: unknown precedence for operator "), LXTOKENNAME(EXPR->BINARYEX.OP)));
       break;
   }
-  return return__BINOPPREC;
+  return RESULT;
 }
 
-int _PRECEDENCE(struct record26 *EXPR) {
-  int return__PRECEDENCE;
+int _PRECEDENCE(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
   switch (EXPR->CLS) {
     case XCIMMEDIATE:
-      return__PRECEDENCE = 0;
+      RESULT = 0;
       break;
     case XCTOSTRING:
-      return__PRECEDENCE = 0;
+      RESULT = 0;
       break;
     case XCVARIABLEACCESS:
-      if (EXPR->VARIABLEEX.VARIABLEINDEX->ISREFERENCE) return__PRECEDENCE = 2;
-      else return__PRECEDENCE = 0;
+      if (EXPR->VARIABLEEX.VARIABLEINDEX->ISREFERENCE) RESULT = 2;
+      else RESULT = 0;
       break;
     case XCFIELDACCESS:
-      return__PRECEDENCE = 1;
+      RESULT = 1;
       break;
     case XCARRAYACCESS:
-      return__PRECEDENCE = 1;
+      RESULT = 1;
       break;
     case XCPOINTERACCESS:
-      return__PRECEDENCE = 2;
+      RESULT = 2;
       break;
     case XCSTRINGCHAR:
-      return__PRECEDENCE = 1;
+      RESULT = 1;
       break;
     case XCFUNCTIONREF:
-      return__PRECEDENCE = 0;
+      RESULT = 0;
       break;
     case XCFUNCTIONCALL:
-      return__PRECEDENCE = 1;
+      RESULT = 1;
       break;
     case XCUNARYOP:
-      return__PRECEDENCE = 2;
+      RESULT = 2;
       break;
     case XCBINARYOP:
-      return__PRECEDENCE = _BINOPPREC(EXPR);
+      RESULT = _BINOPPREC(EXPR);
       break;
     default:
       COMPILEERROR(str_make(34, "Internal error: unknown precedence"));
       break;
   }
-  return return__PRECEDENCE;
+  return RESULT;
 }
 
-void _OUTEXPRESSIONPARENSPREC(struct record26 *EXPR, int PREC) {
+void _OUTEXPRESSIONPARENSPREC(TEXPRESSIONOBJ *EXPR, int PREC) {
   int USEPARENS;
   USEPARENS = _PRECEDENCE(EXPR) > PREC;
   if (USEPARENS) write_c(&CODEGEN.OUTPUT, '(');
@@ -3802,15 +3802,15 @@ void _OUTEXPRESSIONPARENSPREC(struct record26 *EXPR, int PREC) {
   if (USEPARENS) write_c(&CODEGEN.OUTPUT, ')');
 }
 
-void _OUTEXPRESSIONPARENS(struct record26 *EXPR, struct record26 *REF) {
+void _OUTEXPRESSIONPARENS(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
   _OUTEXPRESSIONPARENSPREC(EXPR, _PRECEDENCE(REF));
 }
 
-void _OUTEXPRESSIONPARENSEXTRA(struct record26 *EXPR, struct record26 *REF) {
+void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
   _OUTEXPRESSIONPARENSPREC(EXPR, _PRECEDENCE(REF) - 1);
 }
 
-void _OUTEXIMMEDIATE(struct record26 *EXPR) {
+void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   {
     TEXIMMEDIATE *with49 = &EXPR->IMMEDIATEEX;
     switch ((*with49).CLS) {
@@ -3839,7 +3839,7 @@ void _OUTEXIMMEDIATE(struct record26 *EXPR) {
   }
 }
 
-void _OUTEXVARIABLE(struct record26 *EXPR) {
+void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
   if (EXPR->VARIABLEEX.VARIABLEINDEX->ISREFERENCE) {
     write_c(&CODEGEN.OUTPUT, '*');
     write_s(&CODEGEN.OUTPUT, EXPR->VARIABLEEX.VARIABLEINDEX->NAME);
@@ -3847,7 +3847,7 @@ void _OUTEXVARIABLE(struct record26 *EXPR) {
   else write_s(&CODEGEN.OUTPUT, EXPR->VARIABLEEX.VARIABLEINDEX->NAME);
 }
 
-void _OUTEXFIELDACCESS(struct record26 *EXPR) {
+void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   if (EXPR->FIELDEX.PARENT->CLS == XCPOINTERACCESS) {
     _OUTEXPRESSIONPARENS(EXPR->FIELDEX.PARENT->POINTEREX.PARENT, EXPR);
     write_s(&CODEGEN.OUTPUT, str_make(2, "->"));
@@ -3859,7 +3859,7 @@ void _OUTEXFIELDACCESS(struct record26 *EXPR) {
   write_s(&CODEGEN.OUTPUT, EXPR->FIELDEX.PARENT->TYPEINDEX->RECORDINDEX->FIELDS[EXPR->FIELDEX.FIELDNUMBER - 1].NAME);
 }
 
-void _OUTEXFUNCTIONCALL(struct record26 *EXPR) {
+void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
   int POS;
   _OUTEXPRESSIONPARENS(EXPR->CALLEX.FUNCTIONREF, EXPR);
   write_c(&CODEGEN.OUTPUT, '(');
@@ -3886,7 +3886,7 @@ void _OUTEXFUNCTIONCALL(struct record26 *EXPR) {
   write_c(&CODEGEN.OUTPUT, ')');
 }
 
-void _OUTEXUNARYOP(struct record26 *EXPR) {
+void _OUTEXUNARYOP(TEXPRESSIONOBJ *EXPR) {
   if (EXPR->UNARYEX.OP == TKMINUS) write_c(&CODEGEN.OUTPUT, '-');
   else if (EXPR->UNARYEX.OP == TKNOT && ISBOOLEANTYPE(EXPR->TYPEINDEX)) write_c(&CODEGEN.OUTPUT, '!');
   else if (EXPR->UNARYEX.OP == TKNOT && ISINTEGERTYPE(EXPR->TYPEINDEX)) write_c(&CODEGEN.OUTPUT, '~');
@@ -3894,92 +3894,92 @@ void _OUTEXUNARYOP(struct record26 *EXPR) {
 }
 
 int _ISARITHMETICOP(TLXTOKENID OP) {
-  int return__ISARITHMETICOP;
-  return__ISARITHMETICOP = OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKSLASH || OP == TKDIV || OP == TKMOD;
-  return return__ISARITHMETICOP;
+  int RESULT;
+  RESULT = OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKSLASH || OP == TKDIV || OP == TKMOD;
+  return RESULT;
 }
 
 PString _GETARITHMETICOP(TLXTOKENID OP) {
-  PString return__GETARITHMETICOP;
+  PString RESULT;
   switch (OP) {
     case TKPLUS:
-      return__GETARITHMETICOP = str_of('+');
+      RESULT = str_of('+');
       break;
     case TKMINUS:
-      return__GETARITHMETICOP = str_of('-');
+      RESULT = str_of('-');
       break;
     case TKASTERISK:
-      return__GETARITHMETICOP = str_of('*');
+      RESULT = str_of('*');
       break;
     case TKSLASH:
-      return__GETARITHMETICOP = str_of('/');
+      RESULT = str_of('/');
       break;
     case TKDIV:
-      return__GETARITHMETICOP = str_of('/');
+      RESULT = str_of('/');
       break;
     case TKMOD:
-      return__GETARITHMETICOP = str_of('%');
+      RESULT = str_of('%');
       break;
     default:
       break;
   }
-  return return__GETARITHMETICOP;
+  return RESULT;
 }
 
 int _ISLOGICALORBITWISEOP(TLXTOKENID OP) {
-  int return__ISLOGICALORBITWISEOP;
-  return__ISLOGICALORBITWISEOP = OP == TKAND || OP == TKOR;
-  return return__ISLOGICALORBITWISEOP;
+  int RESULT;
+  RESULT = OP == TKAND || OP == TKOR;
+  return RESULT;
 }
 
 PString _GETLOGICALOP(TLXTOKENID OP) {
-  PString return__GETLOGICALOP;
-  if (OP == TKAND) return__GETLOGICALOP = str_make(2, "&&");
-  else return__GETLOGICALOP = str_make(2, "||");
-  return return__GETLOGICALOP;
+  PString RESULT;
+  if (OP == TKAND) RESULT = str_make(2, "&&");
+  else RESULT = str_make(2, "||");
+  return RESULT;
 }
 
 PString _GETBITWISEOP(TLXTOKENID OP) {
-  PString return__GETBITWISEOP;
-  if (OP == TKAND) return__GETBITWISEOP = str_of('&');
-  else return__GETBITWISEOP = str_of('|');
-  return return__GETBITWISEOP;
+  PString RESULT;
+  if (OP == TKAND) RESULT = str_of('&');
+  else RESULT = str_of('|');
+  return RESULT;
 }
 
 int _ISRELATIONALOP(TLXTOKENID OP) {
-  int return__ISRELATIONALOP;
-  return__ISRELATIONALOP = OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS;
-  return return__ISRELATIONALOP;
+  int RESULT;
+  RESULT = OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS;
+  return RESULT;
 }
 
 PString _GETRELATIONALOP(TLXTOKENID OP) {
-  PString return__GETRELATIONALOP;
+  PString RESULT;
   switch (OP) {
     case TKEQUALS:
-      return__GETRELATIONALOP = str_make(2, "==");
+      RESULT = str_make(2, "==");
       break;
     case TKNOTEQUALS:
-      return__GETRELATIONALOP = str_make(2, "!=");
+      RESULT = str_make(2, "!=");
       break;
     case TKLESSTHAN:
-      return__GETRELATIONALOP = str_of('<');
+      RESULT = str_of('<');
       break;
     case TKMORETHAN:
-      return__GETRELATIONALOP = str_of('>');
+      RESULT = str_of('>');
       break;
     case TKLESSOREQUALS:
-      return__GETRELATIONALOP = str_make(2, "<=");
+      RESULT = str_make(2, "<=");
       break;
     case TKMOREOREQUALS:
-      return__GETRELATIONALOP = str_make(2, ">=");
+      RESULT = str_make(2, ">=");
       break;
     default:
       break;
   }
-  return return__GETRELATIONALOP;
+  return RESULT;
 }
 
-void _OUTEXBINARYOP(struct record26 *EXPR) {
+void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   char LTYPE;
   char RTYPE;
   {
@@ -4064,8 +4064,8 @@ void _OUTEXBINARYOP(struct record26 *EXPR) {
   }
 }
 
-void OUTEXPRESSION(struct record26 *EXPR) {
-  struct record26 *TMPEXPR;
+void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *TMPEXPR;
   switch (EXPR->CLS) {
     case XCIMMEDIATE:
       _OUTEXIMMEDIATE(EXPR);
@@ -4124,7 +4124,7 @@ void OUTEXPRESSION(struct record26 *EXPR) {
   }
 }
 
-void OUTENUMVALUES(struct record30 *ENUMINDEX) {
+void OUTENUMVALUES(TPSENUMDEF *ENUMINDEX) {
   int POSINENUM;
   _OUTBLANKLINE(TOTENUMVAL);
   _OUTINDENT();
@@ -4152,8 +4152,8 @@ void OUTENUMVALUES(struct record30 *ENUMINDEX) {
   _OUTNEWLINE();
 }
 
-void OUTENUMVALUESFROMCHECKPOINT(struct record41 *CHECKPOINT) {
-  struct record41 *DEF;
+void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
+  TPSDEFENTRY *DEF;
   DEF = CHECKPOINT->NEXT;
   while (DEF != (void*)0) {
     if (DEF->CLS == TDCENUM) OUTENUMVALUES(DEF->ENUMINDEX);
@@ -4162,13 +4162,13 @@ void OUTENUMVALUESFROMCHECKPOINT(struct record41 *CHECKPOINT) {
 }
 
 PString OUTVARIABLENAME(PString NAME, int ISREFERENCE) {
-  PString return_OUTVARIABLENAME;
-  if (ISREFERENCE) return_OUTVARIABLENAME = cat_cs('*', NAME);
-  else return_OUTVARIABLENAME = NAME;
-  return return_OUTVARIABLENAME;
+  PString RESULT;
+  if (ISREFERENCE) RESULT = cat_cs('*', NAME);
+  else RESULT = NAME;
+  return RESULT;
 }
 
-void OUTTYPEREFERENCE(struct record29 *TYPEINDEX) {
+void OUTTYPEREFERENCE(TPSTYPE *TYPEINDEX) {
   if (TYPEINDEX == (void*)0) write_s(&CODEGEN.OUTPUT, str_make(4, "void"));
   else if (TYPEINDEX->CLS == TTCPOINTER) {
     OUTTYPEREFERENCE(TYPEINDEX->POINTEDTYPEINDEX);
@@ -4200,7 +4200,7 @@ void OUTTYPEREFERENCE(struct record29 *TYPEINDEX) {
   else COMPILEERROR(cat_ss(str_make(30, "Error writing type reference: "), TYPENAME(TYPEINDEX)));
 }
 
-void OUTNAMEANDRECORD(PString NAME, struct record32 *RECORDINDEX) {
+void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECORDINDEX) {
   int POS;
   int NUMVARIANT;
   NUMVARIANT = 0;
@@ -4257,7 +4257,7 @@ void OUTNAMEANDRECORD(PString NAME, struct record32 *RECORDINDEX) {
   write_s(&CODEGEN.OUTPUT, NAME);
 }
 
-void OUTNAMEANDENUM(PString NAME, struct record30 *ENUMINDEX) {
+void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMINDEX) {
   int POS;
   write_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"));
   write_i(&CODEGEN.OUTPUT, ENUMINDEX->ID);
@@ -4285,9 +4285,9 @@ void OUTNAMEANDENUM(PString NAME, struct record30 *ENUMINDEX) {
   write_s(&CODEGEN.OUTPUT, NAME);
 }
 
-void OUTNAMEANDTYPE(PString NAME, struct record29 *TYPEINDEX) {
+void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEINDEX) {
   TPSARRAYDEF ARR;
-  struct record26 *SIZEEXPR;
+  TEXPRESSIONOBJ *SIZEEXPR;
   if (TYPEINDEX == (void*)0) {
     write_s(&CODEGEN.OUTPUT, str_make(5, "void "));
     write_s(&CODEGEN.OUTPUT, NAME);
@@ -4336,7 +4336,7 @@ void OUTNAMEANDTYPE(PString NAME, struct record29 *TYPEINDEX) {
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Error writing name and type: "), NAME), str_make(2, ", ")), TYPENAME(TYPEINDEX)));
 }
 
-void OUTTYPEDEFINITION(struct record29 *TYPEINDEX) {
+void OUTTYPEDEFINITION(TPSTYPE *TYPEINDEX) {
   PString NAME;
   _OUTBLANKLINE(TOTTYPE);
   _OUTINDENT();
@@ -4348,8 +4348,8 @@ void OUTTYPEDEFINITION(struct record29 *TYPEINDEX) {
   _OUTNEWLINE();
 }
 
-void OUTTYPEDEFINITIONSFROMCHECKPOINT(struct record41 *CHECKPOINT) {
-  struct record41 *DEF;
+void OUTTYPEDEFINITIONSFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
+  TPSDEFENTRY *DEF;
   DEF = CHECKPOINT->NEXT;
   while (DEF != (void*)0) {
     if (DEF->CLS == TDCTYPE) {
@@ -4376,7 +4376,7 @@ void OUTVARIABLEDECLARATION(TPSVARIABLE VARDEF) {
   OUTNAMEANDTYPE(OUTVARIABLENAME(VARDEF.NAME, VARDEF.ISREFERENCE), VARDEF.TYPEINDEX);
 }
 
-void OUTVARIABLEDEFINITION(struct record35 *VARINDEX) {
+void OUTVARIABLEDEFINITION(TPSVARIABLE *VARINDEX) {
   _OUTBLANKLINE(TOTVAR);
   _OUTINDENT();
   if (VARINDEX->ISCONSTANT) write_s(&CODEGEN.OUTPUT, str_make(6, "const "));
@@ -4385,7 +4385,7 @@ void OUTVARIABLEDEFINITION(struct record35 *VARINDEX) {
   _OUTNEWLINE();
 }
 
-void OUTCONSTANTDEFINITIONBEGIN(struct record35 *VARINDEX) {
+void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLE *VARINDEX) {
   _OUTBLANKLINE(TOTVAR);
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(6, "const "));
@@ -4421,21 +4421,21 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
   write_c(&CODEGEN.OUTPUT, ')');
 }
 
-void OUTFUNCTIONDECLARATION(struct record36 *FNINDEX) {
+void OUTFUNCTIONDECLARATION(TPSFUNCTION *FNINDEX) {
   _OUTBLANKLINE(TOTFUNDEC);
   OUTFUNCTIONPROTOTYPE(*FNINDEX);
   write_c(&CODEGEN.OUTPUT, ';');
   _OUTNEWLINE();
 }
 
-void OUTFUNCTIONDEFINITION(struct record36 *FNINDEX) {
+void OUTFUNCTIONDEFINITION(TPSFUNCTION *FNINDEX) {
   _OUTBLANKLINE(TOTFUNDEF);
   OUTFUNCTIONPROTOTYPE(*FNINDEX);
   write_c(&CODEGEN.OUTPUT, ' ');
   OUTBEGIN();
 }
 
-void OUTFUNCTIONEND(struct record36 *FNINDEX) {
+void OUTFUNCTIONEND(TPSFUNCTION *FNINDEX) {
   if (FNINDEX->RETURNTYPEINDEX != (void*)0) {
     _OUTINDENT();
     write_s(&CODEGEN.OUTPUT, str_make(14, "return RESULT;"));
@@ -4453,20 +4453,20 @@ void OUTPROGRAMHEADING(PString NAME) {
   _OUTNEWLINE();
 }
 
-char SHORTTYPENAME(struct record29 *TYPEINDEX) {
-  char return_SHORTTYPENAME;
-  if (ISBOOLEANTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'b';
-  else if (ISINTEGERTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'i';
-  else if (ISCHARTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'c';
-  else if (ISSTRINGTYPE(TYPEINDEX)) return_SHORTTYPENAME = 's';
-  else if (ISENUMTYPE(TYPEINDEX)) return_SHORTTYPENAME = 'e';
+char SHORTTYPENAME(TPSTYPE *TYPEINDEX) {
+  char RESULT;
+  if (ISBOOLEANTYPE(TYPEINDEX)) RESULT = 'b';
+  else if (ISINTEGERTYPE(TYPEINDEX)) RESULT = 'i';
+  else if (ISCHARTYPE(TYPEINDEX)) RESULT = 'c';
+  else if (ISSTRINGTYPE(TYPEINDEX)) RESULT = 's';
+  else if (ISENUMTYPE(TYPEINDEX)) RESULT = 'e';
   else COMPILEERROR(cat_ss(str_make(30, "No short type name exists for "), TYPENAME(TYPEINDEX)));
-  return return_SHORTTYPENAME;
+  return RESULT;
 }
 
-void _OUTREAD(struct record26 *EXPR) {
-  struct record26 *SRC;
-  struct record20 *READARG;
+void _OUTREAD(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *SRC;
+  TEXREADARGS *READARG;
   int LINEFEED;
   int BRACES;
   SRC = EXPR->SPECIALFUNCTIONCALLEX.SRC;
@@ -4496,9 +4496,9 @@ void _OUTREAD(struct record26 *EXPR) {
   if (BRACES) OUTEND();
 }
 
-void _OUTWRITE(struct record26 *EXPR) {
-  struct record26 *DST;
-  struct record21 *WRITEARG;
+void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *DST;
+  TEXWRITEARGS *WRITEARG;
   int LINEFEED;
   int BRACES;
   DST = EXPR->SPECIALFUNCTIONCALLEX.DST;
@@ -4541,9 +4541,9 @@ void _OUTWRITE(struct record26 *EXPR) {
   if (BRACES) OUTEND();
 }
 
-void _OUTSTR(struct record26 *EXPR) {
-  struct record26 *SRC;
-  struct record26 *DST;
+void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *SRC;
+  TEXPRESSIONOBJ *DST;
   SRC = EXPR->SPECIALFUNCTIONCALLEX.SRC;
   DST = EXPR->SPECIALFUNCTIONCALLEX.DST;
   if (ISENUMTYPE(SRC->TYPEINDEX)) {
@@ -4568,8 +4568,8 @@ void _OUTSTR(struct record26 *EXPR) {
   }
 }
 
-void _OUTNEW(struct record26 *EXPR) {
-  struct record26 *PTR;
+void _OUTNEW(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *PTR;
   PTR = EXPR->SPECIALFUNCTIONCALLEX.PTR;
   _OUTINDENT();
   OUTEXPRESSION(PTR);
@@ -4579,8 +4579,8 @@ void _OUTNEW(struct record26 *EXPR) {
   _OUTNEWLINE();
 }
 
-void _OUTDISPOSE(struct record26 *EXPR) {
-  struct record26 *PTR;
+void _OUTDISPOSE(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *PTR;
   PTR = EXPR->SPECIALFUNCTIONCALLEX.PTR;
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(5, "free("));
@@ -4589,7 +4589,7 @@ void _OUTDISPOSE(struct record26 *EXPR) {
   _OUTNEWLINE();
 }
 
-void OUTASSIGN(struct record26 *LHS, struct record26 *RHS) {
+void OUTASSIGN(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS) {
   _OUTINDENT();
   OUTEXPRESSION(LHS);
   write_s(&CODEGEN.OUTPUT, str_make(3, " = "));
@@ -4598,7 +4598,7 @@ void OUTASSIGN(struct record26 *LHS, struct record26 *RHS) {
   _OUTNEWLINE();
 }
 
-void OUTASSIGNRETURNVALUE(struct record26 *LHS, struct record26 *RHS) {
+void OUTASSIGNRETURNVALUE(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(9, "RESULT = "));
   OUTEXPRESSION(RHS);
@@ -4606,7 +4606,7 @@ void OUTASSIGNRETURNVALUE(struct record26 *LHS, struct record26 *RHS) {
   _OUTNEWLINE();
 }
 
-void OUTASSIGNTOREFERENCE(struct record35 *VARINDEX, struct record26 *RHS) {
+void OUTASSIGNTOREFERENCE(TPSVARIABLE *VARINDEX, TEXPRESSIONOBJ *RHS) {
   _OUTINDENT();
   OUTVARIABLEDECLARATION(*VARINDEX);
   write_s(&CODEGEN.OUTPUT, str_make(4, " = &"));
@@ -4615,7 +4615,7 @@ void OUTASSIGNTOREFERENCE(struct record35 *VARINDEX, struct record26 *RHS) {
   _OUTNEWLINE();
 }
 
-void OUTIF(struct record26 *EXPR) {
+void OUTIF(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
   OUTEXPRESSION(EXPR);
@@ -4642,7 +4642,7 @@ void OUTSEQUENCEEND() {
   OUTEND();
 }
 
-void OUTCASEBEGIN(struct record26 *CASEINDEX) {
+void OUTCASEBEGIN(TEXPRESSIONOBJ *CASEINDEX) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(8, "switch ("));
   OUTEXPRESSION(CASEINDEX);
@@ -4650,7 +4650,7 @@ void OUTCASEBEGIN(struct record26 *CASEINDEX) {
   OUTBEGIN();
 }
 
-void OUTCASESTATEMENTBEGIN(struct record26 *CASELABEL) {
+void OUTCASESTATEMENTBEGIN(TEXPRESSIONOBJ *CASELABEL) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(5, "case "));
   OUTEXPRESSION(CASELABEL);
@@ -4690,8 +4690,8 @@ void OUTREPEATBEGIN() {
   OUTBEGIN();
 }
 
-void OUTREPEATEND(struct record26 *EXPR) {
-  struct record26 *TMPEXPR;
+void OUTREPEATEND(TEXPRESSIONOBJ *EXPR) {
+  TEXPRESSIONOBJ *TMPEXPR;
   OUTENDSAMELINE();
   write_s(&CODEGEN.OUTPUT, str_make(8, " while ("));
   TMPEXPR = EXUNARYOP(COPYEXPR(EXPR), TKNOT);
@@ -4701,7 +4701,7 @@ void OUTREPEATEND(struct record26 *EXPR) {
   _OUTNEWLINE();
 }
 
-void OUTWHILEBEGIN(struct record26 *EXPR) {
+void OUTWHILEBEGIN(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(7, "while ("));
   OUTEXPRESSION(EXPR);
@@ -4713,8 +4713,8 @@ void OUTWHILEEND() {
   CODEGEN.ISMULTISTATEMENT = 1;
 }
 
-void OUTFORBEGIN(struct record26 *ITER, struct record26 *FIRSTEXPR, struct record26 *LASTEXPR, int ASCENDING) {
-  struct record29 *LIMITTYPE;
+void OUTFORBEGIN(TEXPRESSIONOBJ *ITER, TEXPRESSIONOBJ *FIRSTEXPR, TEXPRESSIONOBJ *LASTEXPR, int ASCENDING) {
+  TPSTYPE *LIMITTYPE;
   TPSVARIABLE FIRST;
   TPSVARIABLE LAST;
   LIMITTYPE = ITER->TYPEINDEX;
@@ -4751,7 +4751,7 @@ void OUTFORBEGIN(struct record26 *ITER, struct record26 *FIRSTEXPR, struct recor
   OUTBEGIN();
 }
 
-void OUTFOREND(struct record26 *ITER, int ASCENDING) {
+void OUTFOREND(TEXPRESSIONOBJ *ITER, int ASCENDING) {
   _OUTINDENT();
   write_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
   OUTEXPRESSION(ITER);
@@ -4770,14 +4770,14 @@ void OUTFOREND(struct record26 *ITER, int ASCENDING) {
   _OUTNEWLINE();
 }
 
-void OUTPROCEDURECALL(struct record26 *EXPR) {
+void OUTPROCEDURECALL(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
   OUTEXPRESSION(EXPR);
   write_c(&CODEGEN.OUTPUT, ';');
   _OUTNEWLINE();
 }
 
-void OUTSPECIALPROCEDURECALL(struct record26 *EXPR) {
+void OUTSPECIALPROCEDURECALL(TEXPRESSIONOBJ *EXPR) {
   switch (EXPR->SPECIALFUNCTIONCALLEX.SPECIALFUNCTION) {
     case TSFWRITE:
       _OUTWRITE(EXPR);
@@ -4853,11 +4853,11 @@ void USAGE(PString MSG) {
 }
 
 PString REPLACEEXTENSION(PString STR, PString OLD, PString NEW) {
-  PString return_REPLACEEXTENSION;
+  PString RESULT;
   int BASELEN;
   int POS;
   int MATCHES;
-  return_REPLACEEXTENSION = str_make(0, "");
+  RESULT = str_make(0, "");
   BASELEN = LENGTH(STR) - LENGTH(OLD);
   if (BASELEN > 0) {
     MATCHES = 1;
@@ -4873,9 +4873,9 @@ PString REPLACEEXTENSION(PString STR, PString OLD, PString NEW) {
         }
       }
     } while(0);
-    if (MATCHES) return_REPLACEEXTENSION = cat_ss(COPY(STR, 1, BASELEN), NEW);
+    if (MATCHES) RESULT = cat_ss(COPY(STR, 1, BASELEN), NEW);
   }
-  return return_REPLACEEXTENSION;
+  return RESULT;
 }
 
 void PARSECMDLINE() {
