@@ -137,5 +137,5 @@ PString to_str_c(char chr) { return str_of(chr); }
 PString to_str_s(PString str) { return str; }
 
 PString to_str_e(int value, const char** names) {
-  return str_of_pchar(names[value - 1]);
+  return str_of_pchar(names[value]);
 }
