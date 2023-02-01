@@ -10,6 +10,43 @@ begin
 end;
 
 procedure DisposeExpr(var Expr : TExpression);
+forward;
+
+procedure _DisposeSpecialCallExpr(var Call : TExSpecialFunctionCall);
+var 
+  ReadArg, NextReadArg : ^TExReadArgs;
+  WriteArg, NextWriteArg : ^TExWriteArgs;
+begin
+  if Call.Src <> nil then DisposeExpr(Call.Src);
+  if Call.Dst <> nil then DisposeExpr(Call.Dst);
+  if Call.Ptr <> nil then DisposeExpr(Call.Ptr);
+  if (Call.SpecialFunction = TsfWrite) or (Call.SpecialFunction = TsfWriteln)
+    then
+  begin
+    ReadArg := Call.ReadArgs;
+    while ReadArg <> nil do
+    begin
+      NextReadArg := ReadArg^.Next;
+      DisposeExpr(ReadArg^.Arg);
+      dispose(ReadArg);
+      ReadArg := NextReadArg
+    end
+  end
+  else if (Call.SpecialFunction = TsfRead) or (Call.SpecialFunction = TsfReadln)
+         then
+  begin
+    WriteArg := Call.WriteArgs;
+    while WriteArg <> nil do
+    begin
+      NextWriteArg := WriteArg^.Next;
+      DisposeExpr(WriteArg^.Arg);
+      dispose(WriteArg);
+      WriteArg := NextWriteArg
+    end
+  end
+end;
+
+procedure DisposeExpr;
 var Pos : integer;
 begin
   case Expr^.Cls of 
@@ -32,6 +69,8 @@ begin
                        for Pos := 1 to Expr^.CallEx.Args.Size do
                          DisposeExpr(Expr^.CallEx.Args.Values[Pos]);
                      end;
+    XcSpecialFunctionCall : _DisposeSpecialCallExpr(Expr^
+                                                    .SpecialFunctionCallEx);
     XcUnaryOp : DisposeExpr(Expr^.UnaryEx.Parent);
     XcBinaryOp :
                  begin
@@ -43,6 +82,65 @@ begin
 end;
 
 function CopyExpr(Expr : TExpression) : TExpression;
+forward;
+
+procedure _CopySpecialCallExpr(var Call, Copy : TExSpecialFunctionCall);
+var 
+  ReadArg, NextReadArg, CopyReadArg : ^TExReadArgs;
+  WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
+begin
+  Copy.SpecialFunction := Call.SpecialFunction;
+  if Call.Src <> nil then Copy.Src := CopyExpr(Call.Src);
+  if Call.Dst <> nil then Copy.Dst := CopyExpr(Call.Dst);
+  if Call.Ptr <> nil then Copy.Ptr := CopyExpr(Call.Ptr);
+  if (Call.SpecialFunction = TsfWrite)
+     or (Call.SpecialFunction = TsfWriteln) then
+  begin
+    ReadArg := Call.ReadArgs;
+    CopyReadArg := nil;
+    while ReadArg <> nil do
+    begin
+      NextReadArg := ReadArg^.Next;
+      if CopyReadArg = nil then
+      begin
+        new(CopyReadArg);
+        Copy.ReadArgs := CopyReadArg
+      end
+      else
+      begin
+        new(CopyReadArg^.Next);
+        CopyReadArg := CopyReadArg^.Next;
+      end;
+      CopyReadArg^.Next := nil;
+      CopyReadArg^.Arg := CopyExpr(ReadArg^.Arg);
+      ReadArg := NextReadArg
+    end
+  end
+  else if (Call.SpecialFunction = TsfRead)
+          or (Call.SpecialFunction = TsfReadln) then
+  begin
+    WriteArg := Call.WriteArgs;
+    while WriteArg <> nil do
+    begin
+      NextWriteArg := WriteArg^.Next;
+      if CopyWriteArg = nil then
+      begin
+        new(CopyWriteArg);
+        Copy.WriteArgs := CopyWriteArg
+      end
+      else
+      begin
+        new(CopyWriteArg^.Next);
+        CopyWriteArg := CopyWriteArg^.Next;
+      end;
+      CopyWriteArg^.Next := nil;
+      CopyWriteArg^.Arg := CopyExpr(WriteArg^.Arg);
+      WriteArg := NextWriteArg
+    end
+  end
+end;
+
+function CopyExpr;
 var 
   Copy : TExpression;
   Pos : integer;
@@ -87,9 +185,13 @@ begin
                         Copy^.CallEx.Args.Values[Pos] := CopyExpr(Expr^.CallEx
                                                          .Args.Values[Pos])
                     end;
+    XcSpecialFunctionRef: Copy^.SpecialFunctionEx := Expr^.SpecialFunctionEx;
+    XcSpecialFunctionCall: _CopySpecialCallExpr(Expr^.SpecialFunctionCallEx,
+                                                Copy^.SpecialFunctionCallEx);
     XcUnaryOp:
                begin
-                 Copy^.UnaryEx.Parent := CopyExpr(Expr^.UnaryEx.Parent);
+                 Copy^.UnaryEx.Parent := CopyExpr(Expr^.
+                                         UnaryEx.Parent);
                  Copy^.UnaryEx.Op := Expr^.UnaryEx.Op
                end;
     XcBinaryOp:
@@ -104,14 +206,6 @@ end;
 
 function ExCoerce(Expr : TExpression; TypeIndex : TPsTypeIndex) : TExpression;
 forward;
-
-function ExNothing : TExpression;
-var Expr : TExpression;
-begin
-  Expr := _NewExpr(XcNothing);
-  Expr^.TypeIndex := nil;
-  ExNothing := Expr
-end;
 
 function _ExImmediate(Cls : TExImmediateClass) : TExpression;
 var Expr : TExpression;
@@ -337,6 +431,30 @@ begin
   Expr^.IsAssignable := false;
   Expr^.IsFunctionResult := true;
   ExFunctionCall := Expr
+end;
+
+function ExSpecialFunction(SpecialFn : TPsSpecialFunction) : TExpression;
+var Expr : TExpression;
+begin
+  Expr := _NewExpr(XcSpecialFunctionRef);
+  Expr^.SpecialFunctionEx.SpecialFunction := SpecialFn;
+  ExSpecialFunction := Expr
+end;
+
+function ExSpecialFunctionCall(Expr : TExpression) : TExpression;
+var Fn : TPsSpecialFunction;
+begin
+  if Expr^.Cls <> XcSpecialFunctionRef then
+    CompileError('Expected a special function');
+  Fn := Expr^.SpecialFunctionEx.SpecialFunction;
+  Expr^.Cls := XcSpecialFunctionCall;
+  Expr^.SpecialFunctionCallEx.SpecialFunction := Fn;
+  Expr^.SpecialFunctionCallEx.Src := nil;
+  Expr^.SpecialFunctionCallEx.Dst := nil;
+  Expr^.SpecialFunctionCallEx.Ptr := nil;
+  Expr^.SpecialFunctionCallEx.ReadArgs := nil;
+  Expr^.SpecialFunctionCallEx.WriteArgs := nil;
+  ExSpecialFunctionCall := Expr
 end;
 
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -686,13 +804,4 @@ begin
   else
     CompileError('Type mismatch: expected ' + TypeName(TypeIndex) +
     ', got ' + TypeName(Expr^.TypeIndex))
-end;
-
-function ExEvaluateFunction(Fn : TExpression) : TExpression;
-var Args : TExFunctionArgs;
-begin
-  if Fn^.FunctionEx.FunctionIndex^.ArgCount <> 0 then
-    CompileError('Function requires arguments');
-  Args.Size := 0;
-  ExEvaluateFunction := ExFunctionCall(Fn, Args)
 end;

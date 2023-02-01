@@ -297,8 +297,6 @@ procedure OutExpression;
 var TmpExpr : TExpression;
 begin
   case Expr^.Cls of 
-    XcNothing: CompileError('Internal error: ' +
-                            'trying to output empty expression');
     XcImmediate: _OutExImmediate(Expr);
     XcToString:
                 begin
@@ -641,81 +639,118 @@ begin
   else CompileError('No short type name exists for ' + TypeName(TypeIndex))
 end;
 
-procedure OutRead;
+procedure _OutRead(Expr : TExpression);
+var 
+  Src : TExpression;
+  ReadArg : ^TExReadArgs;
+  Linefeed : boolean;
+  Braces : boolean;
 begin
-  write(Codegen.Output, 'read_', ShortTypeName(OutVar^.TypeIndex), '(&');
-  _OutExpressionParensPrec(Src, 2);
-  write(Codegen.Output,', &');
-  _OutExpressionParensPrec(OutVar, 2);
-  writeln(Codegen.Output, ');')
-end;
-
-procedure OutReadln;
-begin
-  write(Codegen.Output, 'readln(&');
-  _OutExpressionParensPrec(Src, 2);
-  writeln(Codegen.Output, ');')
-end;
-
-procedure OutWrite;
-begin
-  if IsEnumType(Expr^.TypeIndex) then
+  Src := Expr^.SpecialFunctionCallEx.Src;
+  Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfReadln;
+  ReadArg := Expr^.SpecialFunctionCallEx.ReadArgs;
+  Braces := (ReadArg <> nil) and ((ReadArg^.Next <> nil) or Linefeed);
+  if Braces then OutBegin;
+  while ReadArg <> nil do
   begin
-    write(Codegen.Output, 'write_e(&');
-    _OutExpressionParensPrec(Dst, 2);
-    write(Codegen.Output, ', ');
-    OutExpression(Expr);
-    writeln(Codegen.Output, ', enumvalues',
-            Expr^.TypeIndex^.EnumIndex^.Id, ');')
-  end
-  else
+    write(Codegen.Output, 'read_',
+          ShortTypeName(ReadArg^.Arg^.TypeIndex), '(&');
+    _OutExpressionParensPrec(Src, 2);
+    write(Codegen.Output,', &');
+    _OutExpressionParensPrec(ReadArg^.Arg, 2);
+    writeln(Codegen.Output, ');');
+    ReadArg := ReadArg^.Next
+  end;
+  if Linefeed then
   begin
-    write(Codegen.Output, 'write_', ShortTypeName(Expr^.TypeIndex), '(&');
+    write(Codegen.Output, 'readln(&');
+    _OutExpressionParensPrec(Src, 2);
+    writeln(Codegen.Output, ');')
+  end;
+  if Braces then OutEnd
+end;
+
+procedure _OutWrite(Expr : TExpression);
+var 
+  Dst : TExpression;
+  WriteArg : ^TExWriteArgs;
+  Linefeed : boolean;
+  Braces : boolean;
+begin
+  Dst := Expr^.SpecialFunctionCallEx.Dst;
+  Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfWriteln;
+  WriteArg := Expr^.SpecialFunctionCallEx.WriteArgs;
+  Braces := (WriteArg <> nil) and ((WriteArg^.Next <> nil) or Linefeed);
+  if Braces then OutBegin;
+  while WriteArg <> nil do
+  begin
+    if IsEnumType(WriteArg^.Arg^.TypeIndex) then
+    begin
+      write(Codegen.Output, 'write_e(&');
+      _OutExpressionParensPrec(Dst, 2);
+      write(Codegen.Output, ', ');
+      OutExpression(WriteArg^.Arg);
+      writeln(Codegen.Output, ', enumvalues',
+              WriteArg^.Arg^.TypeIndex^.EnumIndex^.Id, ');')
+    end
+    else
+    begin
+      write(Codegen.Output, 'write_',
+            ShortTypeName(WriteArg^.Arg^.TypeIndex), '(&');
+      _OutExpressionParensPrec(Dst, 2);
+      write(Codegen.Output, ', ');
+      OutExpression(WriteArg^.Arg);
+      writeln(Codegen.output, ');')
+    end;
+    WriteArg := WriteArg^.Next
+  end;
+  if Linefeed then
+  begin
+    write(Codegen.Output, 'writeln(&');
     _OutExpressionParensPrec(Dst, 2);
-    write(Codegen.Output, ', ');
-    OutExpression(Expr);
-    writeln(Codegen.output, ');')
-  end
+    writeln(Codegen.Output, ');')
+  end;
+  if Braces then OutEnd
 end;
 
-procedure OutWriteln;
+procedure _OutStr(Expr : TExpression);
+var Src, Dst : TExpression;
 begin
-  write(Codegen.Output, 'writeln(&');
-  _OutExpressionParensPrec(Dst, 2);
-  writeln(Codegen.Output, ');')
-end;
-
-procedure OutStr;
-begin
-  if IsEnumType(Expr^.TypeIndex) then
+  Src := Expr^.SpecialFunctionCallEx.Src;
+  Dst := Expr^.SpecialFunctionCallEx.Dst;
+  if IsEnumType(Src^.TypeIndex) then
   begin
     OutExpression(Dst);
     write(Codegen.Output, ' = to_str_e(');
-    OutExpression(Expr);
+    OutExpression(Src);
     writeln(Codegen.Output, ', enumvalues',
-            Expr^.TypeIndex^.EnumIndex^.Id, ');')
+            Src^.TypeIndex^.EnumIndex^.Id, ');')
   end
   else
   begin
     OutExpression(Dst);
-    write(Codegen.Output, ' = to_str_', ShortTypeName(Expr^.TypeIndex), '(');
-    OutExpression(Expr);
+    write(Codegen.Output, ' = to_str_', ShortTypeName(Src^.TypeIndex), '(');
+    OutExpression(Src);
     writeln(Codegen.Output, ');')
   end;
 end;
 
-procedure OutNew;
+procedure _OutNew(Expr : TExpression);
+var Ptr : TExpression;
 begin
-  OutExpression(Dst);
+  Ptr := Expr^.SpecialFunctionCallEx.Ptr;
+  OutExpression(Ptr);
   write(Codegen.Output, ' = malloc(sizeof(');
-  OutTypeReference(Dst^.TypeIndex^.PointedTypeIndex);
+  OutTypeReference(Ptr^.TypeIndex^.PointedTypeIndex);
   writeln(Codegen.Output, '));')
 end;
 
-procedure OutDispose;
+procedure _OutDispose(Expr : TExpression);
+var Ptr : TExpression;
 begin
+  Ptr := Expr^.SpecialFunctionCallEx.Ptr;
   write(Codegen.Output, 'free(');
-  OutExpression(Dst);
+  OutExpression(Ptr);
   writeln(Codegen.Output, ');')
 end;
 
@@ -864,6 +899,19 @@ procedure OutProcedureCall;
 begin
   OutExpression(Expr);
   writeln(Codegen.Output, ';')
+end;
+
+procedure OutSpecialProcedureCall;
+begin
+  case Expr^.SpecialFunctionCallEx.SpecialFunction of 
+    TsfWrite : _OutWrite(Expr);
+    TsfWriteln : _OutWrite(Expr);
+    TsfRead : _OutRead(Expr);
+    TsfReadln : _OutRead(Expr);
+    TsfStr : _OutStr(Expr);
+    TsfNew : _OutNew(Expr);
+    TsfDispose : _OutDispose(Expr);
+  end
 end;
 
 procedure OutEmptyStatement;

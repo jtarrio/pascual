@@ -523,172 +523,189 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
-function PsFunctionCall(Fn : TExpression) : TExpression;
-var 
-  Args : TExFunctionArgs;
-begin
-  WantTokenAndRead(TkLParen);
-  Args.Size := 0;
-  while Lexer.Token.Id <> TkRParen do
-  begin
-    Args.Size := Args.Size + 1;
-    Args.Values[Args.Size] := PsExpression;
-    WantToken2(TkComma, TkRParen);
-    SkipToken(TkComma)
-  end;
-  WantTokenAndRead(TkRparen);
-  PsFunctionCall := ExFunctionCall(Fn, Args)
-end;
-
 function PsPointerDeref(Ptr : TExpression) : TExpression;
 begin
   WantTokenAndRead(TkCaret);
   PsPointerDeref := ExPointerAccess(Ptr)
 end;
 
-procedure PsRead(Fn : TPsSpecialFunction);
+function PsRead(FnExpr : TExpression) : TExpression;
 var 
-  Src : TExpression;
-  LineFeed : boolean;
+  Expr : TExpression;
+  First : boolean;
   OutVar : TExpression;
+  ReadArg : ^TExReadArgs;
 begin
-  LineFeed := Fn = TsfReadln;
-  Src := ExVariable(FindNameOfClass('INPUT',
-         TncVariable, {Required=}true)^.VariableIndex);
-  if Lexer.Token.Id <> TkLparen then
+  Expr := ExSpecialFunctionCall(FnExpr);
+  Expr^.SpecialFunctionCallEx.Src := ExVariable(FindNameOfClass('INPUT',
+                                     TncVariable,
+                                     {Required=}true)^.VariableIndex);
+  ReadArg := nil;
+  if Lexer.Token.Id = TkLparen then
   begin
-    if LineFeed then OutReadln(Src);
-  end
-  else
-  begin
-    OutBegin;
+    First := true;
     WantTokenAndRead(TkLparen);
-    if Lexer.Token.Id <> TkRparen then
+    while Lexer.Token.Id <> TkRparen do
     begin
       OutVar := PsExpression;
-      if OutVar^.IsAssignable and IsTextType(OutVar^.TypeIndex) then
+      if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypeIndex) then
       begin
-        DisposeExpr(Src);
-        Src := OutVar
+        DisposeExpr(Expr^.SpecialFunctionCallEx.Src);
+        Expr^.SpecialFunctionCallEx.Src := OutVar
       end
       else
       begin
         if not OutVar^.IsAssignable
            or not IsStringyType(OutVar^.TypeIndex) then
           CompileError('Invalid expression for read argument');
-        OutRead(Src, OutVar);
-        DisposeExpr(OutVar);
+        if ReadArg = nil then
+        begin
+          new(Expr^.SpecialFunctionCallEx.ReadArgs);
+          ReadArg := Expr^.SpecialFunctionCallEx.ReadArgs
+        end
+        else
+        begin
+          new(ReadArg^.Next);
+          ReadArg := ReadArg^.Next;
+        end;
+        ReadArg^.Next := nil;
+        ReadArg^.Arg := OutVar;
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
-      while Lexer.Token.Id <> TkRparen do
-      begin
-        OutVar := PsExpression;
-        if not OutVar^.IsAssignable
-           or not IsStringyType(OutVar^.TypeIndex) then
-          CompileError('Invalid expression for read argument');
-        OutRead(Src, OutVar);
-        DisposeExpr(OutVar);
-        WantToken2(TkComma, TkRparen);
-        SkipToken(TkComma)
-      end;
+      First := false
     end;
-    WantTokenAndRead(TkRparen);
-    if LineFeed then
-      OutReadln(Src);
-    DisposeExpr(Src);
-    OutEnd;
-  end
+    WantTokenAndRead(TkRparen)
+  end;
+  PsRead := Expr
 end;
 
-procedure PsWrite(Fn : TPsSpecialFunction);
+function PsWrite(FnExpr : TExpression) : TExpression;
 var 
-  Dst : TExpression;
-  LineFeed : boolean;
   Expr : TExpression;
+  First : boolean;
+  OutExpr : TExpression;
+  WriteArg : ^TExWriteArgs;
 begin
-  LineFeed := Fn = TsfWriteln;
-  Dst := ExVariable(FindNameOfClass('OUTPUT',
-         TncVariable, {Required=}true)^.VariableIndex);
-  if Lexer.Token.Id <> TkLparen then
+  Expr := ExSpecialFunctionCall(FnExpr);
+  Expr^.SpecialFunctionCallEx.Dst := ExVariable(FindNameOfClass('OUTPUT',
+                                     TncVariable,
+                                     {Required=}true)^.VariableIndex);
+  WriteArg := nil;
+  if Lexer.Token.Id = TkLparen then
   begin
-    if LineFeed then OutWriteln(Dst);
-  end
-  else
-  begin
-    OutBegin;
+    First := true;
     WantTokenAndRead(TkLparen);
-    if Lexer.Token.Id <> TkRparen then
+    while Lexer.Token.Id <> TkRparen do
     begin
-      Expr := PsExpression;
-      if Expr^.IsAssignable and IsTextType(Expr^.TypeIndex) then
+      OutExpr := PsExpression;
+      if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypeIndex) then
       begin
-        DisposeExpr(Dst);
-        Dst := Expr
+        DisposeExpr(Expr^.SpecialFunctionCallEx.Dst);
+        Expr^.SpecialFunctionCallEx.Dst := OutExpr
       end
       else
       begin
-        OutWrite(Dst, Expr);
-        DisposeExpr(Expr);
+        if WriteArg = nil then
+        begin
+          new(Expr^.SpecialFunctionCallEx.WriteArgs);
+          WriteArg := Expr^.SpecialFunctionCallEx.WriteArgs
+        end
+        else
+        begin
+          new(WriteArg^.Next);
+          WriteArg := WriteArg^.Next;
+        end;
+        WriteArg^.Next := nil;
+        WriteArg^.Arg := OutExpr;
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
-      while Lexer.Token.Id <> TkRParen do
-      begin
-        Expr := PsExpression;
-        OutWrite(Dst, Expr);
-        DisposeExpr(Expr);
-        WantToken2(TkComma, TkRParen);
-        SkipToken(TkComma)
-      end;
+      First := false
     end;
-    WantTokenAndRead(TkRparen);
-    if LineFeed then
-      OutWriteln(Dst);
-    DisposeExpr(Dst);
-    OutEnd
-  end
+    WantTokenAndRead(TkRparen)
+  end;
+  PsWrite := Expr
 end;
 
-procedure PsStr;
+function PsStr(FnExpr : TExpression) : TExpression;
 var 
-  Expr, Dest : TExpression;
+  Expr, Src, Dest : TExpression;
 begin
   WantTokenAndRead(TkLparen);
-  Expr := PsExpression;
+  Src := PsExpression;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
   if not Dest^.IsAssignable or not IsStringType(Dest^.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
-  OutStr(Dest, Expr);
-  DisposeExpr(Dest);
-  DisposeExpr(Expr)
+  Expr := ExSpecialFunctionCall(FnExpr);
+  Expr^.SpecialFunctionCallEx.Src := Src;
+  Expr^.SpecialFunctionCallEx.Dst := Dest;
+  PsStr := Expr
 end;
 
-procedure PsNew;
+function PsNew(FnExpr : TExpression) : TExpression;
 var 
-  Dest : TExpression;
+  Expr, Ptr : TExpression;
 begin
   WantTokenAndRead(TkLparen);
-  Dest := PsExpression;
+  Ptr := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not Dest^.IsAssignable or not IsPointerType(Dest^.TypeIndex) then
+  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypeIndex) then
     CompileError('Argument is not a pointer');
-  OutNew(Dest);
-  DisposeExpr(Dest)
+  Expr := ExSpecialFunctionCall(FnExpr);
+  Expr^.SpecialFunctionCallEx.Ptr := Ptr;
+  PsNew := Expr
 end;
 
-procedure PsDispose;
+function PsDispose(FnExpr : TExpression) : TExpression;
 var 
-  Dest : TExpression;
+  Expr, Ptr : TExpression;
 begin
   WantTokenAndRead(TkLparen);
-  Dest := PsExpression;
+  Ptr := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not Dest^.IsAssignable or not IsPointerType(Dest^.TypeIndex) then
+  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypeIndex) then
     CompileError('Argument is not a pointer');
-  OutDispose(Dest)
+  Expr := ExSpecialFunctionCall(FnExpr);
+  Expr^.SpecialFunctionCallEx.Ptr := Ptr;
+  PsDispose := Expr
+end;
+
+function PsFunctionCall(Fn : TExpression) : TExpression;
+var 
+  Args : TExFunctionArgs;
+begin
+  if Fn^.Cls = XcFunctionRef then
+  begin
+    Args.Size := 0;
+    if Lexer.Token.Id = TkLParen then
+    begin
+      WantTokenAndRead(TkLParen);
+      while Lexer.Token.Id <> TkRParen do
+      begin
+        Args.Size := Args.Size + 1;
+        Args.Values[Args.Size] := PsExpression;
+        WantToken2(TkComma, TkRParen);
+        SkipToken(TkComma)
+      end;
+      WantTokenAndRead(TkRparen)
+    end;
+    PsFunctionCall := ExFunctionCall(Fn, Args)
+  end
+  else if Fn^.Cls = XcSpecialFunctionRef then
+  begin
+    case Fn^.SpecialFunctionEx.SpecialFunction of 
+      TsfRead : PsFunctionCall := PsRead(Fn);
+      TsfReadln : PsFunctionCall := PsRead(Fn);
+      TsfWrite : PsFunctionCall := PsWrite(Fn);
+      TsfWriteln : PsFunctionCall := PsWrite(Fn);
+      TsfStr : PsFunctionCall := PsStr(Fn);
+      TsfNew : PsFunctionCall := PsNew(Fn);
+      TsfDispose : PsFunctionCall := PsDispose(Fn);
+    end;
+  end;
 end;
 
 function PsArrayAccess(Arr : TExpression) : TExpression;
@@ -740,18 +757,7 @@ begin
     else if Found.Cls = TncEnumValue then
            Expr := ExEnumConstant(Found.Ordinal, Found.EnumTypeIndex)
     else if Found.Cls = TncSpecialFunction then
-    begin
-      Expr := ExNothing;
-      if (Found.SpecialFunction = TsfRead)
-         or (Found.SpecialFunction = TsfReadln) then
-        PsRead(Found.SpecialFunction)
-      else if (Found.SpecialFunction = TsfWrite)
-              or (Found.SpecialFunction = TsfWriteln) then
-             PsWrite(Found.SpecialFunction)
-      else if Found.SpecialFunction = TsfStr then PsStr
-      else if Found.SpecialFunction = TsfNew then PsNew
-      else if Found.SpecialFunction = TsfDispose then PsDispose
-    end
+           Expr := ExSpecialFunction(Found.SpecialFunction)
     else
       CompileError('Invalid identifier: ' + Id.Name)
   end;
@@ -764,8 +770,8 @@ var
 begin
   Done := false;
   repeat
-    if Lexer.Token.Id = TkLparen then Expr := PsFunctionCall(Expr)
-    else if Expr^.Cls = XcFunctionRef then Expr := ExEvaluateFunction(Expr)
+    if Expr^.Cls = XcSpecialFunctionRef then Expr := PsFunctionCall(Expr)
+    else if Expr^.Cls = XcFunctionRef then Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
@@ -979,10 +985,14 @@ begin
       OutProcedureCall(Lhs);
       DisposeExpr(Lhs)
     end
-    else if Lhs^.Cls <> XcNothing then
-           if Lhs^.Cls = XcBinaryOp then
-             CompileError('Invalid statement' +
-                          ' (maybe you wrote ''='' instead of '':=''?)')
+    else if Lhs^.Cls = XcSpecialFunctionCall then
+    begin
+      OutSpecialProcedureCall(Lhs);
+      DisposeExpr(Lhs)
+    end
+    else if Lhs^.Cls = XcBinaryOp then
+           CompileError('Invalid statement' +
+                        ' (maybe you wrote ''='' instead of '':=''?)')
     else
       CompileError('Invalid statement')
   end

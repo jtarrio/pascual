@@ -1,9 +1,12 @@
 const 
   MaxEnumValues = 128;
-  MaxRecordFields = 16;
+  MaxRecordFields = 32;
   MaxFunctionArguments = 4;
 
 type 
+  TPsSpecialFunction = (TsfRead, TsfReadln, TsfWrite, TsfWriteln, TsfStr,
+                        TsfNew, TsfDispose);
+
   TPsTypeIndex = ^TPsType;
   TPsEnumIndex = ^TPsEnumDef;
   TPsRecordIndex = ^TPsRecordDef;
@@ -57,6 +60,25 @@ type
     FunctionRef : TExpression;
     Args : TExFunctionArgs
   end;
+  TExSpecialFunctionRef = record
+    SpecialFunction : TPsSpecialFunction
+  end;
+  TExReadArgs = record
+    Arg : TExpression;
+    Next : ^TExReadArgs
+  end;
+  TExWriteArgs = record
+    Arg : TExpression;
+    Next : ^TExWriteArgs
+  end;
+  TExSpecialFunctionCall = record
+    Src : TExpression;
+    Dst : TExpression;
+    Ptr : TExpression;
+    case SpecialFunction : TPsSpecialFunction of 
+      TsfRead, TsfReadln: (ReadArgs : ^TExReadArgs);
+      TsfWrite, TsfWriteln: (WriteArgs : ^TExWriteArgs);
+  end;
   TExUnaryOp = record
     Parent : TExpression;
     Op : TLxTokenId
@@ -67,11 +89,11 @@ type
     Op : TLxTokenId
   end;
 
-  TExpressionClass = (XcNothing, XcImmediate, XcToString,
+  TExpressionClass = (XcImmediate, XcToString,
                       XcVariableAccess, XcFieldAccess,
                       XcArrayAccess, XcPointerAccess, XcStringChar,
-                      XcFunctionRef, XcFunctionCall, XcUnaryOp,
-                      XcBinaryOp);
+                      XcFunctionRef, XcFunctionCall, XcSpecialFunctionRef,
+                      XcSpecialFunctionCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypeIndex : TPsTypeIndex;
     IsConstant : boolean;
@@ -87,6 +109,8 @@ type
       XcStringChar : (StringCharEx : TExStringChar);
       XcFunctionRef : (FunctionEx : TExFunctionRef);
       XcFunctionCall : (CallEx : TExFunctionCall);
+      XcSpecialFunctionRef : (SpecialFunctionEx : TExSpecialFunctionRef);
+      XcSpecialFunctionCall : (SpecialFunctionCallEx : TExSpecialFunctionCall);
       XcUnaryOp : (UnaryEx : TExUnaryOp);
       XcBinaryOp : (BinaryEx : TExBinaryOp);
   end;
@@ -152,8 +176,6 @@ type
   end;
   TPsNameClass = (TncType, TncVariable, TncEnumValue, TncFunction,
                   TncSpecialFunction);
-  TPsSpecialFunction = (TsfRead, TsfReadln, TsfWrite, TsfWriteln, TsfStr,
-                        TsfNew, TsfDispose);
   TPsName = record
     Name : string;
     case Cls : TPsNameClass of 
