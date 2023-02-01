@@ -446,9 +446,19 @@ begin
   else if TypeIndex^.Cls = TtcString then write(Codegen.Output, 'PString')
   else if TypeIndex^.Cls = TtcText then write(Codegen.Output, 'PFile')
   else if TypeIndex^.Cls = TtcEnum then
-         write(Codegen.Output, 'enum enum', TypeIndex^.EnumIndex^.Id)
+  begin
+    if TypeIndex^.EnumIndex^.HasBeenDefined and (TypeIndex^.Name <> '') then
+      write(Codegen.Output, TypeIndex^.Name)
+    else
+      write(Codegen.Output, 'enum enum', TypeIndex^.EnumIndex^.Id)
+  end
   else if TypeIndex^.Cls = TtcRecord then
-         write(Codegen.Output, 'struct record', TypeIndex^.RecordIndex^.Id)
+  begin
+    if TypeIndex^.RecordIndex^.HasBeenDefined and (TypeIndex^.Name <> '') then
+      write(Codegen.Output, TypeIndex^.Name)
+    else
+      write(Codegen.Output, 'struct record', TypeIndex^.RecordIndex^.Id)
+  end
   else if TypeIndex^.Cls = TtcArray then
   begin
     OutTypeReference(TypeIndex^.ArrayIndex^.TypeIndex);
