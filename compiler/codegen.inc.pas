@@ -427,11 +427,6 @@ begin
   else OutVariableName := Name
 end;
 
-function OutReturnVariableName;
-begin
-  OutReturnVariableName := 'return_' + Name
-end;
-
 procedure OutTypeReference;
 begin
   if TypeIndex = nil then write(Codegen.Output, 'void')
@@ -695,15 +690,7 @@ begin
   _OutBlankline(TotFunDef);
   OutFunctionPrototype(FnIndex^);
   write(Codegen.Output, ' ');
-  OutBegin;
-  if FnIndex^.ReturnTypeIndex <> nil then
-  begin
-    _OutIndent;
-    OutNameAndType(OutReturnVariableName(FnIndex^.Name),
-    FnIndex^.ReturnTypeIndex);
-    write(Codegen.Output, ';');
-    _OutNewline
-  end
+  OutBegin
 end;
 
 procedure OutFunctionEnd;
@@ -711,8 +698,7 @@ begin
   if FnIndex^.ReturnTypeIndex <> nil then
   begin
     _OutIndent;
-    write(Codegen.Output, 'return ',
-          OutReturnVariableName(FnIndex^.Name), ';');
+    write(Codegen.Output, 'return RESULT;');
     _OutNewline
   end;
   OutEnd
@@ -884,8 +870,7 @@ end;
 procedure OutAssignReturnValue;
 begin
   _OutIndent;
-  write(Codegen.Output, 'return_',
-        Lhs^.FunctionEx.FunctionIndex^.Name, ' = ');
+  write(Codegen.Output, 'RESULT = ');
   OutExpression(Rhs);
   write(Codegen.Output, ';');
   _OutNewline

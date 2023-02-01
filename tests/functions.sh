@@ -20,6 +20,16 @@ echo "program foo;
       begin Fun := 'fun ' + b + ' ' + c end;
       begin write(Fun(1, '2', '3', 4)) end." | outputs 'fun 2 3'
 
+# The ways you can return a value
+echo "program foo;
+      function Foo : integer;
+      begin Foo := 1234 end;
+      begin write(Foo) end." | outputs '1234'
+echo "program foo;
+      function Foo : integer;
+      begin Result := 1234 end;
+      begin write(Foo) end." | outputs '1234'
+
 # Arguments are passed by value
 echo "program foo;
       var i : integer;

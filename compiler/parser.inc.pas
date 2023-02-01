@@ -383,6 +383,7 @@ procedure PsFunctionBody(FnIndex : TPsFunctionIndex);
 var 
   Pos : integer;
   Checkpoint : TPsDefPtr;
+  ReturnVar : TPsVariable;
 begin
   StartLocalScope(FnIndex);
   Checkpoint := Defs.Latest;
@@ -390,6 +391,9 @@ begin
     AddVariable(FnIndex^.Args[Pos]);
   OutFunctionDefinition(FnIndex);
   OutEnumValuesFromCheckpoint(Checkpoint);
+  if FnIndex^.ReturnTypeIndex <> nil then
+    OutVariableDefinition(AddVariable(MakeVariable('RESULT',
+                          FnIndex^.ReturnTypeIndex, false)));
   PsDefinitions;
   WantTokenAndRead(TkBegin);
   while Lexer.Token.Id <> TkEnd do
