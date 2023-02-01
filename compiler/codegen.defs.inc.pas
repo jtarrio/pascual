@@ -12,8 +12,6 @@ procedure OutEnumValuesFromCheckpoint(Checkpoint : TPsDefPtr);
 forward;
 function OutVariableName(Name : string; IsReference : boolean) : string;
 forward;
-function OutReturnVariableName(Name : string) : string;
-forward;
 procedure OutTypeReference(TypeIndex : TPsTypeIndex);
 forward;
 procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
