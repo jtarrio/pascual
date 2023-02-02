@@ -132,7 +132,7 @@ echo 'const A =;' | testdef | is_not_valid
 echo 'const A = 123' | testdef | is_not_valid
 echo 'const A = 123; B = A;' | testdef | is_valid
 echo 'const A = B; B = 123;' | testdef | is_not_valid
-echo 'const A = 1 + 2;' | testdef | will_be_valid
+echo 'const A = 1 + 2;' | testdef | is_valid
 
 # Typed constant definitions
 echo 'const A : integer = 123;' | testdef | is_valid

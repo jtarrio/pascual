@@ -11,9 +11,9 @@ begin
   PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString));
   PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText));
 
-  AddConstant(MakeConstant('FALSE', TkFalse, 'FALSE'));
-  AddConstant(MakeConstant('TRUE', TkTrue, 'TRUE'));
-  AddConstant(MakeConstant('MAXINT', TkNumber, '2147483647'));
+  AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
+  AddConstant(MakeConstant('TRUE', ExBooleanConstant(true)));
+  AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
   AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false));
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));

@@ -11,7 +11,7 @@ FALSE
 '
 testout 'writeln(1); writeln(-1); writeln(maxint)' | outputs '1
 -1
-2147483647
+32767
 '
 testout "write('a')" | outputs 'a'
 testout "write('a'); write('b')" | outputs 'ab'

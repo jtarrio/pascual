@@ -184,7 +184,7 @@ var Expr : TExpression;
 begin
   Expr := PsExpression;
   if Expr^.cls <> XcImmediate then
-    CompileError('Expected an immediate value');
+    CompileError('Expected an immediate expression');
   PsImmediate := Expr
 end;
 
@@ -275,16 +275,12 @@ end;
 procedure PsConstant(Name : string);
 var 
   Constant : TPsConstant;
+  Value : TExpression;
 begin
   WantTokenAndRead(TkEquals);
   Constant.Name := Name;
-  if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) or
-     (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString) then
-    Constant.Replacement := Lexer.Token
-  else
-    CompileError('Expected constant value, found ' + LxTokenStr);
+  Constant.Value := PsImmediate;
   AddConstant(Constant);
-  ReadToken;
 end;
 
 procedure PsConstantValue(TypeIndex : TPsTypeIndex);
@@ -756,6 +752,8 @@ begin
     Found := FindName(Id.Name, {Required=}true)^;
     if Found.Cls = TncVariable then
       Expr := ExVariable(Found.VariableIndex)
+    else if Found.Cls = TncConstant then
+      Expr := CopyExpr(Found.ConstantIndex^.Value)
     else if Found.Cls = TncFunction then
            Expr := ExFunctionRef(Found.FunctionIndex)
     else if Found.Cls = TncEnumValue then
@@ -846,11 +844,6 @@ begin
   if Lexer.Token.Id = TkNil then
   begin
     Expr := ExNil;
-    ReadToken
-  end
-  else if (Lexer.Token.Id = TkFalse) or (Lexer.Token.Id = TkTrue) then
-  begin
-    Expr := ExBooleanConstant(Lexer.Token.Id = TkTrue);
     ReadToken
   end
   else if Lexer.Token.Id = TkString then
@@ -1179,23 +1172,12 @@ end;
 
 procedure ReadToken;
 var 
-  ConstIndex : TPsConstantIndex;
   TokenPos : TLxPos;
   Stop : boolean;
 begin
   repeat
     LxReadToken;
     Stop := Lexer.Token.Id <> TkComment;
-    if Lexer.Token.Id = TkIdentifier then
-    begin
-      ConstIndex := FindConstant(Lexer.Token.Value);
-      if ConstIndex <> nil then
-      begin
-        TokenPos := Lexer.Token.Pos;
-        Lexer.Token := ConstIndex^.Replacement;
-        Lexer.Token.Pos := TokenPos
-      end
-    end;
     if Lexer.Token.Id = TkComment then
       if (Length(Lexer.Token.Value) >= 2) and (Lexer.Token.Value[1] = '$') then
         ExecuteDirective(Lexer.Token.Value);

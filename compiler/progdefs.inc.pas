@@ -156,7 +156,7 @@ type
   end;
   TPsConstant = record
     Name : string;
-    Replacement : TLxToken
+    Value : TExpression;
   end;
   TPsVariable = record
     Name : string;
@@ -174,13 +174,14 @@ type
   TPsWithVar = record
     VariableIndex : TPsVariableIndex
   end;
-  TPsNameClass = (TncType, TncVariable, TncEnumValue, TncFunction,
+  TPsNameClass = (TncType, TncVariable, TncConstant, TncEnumValue, TncFunction,
                   TncSpecialFunction);
   TPsName = record
     Name : string;
     case Cls : TPsNameClass of 
       TncType : (TypeIndex : TPsTypeIndex);
       TncVariable : (VariableIndex : TPsVariableIndex);
+      TncConstant : (ConstantIndex : TPsConstantIndex);
       TncEnumValue : (EnumTypeIndex : TPsTypeIndex;
                       Ordinal : integer);
       TncFunction : (FunctionIndex : TPsFunctionIndex);
@@ -430,6 +431,15 @@ begin
   Def := _AddName(Name, TncVariable);
   Def^.VariableIndex := Idx;
   AddVariableName := Def
+end;
+
+function AddConstantName(Name : string; Idx : TPsConstantIndex) : TPsNameIndex;
+var 
+  Def : TPsNameIndex;
+begin
+  Def := _AddName(Name, TncConstant);
+  Def^.ConstantIndex := Idx;
+  Result := Def
 end;
 
 function AddFunctionName(Name : string; Idx : TPsFunctionIndex) : TPsNameIndex;
@@ -745,29 +755,14 @@ begin
   AddArray := ArrayIndex
 end;
 
-function FindConstant(Name : string) : TPsConstantIndex;
-var 
-  Def : TPsDefPtr;
-  Ret : TPsConstantIndex;
-begin
-  Ret := nil;
-  Def := Defs.Latest;
-  while (Ret = nil) and (Def <> nil) do
-  begin
-    if (Def^.Cls = TdcConstant) and (Name = Def^.ConstantIndex^.Name) then
-      Ret := Def^.ConstantIndex;
-    Def := Def^.Prev
-  end;
-  FindConstant := Ret
-end;
-
 function AddConstant(Constant : TPsConstant) : TPsConstantIndex;
 var 
   ConstantIndex : TPsConstantIndex;
 begin
-  if FindConstant(Constant.Name) <> nil then
-    CompileError('Constant ' + Constant.Name + ' already defined');
+  if FindNameInLocalScope(Constant.Name, {Required=}false) <> nil then
+    CompileError('Identifier ' + Constant.Name + ' already defined');
   ConstantIndex := _AddDef(TdcConstant)^.ConstantIndex;
+  AddConstantName(Constant.Name, ConstantIndex);
   ConstantIndex^ := Constant;
   AddConstant := ConstantIndex
 end;
@@ -955,14 +950,13 @@ begin
   MakeType := Typ
 end;
 
-function MakeConstant(Name : string; TokenId : TLxTokenId; TokenValue : string)
+function MakeConstant(Name : string; Value : TExpression)
 : TPsConstant;
 var 
   Constant : TPsConstant;
 begin
   Constant.Name := Name;
-  Constant.Replacement.Id := TokenId;
-  Constant.Replacement.Value := TokenValue;
+  Constant.Value := Value;
   MakeConstant := Constant
 end;
 
