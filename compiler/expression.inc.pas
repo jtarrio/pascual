@@ -17,9 +17,8 @@ var
   ReadArg, NextReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg : ^TExWriteArgs;
 begin
-  if Call.Src <> nil then DisposeExpr(Call.Src);
-  if Call.Dst <> nil then DisposeExpr(Call.Dst);
-  if Call.Ptr <> nil then DisposeExpr(Call.Ptr);
+  if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
+  if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
   if (Call.SpecialFunction = TsfWrite) or (Call.SpecialFunction = TsfWriteln)
     then
   begin
@@ -90,9 +89,8 @@ var
   WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
 begin
   Copy.SpecialFunction := Call.SpecialFunction;
-  if Call.Src <> nil then Copy.Src := CopyExpr(Call.Src);
-  if Call.Dst <> nil then Copy.Dst := CopyExpr(Call.Dst);
-  if Call.Ptr <> nil then Copy.Ptr := CopyExpr(Call.Ptr);
+  if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
+  if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
   if (Call.SpecialFunction = TsfWrite)
      or (Call.SpecialFunction = TsfWriteln) then
   begin
@@ -335,8 +333,7 @@ begin
   ExFieldAccess := Expr
 end;
 
-function ExArrayAccess(Parent : TExpression; Subscript : TExpression)
-: TExpression;
+function ExArrayAccess(Parent, Subscript : TExpression) : TExpression;
 var Expr : TExpression;
 begin
   if not IsArrayType(Parent^.TypeIndex) then
@@ -371,8 +368,7 @@ begin
   ExPointerAccess := Expr
 end;
 
-function ExStringChar(Parent : TExpression; Subscript : TExpression)
-: TExpression;
+function ExStringChar(Parent, Subscript : TExpression) : TExpression;
 var Expr : TExpression;
 begin
   if not IsStringyType(Parent^.TypeIndex) then
@@ -449,12 +445,34 @@ begin
   Fn := Expr^.SpecialFunctionEx.SpecialFunction;
   Expr^.Cls := XcSpecialFunctionCall;
   Expr^.SpecialFunctionCallEx.SpecialFunction := Fn;
-  Expr^.SpecialFunctionCallEx.Src := nil;
-  Expr^.SpecialFunctionCallEx.Dst := nil;
-  Expr^.SpecialFunctionCallEx.Ptr := nil;
+  Expr^.SpecialFunctionCallEx.Arg1 := nil;
+  Expr^.SpecialFunctionCallEx.Arg2 := nil;
   Expr^.SpecialFunctionCallEx.ReadArgs := nil;
   Expr^.SpecialFunctionCallEx.WriteArgs := nil;
   ExSpecialFunctionCall := Expr
+end;
+
+function _ExSFCUnImm(FnExpr, Arg : TExpression) : TExpression;
+forward;
+function _ExSFCUnCmp(FnExpr, Arg : TExpression) : TExpression;
+forward;
+function ExSpecialFunctionCallUnary(FnExpr, Arg : TExpression) : TExpression;
+begin
+  if Arg^.Cls = XcImmediate then Result := _ExSFCUnImm(FnExpr, Arg)
+  else Result := _ExSFCUnCmp(FnExpr, Arg)
+end;
+
+function _ExSFCBiImm(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
+forward;
+function _ExSFCBiCmp(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
+forward;
+function ExSpecialFunctionCallBinary(FnExpr, Arg1, Arg2 : TExpression)
+: TExpression;
+begin
+  if (Arg1^.Cls = XcImmediate) and (Arg2^.Cls = XcImmediate) then
+    Result := _ExSFCBiImm(FnExpr, Arg1, Arg2)
+  else
+    Result := _ExSFCBiCmp(FnExpr, Arg1, Arg2)
 end;
 
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -511,35 +529,35 @@ begin
   _ExUnOpCmp := Expr
 end;
 
-function _ExBinOpBoolImm(Left : TExpression; Right : TExpression;
+function _ExBinOpBoolImm(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpIntImm(Left : TExpression; Right : TExpression;
+function _ExBinOpIntImm(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpStrImm(Left : TExpression; Right : TExpression;
+function _ExBinOpStrImm(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpEnumImm(Left : TExpression; Right : TExpression;
+function _ExBinOpEnumImm(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpBoolCmp(Left : TExpression; Right : TExpression;
+function _ExBinOpBoolCmp(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpIntCmp(Left : TExpression; Right : TExpression;
+function _ExBinOpIntCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpStrCmp(Left : TExpression; Right : TExpression;
+function _ExBinOpStrCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpEnumCmp(Left : TExpression; Right : TExpression;
+function _ExBinOpEnumCmp(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
-function _ExBinOpPtrCmp(Left : TExpression; Right : TExpression;
+function _ExBinOpPtrCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
-function ExBinaryOp(Left : TExpression; Right : TExpression; Op : TLxTokenId)
-: TExpression;
+function ExBinaryOp(Left, Right : TExpression;
+                    Op : TLxTokenId) : TExpression;
 var 
   Immediate : boolean;
 begin
@@ -791,6 +809,97 @@ begin
     Expr^.TypeIndex := PrimitiveTypes.PtBoolean
   else CompileError('Invalid string operator: ' + LxTokenName(Op));
   _ExBinOpPtrCmp := Expr
+end;
+
+function _ExSFCUnImm;
+var 
+  SF : TPsSpecialFunction;
+  OutOfBounds : boolean;
+begin
+  OutOfBounds := false;
+  SF := FnExpr^.SpecialFunctionEx.SpecialFunction;
+  DisposeExpr(FnExpr);
+  if (SF = TsfNew) or (SF = TsfDispose) then
+    CompileError('Invalid argument')
+  else if SF = TsfOrd then
+  begin
+    with Arg^.ImmediateEx do
+    begin
+      case Cls of 
+        XicBoolean : if BooleanValue then IntegerValue := 1
+                     else IntegerValue := 0;
+        XicInteger: {do nothing};
+        XicChar: IntegerValue := Ord(CharValue);
+        XicEnum: IntegerValue := EnumOrdinal;
+        else CompileError('Invalid type')
+      end;
+      Arg^.TypeIndex := PrimitiveTypes.PtInteger;
+      Cls := XicInteger
+    end
+  end
+  else if SF = TsfPred then
+  begin
+    with Arg^.ImmediateEx do
+    begin
+      case Cls of 
+        XicBoolean : if BooleanValue then BooleanValue := false
+                     else OutOfBounds := true;
+        XicInteger: IntegerValue := IntegerValue - 1;
+{ TODO bootstrap doesn't recognize this yet
+        XicChar: if Ord(CharValue) > 0 then CharValue := Pred(CharValue)
+                 else OutOfBounds := true; }
+        XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
+                 else OutOfBounds := true;
+        else CompileError('Invalid type')
+      end
+    end
+  end
+  else if SF = TsfSucc then
+  begin
+    with Arg^.ImmediateEx do
+    begin
+      case Cls of 
+        XicBoolean : if not BooleanValue then BooleanValue := true
+                     else OutOfBounds := true;
+        XicInteger: IntegerValue := IntegerValue + 1;
+{ TODO bootstrap doesn't recognize this yet
+        XicChar: if Ord(CharValue) < 255 then CharValue := Succ(CharValue)
+                 else OutOfBounds := true; }
+        XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size then
+                   EnumOrdinal := EnumOrdinal + 1
+                 else
+                   OutOfBounds := true;
+        else CompileError('Invalid type for SUCC()')
+      end
+    end
+  end;
+  if OutOfBounds then CompileError('Out of bounds');
+  Result := Arg
+end;
+
+function _ExSFCUnCmp;
+begin
+  FnExpr := ExSpecialFunctionCall(FnExpr);
+  FnExpr^.SpecialFunctionCallEx.Arg1 := Arg;
+  if FnExpr^.SpecialFunctionCallEx.SpecialFunction = TsfOrd then
+    FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
+  Result := FnExpr
+end;
+
+function _ExSFCBiImm;
+var 
+  SF : TPsSpecialFunction;
+begin
+  SF := FnExpr^.SpecialFunctionEx.SpecialFunction;
+  if SF = TsfStr then Result := _ExSFCBiCmp(FnExpr, Arg1, Arg2)
+end;
+
+function _ExSFCBiCmp;
+begin
+  FnExpr := ExSpecialFunctionCall(FnExpr);
+  FnExpr^.SpecialFunctionCallEx.Arg1 := Arg1;
+  FnExpr^.SpecialFunctionCallEx.Arg2 := Arg2;
+  Result := FnExpr
 end;
 
 function ExCoerce;

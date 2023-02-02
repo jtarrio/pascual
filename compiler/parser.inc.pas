@@ -537,9 +537,9 @@ var
   ReadArg : ^TExReadArgs;
 begin
   Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Src := ExVariable(FindNameOfClass('INPUT',
-                                     TncVariable,
-                                     {Required=}true)^.VariableIndex);
+  Expr^.SpecialFunctionCallEx.Arg1 := ExVariable(FindNameOfClass('INPUT',
+                                      TncVariable,
+                                      {Required=}true)^.VariableIndex);
   ReadArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -550,8 +550,8 @@ begin
       OutVar := PsExpression;
       if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypeIndex) then
       begin
-        DisposeExpr(Expr^.SpecialFunctionCallEx.Src);
-        Expr^.SpecialFunctionCallEx.Src := OutVar
+        DisposeExpr(Expr^.SpecialFunctionCallEx.Arg1);
+        Expr^.SpecialFunctionCallEx.Arg1 := OutVar
       end
       else
       begin
@@ -588,9 +588,9 @@ var
   WriteArg : ^TExWriteArgs;
 begin
   Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Dst := ExVariable(FindNameOfClass('OUTPUT',
-                                     TncVariable,
-                                     {Required=}true)^.VariableIndex);
+  Expr^.SpecialFunctionCallEx.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
+                                      TncVariable,
+                                      {Required=}true)^.VariableIndex);
   WriteArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -601,8 +601,8 @@ begin
       OutExpr := PsExpression;
       if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypeIndex) then
       begin
-        DisposeExpr(Expr^.SpecialFunctionCallEx.Dst);
-        Expr^.SpecialFunctionCallEx.Dst := OutExpr
+        DisposeExpr(Expr^.SpecialFunctionCallEx.Arg1);
+        Expr^.SpecialFunctionCallEx.Arg1 := OutExpr
       end
       else
       begin
@@ -639,27 +639,24 @@ begin
   if not Dest^.IsAssignable or not IsStringType(Dest^.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
-  Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Src := Src;
-  Expr^.SpecialFunctionCallEx.Dst := Dest;
+  Expr := ExSpecialFunctionCallBinary(FnExpr, Src, Dest);
   PsStr := Expr
 end;
 
-function PsNew(FnExpr : TExpression) : TExpression;
-var 
-  Expr, Ptr : TExpression;
+function PsOrdPrecSucc(FnExpr : TExpression) : TExpression;
+var
+  Expr, Value : TExpression;
 begin
   WantTokenAndRead(TkLparen);
-  Ptr := PsExpression;
+  Value := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypeIndex) then
-    CompileError('Argument is not a pointer');
-  Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Ptr := Ptr;
-  PsNew := Expr
+  if not IsOrdinalType(Value^.TypeIndex) then
+    CompileError('Argument does not have an ordinal type');
+  Expr := ExSpecialFunctionCallUnary(FnExpr, Value);
+  Result := Expr
 end;
 
-function PsDispose(FnExpr : TExpression) : TExpression;
+function PsNewDispose(FnExpr : TExpression) : TExpression;
 var 
   Expr, Ptr : TExpression;
 begin
@@ -668,9 +665,8 @@ begin
   WantTokenAndRead(TkRparen);
   if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypeIndex) then
     CompileError('Argument is not a pointer');
-  Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Ptr := Ptr;
-  PsDispose := Expr
+  Expr := ExSpecialFunctionCallUnary(FnExpr, Ptr);
+  Result := Expr
 end;
 
 function PsFunctionCall(Fn : TExpression) : TExpression;
@@ -697,13 +693,17 @@ begin
   else if Fn^.Cls = XcSpecialFunctionRef then
   begin
     case Fn^.SpecialFunctionEx.SpecialFunction of 
+      TsfDispose : PsFunctionCall := PsNewDispose(Fn);
+      TsfNew : PsFunctionCall := PsNewDispose(Fn);
+      TsfOrd : PsFunctionCall := PsOrdPrecSucc(Fn);
+      TsfPred : PsFunctionCall := PsOrdPrecSucc(Fn);
       TsfRead : PsFunctionCall := PsRead(Fn);
       TsfReadln : PsFunctionCall := PsRead(Fn);
+      TsfStr : PsFunctionCall := PsStr(Fn);
+      TsfSucc : PsFunctionCall := PsOrdPrecSucc(Fn);
       TsfWrite : PsFunctionCall := PsWrite(Fn);
       TsfWriteln : PsFunctionCall := PsWrite(Fn);
-      TsfStr : PsFunctionCall := PsStr(Fn);
-      TsfNew : PsFunctionCall := PsNew(Fn);
-      TsfDispose : PsFunctionCall := PsDispose(Fn);
+      else CompileError('Internal error: unimplemented special function')
     end;
   end;
 end;
@@ -753,7 +753,7 @@ begin
     if Found.Cls = TncVariable then
       Expr := ExVariable(Found.VariableIndex)
     else if Found.Cls = TncConstant then
-      Expr := CopyExpr(Found.ConstantIndex^.Value)
+           Expr := CopyExpr(Found.ConstantIndex^.Value)
     else if Found.Cls = TncFunction then
            Expr := ExFunctionRef(Found.FunctionIndex)
     else if Found.Cls = TncEnumValue then

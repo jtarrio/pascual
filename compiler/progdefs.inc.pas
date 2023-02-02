@@ -4,8 +4,8 @@ const
   MaxFunctionArguments = 4;
 
 type 
-  TPsSpecialFunction = (TsfRead, TsfReadln, TsfWrite, TsfWriteln, TsfStr,
-                        TsfNew, TsfDispose);
+  TPsSpecialFunction = (TsfDispose, TsfNew, TsfOrd, TsfPred, TsfRead, TsfReadln,
+                        TsfStr, TsfSucc, TsfWrite, TsfWriteln);
 
   TPsTypeIndex = ^TPsType;
   TPsEnumIndex = ^TPsEnumDef;
@@ -72,9 +72,8 @@ type
     Next : ^TExWriteArgs
   end;
   TExSpecialFunctionCall = record
-    Src : TExpression;
-    Dst : TExpression;
-    Ptr : TExpression;
+    Arg1 : TExpression;
+    Arg2 : TExpression;
     case SpecialFunction : TPsSpecialFunction of 
       TsfRead, TsfReadln: (ReadArgs : ^TExReadArgs);
       TsfWrite, TsfWriteln: (WriteArgs : ^TExWriteArgs);

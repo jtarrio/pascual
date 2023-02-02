@@ -19,13 +19,16 @@ begin
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
 
+  AddSpecialFunctionName('DISPOSE', TsfDispose);
+  AddSpecialFunctionName('NEW', TsfNew);
+  AddSpecialFunctionName('ORD', TsfOrd);
+  AddSpecialFunctionName('PRED', TsfPred);
   AddSpecialFunctionName('READ', TsfRead);
   AddSpecialFunctionName('READLN', TsfReadln);
+  AddSpecialFunctionName('STR', TsfStr);
+  AddSpecialFunctionName('SUCC', TsfSucc);
   AddSpecialFunctionName('WRITE', TsfWrite);
   AddSpecialFunctionName('WRITELN', TsfWriteln);
-  AddSpecialFunctionName('STR', TsfStr);
-  AddSpecialFunctionName('NEW', TsfNew);
-  AddSpecialFunctionName('DISPOSE', TsfDispose);
 
   Fun.Name := 'ASSIGN';
   Fun.ArgCount := 2;
@@ -70,11 +73,6 @@ begin
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
-  Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
-  AddFunction(Fun);
-  Fun.Name := 'ORD';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
   Fun.Name := 'PARAMCOUNT';

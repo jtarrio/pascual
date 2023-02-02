@@ -18,4 +18,7 @@ typedef struct {
   FILE* file;
 } PFile;
 
+int pred(int value, int low, int high);
+int succ(int value, int low, int high);
+
 #endif  // __PASCUAL_TYPES_H
