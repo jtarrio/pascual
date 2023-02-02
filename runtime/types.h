@@ -2,6 +2,7 @@
 #define __PASCUAL_TYPES_H
 
 #include <stdio.h>
+#include <limits.h>
 
 typedef struct {
   union {

@@ -436,11 +436,10 @@ begin
   write(Codegen.Output, 'const char* enumvalues',
         EnumIndex^.Id,
         '[] = { ');
-  for PosInEnum := 1 to EnumIndex^.Size do
+  for PosInEnum := 0 to EnumIndex^.Size - 1 do
   begin
-    if PosInEnum <> 1 then write(Codegen.Output, ', ');
-    write(Codegen.Output, '"', EnumIndex^.Values[PosInEnum],
-          '"')
+    if PosInEnum <> 0 then write(Codegen.Output, ', ');
+    write(Codegen.Output, '"', EnumIndex^.Values[PosInEnum], '"')
   end;
   write(Codegen.Output, ' };');
   _OutNewline
@@ -562,9 +561,9 @@ begin
   if not EnumIndex^.HasBeenDefined then
   begin
     write(Codegen.Output, ' { ');
-    for Pos := 1 to EnumIndex^.Size do
+    for Pos := 0 to EnumIndex^.Size - 1 do
     begin
-      if Pos > 1 then
+      if Pos > 0 then
         write(Codegen.Output, ', ');
       write(Codegen.Output, EnumIndex^.Values[Pos])
     end;

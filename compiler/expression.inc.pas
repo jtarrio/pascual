@@ -264,7 +264,7 @@ var Expr : TExpression;
 begin
   if not IsEnumType(TypeIndex) then
     CompileError('Not an enumeration type: ' + TypeName(TypeIndex));
-  if (Ordinal < 1) or (Ordinal > TypeIndex^.EnumIndex^.Size) then
+  if (Ordinal < 0) or (Ordinal > TypeIndex^.EnumIndex^.Size - 1) then
     CompileError('Invalid value for ' + TypeName(TypeIndex));
   Expr := _ExImmediate(XicEnum);
   Expr^.ImmediateEx.EnumOrdinal := Ordinal;
@@ -848,6 +848,8 @@ begin
 { TODO bootstrap doesn't recognize this yet
         XicChar: if Ord(CharValue) > 0 then CharValue := Pred(CharValue)
                  else OutOfBounds := true; }
+        XicChar: if Ord(CharValue) > 0 then CharValue := Chr(Ord(CharValue) - 1)
+                 else OutOfBounds := true;
         XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
                  else OutOfBounds := true;
         else CompileError('Invalid type')
@@ -865,11 +867,13 @@ begin
 { TODO bootstrap doesn't recognize this yet
         XicChar: if Ord(CharValue) < 255 then CharValue := Succ(CharValue)
                  else OutOfBounds := true; }
-        XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size then
+        XicChar: if Ord(CharValue) < 255 then CharValue := Chr(Ord(CharValue) + 1)
+                 else OutOfBounds := true;
+        XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size - 1 then
                    EnumOrdinal := EnumOrdinal + 1
                  else
                    OutOfBounds := true;
-        else CompileError('Invalid type for SUCC()')
+        else CompileError('Invalid type')
       end
     end
   end;
@@ -881,8 +885,11 @@ function _ExSFCUnCmp;
 begin
   FnExpr := ExSpecialFunctionCall(FnExpr);
   FnExpr^.SpecialFunctionCallEx.Arg1 := Arg;
-  if FnExpr^.SpecialFunctionCallEx.SpecialFunction = TsfOrd then
-    FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
+  case FnExpr^.SpecialFunctionCallEx.SpecialFunction of 
+    TsfOrd: FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
+    TsfPred: FnExpr^.TypeIndex := Arg^.TypeIndex;
+    TsfSucc: FnExpr^.TypeIndex := Arg^.TypeIndex;
+  end;
   Result := FnExpr
 end;
 

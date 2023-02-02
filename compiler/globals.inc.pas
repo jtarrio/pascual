@@ -38,7 +38,7 @@ begin
   AddFunction(Fun);
   Fun.Name := 'CHR';
   Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('POS', PrimitiveTypes.PtInteger, true);
+  Fun.Args[1] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
   Fun.ReturnTypeIndex := PrimitiveTypes.PtChar;
   AddFunction(Fun);
   Fun.Name := 'CLOSE';

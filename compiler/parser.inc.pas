@@ -77,7 +77,7 @@ begin
     Enum.Size := Enum.Size + 1;
     if Enum.Size > MaxEnumValues then
       CompileError('Too many values in enum');
-    Enum.Values[Enum.Size] := GetTokenValueAndRead(TkIdentifier);
+    Enum.Values[Enum.Size - 1] := GetTokenValueAndRead(TkIdentifier);
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma);
   until Lexer.Token.Id = TkRparen;

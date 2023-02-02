@@ -133,7 +133,7 @@ type
   end;
   TPsEnumDef = record
     Size : integer;
-    Values : array[1..MaxEnumValues] of string;
+    Values : array[0..MaxEnumValues - 1] of string;
     Id : integer;
     HasBeenDefined : boolean
   end;
@@ -483,9 +483,9 @@ begin
   else if Typ.Cls = TtcEnum then
   begin
     Ret := '(';
-    for Pos := 1 to Typ.EnumIndex^.Size do
+    for Pos := 0 to Typ.EnumIndex^.Size - 1 do
     begin
-      if Pos <> 1 then
+      if Pos <> 0 then
         Ret := Ret + ',';
       Ret := Ret + Typ.EnumIndex^.Values[Pos]
     end;
@@ -721,7 +721,7 @@ begin
   end;
 
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = nil) then
-    for EnumPos := 1 to Typ.EnumIndex^.Size do
+    for EnumPos := 0 to Typ.EnumIndex^.Size - 1 do
       AddEnumValueName(EnumPos, TypeIndex)
 end;
 
