@@ -4,8 +4,8 @@ const
   MaxFunctionArguments = 4;
 
 type 
-  TPsSpecialFunction = (TsfDispose, TsfNew, TsfOrd, TsfPred, TsfRead, TsfReadln,
-                        TsfStr, TsfSucc, TsfWrite, TsfWriteln);
+  TPsPseudoFun = (TpfDispose, TpfNew, TpfOrd, TpfPred, TpfRead, TpfReadln,
+                  TpfStr, TpfSucc, TpfWrite, TpfWriteln);
 
   TPsTypeIndex = ^TPsType;
   TPsEnumIndex = ^TPsEnumDef;
@@ -60,8 +60,8 @@ type
     FunctionRef : TExpression;
     Args : TExFunctionArgs
   end;
-  TExSpecialFunctionRef = record
-    SpecialFunction : TPsSpecialFunction
+  TExPseudoFunRef = record
+    PseudoFun : TPsPseudoFun
   end;
   TExReadArgs = record
     Arg : TExpression;
@@ -71,12 +71,12 @@ type
     Arg : TExpression;
     Next : ^TExWriteArgs
   end;
-  TExSpecialFunctionCall = record
+  TExPseudoFunCall = record
     Arg1 : TExpression;
     Arg2 : TExpression;
-    case SpecialFunction : TPsSpecialFunction of 
-      TsfRead, TsfReadln: (ReadArgs : ^TExReadArgs);
-      TsfWrite, TsfWriteln: (WriteArgs : ^TExWriteArgs);
+    case PseudoFun : TPsPseudoFun of 
+      TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
+      TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);
   end;
   TExUnaryOp = record
     Parent : TExpression;
@@ -91,8 +91,8 @@ type
   TExpressionClass = (XcImmediate, XcToString,
                       XcVariableAccess, XcFieldAccess,
                       XcArrayAccess, XcPointerAccess, XcStringChar,
-                      XcFunctionRef, XcFunctionCall, XcSpecialFunctionRef,
-                      XcSpecialFunctionCall, XcUnaryOp, XcBinaryOp);
+                      XcFunctionRef, XcFunctionCall, XcPseudoFunRef,
+                      XcPseudoFunCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypeIndex : TPsTypeIndex;
     IsConstant : boolean;
@@ -108,8 +108,8 @@ type
       XcStringChar : (StringCharEx : TExStringChar);
       XcFunctionRef : (FunctionEx : TExFunctionRef);
       XcFunctionCall : (CallEx : TExFunctionCall);
-      XcSpecialFunctionRef : (SpecialFunctionEx : TExSpecialFunctionRef);
-      XcSpecialFunctionCall : (SpecialFunctionCallEx : TExSpecialFunctionCall);
+      XcPseudoFunRef : (PseudoFunEx : TExPseudoFunRef);
+      XcPseudoFunCall : (PseudoFunCallEx : TExPseudoFunCall);
       XcUnaryOp : (UnaryEx : TExUnaryOp);
       XcBinaryOp : (BinaryEx : TExBinaryOp);
   end;
@@ -174,7 +174,7 @@ type
     VariableIndex : TPsVariableIndex
   end;
   TPsNameClass = (TncType, TncVariable, TncConstant, TncEnumValue, TncFunction,
-                  TncSpecialFunction);
+                  TncPseudoFun);
   TPsName = record
     Name : string;
     case Cls : TPsNameClass of 
@@ -184,7 +184,7 @@ type
       TncEnumValue : (EnumTypeIndex : TPsTypeIndex;
                       Ordinal : integer);
       TncFunction : (FunctionIndex : TPsFunctionIndex);
-      TncSpecialFunction : (SpecialFunction : TPsSpecialFunction)
+      TncPseudoFun : (PseudoFun : TPsPseudoFun)
   end;
 
   TPsDefPtr = ^TPsDefEntry;
@@ -372,8 +372,8 @@ begin
                                   NameIndex^.Name);
       TncFunction : CompileError('Not a procedure or function: ' +
                                  NameIndex^.Name);
-      TncSpecialFunction : CompileError('Not a procedure or function: ' +
-                                        NameIndex^.Name);
+      TncPseudoFun : CompileError('Not a procedure or function: ' +
+                                  NameIndex^.Name);
       else CompileError('Internal error: name class mismatch')
     end;
   _CheckNameClass := NameIndex
@@ -460,13 +460,12 @@ begin
   AddEnumValueName := Def
 end;
 
-function AddSpecialFunctionName(Name : string; Fn : TPsSpecialFunction)
-: TPsNameIndex;
+function AddPseudoFun(Name : string; Fn : TPsPseudoFun) : TPsNameIndex;
 var Def : TPsNameIndex;
 begin
-  Def := _AddName(Name, TncSpecialFunction);
-  Def^.SpecialFunction := Fn;
-  AddSpecialFunctionName := Def
+  Def := _AddName(Name, TncPseudoFun);
+  Def^.PseudoFun := Fn;
+  AddPseudoFun := Def
 end;
 
 function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;

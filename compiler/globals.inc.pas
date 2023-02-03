@@ -19,16 +19,16 @@ begin
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
 
-  AddSpecialFunctionName('DISPOSE', TsfDispose);
-  AddSpecialFunctionName('NEW', TsfNew);
-  AddSpecialFunctionName('ORD', TsfOrd);
-  AddSpecialFunctionName('PRED', TsfPred);
-  AddSpecialFunctionName('READ', TsfRead);
-  AddSpecialFunctionName('READLN', TsfReadln);
-  AddSpecialFunctionName('STR', TsfStr);
-  AddSpecialFunctionName('SUCC', TsfSucc);
-  AddSpecialFunctionName('WRITE', TsfWrite);
-  AddSpecialFunctionName('WRITELN', TsfWriteln);
+  AddPseudoFun('DISPOSE', TpfDispose);
+  AddPseudoFun('NEW', TpfNew);
+  AddPseudoFun('ORD', TpfOrd);
+  AddPseudoFun('PRED', TpfPred);
+  AddPseudoFun('READ', TpfRead);
+  AddPseudoFun('READLN', TpfReadln);
+  AddPseudoFun('STR', TpfStr);
+  AddPseudoFun('SUCC', TpfSucc);
+  AddPseudoFun('WRITE', TpfWrite);
+  AddPseudoFun('WRITELN', TpfWriteln);
 
   Fun.Name := 'ASSIGN';
   Fun.ArgCount := 2;

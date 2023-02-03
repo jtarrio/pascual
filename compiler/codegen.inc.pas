@@ -129,8 +129,8 @@ begin
     XcStringChar : _Precedence := 1;
     XcFunctionRef : _Precedence := 0;
     XcFunctionCall : _Precedence := 1;
-    XcSpecialFunctionRef : _Precedence := 0;
-    XcSpecialFunctionCall : _Precedence := 1;
+    XcPseudoFunRef : _Precedence := 0;
+    XcPseudoFunCall : _Precedence := 1;
     XcUnaryOp : _Precedence := 2;
     XcBinaryOp : _Precedence := _BinOpPrec(Expr);
     else CompileError('Internal error: unknown precedence')
@@ -236,19 +236,19 @@ forward;
 procedure _OutWrite(Expr : TExpression);
 forward;
 
-procedure _OutExSpecialFunctionCall(Expr : TExpression);
+procedure _OutExPseudoFunCall(Expr : TExpression);
 begin
-  case Expr^.SpecialFunctionCallEx.SpecialFunction of 
-    TsfDispose : _OutDispose(Expr);
-    TsfNew : _OutNew(Expr);
-    TsfOrd : _OutOrd(Expr);
-    TsfPred : _OutPred(Expr);
-    TsfRead : _OutRead(Expr);
-    TsfReadln : _OutRead(Expr);
-    TsfStr : _OutStr(Expr);
-    TsfSucc : _OutSucc(Expr);
-    TsfWrite : _OutWrite(Expr);
-    TsfWriteln : _OutWrite(Expr);
+  case Expr^.PseudoFunCallEx.PseudoFun of 
+    TpfDispose : _OutDispose(Expr);
+    TpfNew : _OutNew(Expr);
+    TpfOrd : _OutOrd(Expr);
+    TpfPred : _OutPred(Expr);
+    TpfRead : _OutRead(Expr);
+    TpfReadln : _OutRead(Expr);
+    TpfStr : _OutStr(Expr);
+    TpfSucc : _OutSucc(Expr);
+    TpfWrite : _OutWrite(Expr);
+    TpfWriteln : _OutWrite(Expr);
     else CompileError('Internal error: unimplemented special function')
   end
 end;
@@ -421,7 +421,7 @@ begin
                   end;
     XcFunctionRef: write(Codegen.Output, Expr^.FunctionEx.FunctionIndex^.Name);
     XcFunctionCall: _OutExFunctionCall(Expr);
-    XcSpecialFunctionCall: _OutExSpecialFunctionCall(Expr);
+    XcPseudoFunCall: _OutExPseudoFunCall(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -765,9 +765,9 @@ var
   Linefeed : boolean;
   Braces : boolean;
 begin
-  Src := Expr^.SpecialFunctionCallEx.Arg1;
-  Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfReadln;
-  ReadArg := Expr^.SpecialFunctionCallEx.ReadArgs;
+  Src := Expr^.PseudoFunCallEx.Arg1;
+  Linefeed := Expr^.PseudoFunCallEx.PseudoFun = TpfReadln;
+  ReadArg := Expr^.PseudoFunCallEx.ReadArgs;
   Braces := (not Codegen.IsMultiStatement) and (ReadArg <> nil)
             and ((ReadArg^.Next <> nil) or Linefeed);
   if Braces then OutBegin;
@@ -801,9 +801,9 @@ var
   Linefeed : boolean;
   Braces : boolean;
 begin
-  Dst := Expr^.SpecialFunctionCallEx.Arg1;
-  Linefeed := Expr^.SpecialFunctionCallEx.SpecialFunction = TsfWriteln;
-  WriteArg := Expr^.SpecialFunctionCallEx.WriteArgs;
+  Dst := Expr^.PseudoFunCallEx.Arg1;
+  Linefeed := Expr^.PseudoFunCallEx.PseudoFun = TpfWriteln;
+  WriteArg := Expr^.PseudoFunCallEx.WriteArgs;
   Braces := (not Codegen.IsMultiStatement) and (WriteArg <> nil)
             and ((WriteArg^.Next <> nil) or Linefeed);
   if Braces then OutBegin;
@@ -847,8 +847,8 @@ end;
 procedure _OutStr(Expr : TExpression);
 var Src, Dst : TExpression;
 begin
-  Src := Expr^.SpecialFunctionCallEx.Arg1;
-  Dst := Expr^.SpecialFunctionCallEx.Arg2;
+  Src := Expr^.PseudoFunCallEx.Arg1;
+  Dst := Expr^.PseudoFunCallEx.Arg2;
   if IsEnumType(Src^.TypeIndex) then
   begin
     _OutIndent;
@@ -873,7 +873,7 @@ end;
 procedure _OutNew(Expr : TExpression);
 var Ptr : TExpression;
 begin
-  Ptr := Expr^.SpecialFunctionCallEx.Arg1;
+  Ptr := Expr^.PseudoFunCallEx.Arg1;
   _OutIndent;
   OutExpression(Ptr);
   write(Codegen.Output, ' = malloc(sizeof(');
@@ -885,7 +885,7 @@ end;
 procedure _OutDispose(Expr : TExpression);
 var Ptr : TExpression;
 begin
-  Ptr := Expr^.SpecialFunctionCallEx.Arg1;
+  Ptr := Expr^.PseudoFunCallEx.Arg1;
   _OutIndent;
   write(Codegen.Output, 'free(');
   OutExpression(Ptr);
@@ -895,13 +895,13 @@ end;
 
 procedure _OutOrd(Expr : TExpression);
 begin
-  if IsOrdinalType(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex) then
+  if IsOrdinalType(Expr^.PseudoFunCallEx.Arg1^.TypeIndex) then
   begin
     write(Codegen.Output, '(int)');
-    _OutExpressionParensPrec(Expr^.SpecialFunctionCallEx.Arg1, 2)
+    _OutExpressionParensPrec(Expr^.PseudoFunCallEx.Arg1, 2)
   end
   else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex))
+                    TypeName(Expr^.PseudoFunCallEx.Arg1^.TypeIndex))
 end;
 
 procedure _OutBounds(Expr : TExpression);
@@ -919,30 +919,30 @@ end;
 
 procedure _OutPred(Expr : TExpression);
 begin
-  if IsOrdinalType(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex) then
+  if IsOrdinalType(Expr^.PseudoFunCallEx.Arg1^.TypeIndex) then
   begin
     write(Codegen.Output, 'pred(');
-    OutExpression(Expr^.SpecialFunctionCallEx.Arg1);
+    OutExpression(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ', ');
-    _OutBounds(Expr^.SpecialFunctionCallEx.Arg1);
+    _OutBounds(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ')')
   end
   else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex))
+                    TypeName(Expr^.PseudoFunCallEx.Arg1^.TypeIndex))
 end;
 
 procedure _OutSucc(Expr : TExpression);
 begin
-  if IsOrdinalType(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex) then
+  if IsOrdinalType(Expr^.PseudoFunCallEx.Arg1^.TypeIndex) then
   begin
     write(Codegen.Output, 'succ(');
-    OutExpression(Expr^.SpecialFunctionCallEx.Arg1);
+    OutExpression(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ', ');
-    _OutBounds(Expr^.SpecialFunctionCallEx.Arg1);
+    _OutBounds(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ')')
   end
   else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.SpecialFunctionCallEx.Arg1^.TypeIndex))
+                    TypeName(Expr^.PseudoFunCallEx.Arg1^.TypeIndex))
 end;
 
 procedure OutAssign;
@@ -1159,9 +1159,9 @@ begin
   _OutNewline
 end;
 
-procedure OutSpecialProcedureCall;
+procedure OutPseudoProcCall;
 begin
-  _OutExSpecialFunctionCall(Expr)
+  _OutExPseudoFunCall(Expr)
 end;
 
 procedure OutEmptyStatement;

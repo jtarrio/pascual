@@ -90,7 +90,7 @@ procedure OutForEnd(Iter : TExpression; Ascending : boolean);
 forward;
 procedure OutProcedureCall(Expr : TExpression);
 forward;
-procedure OutSpecialProcedureCall(Expr : TExpression);
+procedure OutPseudoProcCall(Expr : TExpression);
 forward;
 procedure OutEmptyStatement;
 forward;

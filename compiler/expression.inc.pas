@@ -12,15 +12,14 @@ end;
 procedure DisposeExpr(var Expr : TExpression);
 forward;
 
-procedure _DisposeSpecialCallExpr(var Call : TExSpecialFunctionCall);
+procedure _DisposePseudoCallExpr(var Call : TExPseudoFunCall);
 var 
   ReadArg, NextReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg : ^TExWriteArgs;
 begin
   if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
   if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
-  if (Call.SpecialFunction = TsfWrite) or (Call.SpecialFunction = TsfWriteln)
-    then
+  if (Call.PseudoFun = TpfWrite) or (Call.PseudoFun = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
     while ReadArg <> nil do
@@ -31,8 +30,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.SpecialFunction = TsfRead) or (Call.SpecialFunction = TsfReadln)
-         then
+  else if (Call.PseudoFun = TpfRead) or (Call.PseudoFun = TpfReadln) then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
@@ -68,8 +66,7 @@ begin
                        for Pos := 1 to Expr^.CallEx.Args.Size do
                          DisposeExpr(Expr^.CallEx.Args.Values[Pos]);
                      end;
-    XcSpecialFunctionCall : _DisposeSpecialCallExpr(Expr^
-                                                    .SpecialFunctionCallEx);
+    XcPseudoFunCall : _DisposePseudoCallExpr(Expr^.PseudoFunCallEx);
     XcUnaryOp : DisposeExpr(Expr^.UnaryEx.Parent);
     XcBinaryOp :
                  begin
@@ -83,16 +80,15 @@ end;
 function CopyExpr(Expr : TExpression) : TExpression;
 forward;
 
-procedure _CopySpecialCallExpr(var Call, Copy : TExSpecialFunctionCall);
+procedure _CopyPseudoCallExpr(var Call, Copy : TExPseudoFunCall);
 var 
   ReadArg, NextReadArg, CopyReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
 begin
-  Copy.SpecialFunction := Call.SpecialFunction;
+  Copy.PseudoFun := Call.PseudoFun;
   if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
-  if (Call.SpecialFunction = TsfWrite)
-     or (Call.SpecialFunction = TsfWriteln) then
+  if (Call.PseudoFun = TpfWrite) or (Call.PseudoFun = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
     CopyReadArg := nil;
@@ -114,8 +110,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.SpecialFunction = TsfRead)
-          or (Call.SpecialFunction = TsfReadln) then
+  else if (Call.PseudoFun = TpfRead) or (Call.PseudoFun = TpfReadln) then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
@@ -183,9 +178,9 @@ begin
                         Copy^.CallEx.Args.Values[Pos] := CopyExpr(Expr^.CallEx
                                                          .Args.Values[Pos])
                     end;
-    XcSpecialFunctionRef: Copy^.SpecialFunctionEx := Expr^.SpecialFunctionEx;
-    XcSpecialFunctionCall: _CopySpecialCallExpr(Expr^.SpecialFunctionCallEx,
-                                                Copy^.SpecialFunctionCallEx);
+    XcPseudoFunRef: Copy^.PseudoFunEx := Expr^.PseudoFunEx;
+    XcPseudoFunCall: _CopyPseudoCallExpr(Expr^.PseudoFunCallEx,
+                                         Copy^.PseudoFunCallEx);
     XcUnaryOp:
                begin
                  Copy^.UnaryEx.Parent := CopyExpr(Expr^.
@@ -429,50 +424,50 @@ begin
   ExFunctionCall := Expr
 end;
 
-function ExSpecialFunction(SpecialFn : TPsSpecialFunction) : TExpression;
+function ExPseudoFun(SpecialFn : TPsPseudoFun) : TExpression;
 var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcSpecialFunctionRef);
-  Expr^.SpecialFunctionEx.SpecialFunction := SpecialFn;
-  ExSpecialFunction := Expr
+  Expr := _NewExpr(XcPseudoFunRef);
+  Expr^.PseudoFunEx.PseudoFun := SpecialFn;
+  ExPseudoFun := Expr
 end;
 
-function ExSpecialFunctionCall(Expr : TExpression) : TExpression;
-var Fn : TPsSpecialFunction;
+function ExPseudoFunCall(Expr : TExpression) : TExpression;
+var Fn : TPsPseudoFun;
 begin
-  if Expr^.Cls <> XcSpecialFunctionRef then
-    CompileError('Expected a special function');
-  Fn := Expr^.SpecialFunctionEx.SpecialFunction;
-  Expr^.Cls := XcSpecialFunctionCall;
-  Expr^.SpecialFunctionCallEx.SpecialFunction := Fn;
-  Expr^.SpecialFunctionCallEx.Arg1 := nil;
-  Expr^.SpecialFunctionCallEx.Arg2 := nil;
-  Expr^.SpecialFunctionCallEx.ReadArgs := nil;
-  Expr^.SpecialFunctionCallEx.WriteArgs := nil;
-  ExSpecialFunctionCall := Expr
+  if Expr^.Cls <> XcPseudoFunRef then
+    CompileError('Expected a pseudofunction');
+  Fn := Expr^.PseudoFunEx.PseudoFun;
+  Expr^.Cls := XcPseudoFunCall;
+  Expr^.PseudoFunCallEx.PseudoFun := Fn;
+  Expr^.PseudoFunCallEx.Arg1 := nil;
+  Expr^.PseudoFunCallEx.Arg2 := nil;
+  Expr^.PseudoFunCallEx.ReadArgs := nil;
+  Expr^.PseudoFunCallEx.WriteArgs := nil;
+  ExPseudoFunCall := Expr
 end;
 
-function _ExSFCUnImm(FnExpr, Arg : TExpression) : TExpression;
+function _ExPfcUnImm(FnExpr, Arg : TExpression) : TExpression;
 forward;
-function _ExSFCUnCmp(FnExpr, Arg : TExpression) : TExpression;
+function _ExPfcUnCmp(FnExpr, Arg : TExpression) : TExpression;
 forward;
-function ExSpecialFunctionCallUnary(FnExpr, Arg : TExpression) : TExpression;
+function ExPseudoFunCallUnary(FnExpr, Arg : TExpression) : TExpression;
 begin
-  if Arg^.Cls = XcImmediate then Result := _ExSFCUnImm(FnExpr, Arg)
-  else Result := _ExSFCUnCmp(FnExpr, Arg)
+  if Arg^.Cls = XcImmediate then Result := _ExPfcUnImm(FnExpr, Arg)
+  else Result := _ExPfcUnCmp(FnExpr, Arg)
 end;
 
-function _ExSFCBiImm(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
+function _ExPfcBiImm(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
 forward;
-function _ExSFCBiCmp(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
+function _ExPfcBiCmp(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
 forward;
-function ExSpecialFunctionCallBinary(FnExpr, Arg1, Arg2 : TExpression)
+function ExPseudoFunCallBinary(FnExpr, Arg1, Arg2 : TExpression)
 : TExpression;
 begin
   if (Arg1^.Cls = XcImmediate) and (Arg2^.Cls = XcImmediate) then
-    Result := _ExSFCBiImm(FnExpr, Arg1, Arg2)
+    Result := _ExPfcBiImm(FnExpr, Arg1, Arg2)
   else
-    Result := _ExSFCBiCmp(FnExpr, Arg1, Arg2)
+    Result := _ExPfcBiCmp(FnExpr, Arg1, Arg2)
 end;
 
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -811,17 +806,16 @@ begin
   _ExBinOpPtrCmp := Expr
 end;
 
-function _ExSFCUnImm;
+function _ExPfcUnImm;
 var 
-  SF : TPsSpecialFunction;
+  PF : TPsPseudoFun;
   OutOfBounds : boolean;
 begin
   OutOfBounds := false;
-  SF := FnExpr^.SpecialFunctionEx.SpecialFunction;
+  PF := FnExpr^.PseudoFunEx.PseudoFun;
   DisposeExpr(FnExpr);
-  if (SF = TsfNew) or (SF = TsfDispose) then
-    CompileError('Invalid argument')
-  else if SF = TsfOrd then
+  if (PF = TpfNew) or (PF = TpfDispose) then CompileError('Invalid argument')
+  else if PF = TpfOrd then
   begin
     with Arg^.ImmediateEx do
     begin
@@ -837,7 +831,7 @@ begin
       Cls := XicInteger
     end
   end
-  else if SF = TsfPred then
+  else if PF = TpfPred then
   begin
     with Arg^.ImmediateEx do
     begin
@@ -856,7 +850,7 @@ begin
       end
     end
   end
-  else if SF = TsfSucc then
+  else if PF = TpfSucc then
   begin
     with Arg^.ImmediateEx do
     begin
@@ -867,7 +861,8 @@ begin
 { TODO bootstrap doesn't recognize this yet
         XicChar: if Ord(CharValue) < 255 then CharValue := Succ(CharValue)
                  else OutOfBounds := true; }
-        XicChar: if Ord(CharValue) < 255 then CharValue := Chr(Ord(CharValue) + 1)
+        XicChar: if Ord(CharValue) < 255 then CharValue := Chr(Ord(CharValue) +
+                                                           1)
                  else OutOfBounds := true;
         XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size - 1 then
                    EnumOrdinal := EnumOrdinal + 1
@@ -881,31 +876,31 @@ begin
   Result := Arg
 end;
 
-function _ExSFCUnCmp;
+function _ExPfcUnCmp;
 begin
-  FnExpr := ExSpecialFunctionCall(FnExpr);
-  FnExpr^.SpecialFunctionCallEx.Arg1 := Arg;
-  case FnExpr^.SpecialFunctionCallEx.SpecialFunction of 
-    TsfOrd: FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
-    TsfPred: FnExpr^.TypeIndex := Arg^.TypeIndex;
-    TsfSucc: FnExpr^.TypeIndex := Arg^.TypeIndex;
+  FnExpr := ExPseudoFunCall(FnExpr);
+  FnExpr^.PseudoFunCallEx.Arg1 := Arg;
+  case FnExpr^.PseudoFunCallEx.PseudoFun of 
+    TpfOrd: FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
+    TpfPred: FnExpr^.TypeIndex := Arg^.TypeIndex;
+    TpfSucc: FnExpr^.TypeIndex := Arg^.TypeIndex;
   end;
   Result := FnExpr
 end;
 
-function _ExSFCBiImm;
+function _ExPfcBiImm;
 var 
-  SF : TPsSpecialFunction;
+  PF : TPsPseudoFun;
 begin
-  SF := FnExpr^.SpecialFunctionEx.SpecialFunction;
-  if SF = TsfStr then Result := _ExSFCBiCmp(FnExpr, Arg1, Arg2)
+  PF := FnExpr^.PseudoFunEx.PseudoFun;
+  if PF = TpfStr then Result := _ExPfcBiCmp(FnExpr, Arg1, Arg2)
 end;
 
-function _ExSFCBiCmp;
+function _ExPfcBiCmp;
 begin
-  FnExpr := ExSpecialFunctionCall(FnExpr);
-  FnExpr^.SpecialFunctionCallEx.Arg1 := Arg1;
-  FnExpr^.SpecialFunctionCallEx.Arg2 := Arg2;
+  FnExpr := ExPseudoFunCall(FnExpr);
+  FnExpr^.PseudoFunCallEx.Arg1 := Arg1;
+  FnExpr^.PseudoFunCallEx.Arg2 := Arg2;
   Result := FnExpr
 end;
 

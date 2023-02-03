@@ -536,10 +536,9 @@ var
   OutVar : TExpression;
   ReadArg : ^TExReadArgs;
 begin
-  Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Arg1 := ExVariable(FindNameOfClass('INPUT',
-                                      TncVariable,
-                                      {Required=}true)^.VariableIndex);
+  Expr := ExPseudoFunCall(FnExpr);
+  Expr^.PseudoFunCallEx.Arg1 := ExVariable(FindNameOfClass('INPUT',
+                                TncVariable, {Required=}true)^.VariableIndex);
   ReadArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -550,8 +549,8 @@ begin
       OutVar := PsExpression;
       if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypeIndex) then
       begin
-        DisposeExpr(Expr^.SpecialFunctionCallEx.Arg1);
-        Expr^.SpecialFunctionCallEx.Arg1 := OutVar
+        DisposeExpr(Expr^.PseudoFunCallEx.Arg1);
+        Expr^.PseudoFunCallEx.Arg1 := OutVar
       end
       else
       begin
@@ -560,8 +559,8 @@ begin
           CompileError('Invalid expression for read argument');
         if ReadArg = nil then
         begin
-          new(Expr^.SpecialFunctionCallEx.ReadArgs);
-          ReadArg := Expr^.SpecialFunctionCallEx.ReadArgs
+          new(Expr^.PseudoFunCallEx.ReadArgs);
+          ReadArg := Expr^.PseudoFunCallEx.ReadArgs
         end
         else
         begin
@@ -587,10 +586,9 @@ var
   OutExpr : TExpression;
   WriteArg : ^TExWriteArgs;
 begin
-  Expr := ExSpecialFunctionCall(FnExpr);
-  Expr^.SpecialFunctionCallEx.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
-                                      TncVariable,
-                                      {Required=}true)^.VariableIndex);
+  Expr := ExPseudoFunCall(FnExpr);
+  Expr^.PseudoFunCallEx.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
+                                TncVariable, {Required=}true)^.VariableIndex);
   WriteArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -601,15 +599,15 @@ begin
       OutExpr := PsExpression;
       if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypeIndex) then
       begin
-        DisposeExpr(Expr^.SpecialFunctionCallEx.Arg1);
-        Expr^.SpecialFunctionCallEx.Arg1 := OutExpr
+        DisposeExpr(Expr^.PseudoFunCallEx.Arg1);
+        Expr^.PseudoFunCallEx.Arg1 := OutExpr
       end
       else
       begin
         if WriteArg = nil then
         begin
-          new(Expr^.SpecialFunctionCallEx.WriteArgs);
-          WriteArg := Expr^.SpecialFunctionCallEx.WriteArgs
+          new(Expr^.PseudoFunCallEx.WriteArgs);
+          WriteArg := Expr^.PseudoFunCallEx.WriteArgs
         end
         else
         begin
@@ -639,12 +637,12 @@ begin
   if not Dest^.IsAssignable or not IsStringType(Dest^.TypeIndex) then
     CompileError('Destination argument is not a string variable');
   WantTokenAndRead(TkRparen);
-  Expr := ExSpecialFunctionCallBinary(FnExpr, Src, Dest);
+  Expr := ExPseudoFunCallBinary(FnExpr, Src, Dest);
   PsStr := Expr
 end;
 
 function PsOrdPrecSucc(FnExpr : TExpression) : TExpression;
-var
+var 
   Expr, Value : TExpression;
 begin
   WantTokenAndRead(TkLparen);
@@ -652,7 +650,7 @@ begin
   WantTokenAndRead(TkRparen);
   if not IsOrdinalType(Value^.TypeIndex) then
     CompileError('Argument does not have an ordinal type');
-  Expr := ExSpecialFunctionCallUnary(FnExpr, Value);
+  Expr := ExPseudoFunCallUnary(FnExpr, Value);
   Result := Expr
 end;
 
@@ -665,7 +663,7 @@ begin
   WantTokenAndRead(TkRparen);
   if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypeIndex) then
     CompileError('Argument is not a pointer');
-  Expr := ExSpecialFunctionCallUnary(FnExpr, Ptr);
+  Expr := ExPseudoFunCallUnary(FnExpr, Ptr);
   Result := Expr
 end;
 
@@ -690,19 +688,19 @@ begin
     end;
     PsFunctionCall := ExFunctionCall(Fn, Args)
   end
-  else if Fn^.Cls = XcSpecialFunctionRef then
+  else if Fn^.Cls = XcPseudoFunRef then
   begin
-    case Fn^.SpecialFunctionEx.SpecialFunction of 
-      TsfDispose : PsFunctionCall := PsNewDispose(Fn);
-      TsfNew : PsFunctionCall := PsNewDispose(Fn);
-      TsfOrd : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TsfPred : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TsfRead : PsFunctionCall := PsRead(Fn);
-      TsfReadln : PsFunctionCall := PsRead(Fn);
-      TsfStr : PsFunctionCall := PsStr(Fn);
-      TsfSucc : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TsfWrite : PsFunctionCall := PsWrite(Fn);
-      TsfWriteln : PsFunctionCall := PsWrite(Fn);
+    case Fn^.PseudoFunEx.PseudoFun of 
+      TpfDispose : PsFunctionCall := PsNewDispose(Fn);
+      TpfNew : PsFunctionCall := PsNewDispose(Fn);
+      TpfOrd : PsFunctionCall := PsOrdPrecSucc(Fn);
+      TpfPred : PsFunctionCall := PsOrdPrecSucc(Fn);
+      TpfRead : PsFunctionCall := PsRead(Fn);
+      TpfReadln : PsFunctionCall := PsRead(Fn);
+      TpfStr : PsFunctionCall := PsStr(Fn);
+      TpfSucc : PsFunctionCall := PsOrdPrecSucc(Fn);
+      TpfWrite : PsFunctionCall := PsWrite(Fn);
+      TpfWriteln : PsFunctionCall := PsWrite(Fn);
       else CompileError('Internal error: unimplemented special function')
     end;
   end;
@@ -758,8 +756,8 @@ begin
            Expr := ExFunctionRef(Found.FunctionIndex)
     else if Found.Cls = TncEnumValue then
            Expr := ExEnumConstant(Found.Ordinal, Found.EnumTypeIndex)
-    else if Found.Cls = TncSpecialFunction then
-           Expr := ExSpecialFunction(Found.SpecialFunction)
+    else if Found.Cls = TncPseudoFun then
+           Expr := ExPseudoFun(Found.PseudoFun)
     else
       CompileError('Invalid identifier: ' + Id.Name)
   end;
@@ -772,8 +770,8 @@ var
 begin
   Done := false;
   repeat
-    if Expr^.Cls = XcSpecialFunctionRef then Expr := PsFunctionCall(Expr)
-    else if Expr^.Cls = XcFunctionRef then Expr := PsFunctionCall(Expr)
+    if (Expr^.Cls = XcFunctionRef) or (Expr^.Cls = XcPseudoFunRef) then
+      Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
@@ -982,9 +980,9 @@ begin
       OutProcedureCall(Lhs);
       DisposeExpr(Lhs)
     end
-    else if Lhs^.Cls = XcSpecialFunctionCall then
+    else if Lhs^.Cls = XcPseudoFunCall then
     begin
-      OutSpecialProcedureCall(Lhs);
+      OutPseudoProcCall(Lhs);
       DisposeExpr(Lhs)
     end
     else if Lhs^.Cls = XcBinaryOp then
