@@ -5,7 +5,7 @@ all: pascual
 bootstrap: stage0.c
 	gcc -o bootstrap -I$(RTDIR) -L$(RTDIR) stage0.c -lpascual
 
-pascual: bootstrap compiler.pas codegen.defs.inc.pas codegen.inc.pas expression.inc.pas globals.inc.pas lexer.inc.pas parser.inc.pas progdefs.inc.pas
+pascual: bootstrap compiler.pas codegen.defs.inc.pas codegen.inc.pas expression.forward.inc.pas expression.inc.pas globals.inc.pas lexer.inc.pas parser.inc.pas progdefs.inc.pas typedefs.inc.pas
 	PC=./bootstrap PINCDIR=$(RTDIR) PLIBDIR=$(RTDIR) ./pascualc compiler.pas -o pascual
 
 .PHONY: clean

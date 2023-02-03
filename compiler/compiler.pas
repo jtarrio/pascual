@@ -1,5 +1,7 @@
 program compiler;
 
+{$I typedefs.inc.pas}
+{$I expression.forward.inc.pas}
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
 {$I codegen.defs.inc.pas}

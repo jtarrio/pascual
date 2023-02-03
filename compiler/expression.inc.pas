@@ -9,9 +9,6 @@ begin
   _NewExpr := Expr
 end;
 
-procedure DisposeExpr(var Expr : TExpression);
-forward;
-
 procedure _DisposePseudoCallExpr(var Call : TExPseudoFunCall);
 var 
   ReadArg, NextReadArg : ^TExReadArgs;
@@ -76,9 +73,6 @@ begin
   end;
   dispose(Expr);
 end;
-
-function CopyExpr(Expr : TExpression) : TExpression;
-forward;
 
 procedure _CopyPseudoCallExpr(var Call, Copy : TExPseudoFunCall);
 var 

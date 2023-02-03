@@ -427,7 +427,7 @@ begin
   end
 end;
 
-procedure OutEnumValues;
+procedure OutEnumValues(EnumIndex : TPsEnumIndex);
 var 
   PosInEnum : integer;
 begin
@@ -457,13 +457,13 @@ begin
   end
 end;
 
-function OutVariableName;
+function OutVariableName(Name : string; IsReference : boolean) : string;
 begin
   if IsReference then OutVariableName := '*' + Name
   else OutVariableName := Name
 end;
 
-procedure OutTypeReference;
+procedure OutTypeReference(TypeIndex : TPsTypeIndex);
 begin
   if TypeIndex = nil then write(Codegen.Output, 'void')
   else if TypeIndex^.Cls = TtcPointer then
@@ -498,6 +498,9 @@ begin
   else
     CompileError('Error writing type reference: ' + TypeName(TypeIndex))
 end;
+
+procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
+forward;
 
 procedure OutNameAndRecord(Name : string; RecordIndex : TPsRecordIndex);
 var 
@@ -573,7 +576,7 @@ begin
   write(Codegen.Output, ' ', Name)
 end;
 
-procedure OutNameAndType;
+procedure OutNameAndType(Name : string; TypeIndex : TPsTypeIndex);
 var 
   Arr : TPsArrayDef;
   SizeExpr : TExpression;
@@ -618,7 +621,7 @@ begin
                  TypeName(TypeIndex))
 end;
 
-procedure OutTypeDefinition;
+procedure OutTypeDefinition(TypeIndex : TPsTypeIndex);
 var 
   Name : string;
 begin
@@ -665,7 +668,7 @@ begin
   write(Codegen.Output, ' }')
 end;
 
-procedure OutVariableDeclaration;
+procedure OutVariableDeclaration(VarDef : TPsVariable);
 begin
   OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
   VarDef.TypeIndex)
@@ -697,7 +700,7 @@ begin
   _OutNewline
 end;
 
-procedure OutFunctionPrototype;
+procedure OutFunctionPrototype(Def : TPsFunction);
 var 
   Pos : integer;
 begin

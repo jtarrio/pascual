@@ -1,22 +1,4 @@
-type 
-  TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkNumber, TkString,
-                TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals, TkLessthan,
-                TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma, TkColon,
-                TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
-                TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAnd,
-                TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
-                TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
-                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo,
-                TkType, TkUntil, TkVar, TkWhile, TkWith);
-  TLxPos = record
-    Row, Col : integer
-  end;
-  TLxToken = record
-    Id : TLxTokenId;
-    Value : string;
-    Pos : TLxPos
-  end;
+type
   TLxInputFile = record
     Src : text;
     Name : string;
