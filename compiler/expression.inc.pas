@@ -839,10 +839,7 @@ begin
         XicBoolean : if BooleanValue then BooleanValue := false
                      else OutOfBounds := true;
         XicInteger: IntegerValue := IntegerValue - 1;
-{ TODO bootstrap doesn't recognize this yet
         XicChar: if Ord(CharValue) > 0 then CharValue := Pred(CharValue)
-                 else OutOfBounds := true; }
-        XicChar: if Ord(CharValue) > 0 then CharValue := Chr(Ord(CharValue) - 1)
                  else OutOfBounds := true;
         XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
                  else OutOfBounds := true;
@@ -858,11 +855,7 @@ begin
         XicBoolean : if not BooleanValue then BooleanValue := true
                      else OutOfBounds := true;
         XicInteger: IntegerValue := IntegerValue + 1;
-{ TODO bootstrap doesn't recognize this yet
         XicChar: if Ord(CharValue) < 255 then CharValue := Succ(CharValue)
-                 else OutOfBounds := true; }
-        XicChar: if Ord(CharValue) < 255 then CharValue := Chr(Ord(CharValue) +
-                                                           1)
                  else OutOfBounds := true;
         XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size - 1 then
                    EnumOrdinal := EnumOrdinal + 1
