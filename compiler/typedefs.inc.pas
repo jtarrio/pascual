@@ -27,14 +27,8 @@ type
                   TpfStr, TpfSucc, TpfWrite, TpfWriteln);
 
   TPsTypeIndex = ^TPsType;
-  TPsEnumIndex = ^TPsEnumDef;
-  TPsRecordIndex = ^TPsRecordDef;
-  TPsArrayIndex = ^TPsArrayDef;
-  TPsConstantIndex = ^TPsConstant;
   TPsVariableIndex = ^TPsVariable;
   TPsFunctionIndex = ^TPsFunction;
-  TPsWithVarIndex = ^TPsWithVar;
-  TPsNameIndex = ^TPsName;
 
   TExpression = ^TExpressionObj;
   TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicChar, XicString,
@@ -48,6 +42,9 @@ type
       XicEnum : (EnumOrdinal : integer)
   end;
   TExToString = record
+    Parent : TExpression
+  end;
+  TExSubrange = record
     Parent : TExpression
   end;
   TExVariableAccess = record
@@ -107,7 +104,7 @@ type
     Op : TLxTokenId
   end;
 
-  TExpressionClass = (XcImmediate, XcToString,
+  TExpressionClass = (XcImmediate, XcToString, XcSubrange,
                       XcVariableAccess, XcFieldAccess,
                       XcArrayAccess, XcPointerAccess, XcStringChar,
                       XcFunctionRef, XcFunctionCall, XcPseudoFunRef,
@@ -120,6 +117,7 @@ type
     case Cls : TExpressionClass of 
       XcImmediate : (ImmediateEx : TExImmediate);
       XcToString : (ToStringEx : TExToString);
+      XcSubrange : (SubrangeEx : TExSubrange);
       XcVariableAccess : (VariableEx : TExVariableAccess);
       XcFieldAccess : (FieldEx : TExFieldAccess);
       XcArrayAccess : (ArrayEx : TExArrayAccess);
@@ -137,14 +135,23 @@ type
     Name : string;
   end;
 
+  TPsEnumIndex = ^TPsEnumDef;
+  TPsRangeIndex = ^TPsRangeDef;
+  TPsRecordIndex = ^TPsRecordDef;
+  TPsArrayIndex = ^TPsArrayDef;
+  TPsConstantIndex = ^TPsConstant;
+  TPsWithVarIndex = ^TPsWithVar;
+  TPsNameIndex = ^TPsName;
+
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
-                  TtcEnum, TtcRecord, TtcArray, TtcPointer, TtcNil,
+                  TtcEnum, TtcRange, TtcRecord, TtcArray, TtcPointer, TtcNil,
                   TtcPointerUnknown);
   TPsType = record
     Name : string;
     AliasFor : TPsTypeIndex;
     case Cls : TPsTypeClass of 
       TtcEnum : (EnumIndex : TPsEnumIndex);
+      TtcRange : (RangeIndex : TPsRangeIndex);
       TtcRecord : (RecordIndex : TPsRecordIndex);
       TtcArray : (ArrayIndex : TPsArrayIndex);
       TtcPointer : (PointedTypeIndex : TPsTypeIndex);
@@ -155,6 +162,10 @@ type
     Values : array[0..MaxEnumValues - 1] of string;
     Id : integer;
     HasBeenDefined : boolean
+  end;
+  TPsRangeDef = record
+    First, Last : TExpression;
+    BaseTypeIndex : TPsTypeIndex
   end;
   TPsRecordField = record
     Name : string;
@@ -207,8 +218,9 @@ type
   end;
 
   TPsDefPtr = ^TPsDefEntry;
-  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRecord, TdcArray, TdcConstant,
-                 TdcVariable, TdcFunction, TdcWithVar, TdcScopeBoundary);
+  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRange, TdcRecord, TdcArray,
+                 TdcConstant, TdcVariable, TdcFunction, TdcWithVar,
+                 TdcScopeBoundary);
   TPsDefEntry = record
     Prev : TPsDefPtr;
     Next : TPsDefPtr;
@@ -216,6 +228,7 @@ type
       TdcName : (NameIndex : TPsNameIndex);
       TdcType : (TypeIndex : TPsTypeIndex);
       TdcEnum : (EnumIndex : TPsEnumIndex);
+      TdcRange : (RangeIndex : TPsRangeIndex);
       TdcRecord : (RecordIndex : TPsRecordIndex);
       TdcArray : (ArrayIndex : TPsArrayIndex);
       TdcConstant : (ConstantIndex : TPsConstantIndex);

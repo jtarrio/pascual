@@ -3,12 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const char* RtErrorMsgs[] = {"Unknown error", "Index out of bounds"};
+static const char* RtErrorMsgs[] = {"Unknown error", "Out of bounds"};
 
 void rt_error(RtError err) {
   if ((err < 0) || (err >= sizeof(RtErrorMsgs))) err = 0;
   fprintf(stderr, "Run-time error: %s\n", RtErrorMsgs[err]);
-  exit(1);
+  abort();
 }
 
 static const char* IoErrorMsgs[] = {"Unknown error", "File not found",
@@ -18,5 +18,5 @@ static const char* IoErrorMsgs[] = {"Unknown error", "File not found",
 void io_error(IoError err, const char* msg) {
   if ((err < 0) || (err >= sizeof(IoErrorMsgs))) err = 0;
   fprintf(stderr, "I/O error: %s: %s\n", msg, IoErrorMsgs[err]);
-  exit(1);
+  abort();
 }

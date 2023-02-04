@@ -187,8 +187,189 @@ begin
                   Copy^.BinaryEx.Right := CopyExpr(Expr^.BinaryEx.Right);
                   Copy^.BinaryEx.Op := Expr^.BinaryEx.Op
                 end;
+    else CompileError('Internal error: cannot copy expression: ' +
+                      DescribeExpr(Expr, 2))
   end;
   CopyExpr := Copy
+end;
+
+function _UnparseChar(Chr : char) : string;
+var Pos : integer;
+begin
+  case Chr of 
+    '''': Result := '''''''''';
+    else Result := '''' + Chr + ''''
+  end
+end;
+
+function _UnparseString(Str : string) : string;
+var Pos : integer;
+begin
+  Result := '''';
+  for Pos := 1 to Length(Str) do
+    case Str[Pos] of 
+      '''': Result := Result + '''''';
+      else Result := Result + Str[Pos]
+    end;
+  Result := Result + ''''
+end;
+
+function _DescribeImmediateExpr(Expr : TExpression) : string;
+begin
+  with Expr^.ImmediateEx do
+    case Cls of 
+      XicNil: Result := 'nil';
+      XicBoolean: Str(BooleanValue, Result);
+      XicInteger: Str(IntegerValue, Result);
+      XicChar: Result := _UnparseChar(CharValue);
+      XicString: Result := _UnparseString(StringValue);
+      XicEnum: Result := Expr^.TypeIndex^.EnumIndex^.Values[EnumOrdinal];
+      else CompileError('Internal error: cannot describe immediate value')
+    end
+end;
+
+function _DescribePseudoCallExpr(Expr : TExpression; Levels : integer) : string;
+begin
+  with Expr^.PseudoFunCallEx do
+    case PseudoFun of 
+      TpfDispose: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfRead: Result := 'READ(...)';
+      TpfReadln: Result := 'READLN(...)';
+      TpfSucc: Result := 'SUCC(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfWrite: Result := 'WRITE(...)';
+      TpfWriteln: Result := 'WRITELN(...)';
+      else CompileError('Internal error: cannot describe pseudofun')
+    end
+end;
+
+function _ExprPrecedence(Expr : TExpression) : integer;
+begin
+  case Expr^.Cls of 
+    XcImmediate: Result := 0;
+    XcToString: Result := _ExprPrecedence(Expr^.ToStringEx.Parent);
+    XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeEx.Parent);
+    XcVariableAccess: Result := 0;
+    XcFieldAccess: Result := 1;
+    XcArrayAccess: Result := 1;
+    XcPointerAccess: Result := 1;
+    XcStringChar: Result := 1;
+    XcFunctionRef: Result := 0;
+    XcFunctionCall: Result := 1;
+    XcPseudoFunRef: Result := 0;
+    XcPseudoFunCall: Result := 1;
+    XcUnaryOp: case Expr^.UnaryEx.Op of 
+                 TkMinus: Result := 4;
+                 TkNot: Result := 2;
+               end;
+    XcBinaryOp: case Expr^.BinaryEx.Op of 
+                  TkPlus: Result := 4;
+                  TkMinus: Result := 4;
+                  TkAsterisk: Result := 3;
+                  TkDiv: Result := 3;
+                  TkAnd: Result := 3;
+                  TkOr: Result := 4;
+                  TkEquals: Result := 5;
+                  TkNotEquals: Result := 5;
+                  TkLessthan: Result := 5;
+                  TkMorethan: Result := 5;
+                  TkLessOrEquals: Result := 5;
+                  TkMoreOrEquals: Result := 5;
+                end;
+  end;
+end;
+
+function _DescribeUnaryOpExpr(Expr : TExpression; Levels : integer) : string;
+var UseParens : boolean;
+begin
+  case Expr^.UnaryEx.Op of 
+    TkMinus: Result := '-';
+    TkNot: Result := 'not ';
+    else CompileError('Internal error: cannot describe unary operation')
+  end;
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.UnaryEx.Parent);
+  if UseParens then Result := Result + '(';
+  Result := Result + DescribeExpr(Expr^.UnaryEx.Parent, Levels);
+  if UseParens then Result := Result + ')';
+end;
+
+function _DescribeBinaryOpExpr(Expr : TExpression; Levels : integer) : string;
+var UseParens : boolean;
+begin
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.BinaryEx.Left);
+  if UseParens then Result := '('
+  else Result := '';
+  Result := Result + DescribeExpr(Expr^.BinaryEx.Left, Levels - 1);
+  if UseParens then Result := Result + ')';
+  case Expr^.BinaryEx.Op of 
+    TkPlus: Result := Result + ' + ';
+    TkMinus: Result := Result + ' - ';
+    TkAsterisk: Result := Result + ' * ';
+    TkSlash: Result := Result + ' / ';
+    TkDiv: Result := Result + ' div ';
+    TkAnd: Result := Result + ' and ';
+    TkOr: Result := Result + ' or ';
+    TkEquals: Result := Result + ' = ';
+    TkNotEquals: Result := Result + ' <> ';
+    TkLessthan: Result := Result + ' < ';
+    TkMorethan: Result := Result + ' > ';
+    TkLessOrEquals: Result := Result + ' <= ';
+    TkMoreOrEquals: Result := Result + ' >= ';
+    else CompileError('Internal error: cannot describe binary operation')
+  end;
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.BinaryEx.Right);
+  if UseParens then Result := Result + '(';
+  Result := Result + DescribeExpr(Expr^.BinaryEx.Right, Levels - 1);
+  if UseParens then Result := Result + ')';
+end;
+
+function DescribeExpr;
+var 
+  Pos : integer;
+begin
+  if Levels < 1 then Result := '(...)'
+  else
+    case Expr^.Cls of 
+      XcImmediate: Result := _DescribeImmediateExpr(Expr);
+      XcToString: Result := DescribeExpr(Expr^.ToStringEx.Parent, Levels);
+      XcSubrange: Result := DescribeExpr(Expr^.ToStringEx.Parent, Levels);
+      XcVariableAccess: Result := Expr^.VariableEx.VariableIndex^.Name;
+      XcFieldAccess: with Expr^.FieldEx do
+                       Result := DescribeExpr(Parent, Levels) +
+                                 '.' +
+                                 Parent^.TypeIndex^.RecordIndex^
+                                 .Fields[FieldNumber].Name;
+      XcArrayAccess: with Expr^.ArrayEx do
+                       Result := DescribeExpr(Parent, Levels) +
+                                 '[' + DescribeExpr(Subscript, Levels - 1) +
+                                 ']';
+      XcPointerAccess: Result := DescribeExpr(Expr^.PointerEx.Parent, Levels) +
+                                 '^';
+      XcStringChar: with Expr^.StringCharEx do
+                      Result := DescribeExpr(Parent, Levels) +
+                                '[' + DescribeExpr(Subscript, Levels - 1) +
+                                ']';
+      XcFunctionRef: Result := Expr^.FunctionEx.FunctionIndex^.Name;
+      XcFunctionCall: with Expr^.CallEx do
+                      begin
+                        Result := DescribeExpr(FunctionRef, Levels) + '(';
+                        if Levels < 2 then
+                          Result := Result + '...'
+                        else
+                          for Pos := 1 to Args.Size do
+                        begin
+                          if Pos <> 1 then Result := Result + ', ';
+                          Result := Result +
+                                    DescribeExpr(Args.Values[Pos], Levels - 1)
+                        end;
+                        Result := Result + ')'
+                      end;
+      XcPseudoFunCall: Result := _DescribePseudoCallExpr(Expr, Levels);
+      XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr, Levels);
+      XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr, Levels);
+      else CompileError('Internal error: cannot describe expression')
+    end
 end;
 
 function ExCoerce(Expr : TExpression; TypeIndex : TPsTypeIndex) : TExpression;
@@ -288,6 +469,17 @@ begin
   else if IsStringType(Parent^.TypeIndex) then ExToString := Parent
   else CompileError('Cannot convert a value of this type to string: ' +
                     TypeName(Parent^.TypeIndex))
+end;
+
+function ExSubrange(Parent : TExpression; TypeIndex : TPsTypeIndex)
+: TExpression;
+forward;
+
+function ExOutrange(Expr : TExpression) : TExpression;
+begin
+  while IsRangeType(Expr^.TypeIndex) do
+    Expr^.TypeIndex := Expr^.TypeIndex^.RangeIndex^.BaseTypeIndex;
+  Result := Expr
 end;
 
 function ExVariable(VariableIndex : TPsVariableIndex) : TExpression;
@@ -550,6 +742,9 @@ function ExBinaryOp(Left, Right : TExpression;
 var 
   Immediate : boolean;
 begin
+  Left := ExOutrange(Left);
+  Right := ExOutrange(Right);
+
   Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
   if IsBooleanType(Left^.TypeIndex) and IsBooleanType(Right^.TypeIndex) then
   begin
@@ -808,7 +1003,8 @@ begin
   OutOfBounds := false;
   PF := FnExpr^.PseudoFunEx.PseudoFun;
   DisposeExpr(FnExpr);
-  if (PF = TpfNew) or (PF = TpfDispose) then CompileError('Invalid argument')
+  if (PF = TpfNew) or (PF = TpfDispose) then
+    CompileError('Invalid pointer argument for NEW or DISPOSE')
   else if PF = TpfOrd then
   begin
     with Arg^.ImmediateEx do
@@ -819,7 +1015,7 @@ begin
         XicInteger: {do nothing};
         XicChar: IntegerValue := Ord(CharValue);
         XicEnum: IntegerValue := EnumOrdinal;
-        else CompileError('Invalid type')
+        else CompileError('Invalid type for ORD')
       end;
       Arg^.TypeIndex := PrimitiveTypes.PtInteger;
       Cls := XicInteger
@@ -837,7 +1033,7 @@ begin
                  else OutOfBounds := true;
         XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
                  else OutOfBounds := true;
-        else CompileError('Invalid type')
+        else CompileError('Invalid type for PRED')
       end
     end
   end
@@ -855,7 +1051,7 @@ begin
                    EnumOrdinal := EnumOrdinal + 1
                  else
                    OutOfBounds := true;
-        else CompileError('Invalid type')
+        else CompileError('Invalid type for SUCC')
       end
     end
   end;
@@ -891,10 +1087,51 @@ begin
   Result := FnExpr
 end;
 
+function _ExBelongsToRange(Expr, First, Last : TExpression) : boolean;
+var CmpExpr : TExpression;
+begin
+  CmpExpr := ExBinaryOp(
+             ExBinaryOp(CopyExpr(First), CopyExpr(Expr), TkLessOrEquals),
+             ExBinaryOp(CopyExpr(Expr), CopyExpr(Last), TkLessOrEquals),
+             TkAnd);
+  if CmpExpr^.Cls <> XcImmediate then
+    CompileError('Internal error: could not calculate if an immediate value ' +
+                 'belongs to a range');
+  Result := CmpExpr^.ImmediateEx.BooleanValue;
+  DisposeExpr(CmpExpr)
+end;
+
+function ExSubrange;
+var Expr : TExpression;
+begin
+  if Parent^.Cls = XcImmediate then
+  begin
+    if not _ExBelongsToRange(Parent, TypeIndex^.RangeIndex^.First,
+       TypeIndex^.RangeIndex^.Last) then
+      CompileError('Value ' + DescribeExpr(Parent, 2) +
+      ' out of bounds for ' + TypeName(TypeIndex));
+    Parent^.TypeIndex := TypeIndex;
+    Result := Parent
+  end
+  else
+  begin
+    Result := _NewExpr(XcSubrange);
+    Result^.SubrangeEx.Parent := Parent;
+    Result^.TypeIndex := TypeIndex
+  end
+end;
+
 function ExCoerce;
 begin
-  if IsCharType(Expr^.TypeIndex) and IsStringType(TypeIndex) then
-    ExCoerce := ExToString(Expr)
+  if IsRangeType(Expr^.TypeIndex)
+     and IsSameType(TypeIndex, Expr^.TypeIndex^.RangeIndex^.BaseTypeIndex)
+    then ExCoerce := ExOutrange(Expr)
+  else if IsRangeType(TypeIndex)
+          and IsSameType(TypeIndex^.RangeIndex^.BaseTypeIndex, Expr^.TypeIndex)
+         then
+         ExCoerce := ExSubrange(Expr, TypeIndex)
+  else if IsCharType(Expr^.TypeIndex) and IsStringType(TypeIndex) then
+         ExCoerce := ExToString(Expr)
   else if IsSameType(Expr^.TypeIndex, TypeIndex) then
          ExCoerce := Expr
   else if IsNilType(Expr^.TypeIndex) and IsPointeryType(TypeIndex) then

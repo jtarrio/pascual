@@ -19,6 +19,7 @@ typedef struct {
   FILE* file;
 } PFile;
 
+int subrange(int value, int low, int high);
 int pred(int value, int low, int high);
 int succ(int value, int low, int high);
 

@@ -29,6 +29,7 @@ begin
     TdcName : new(Def^.NameIndex);
     TdcType : new(Def^.TypeIndex);
     TdcEnum : new(Def^.EnumIndex);
+    TdcRange : new(Def^.RangeIndex);
     TdcRecord : new(Def^.RecordIndex);
     TdcArray : new(Def^.ArrayIndex);
     TdcConstant : new(Def^.ConstantIndex);
@@ -50,8 +51,19 @@ begin
     TdcName : dispose(Def^.NameIndex);
     TdcType : dispose(Def^.TypeIndex);
     TdcEnum : dispose(Def^.EnumIndex);
+    TdcRange:
+              begin
+                DisposeExpr(Def^.RangeIndex^.First);
+                DisposeExpr(Def^.RangeIndex^.Last);
+                dispose(Def^.RangeIndex)
+              end;
     TdcRecord : dispose(Def^.RecordIndex);
-    TdcArray : dispose(Def^.ArrayIndex);
+    TdcArray :
+               begin
+                 DisposeExpr(Def^.ArrayIndex^.LowBound);
+                 DisposeExpr(Def^.ArrayIndex^.HighBound);
+                 dispose(Def^.ArrayIndex)
+               end;
     TdcConstant : dispose(Def^.ConstantIndex);
     TdcVariable : dispose(Def^.VariableIndex);
     TdcFunction : dispose(Def^.FunctionIndex);
@@ -151,7 +163,7 @@ function _CheckNameClass(NameIndex : TPsNameIndex; Cls : TPsNameClass)
 : TPSNameIndex;
 begin
   if (NameIndex <> nil) and (NameIndex^.Cls <> Cls) then
-    case NameIndex^.Cls of 
+    case Cls of 
       TncType : CompileError('Not a type: ' + NameIndex^.Name);
       TncVariable : CompileError('Not a variable: ' + NameIndex^.Name);
       TncEnumValue : CompileError('Not an enumeration value: ' +
@@ -276,6 +288,9 @@ begin
     end;
     DeepTypeName := Ret + ')'
   end
+  else if Typ.Cls = TtcRange then
+         DeepTypeName := DescribeExpr(Typ.RangeIndex^.First, 1) +
+                '..' + DescribeExpr(Typ.RangeIndex^.Last, 1)
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
@@ -289,7 +304,9 @@ begin
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [...] of ' + DeepTypeName(Typ.ArrayIndex^.TypeIndex, true);
+    Ret := 'array [' + DescribeExpr(Typ.ArrayIndex^.LowBound, 1) +
+           '..' + DescribeExpr(Typ.ArrayIndex^.HighBound, 1) +
+           '] of ' + DeepTypeName(Typ.ArrayIndex^.TypeIndex, true);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
@@ -399,6 +416,11 @@ begin
   IsEnumType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcEnum)
 end;
 
+function IsRangeType(TypeIndex : TPsTypeIndex) : boolean;
+begin
+  Result := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcRange)
+end;
+
 function IsRecordType(TypeIndex : TPsTypeIndex) : boolean;
 begin
   IsRecordType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcRecord)
@@ -460,6 +482,7 @@ begin
                    or IsIntegerType(TypeIndex)
                    or IsCharType(TypeIndex)
                    or IsEnumType(TypeIndex)
+                   or IsRangeType(TypeIndex)
 end;
 
 function IsSimpleType(TypeIndex : TPsTypeIndex) : boolean;
@@ -518,6 +541,12 @@ begin
   EnumIndex^ := Enum;
   EnumIndex^.Id := DefCounter;
   AddEnum := EnumIndex
+end;
+
+function AddRange(Range : TPsRangeDef) : TPsRangeIndex;
+begin
+  Result := _AddDef(TdcRange)^.RangeIndex;
+  Result^ := Range
 end;
 
 function AddRecord(Rec : TPsRecordDef) : TPsRecordIndex;

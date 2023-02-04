@@ -171,6 +171,34 @@ begin
     end
 end;
 
+procedure _OutBounds(TypeIndex : TPsTypeIndex);
+begin
+  if IsBooleanType(TypeIndex) then write(Codegen.Output, '0, 1')
+  else if IsIntegerType(TypeIndex) then
+         write(Codegen.Output, 'INT_MIN, INT_MAX')
+  else if IsCharType(TypeIndex) then write(Codegen.Output, '0, 255')
+  else if IsEnumType(TypeIndex) then
+         write(Codegen.Output, '0, ', TypeIndex^.EnumIndex^.Size - 1)
+  else if IsRangeType(TypeIndex) then
+  begin
+    OutExpression(TypeIndex^.RangeIndex^.First);
+    write(Codegen.Output, ', ');
+    OutExpression(TypeIndex^.RangeIndex^.Last)
+  end
+  else
+    CompileError('Internal error: unknown bounds for type ' +
+                 TypeName(TypeIndex))
+end;
+
+procedure _OutExSubrange(Expr : TExpression);
+begin
+  write(Codegen.Output, 'subrange(');
+  OutExpression(Expr^.SubrangeEx.Parent);
+  write(Codegen.Output, ', ');
+  _OutBounds(Expr^.TypeIndex);
+  write(Codegen.Output, ')')
+end;
+
 procedure _OutExVariable(Expr : TExpression);
 begin
   if Expr^.VariableEx.VariableIndex^.IsReference then
@@ -392,6 +420,7 @@ begin
                   OutExpression(Expr^.ToStringEx.Parent);
                   write(Codegen.Output, ')')
                 end;
+    XcSubrange: _OutExSubrange(Expr);
     XcVariableAccess : _OutExVariable(Expr);
     XcFieldAccess: _OutExFieldAccess(Expr);
     XcArrayAccess:
@@ -483,6 +512,8 @@ begin
     else
       write(Codegen.Output, 'enum enum', TypeIndex^.EnumIndex^.Id)
   end
+  else if TypeIndex^.Cls = TtcRange then
+         OutTypeReference(TypeIndex^.RangeIndex^.First^.TypeIndex)
   else if TypeIndex^.Cls = TtcRecord then
   begin
     if TypeIndex^.RecordIndex^.HasBeenDefined and (TypeIndex^.Name <> '') then
@@ -601,6 +632,8 @@ begin
          write(Codegen.Output, 'PFile ', Name)
   else if TypeIndex^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypeIndex^.EnumIndex)
+  else if TypeIndex^.Cls = TtcRange then
+         OutNameAndType(Name, TypeIndex^.RangeIndex^.First^.TypeIndex)
   else if TypeIndex^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypeIndex^.RecordIndex)
   else if TypeIndex^.Cls = TtcArray then
@@ -609,9 +642,10 @@ begin
     OutNameAndType(Name, Arr.TypeIndex);
     write(Codegen.Output, '[');
     SizeExpr := ExBinaryOp(
-                ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound), TkPlus
-                ),
-                CopyExpr(Arr.LowBound), TkMinus);
+                ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound),
+                TkPlus),
+                CopyExpr(Arr.LowBound),
+                TkMinus);
     OutExpression(SizeExpr);
     DisposeExpr(SizeExpr);
     write(Codegen.Output, ']')
@@ -753,6 +787,8 @@ end;
 
 function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
 begin
+  if IsRangeType(TypeIndex) then
+    TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
   if IsBooleanType(TypeIndex) then ShortTypeName := 'b'
   else if IsIntegerType(TypeIndex) then ShortTypeName := 'i'
   else if IsCharType(TypeIndex) then ShortTypeName := 'c'
@@ -907,19 +943,6 @@ begin
                     TypeName(Expr^.PseudoFunCallEx.Arg1^.TypeIndex))
 end;
 
-procedure _OutBounds(Expr : TExpression);
-begin
-  if IsBooleanType(Expr^.TypeIndex) then write(Codegen.Output, '0, 1')
-  else if IsIntegerType(Expr^.TypeIndex) then
-         write(Codegen.Output, 'INT_MIN, INT_MAX')
-  else if IsCharType(Expr^.TypeIndex) then write(Codegen.Output, '0, 255')
-  else if IsEnumType(Expr^.TypeIndex) then
-         write(Codegen.Output, '0, ', Expr^.TypeIndex^.EnumIndex^.Size - 1)
-  else
-    CompileError('Internal error: unknown bounds for type ' +
-                 TypeName(Expr^.TypeIndex))
-end;
-
 procedure _OutPred(Expr : TExpression);
 begin
   if IsOrdinalType(Expr^.PseudoFunCallEx.Arg1^.TypeIndex) then
@@ -927,7 +950,7 @@ begin
     write(Codegen.Output, 'pred(');
     OutExpression(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ', ');
-    _OutBounds(Expr^.PseudoFunCallEx.Arg1);
+    _OutBounds(Expr^.PseudoFunCallEx.Arg1^.TypeIndex);
     write(Codegen.Output, ')')
   end
   else CompileError('Expected an ordinal type, got ' +
@@ -941,7 +964,7 @@ begin
     write(Codegen.Output, 'succ(');
     OutExpression(Expr^.PseudoFunCallEx.Arg1);
     write(Codegen.Output, ', ');
-    _OutBounds(Expr^.PseudoFunCallEx.Arg1);
+    _OutBounds(Expr^.PseudoFunCallEx.Arg1^.TypeIndex);
     write(Codegen.Output, ')')
   end
   else CompileError('Expected an ordinal type, got ' +

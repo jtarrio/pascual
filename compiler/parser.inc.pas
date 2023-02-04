@@ -220,19 +220,56 @@ begin
   PsPointerType := AddType(Typ)
 end;
 
-function PsTypeDenoter;
-var 
-  TypeIndex : TPsTypeIndex;
+function PsCompareExprs(A, B : TExpression; Op : TLxTokenId) : boolean;
+var CmpExpr : TExpression;
 begin
-  TypeIndex := nil;
-  if Lexer.Token.Id = TkIdentifier then TypeIndex := PsTypeIdentifier
-  else if Lexer.Token.Id = TkLparen then TypeIndex := PsEnumeratedType
-  else if Lexer.Token.Id = TkRecord then TypeIndex := PsRecordType
-  else if Lexer.Token.Id = TkArray then TypeIndex := PsArrayType
-  else if Lexer.Token.Id = TkCaret then TypeIndex := PsPointerType
-  else
-    CompileError('Wanted type definition, found ' + LxTokenStr);
-  PsTypeDenoter := TypeIndex;
+  CmpExpr := ExBinaryOp(CopyExpr(A), CopyExpr(B), Op);
+  if CmpExpr^.Cls <> XcImmediate then
+    CompileError('Internal error: the compared expressions are not immediate');
+  Result := CmpExpr^.ImmediateEx.BooleanValue;
+  DisposeExpr(CmpExpr)
+end;
+
+function PsRangeType : TPsTypeIndex;
+var 
+  Typ : TPsType;
+  Range : TPsRangeDef;
+begin
+  Range.First := PsImmediate;
+  WantTokenAndRead(TkRange);
+  Range.Last := PsImmediate;
+  Range.BaseTypeIndex := Range.First^.TypeIndex;
+  if not IsSameType(Range.First^.TypeIndex, Range.Last^.TypeIndex) then
+    CompileError('The bounds of a subrange must belong to the same type');
+  if not IsOrdinalType(Range.BaseTypeIndex) then
+    CompileError('The bounds of a subrange must belong to an ordinal type');
+  if not PsCompareExprs(Range.First, Range.Last, TkLessOrEquals) then
+    CompileError('The bounds of a subrange must be in ascending order');
+  Typ := TypeOfClass(TtcRange);
+  Typ.RangeIndex := AddRange(Range);
+  Result := AddType(Typ)
+end;
+
+function PsTypeDenoter;
+var Idx : TPsNameIndex;
+begin
+  Result := nil;
+  if Lexer.Token.Id = TkLparen then Result := PsEnumeratedType
+  else if Lexer.Token.Id = TkRecord then Result := PsRecordType
+  else if Lexer.Token.Id = TkArray then Result := PsArrayType
+  else if Lexer.Token.Id = TkCaret then Result := PsPointerType
+  else if Lexer.Token.Id = TkIdentifier then
+  begin
+    Idx := FindName(Lexer.Token.Value, {Required=}false);
+    if Idx = nil then
+    else if Idx^.Cls = TncType then Result := PsTypeIdentifier
+    else if (Idx^.Cls = TncConstant) or (Idx^.Cls = TncEnumValue) then
+           Result := PsRangeType
+  end
+  else if (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString) then
+         Result := PsRangeType;
+  if Result = nil then
+    CompileError('Expected type denoter, found ' + LxTokenStr);
 end;
 
 procedure _ResolvePointerUnknown(TypeIndex : TPsTypeIndex);
