@@ -57,6 +57,16 @@ will_be_valid() {
   fi
 }
 
+aborts() {
+  outfile=$(do_compile)
+  add_cleanup "$outfile"
+  if ( "$outfile" || false ) >/dev/null 2>&1
+  then
+    echo "Program did not abort execution in ${BASH_SOURCE[1]}:${BASH_LINENO}"
+    exit 1
+  fi
+}
+
 outputs() {
   outfile=$(do_compile)
   add_cleanup "$outfile"

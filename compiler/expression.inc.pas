@@ -215,7 +215,11 @@ begin
 end;
 
 function _DescribeImmediateExpr(Expr : TExpression) : string;
+var TypeIndex : TPsTypeIndex;
 begin
+  TypeIndex := Expr^.TypeIndex;
+  while IsRangeType(TypeIndex) do
+    TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
   with Expr^.ImmediateEx do
     case Cls of 
       XicNil: Result := 'nil';
@@ -223,7 +227,7 @@ begin
       XicInteger: Str(IntegerValue, Result);
       XicChar: Result := _UnparseChar(CharValue);
       XicString: Result := _UnparseString(StringValue);
-      XicEnum: Result := Expr^.TypeIndex^.EnumIndex^.Values[EnumOrdinal];
+      XicEnum: Result := TypeIndex^.EnumIndex^.Values[EnumOrdinal];
       else CompileError('Internal error: cannot describe immediate value')
     end
 end;
@@ -1127,8 +1131,8 @@ begin
      and IsSameType(TypeIndex, Expr^.TypeIndex^.RangeIndex^.BaseTypeIndex)
     then ExCoerce := ExOutrange(Expr)
   else if IsRangeType(TypeIndex)
-          and IsSameType(TypeIndex^.RangeIndex^.BaseTypeIndex, Expr^.TypeIndex)
-         then
+          and IsSameType(TypeIndex^.RangeIndex^.BaseTypeIndex,
+          Expr^.TypeIndex) then
          ExCoerce := ExSubrange(Expr, TypeIndex)
   else if IsCharType(Expr^.TypeIndex) and IsStringType(TypeIndex) then
          ExCoerce := ExToString(Expr)

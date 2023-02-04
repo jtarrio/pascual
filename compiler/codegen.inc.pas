@@ -157,7 +157,11 @@ begin
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
+var TypeIndex : TPsTypeIndex;
 begin
+  TypeIndex := Expr^.TypeIndex;
+  while IsRangeType(TypeIndex) do
+    TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
   with Expr^.ImmediateEx do
     case Cls of 
       XicNil : write(Codegen.Output, '(void*)0');
@@ -167,7 +171,7 @@ begin
       XicChar : _OutChar(CharValue);
       XicString : _OutString(StringValue);
       XicEnum : write(Codegen.Output,
-                      Expr^.TypeIndex^.EnumIndex^.Values[EnumOrdinal])
+                      TypeIndex^.EnumIndex^.Values[EnumOrdinal])
     end
 end;
 
@@ -787,13 +791,12 @@ end;
 
 function ShortTypeName(TypeIndex : TPsTypeIndex) : char;
 begin
-  if IsRangeType(TypeIndex) then
+  while IsRangeType(TypeIndex) do
     TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
   if IsBooleanType(TypeIndex) then ShortTypeName := 'b'
   else if IsIntegerType(TypeIndex) then ShortTypeName := 'i'
   else if IsCharType(TypeIndex) then ShortTypeName := 'c'
   else if IsStringType(TypeIndex) then ShortTypeName := 's'
-  else if IsEnumType(TypeIndex) then ShortTypeName := 'e'
   else CompileError('No short type name exists for ' + TypeName(TypeIndex))
 end;
 
@@ -839,6 +842,7 @@ var
   WriteArg : ^TExWriteArgs;
   Linefeed : boolean;
   Braces : boolean;
+  TypeIndex : TPsTypeIndex;
 begin
   Dst := Expr^.PseudoFunCallEx.Arg1;
   Linefeed := Expr^.PseudoFunCallEx.PseudoFun = TpfWriteln;
@@ -848,22 +852,23 @@ begin
   if Braces then OutBegin;
   while WriteArg <> nil do
   begin
-    if IsEnumType(WriteArg^.Arg^.TypeIndex) then
+    TypeIndex := WriteArg^.Arg^.TypeIndex;
+    while IsRangeType(TypeIndex) do
+      TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
+    if IsEnumType(TypeIndex) then
     begin
       _OutIndent;
       write(Codegen.Output, 'write_e(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.Output, ', enumvalues',
-            WriteArg^.Arg^.TypeIndex^.EnumIndex^.Id, ');');
+      write(Codegen.Output, ', enumvalues', TypeIndex^.EnumIndex^.Id, ');');
       _OutNewline
     end
     else
     begin
       _OutIndent;
-      write(Codegen.Output, 'write_',
-            ShortTypeName(WriteArg^.Arg^.TypeIndex), '(&');
+      write(Codegen.Output, 'write_', ShortTypeName(TypeIndex), '(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
@@ -941,6 +946,20 @@ begin
   end
   else CompileError('Expected an ordinal type, got ' +
                     TypeName(Expr^.PseudoFunCallEx.Arg1^.TypeIndex))
+end;
+
+procedure _OutExpressionBoundsCheck(Expr : TExpression);
+begin
+  if not IsOrdinalType(Expr^.TypeIndex) or IsIntegerType(Expr^.TypeIndex) then
+    OutExpression(Expr)
+  else
+  begin
+    write(Codegen.Output, 'subrange(');
+    OutExpression(Expr);
+    write(Codegen.Output, ', ');
+    _OutBounds(Expr^.TypeIndex);
+    write(Codegen.Output, ')')
+  end
 end;
 
 procedure _OutPred(Expr : TExpression);
