@@ -45,6 +45,7 @@ var Pos : integer;
 begin
   case Expr^.Cls of 
     XcToString : DisposeExpr(Expr^.ToStrParent);
+    XcSubrange : DisposeExpr(Expr^.SubrangeParent);
     XcField : DisposeExpr(Expr^.RecExpr);
     XcArray :
               begin
@@ -140,6 +141,7 @@ begin
   case Expr^.Cls of 
     XcImmediate: Copy^.Immediate := Expr^.Immediate;
     XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
+    XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
              begin
@@ -448,7 +450,14 @@ function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
 forward;
 
 function ExOutrange(Expr : TExpression) : TExpression;
+var TmpExpr : TExpression;
 begin
+  while Expr^.Cls = XcSubrange do
+  begin
+    TmpExpr := CopyExpr(Expr^.SubrangeParent);
+    DisposeExpr(Expr);
+    Expr := TmpExpr;
+  end;
   while IsRangeType(Expr^.TypePtr) do
     Expr^.TypePtr := Expr^.TypePtr^.RangePtr^.BaseTypePtr;
   Result := Expr
@@ -487,13 +496,11 @@ begin
   if not IsArrayType(Parent^.TypePtr) then
     CompileError('Cannot access subscript of non-array type ' +
                  TypeName(Parent^.TypePtr));
-  if not IsIntegerType(Subscript^.TypePtr) then
-    CompileError('Invalid type for subscript of ' + TypeName(Parent^.TypePtr) +
-    ': ' + TypeName(Subscript^.TypePtr));
   Result := _NewExpr(XcArray);
   Result^.ArrayExpr := Parent;
-  Result^.ArrayIndex := Subscript;
-  Result^.TypePtr := Parent^.TypePtr^.ArrayPtr^.TypePtr;
+  Result^.ArrayIndex := ExCoerce(Subscript,
+                        Parent^.TypePtr^.ArrayPtr^.IndexTypePtr);
+  Result^.TypePtr := Parent^.TypePtr^.ArrayPtr^.ValueTypePtr;
   Result^.IsConstant := Parent^.IsConstant;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
@@ -1059,14 +1066,34 @@ begin
   end
 end;
 
+function ExRerange(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
+begin
+  if _ExBelongsToRange(Expr^.TypePtr^.RangePtr^.First,
+     TypePtr^.RangePtr^.First,
+     TypePtr^.RangePtr^.Last)
+     and _ExBelongsToRange(Expr^.TypePtr^.RangePtr^.Last,
+     TypePtr^.RangePtr^.First,
+     TypePtr^.RangePtr^.Last) then
+  begin
+    Expr^.TypePtr := TypePtr;
+    Result := Expr
+  end
+  else
+    Result := ExSubrange(ExOutrange(Expr), TypePtr)
+end;
+
 function ExCoerce;
 begin
   if IsRangeType(Expr^.TypePtr)
-     and IsSameType(TypePtr, Expr^.TypePtr^.RangePtr^.BaseTypePtr)
-    then ExCoerce := ExOutrange(Expr)
+     and IsSameType(TypePtr, Expr^.TypePtr^.RangePtr^.BaseTypePtr) then
+    ExCoerce := ExOutrange(Expr)
   else if IsRangeType(TypePtr)
           and IsSameType(TypePtr^.RangePtr^.BaseTypePtr, Expr^.TypePtr) then
          ExCoerce := ExSubrange(Expr, TypePtr)
+  else if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr)
+          and IsSameType(Expr^.TypePtr^.RangePtr^.BaseTypePtr,
+          TypePtr^.RangePtr^.BaseTypePtr) then
+         ExCoerce := ExRerange(Expr, TypePtr)
   else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)
   else if IsSameType(Expr^.TypePtr, TypePtr) then

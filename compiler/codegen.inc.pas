@@ -119,6 +119,7 @@ begin
   case Expr^.Cls of 
     XcImmediate : Result := 0;
     XcToString : Result := 0;
+    XcSubrange : Result := 0;
     XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
                  else Result := 0;
     XcField : Result := 1;
@@ -168,22 +169,74 @@ begin
     end
 end;
 
-procedure _OutBounds(TypePtr : TPsTypePtr);
+function _GetLowBound(TypePtr : TPsTypePtr) : TExpression;
 begin
-  if IsBooleanType(TypePtr) then write(Codegen.Output, '0, 1')
-  else if IsIntegerType(TypePtr) then
-         write(Codegen.Output, 'INT_MIN, INT_MAX')
-  else if IsCharType(TypePtr) then write(Codegen.Output, '0, 255')
+  if IsRangeType(TypePtr) then
+    Result := ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
+              CopyExpr(TypePtr^.RangePtr^.First))
+  else if IsBoundedType(TypePtr) then
+  Result := ExIntegerConstant(0)
+  else CompileError('Internal error: unknown low bound for ' +
+                    TypeName(TypePtr))
+end;
+
+function _GetHighBound(TypePtr : TPsTypePtr) : TExpression;
+begin
+  if IsBooleanType(TypePtr) then Result := ExIntegerConstant(1)
+  else if IsCharType(TypePtr) then Result := ExIntegerConstant(255)
   else if IsEnumType(TypePtr) then
-         write(Codegen.Output, '0, ', TypePtr^.EnumPtr^.Size - 1)
+         Result := ExIntegerConstant(TypePtr^.EnumPtr^.Size - 1)
   else if IsRangeType(TypePtr) then
+         Result := ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
+                   CopyExpr(TypePtr^.RangePtr^.Last))
+  else CompileError('Internal error: unknown high bound for ' +
+                    TypeName(TypePtr))
+end;
+
+procedure _OutBounds(TypePtr : TPsTypePtr);
+var TmpExpr : TExpression;
+begin
+  TmpExpr := _GetLowBound(TypePtr);
+  OutExpression(TmpExpr);
+  DisposeExpr(TmpExpr);
+  write(Codegen.Output, ', ');
+  TmpExpr := _GetHighBound(TypePtr);
+  OutExpression(TmpExpr);
+  DisposeExpr(TmpExpr);
+end;
+
+procedure _OutArrayIndex(Index : TExpression; TypePtr : TPsTypePtr);
+var LowBound, SizeExpr : TExpression;
+begin
+  LowBound := _GetLowBound(TypePtr^.ArrayPtr^.IndexTypePtr);
+  if (LowBound^.Cls = XcImmediate)
+     and (LowBound^.Immediate.Cls = XicInteger)
+     and (LowBound^.Immediate.IntegerVal = 0) then
   begin
-    OutExpression(TypePtr^.RangePtr^.First);
-    write(Codegen.Output, ', ');
-    OutExpression(TypePtr^.RangePtr^.Last)
+    OutExpression(Index);
+    DisposeExpr(LowBound)
   end
   else
-    CompileError('Internal error: unknown bounds for type ' + TypeName(TypePtr))
+  begin
+    SizeExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
+                CopyExpr(Index)),
+                LowBound, TkMinus);
+    OutExpression(SizeExpr);
+    DisposeExpr(SizeExpr)
+  end
+end;
+
+procedure _OutSize(TypePtr : TPsTypePtr);
+var SizeExpr : TExpression;
+begin
+  SizeExpr := ExBinaryOp(
+              ExBinaryOp(_GetHighBound(TypePtr),
+              _GetLowBound(TypePtr),
+              TkMinus),
+              ExIntegerConstant(1),
+              TkPlus);
+  OutExpression(SizeExpr);
+  DisposeExpr(SizeExpr)
 end;
 
 procedure _OutExSubrange(Expr : TExpression);
@@ -407,7 +460,6 @@ begin
 end;
 
 procedure OutExpression;
-var TmpExpr : TExpression;
 begin
   case Expr^.Cls of 
     XcImmediate: _OutExImmediate(Expr);
@@ -424,13 +476,7 @@ begin
              begin
                _OutExpressionParens(Expr^.ArrayExpr, Expr);
                write(Codegen.Output, '[');
-               TmpExpr := ExBinaryOp(
-                          CopyExpr(Expr^.ArrayIndex),
-                          CopyExpr(Expr^.ArrayExpr^.TypePtr^
-                          .ArrayPtr^.LowBound),
-                          TkMinus);
-               OutExpression(TmpExpr);
-               DisposeExpr(TmpExpr);
+               _OutArrayIndex(Expr^.ArrayIndex, Expr^.ArrayExpr^.TypePtr);
                write(Codegen.Output, ']')
              end;
     XcPointer:
@@ -518,7 +564,7 @@ begin
   end
   else if TypePtr^.Cls = TtcArray then
   begin
-    OutTypeReference(TypePtr^.ArrayPtr^.TypePtr);
+    OutTypeReference(TypePtr^.ArrayPtr^.ValueTypePtr);
     write(Codegen.Output, '*')
   end
   else
@@ -632,16 +678,9 @@ begin
          OutNameAndRecord(Name, TypePtr^.RecPtr)
   else if TypePtr^.Cls = TtcArray then
   begin
-    Arr := TypePtr^.ArrayPtr^;
-    OutNameAndType(Name, Arr.TypePtr);
+    OutNameAndType(Name, TypePtr^.ArrayPtr^.ValueTypePtr);
     write(Codegen.Output, '[');
-    SizeExpr := ExBinaryOp(
-                ExBinaryOp(ExIntegerConstant(1), CopyExpr(Arr.Highbound),
-                TkPlus),
-                CopyExpr(Arr.LowBound),
-                TkMinus);
-    OutExpression(SizeExpr);
-    DisposeExpr(SizeExpr);
+    _OutSize(TypePtr^.ArrayPtr^.IndexTypePtr);
     write(Codegen.Output, ']')
   end
   else
@@ -936,8 +975,7 @@ end;
 
 procedure _OutExpressionBoundsCheck(Expr : TExpression);
 begin
-  if not IsOrdinalType(Expr^.TypePtr) or IsIntegerType(Expr^.TypePtr) then
-    OutExpression(Expr)
+  if not IsBoundedType(Expr^.TypePtr) then OutExpression(Expr)
   else
   begin
     write(Codegen.Output, 'subrange(');
@@ -949,8 +987,16 @@ begin
 end;
 
 procedure _OutPred(Expr : TExpression);
+var TmpExpr : TExpression;
 begin
-  if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  begin
+    TmpExpr := ExBinaryOp(CopyExpr(Expr^.PseudoFnCall.Arg1),
+               ExIntegerConstant(1), TkMinus);
+    OutExpression(TmpExpr);
+    DisposeExpr(TmpExpr)
+  end
+  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     write(Codegen.Output, 'pred(');
     OutExpression(Expr^.PseudoFnCall.Arg1);
@@ -963,8 +1009,16 @@ begin
 end;
 
 procedure _OutSucc(Expr : TExpression);
+var TmpExpr : TExpression;
 begin
-  if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  begin
+    TmpExpr := ExBinaryOp(CopyExpr(Expr^.PseudoFnCall.Arg1),
+               ExIntegerConstant(1), TkPlus);
+    OutExpression(TmpExpr);
+    DisposeExpr(TmpExpr)
+  end
+  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     write(Codegen.Output, 'succ(');
     OutExpression(Expr^.PseudoFnCall.Arg1);

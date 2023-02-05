@@ -154,8 +154,8 @@ type
     HasBeenDefined : boolean
   end;
   TPsArrayDef = record
-    LowBound, HighBound : TExpression;
-    TypePtr : TPsTypePtr
+    IndexTypePtr : TPsTypePtr;
+    ValueTypePtr : TPsTypePtr;
   end;
   TPsConstant = record
     Name : string;

@@ -58,12 +58,7 @@ begin
                 dispose(Def^.RangePtr)
               end;
     TdcRecord : dispose(Def^.RecPtr);
-    TdcArray :
-               begin
-                 DisposeExpr(Def^.ArrayPtr^.LowBound);
-                 DisposeExpr(Def^.ArrayPtr^.HighBound);
-                 dispose(Def^.ArrayPtr)
-               end;
+    TdcArray : dispose(Def^.ArrayPtr);
     TdcConstant : dispose(Def^.ConstPtr);
     TdcVariable : dispose(Def^.VarPtr);
     TdcFunction : dispose(Def^.FnPtr);
@@ -302,9 +297,8 @@ begin
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [' + DescribeExpr(Typ.ArrayPtr^.LowBound, 1) +
-           '..' + DescribeExpr(Typ.ArrayPtr^.HighBound, 1) +
-           '] of ' + DeepTypeName(Typ.ArrayPtr^.TypePtr, true);
+    Ret := 'array [' + DeepTypeName(Typ.ArrayPtr^.IndexTypePtr, false) +
+           '] of ' + DeepTypeName(Typ.ArrayPtr^.ValueTypePtr, false);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
@@ -478,6 +472,14 @@ function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsOrdinalType := IsBooleanType(TypePtr)
                    or IsIntegerType(TypePtr)
+                   or IsCharType(TypePtr)
+                   or IsEnumType(TypePtr)
+                   or IsRangeType(TypePtr)
+end;
+
+function IsBoundedType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := IsBooleanType(TypePtr)
                    or IsCharType(TypePtr)
                    or IsEnumType(TypePtr)
                    or IsRangeType(TypePtr)

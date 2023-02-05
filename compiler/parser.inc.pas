@@ -19,7 +19,7 @@ begin
   if (Lexer.Token.Id <> Id1)
      and (Lexer.Token.Id <> Id2) and (Lexer.Token.Id <> Id3) then
     CompileError('Wanted token ' + LxTokenName(Id1) + ', ' + LxTokenName(Id2) +
-    ', or ' + LxTokenName(Id3) + ' found ' + LxTokenStr)
+    ', or ' + LxTokenName(Id3) + ', found ' + LxTokenStr)
 end;
 
 procedure WantTokenAndRead(Id : TLxTokenId);
@@ -195,12 +195,12 @@ var
 begin
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
-  Arr.LowBound := PsImmediate;
-  WantTokenAndRead(TkRange);
-  Arr.HighBound := PsImmediate;
+  Arr.IndexTypePtr := PsTypeDenoter;
+  if not IsBoundedType(Arr.IndexTypePtr) then
+    CompileError('Array indices must belong to a bounded ordinal type');
   WantTokenAndRead(TkRbracket);
   WantTokenAndRead(TkOf);
-  Arr.TypePtr := PsTypeDenoter;
+  Arr.ValueTypePtr := PsTypeDenoter;
   Typ := TypeOfClass(TtcArray);
   Typ.ArrayPtr := AddArray(Arr);
   PsArrayType := AddType(Typ)
@@ -266,7 +266,8 @@ begin
     else if (Idx^.Cls = TncConstant) or (Idx^.Cls = TncEnumVal) then
            Result := PsRangeType
   end
-  else if (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString) then
+  else if (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString)
+          or (Lexer.Token.Id = TkMinus) or (Lexer.Token.Id = TkPlus) then
          Result := PsRangeType;
   if Result = nil then
     CompileError('Expected type denoter, found ' + LxTokenStr);
@@ -327,7 +328,7 @@ begin
   if IsArrayType(TypePtr) then
   begin
     WantTokenAndRead(TkLparen);
-    TypePtr := TypePtr^.ArrayPtr^.TypePtr;
+    TypePtr := TypePtr^.ArrayPtr^.ValueTypePtr;
     OutConstantArrayBegin;
     while Lexer.Token.Id <> TkRparen do
     begin
@@ -575,7 +576,7 @@ var
 begin
   Expr := ExPseudoFnCall(FnExpr);
   Expr^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('INPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
+                             TncVariable, {Required=}true)^.VarPtr);
   ReadArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -625,7 +626,7 @@ var
 begin
   Expr := ExPseudoFnCall(FnExpr);
   Expr^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
+                             TncVariable, {Required=}true)^.VarPtr);
   WriteArg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -1132,11 +1133,11 @@ begin
   if not IsOrdinalType(Iter^.TypePtr) then
     CompileError('Type of iterator is not ordinal: ' + TypeName(Iter^.TypePtr));
   WantTokenAndRead(TkAssign);
-  First := PsExpression;
+  First := ExCoerce(PsExpression, Iter^.TypePtr);
   WantToken2(TkTo, TkDownto);
   Ascending := Lexer.Token.Id = TkTo;
   ReadToken;
-  Last := PsExpression;
+  Last := ExCoerce(PsExpression, Iter^.TypePtr);
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;

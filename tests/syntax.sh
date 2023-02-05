@@ -179,8 +179,8 @@ echo 'array[-4..5] of integer' | testtype | is_valid
 echo 'array[1..10] of array[1..20] of integer' | testtype | is_valid
 echo 'array[1..10,1..20] of integer' | testtype | will_be_valid
 echo '(One, Two, Three);
-      X = array[One..Two] of integer' | testtype | will_be_valid
-echo 'array[boolean] of integer' | testtype | will_be_valid
+      X = array[One..Two] of integer' | testtype | is_valid
+echo 'array[boolean] of integer' | testtype | is_valid
 echo 'packed array[1..10] of char' | testtype | will_be_valid
 echo 'record A : integer end' | testtype | is_valid
 echo 'record A : integer; B : string end' | testtype | is_valid
