@@ -19,7 +19,9 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
     * Missing `goto`.
 * `Write`, `writeln`, `read`, `readln`, `str`.
     * Missing format specifiers.
-* `$I` (include) directive.
+* Compiler directives:
+    * `{$I name.pas}`: include the file `name.pas`
+    * `{$R[-+]}`: disable or enable bounds checking (enabled by default)
 
 The first objective with Pascual is to make it comparable to Turbo Pascal 3. The next objective is to introduce compilation units and make it comparable to Turbo Pascal 5. A stretch objective is to introduce Object Pascal features and make it comparable to Turbo Pascal 7.
 

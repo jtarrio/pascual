@@ -2,6 +2,8 @@ procedure CodegenReset;
 forward;
 procedure CodegenSetOutput(Filename : string);
 forward;
+procedure CodegenSetCheckBounds(CheckBounds : boolean);
+forward;
 procedure OutEnumValuesFromCheckpoint(Checkpoint : TPsDefPtr);
 forward;
 procedure OutTypeDefinitionsFromCheckpoint(Checkpoint : TPsDefPtr);

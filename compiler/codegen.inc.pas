@@ -7,7 +7,8 @@ var
     IsMultiStatement : boolean;
     Indent : integer;
     Newline : boolean;
-    LastOut : TOutputType
+    LastOut : TOutputType;
+    CheckBounds : boolean;
   end;
 
 procedure _OutNewline;
@@ -175,7 +176,7 @@ begin
     Result := ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
               CopyExpr(TypePtr^.RangePtr^.First))
   else if IsBoundedType(TypePtr) then
-  Result := ExIntegerConstant(0)
+         Result := ExIntegerConstant(0)
   else CompileError('Internal error: unknown low bound for ' +
                     TypeName(TypePtr))
 end;
@@ -241,11 +242,15 @@ end;
 
 procedure _OutExSubrange(Expr : TExpression);
 begin
-  write(Codegen.Output, 'subrange(');
-  OutExpression(Expr^.SubrangeParent);
-  write(Codegen.Output, ', ');
-  _OutBounds(Expr^.TypePtr);
-  write(Codegen.Output, ')')
+  if not Codegen.CheckBounds then OutExpression(Expr^.SubrangeParent)
+  else
+  begin
+    write(Codegen.Output, 'subrange(');
+    OutExpression(Expr^.SubrangeParent);
+    write(Codegen.Output, ', ');
+    _OutBounds(Expr^.TypePtr);
+    write(Codegen.Output, ')')
+  end
 end;
 
 procedure _OutExVariable(Expr : TExpression);
@@ -998,11 +1003,22 @@ begin
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    write(Codegen.Output, 'pred(');
-    OutExpression(Expr^.PseudoFnCall.Arg1);
-    write(Codegen.Output, ', ');
-    _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
-    write(Codegen.Output, ')')
+    if not CodeGen.CheckBounds then
+    begin
+      TmpExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
+                 CopyExpr(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1), TkMinus);
+      OutExpression(TmpExpr);
+      DisposeExpr(TmpExpr)
+    end
+    else
+    begin
+      write(Codegen.Output, 'pred(');
+      OutExpression(Expr^.PseudoFnCall.Arg1);
+      write(Codegen.Output, ', ');
+      _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
+      write(Codegen.Output, ')')
+    end
   end
   else CompileError('Expected an ordinal type, got ' +
                     TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
@@ -1020,11 +1036,22 @@ begin
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    write(Codegen.Output, 'succ(');
-    OutExpression(Expr^.PseudoFnCall.Arg1);
-    write(Codegen.Output, ', ');
-    _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
-    write(Codegen.Output, ')')
+    if not CodeGen.CheckBounds then
+    begin
+      TmpExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
+                 CopyExpr(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1), TkPlus);
+      OutExpression(TmpExpr);
+      DisposeExpr(TmpExpr)
+    end
+    else
+    begin
+      write(Codegen.Output, 'succ(');
+      OutExpression(Expr^.PseudoFnCall.Arg1);
+      write(Codegen.Output, ', ');
+      _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
+      write(Codegen.Output, ')')
+    end
   end
   else CompileError('Expected an ordinal type, got ' +
                     TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
@@ -1275,11 +1302,17 @@ begin
   Codegen.IsMultiStatement := false;
   Codegen.Indent := 0;
   Codegen.Newline := true;
-  Codegen.LastOut := TotNone
+  Codegen.LastOut := TotNone;
+  Codegen.CheckBounds := true
 end;
 
 procedure CodegenSetOutput;
 begin
   Assign(Codegen.Output, Filename);
   Rewrite(Codegen.Output)
+end;
+
+procedure CodegenSetCheckBounds;
+begin
+  Codegen.CheckBounds := CheckBounds
 end;

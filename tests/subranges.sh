@@ -145,3 +145,9 @@ testrange 'false..false' 'true' arg | is_not_valid
 testrange '1..2' '1' arg | outputs 1
 testrange '1..1' '1' arg | outputs 1
 testrange '2..1' '1' arg | is_not_valid
+
+# Bounds checking
+echo '{$R+} program foo; var A : 1..3; B : integer; begin B := 5; A := B end.' |
+  aborts
+echo '{$R-} program foo; var A : 1..3; B : integer; begin B := 5; A := B end.' |
+  outputs ''

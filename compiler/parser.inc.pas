@@ -1203,6 +1203,9 @@ procedure ExecuteDirective(Dir : string);
 begin
   if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
     LxInclude(Copy(Dir, 4, 255))
+  else if (length(Dir) = 3) and (Dir[2] = 'R') and
+          ((Dir[3] = '-') or (Dir[3] = '+')) then
+         CodegenSetCheckBounds(Dir[3] = '+')
 end;
 
 procedure ReadToken;
