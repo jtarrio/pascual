@@ -155,11 +155,7 @@ begin
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
-var TypePtr : TPsTypePtr;
 begin
-  TypePtr := Expr^.TypePtr;
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
   with Expr^.Immediate do
     case Cls of 
       XicNil : write(Codegen.Output, '(void*)0');
@@ -168,7 +164,7 @@ begin
       XicInteger : write(Codegen.Output, IntegerVal);
       XicChar : _OutChar(CharVal);
       XicString : _OutString(StringVal);
-      XicEnum : write(Codegen.Output, TypePtr^.EnumPtr^.Values[EnumOrdinal])
+      XicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal])
     end
 end;
 

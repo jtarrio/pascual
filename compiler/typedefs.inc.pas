@@ -27,6 +27,7 @@ type
                  TpfStr, TpfSucc, TpfWrite, TpfWriteln);
 
   TPsTypePtr = ^TPsType;
+  TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
   TPsFnPtr = ^TPsFunction;
 
@@ -39,7 +40,8 @@ type
       XicInteger : (IntegerVal : integer);
       XicChar : (CharVal : char);
       XicString : (StringVal : string);
-      XicEnum : (EnumOrdinal : integer)
+      XicEnum : (EnumOrdinal : integer;
+                 EnumPtr : TPsEnumPtr)
   end;
   TExFunctionArgs = record
     Size : integer;
@@ -108,7 +110,6 @@ type
     Name : string;
   end;
 
-  TPsEnumPtr = ^TPsEnumDef;
   TPsRangePtr = ^TPsRangeDef;
   TPsRecPtr = ^TPsRecordDef;
   TPsArrayPtr = ^TPsArrayDef;

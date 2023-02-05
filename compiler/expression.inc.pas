@@ -208,11 +208,7 @@ begin
 end;
 
 function _DescribeImmediatepr(Expr : TExpression) : string;
-var TypePtr : TPsTypePtr;
 begin
-  TypePtr := Expr^.TypePtr;
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
   with Expr^.Immediate do
     case Cls of 
       XicNil: Result := 'nil';
@@ -220,7 +216,7 @@ begin
       XicInteger: Str(IntegerVal, Result);
       XicChar: Result := _UnparseChar(CharVal);
       XicString: Result := _UnparseString(StringVal);
-      XicEnum: Result := TypePtr^.EnumPtr^.Values[EnumOrdinal];
+      XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
       else CompileError('Internal error: cannot describe immediate value')
     end
 end;
@@ -417,6 +413,7 @@ begin
     CompileError('Invalid value for ' + TypeName(TypePtr));
   Result := _ExImmediate(XicEnum);
   Result^.Immediate.EnumOrdinal := Ordinal;
+  Result^.Immediate.EnumPtr := TypePtr^.EnumPtr;
   Result^.TypePtr := TypePtr
 end;
 
@@ -987,7 +984,7 @@ begin
         XicInteger: IntegerVal := IntegerVal + 1;
         XicChar: if Ord(CharVal) < 255 then CharVal := Succ(CharVal)
                  else OutOfBounds := true;
-        XicEnum: if EnumOrdinal < Arg^.TypePtr^.EnumPtr^.Size - 1 then
+        XicEnum: if EnumOrdinal < EnumPtr^.Size - 1 then
                    EnumOrdinal := EnumOrdinal + 1
                  else
                    OutOfBounds := true;
