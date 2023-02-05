@@ -9,14 +9,14 @@ begin
   _NewExpr := Expr
 end;
 
-procedure _DisposePseudoCallExpr(var Call : TExPseudoFunCall);
+procedure _DisposePseudoCallExpr(var Call : TExPseudoFnCall);
 var 
   ReadArg, NextReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg : ^TExWriteArgs;
 begin
   if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
   if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
-  if (Call.PseudoFun = TpfWrite) or (Call.PseudoFun = TpfWriteln) then
+  if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
     while ReadArg <> nil do
@@ -27,7 +27,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.PseudoFun = TpfRead) or (Call.PseudoFun = TpfReadln) then
+  else if (Call.PseudoFn = TpfRead) or (Call.PseudoFn = TpfReadln) then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
@@ -44,45 +44,45 @@ procedure DisposeExpr;
 var Pos : integer;
 begin
   case Expr^.Cls of 
-    XcToString : DisposeExpr(Expr^.ToStringEx.Parent);
-    XcFieldAccess : DisposeExpr(Expr^.FieldEx.Parent);
-    XcArrayAccess :
-                    begin
-                      DisposeExpr(Expr^.ArrayEx.Parent);
-                      DisposeExpr(Expr^.ArrayEx.Subscript);
-                    end;
-    XcPointerAccess : DisposeExpr(Expr^.PointerEx.Parent);
+    XcToString : DisposeExpr(Expr^.ToStrParent);
+    XcField : DisposeExpr(Expr^.RecExpr);
+    XcArray :
+              begin
+                DisposeExpr(Expr^.ArrayExpr);
+                DisposeExpr(Expr^.ArrayIndex);
+              end;
+    XcPointer : DisposeExpr(Expr^.PointerExpr);
     XcStringChar :
                    begin
-                     DisposeExpr(Expr^.StringCharEx.Parent);
-                     DisposeExpr(Expr^.StringCharEx.Subscript);
+                     DisposeExpr(Expr^.StringExpr);
+                     DisposeExpr(Expr^.StringIndex);
                    end;
-    XcFunctionCall :
-                     begin
-                       DisposeExpr(Expr^.CallEx.FunctionRef);
-                       for Pos := 1 to Expr^.CallEx.Args.Size do
-                         DisposeExpr(Expr^.CallEx.Args.Values[Pos]);
-                     end;
-    XcPseudoFunCall : _DisposePseudoCallExpr(Expr^.PseudoFunCallEx);
-    XcUnaryOp : DisposeExpr(Expr^.UnaryEx.Parent);
+    XcFnCall :
+               begin
+                 DisposeExpr(Expr^.FnExpr);
+                 for Pos := 1 to Expr^.CallArgs.Size do
+                   DisposeExpr(Expr^.CallArgs.Values[Pos]);
+               end;
+    XcPseudoFnCall : _DisposePseudoCallExpr(Expr^.PseudoFnCall);
+    XcUnaryOp : DisposeExpr(Expr^.Unary.Parent);
     XcBinaryOp :
                  begin
-                   DisposeExpr(Expr^.BinaryEx.Left);
-                   DisposeExpr(Expr^.BinaryEx.Right);
+                   DisposeExpr(Expr^.Binary.Left);
+                   DisposeExpr(Expr^.Binary.Right);
                  end
   end;
   dispose(Expr);
 end;
 
-procedure _CopyPseudoCallExpr(var Call, Copy : TExPseudoFunCall);
+procedure _CopyPseudoCallExpr(var Call, Copy : TExPseudoFnCall);
 var 
   ReadArg, NextReadArg, CopyReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
 begin
-  Copy.PseudoFun := Call.PseudoFun;
+  Copy.PseudoFn := Call.PseudoFn;
   if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
-  if (Call.PseudoFun = TpfWrite) or (Call.PseudoFun = TpfWriteln) then
+  if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
     CopyReadArg := nil;
@@ -104,7 +104,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.PseudoFun = TpfRead) or (Call.PseudoFun = TpfReadln) then
+  else if (Call.PseudoFn = TpfRead) or (Call.PseudoFn = TpfReadln) then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
@@ -133,59 +133,52 @@ var
   Pos : integer;
 begin
   Copy := _NewExpr(Expr^.Cls);
-  Copy^.TypeIndex := Expr^.TypeIndex;
+  Copy^.TypePtr := Expr^.TypePtr;
   Copy^.IsConstant := Expr^.IsConstant;
   Copy^.IsAssignable := Expr^.IsAssignable;
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
-    XcImmediate: Copy^.ImmediateEx := Expr^.ImmediateEx;
-    XcToString: Copy^.ToStringEx.Parent := CopyExpr(Expr^.ToStringEx.Parent);
-    XcVariableAccess: Copy^.VariableEx := Expr^.VariableEx;
-    XcFieldAccess:
-                   begin
-                     Copy^.FieldEx.Parent := CopyExpr(Expr^.FieldEx.Parent);
-                     Copy^.FieldEx.FieldNumber := Expr^.FieldEx.FieldNumber
-                   end;
-    XcArrayAccess:
-                   begin
-                     Copy^.ArrayEx.Parent := CopyExpr(Expr^.ArrayEx.Parent);
-                     Copy^.ArrayEx.Subscript := CopyExpr(Expr^.ArrayEx
-                                                .Subscript)
-                   end;
-    XcPointerAccess: Copy^.PointerEx.Parent := CopyExpr(Expr^.PointerEx.Parent);
+    XcImmediate: Copy^.Immediate := Expr^.Immediate;
+    XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
+    XcVariable: Copy^.VarPtr := Expr^.VarPtr;
+    XcField:
+             begin
+               Copy^.RecExpr := CopyExpr(Expr^.RecExpr);
+               Copy^.RecFieldNum := Expr^.RecFieldNum
+             end;
+    XcArray:
+             begin
+               Copy^.ArrayExpr := CopyExpr(Expr^.ArrayExpr);
+               Copy^.ArrayIndex := CopyExpr(Expr^.ArrayIndex)
+             end;
+    XcPointer: Copy^.PointerExpr := CopyExpr(Expr^.PointerExpr);
     XcStringChar:
                   begin
-                    Copy^.StringCharEx.Parent := CopyExpr(Expr^.StringCharEx
-                                                 .Parent);
-                    Copy^.StringCharEx.Subscript := CopyExpr(Expr^.StringCharEx
-                                                    .Subscript)
+                    Copy^.StringExpr := CopyExpr(Expr^.StringExpr);
+                    Copy^.StringIndex := CopyExpr(Expr^.StringIndex)
                   end;
-    XcFunctionRef:
-                   Copy^.FunctionEx.FunctionIndex := Expr^.FunctionEx
-                                                     .FunctionIndex;
-    XcFunctionCall:
-                    begin
-                      Copy^.CallEx.FunctionRef := CopyExpr(Expr^.CallEx
-                                                  .FunctionRef);
-                      Copy^.CallEx.Args.Size := Expr^.CallEx.Args.Size;
-                      for Pos := 1 to Expr^.CallEx.Args.Size do
-                        Copy^.CallEx.Args.Values[Pos] := CopyExpr(Expr^.CallEx
-                                                         .Args.Values[Pos])
-                    end;
-    XcPseudoFunRef: Copy^.PseudoFunEx := Expr^.PseudoFunEx;
-    XcPseudoFunCall: _CopyPseudoCallExpr(Expr^.PseudoFunCallEx,
-                                         Copy^.PseudoFunCallEx);
+    XcFnRef: Copy^.FnPtr := Expr^.FnPtr;
+    XcFnCall:
+              begin
+                Copy^.FnExpr := CopyExpr(Expr^.FnExpr);
+                Copy^.CallArgs.Size := Expr^.CallArgs.Size;
+                for Pos := 1 to Expr^.CallArgs.Size do
+                  Copy^.CallArgs.Values[Pos] := CopyExpr(Expr^.CallArgs
+                                                .Values[Pos])
+              end;
+    XcPseudoFnRef: Copy^.PseudoFn := Expr^.PseudoFn;
+    XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
+                                        Copy^.PseudoFnCall);
     XcUnaryOp:
                begin
-                 Copy^.UnaryEx.Parent := CopyExpr(Expr^.
-                                         UnaryEx.Parent);
-                 Copy^.UnaryEx.Op := Expr^.UnaryEx.Op
+                 Copy^.Unary.Parent := CopyExpr(Expr^.Unary.Parent);
+                 Copy^.Unary.Op := Expr^.Unary.Op
                end;
     XcBinaryOp:
                 begin
-                  Copy^.BinaryEx.Left := CopyExpr(Expr^.BinaryEx.Left);
-                  Copy^.BinaryEx.Right := CopyExpr(Expr^.BinaryEx.Right);
-                  Copy^.BinaryEx.Op := Expr^.BinaryEx.Op
+                  Copy^.Binary.Left := CopyExpr(Expr^.Binary.Left);
+                  Copy^.Binary.Right := CopyExpr(Expr^.Binary.Right);
+                  Copy^.Binary.Op := Expr^.Binary.Op
                 end;
     else CompileError('Internal error: cannot copy expression: ' +
                       DescribeExpr(Expr, 2))
@@ -214,28 +207,28 @@ begin
   Result := Result + ''''
 end;
 
-function _DescribeImmediateExpr(Expr : TExpression) : string;
-var TypeIndex : TPsTypeIndex;
+function _DescribeImmediatepr(Expr : TExpression) : string;
+var TypePtr : TPsTypePtr;
 begin
-  TypeIndex := Expr^.TypeIndex;
-  while IsRangeType(TypeIndex) do
-    TypeIndex := TypeIndex^.RangeIndex^.BaseTypeIndex;
-  with Expr^.ImmediateEx do
+  TypePtr := Expr^.TypePtr;
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  with Expr^.Immediate do
     case Cls of 
       XicNil: Result := 'nil';
-      XicBoolean: Str(BooleanValue, Result);
-      XicInteger: Str(IntegerValue, Result);
-      XicChar: Result := _UnparseChar(CharValue);
-      XicString: Result := _UnparseString(StringValue);
-      XicEnum: Result := TypeIndex^.EnumIndex^.Values[EnumOrdinal];
+      XicBoolean: Str(BooleanVal, Result);
+      XicInteger: Str(IntegerVal, Result);
+      XicChar: Result := _UnparseChar(CharVal);
+      XicString: Result := _UnparseString(StringVal);
+      XicEnum: Result := TypePtr^.EnumPtr^.Values[EnumOrdinal];
       else CompileError('Internal error: cannot describe immediate value')
     end
 end;
 
 function _DescribePseudoCallExpr(Expr : TExpression; Levels : integer) : string;
 begin
-  with Expr^.PseudoFunCallEx do
-    case PseudoFun of 
+  with Expr^.PseudoFnCall do
+    case PseudoFn of 
       TpfDispose: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
@@ -252,22 +245,22 @@ function _ExprPrecedence(Expr : TExpression) : integer;
 begin
   case Expr^.Cls of 
     XcImmediate: Result := 0;
-    XcToString: Result := _ExprPrecedence(Expr^.ToStringEx.Parent);
-    XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeEx.Parent);
-    XcVariableAccess: Result := 0;
-    XcFieldAccess: Result := 1;
-    XcArrayAccess: Result := 1;
-    XcPointerAccess: Result := 1;
+    XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
+    XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
+    XcVariable: Result := 0;
+    XcField: Result := 1;
+    XcArray: Result := 1;
+    XcPointer: Result := 1;
     XcStringChar: Result := 1;
-    XcFunctionRef: Result := 0;
-    XcFunctionCall: Result := 1;
-    XcPseudoFunRef: Result := 0;
-    XcPseudoFunCall: Result := 1;
-    XcUnaryOp: case Expr^.UnaryEx.Op of 
+    XcFnRef: Result := 0;
+    XcFnCall: Result := 1;
+    XcPseudoFnRef: Result := 0;
+    XcPseudoFnCall: Result := 1;
+    XcUnaryOp: case Expr^.Unary.Op of 
                  TkMinus: Result := 4;
                  TkNot: Result := 2;
                end;
-    XcBinaryOp: case Expr^.BinaryEx.Op of 
+    XcBinaryOp: case Expr^.Binary.Op of 
                   TkPlus: Result := 4;
                   TkMinus: Result := 4;
                   TkAsterisk: Result := 3;
@@ -287,26 +280,26 @@ end;
 function _DescribeUnaryOpExpr(Expr : TExpression; Levels : integer) : string;
 var UseParens : boolean;
 begin
-  case Expr^.UnaryEx.Op of 
+  case Expr^.Unary.Op of 
     TkMinus: Result := '-';
     TkNot: Result := 'not ';
     else CompileError('Internal error: cannot describe unary operation')
   end;
-  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.UnaryEx.Parent);
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
   if UseParens then Result := Result + '(';
-  Result := Result + DescribeExpr(Expr^.UnaryEx.Parent, Levels);
+  Result := Result + DescribeExpr(Expr^.Unary.Parent, Levels);
   if UseParens then Result := Result + ')';
 end;
 
 function _DescribeBinaryOpExpr(Expr : TExpression; Levels : integer) : string;
 var UseParens : boolean;
 begin
-  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.BinaryEx.Left);
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Left);
   if UseParens then Result := '('
   else Result := '';
-  Result := Result + DescribeExpr(Expr^.BinaryEx.Left, Levels - 1);
+  Result := Result + DescribeExpr(Expr^.Binary.Left, Levels - 1);
   if UseParens then Result := Result + ')';
-  case Expr^.BinaryEx.Op of 
+  case Expr^.Binary.Op of 
     TkPlus: Result := Result + ' + ';
     TkMinus: Result := Result + ' - ';
     TkAsterisk: Result := Result + ' * ';
@@ -322,9 +315,9 @@ begin
     TkMoreOrEquals: Result := Result + ' >= ';
     else CompileError('Internal error: cannot describe binary operation')
   end;
-  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.BinaryEx.Right);
+  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Right);
   if UseParens then Result := Result + '(';
-  Result := Result + DescribeExpr(Expr^.BinaryEx.Right, Levels - 1);
+  Result := Result + DescribeExpr(Expr^.Binary.Right, Levels - 1);
   if UseParens then Result := Result + ')';
 end;
 
@@ -335,48 +328,42 @@ begin
   if Levels < 1 then Result := '(...)'
   else
     case Expr^.Cls of 
-      XcImmediate: Result := _DescribeImmediateExpr(Expr);
-      XcToString: Result := DescribeExpr(Expr^.ToStringEx.Parent, Levels);
-      XcSubrange: Result := DescribeExpr(Expr^.ToStringEx.Parent, Levels);
-      XcVariableAccess: Result := Expr^.VariableEx.VariableIndex^.Name;
-      XcFieldAccess: with Expr^.FieldEx do
-                       Result := DescribeExpr(Parent, Levels) +
-                                 '.' +
-                                 Parent^.TypeIndex^.RecordIndex^
-                                 .Fields[FieldNumber].Name;
-      XcArrayAccess: with Expr^.ArrayEx do
-                       Result := DescribeExpr(Parent, Levels) +
-                                 '[' + DescribeExpr(Subscript, Levels - 1) +
-                                 ']';
-      XcPointerAccess: Result := DescribeExpr(Expr^.PointerEx.Parent, Levels) +
-                                 '^';
-      XcStringChar: with Expr^.StringCharEx do
-                      Result := DescribeExpr(Parent, Levels) +
-                                '[' + DescribeExpr(Subscript, Levels - 1) +
-                                ']';
-      XcFunctionRef: Result := Expr^.FunctionEx.FunctionIndex^.Name;
-      XcFunctionCall: with Expr^.CallEx do
-                      begin
-                        Result := DescribeExpr(FunctionRef, Levels) + '(';
-                        if Levels < 2 then
-                          Result := Result + '...'
-                        else
-                          for Pos := 1 to Args.Size do
-                        begin
-                          if Pos <> 1 then Result := Result + ', ';
-                          Result := Result +
-                                    DescribeExpr(Args.Values[Pos], Levels - 1)
-                        end;
-                        Result := Result + ')'
-                      end;
-      XcPseudoFunCall: Result := _DescribePseudoCallExpr(Expr, Levels);
+      XcImmediate: Result := _DescribeImmediatepr(Expr);
+      XcToString: Result := DescribeExpr(Expr^.ToStrParent, Levels);
+      XcSubrange: Result := DescribeExpr(Expr^.ToStrParent, Levels);
+      XcVariable: Result := Expr^.VarPtr^.Name;
+      XcField: Result := DescribeExpr(Expr^.RecExpr, Levels) + '.' +
+                         Expr^.RecExpr^.TypePtr^.RecPtr^
+                         .Fields[Expr^.RecFieldNum].Name;
+      XcArray: Result := DescribeExpr(Expr^.ArrayExpr, Levels) +
+                         '[' + DescribeExpr(Expr^.ArrayIndex, Levels - 1) + ']';
+      XcPointer: Result := DescribeExpr(Expr^.PointerExpr, Levels) + '^';
+      XcStringChar: Result := DescribeExpr(Expr^.StringExpr, Levels) + '[' +
+                              DescribeExpr(Expr^.StringIndex, Levels - 1) + ']';
+      XcFnRef: Result := Expr^.FnPtr^.Name;
+      XcFnCall:
+                begin
+                  Result := DescribeExpr(Expr^.FnExpr, Levels) + '(';
+                  if Levels < 2 then
+                    Result := Result + '...'
+                  else
+                    for Pos := 1 to Expr^.CallArgs.Size do
+                  begin
+                    if Pos <> 1 then Result := Result + ', ';
+                    Result := Result +
+                              DescribeExpr(Expr^.CallArgs.Values[Pos],
+                              Levels - 1)
+                  end;
+                  Result := Result + ')'
+                end;
+      XcPseudoFnCall: Result := _DescribePseudoCallExpr(Expr, Levels);
       XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr, Levels);
       XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr, Levels);
       else CompileError('Internal error: cannot describe expression')
     end
 end;
 
-function ExCoerce(Expr : TExpression; TypeIndex : TPsTypeIndex) : TExpression;
+function ExCoerce(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
 forward;
 
 function _ExImmediate(Cls : TExImmediateClass) : TExpression;
@@ -384,264 +371,229 @@ var Expr : TExpression;
 begin
   Expr := _NewExpr(XcImmediate);
   Expr^.IsConstant := true;
-  Expr^.ImmediateEx.Cls := Cls;
+  Expr^.Immediate.Cls := Cls;
   _ExImmediate := Expr
 end;
 
 function ExNil : TExpression;
-var Expr : TExpression;
 begin
-  Expr := _ExImmediate(XicNil);
-  Expr^.TypeIndex := PrimitiveTypes.PtNil;
-  ExNil := Expr
+  Result := _ExImmediate(XicNil);
+  Result^.TypePtr := PrimitiveTypes.PtNil
 end;
 
 function ExBooleanConstant(Value : boolean) : TExpression;
-var Expr : TExpression;
 begin
-  Expr := _ExImmediate(XicBoolean);
-  Expr^.ImmediateEx.BooleanValue := Value;
-  Expr^.TypeIndex := PrimitiveTypes.PtBoolean;
-  ExBooleanConstant := Expr
+  Result := _ExImmediate(XicBoolean);
+  Result^.Immediate.BooleanVal := Value;
+  Result^.TypePtr := PrimitiveTypes.PtBoolean
 end;
 
 function ExIntegerConstant(Value : integer) : TExpression;
-var Expr : TExpression;
 begin
-  Expr := _ExImmediate(XicInteger);
-  Expr^.ImmediateEx.IntegerValue := Value;
-  Expr^.TypeIndex := PrimitiveTypes.PtInteger;
-  ExIntegerConstant := Expr
+  Result := _ExImmediate(XicInteger);
+  Result^.Immediate.IntegerVal := Value;
+  Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
 function ExCharConstant(Value : char) : TExpression;
-var Expr : TExpression;
 begin
-  Expr := _ExImmediate(XicChar);
-  Expr^.ImmediateEx.CharValue := Value;
-  Expr^.TypeIndex := PrimitiveTypes.PtChar;
-  ExCharConstant := Expr
+  Result := _ExImmediate(XicChar);
+  Result^.Immediate.CharVal := Value;
+  Result^.TypePtr := PrimitiveTypes.PtChar
 end;
 
 function ExStringConstant(Value : string) : TExpression;
-var Expr : TExpression;
 begin
-  Expr := _ExImmediate(XicString);
-  Expr^.ImmediateEx.StringValue := Value;
-  Expr^.TypeIndex := PrimitiveTypes.PtString;
-  ExStringConstant := Expr
+  Result := _ExImmediate(XicString);
+  Result^.Immediate.StringVal := Value;
+  Result^.TypePtr := PrimitiveTypes.PtString
 end;
 
-function ExEnumConstant(Ordinal : integer; TypeIndex : TPsTypeIndex)
-: TExpression;
-var Expr : TExpression;
+function ExEnumConstant(Ordinal : integer; TypePtr : TPsTypePtr) : TExpression;
 begin
-  if not IsEnumType(TypeIndex) then
-    CompileError('Not an enumeration type: ' + TypeName(TypeIndex));
-  if (Ordinal < 0) or (Ordinal > TypeIndex^.EnumIndex^.Size - 1) then
-    CompileError('Invalid value for ' + TypeName(TypeIndex));
-  Expr := _ExImmediate(XicEnum);
-  Expr^.ImmediateEx.EnumOrdinal := Ordinal;
-  Expr^.TypeIndex := TypeIndex;
-  ExEnumConstant := Expr
+  if not IsEnumType(TypePtr) then
+    CompileError('Not an enumeration type: ' + TypeName(TypePtr));
+  if (Ordinal < 0) or (Ordinal > TypePtr^.EnumPtr^.Size - 1) then
+    CompileError('Invalid value for ' + TypeName(TypePtr));
+  Result := _ExImmediate(XicEnum);
+  Result^.Immediate.EnumOrdinal := Ordinal;
+  Result^.TypePtr := TypePtr
 end;
 
 function ExToString(Parent : TExpression) : TExpression;
-var 
-  Expr : TExpression;
-  Str : string;
+var Str : string;
 begin
-  if IsCharType(Parent^.TypeIndex) then
+  if IsCharType(Parent^.TypePtr) then
   begin
     if Parent^.Cls = XcImmediate then
     begin
-      Str := Parent^.ImmediateEx.CharValue;
-      Parent^.ImmediateEx.Cls := XicString;
-      Parent^.ImmediateEx.StringValue := Str;
-      ExToString := Parent
+      Str := Parent^.Immediate.CharVal;
+      Parent^.Immediate.Cls := XicString;
+      Parent^.Immediate.StringVal := Str;
+      Result := Parent
     end
     else
     begin
-      Expr := _NewExpr(XcToString);
-      Expr^.ToStringEx.Parent := Parent;
-      Expr^.TypeIndex := PrimitiveTypes.PtString;
-      Expr^.IsAssignable := false;
-      Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-      ExToString := Expr
+      Result := _NewExpr(XcToString);
+      Result^.ToStrParent := Parent;
+      Result^.TypePtr := PrimitiveTypes.PtString;
+      Result^.IsAssignable := false;
+      Result^.IsFunctionResult := Parent^.IsFunctionResult
     end
   end
-  else if IsStringType(Parent^.TypeIndex) then ExToString := Parent
+  else if IsStringType(Parent^.TypePtr) then Result := Parent
   else CompileError('Cannot convert a value of this type to string: ' +
-                    TypeName(Parent^.TypeIndex))
+                    TypeName(Parent^.TypePtr))
 end;
 
-function ExSubrange(Parent : TExpression; TypeIndex : TPsTypeIndex)
+function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
 : TExpression;
 forward;
 
 function ExOutrange(Expr : TExpression) : TExpression;
 begin
-  while IsRangeType(Expr^.TypeIndex) do
-    Expr^.TypeIndex := Expr^.TypeIndex^.RangeIndex^.BaseTypeIndex;
+  while IsRangeType(Expr^.TypePtr) do
+    Expr^.TypePtr := Expr^.TypePtr^.RangePtr^.BaseTypePtr;
   Result := Expr
 end;
 
-function ExVariable(VariableIndex : TPsVariableIndex) : TExpression;
-var Expr : TExpression;
+function ExVariable(VarPtr : TPsVarPtr) : TExpression;
 begin
-  Expr := _NewExpr(XcVariableAccess);
-  Expr^.VariableEx.VariableIndex := VariableIndex;
-  Expr^.TypeIndex := VariableIndex^.TypeIndex;
-  Expr^.IsConstant := VariableIndex^.IsConstant;
-  Expr^.IsAssignable := true;
-  ExVariable := Expr
+  Result := _NewExpr(XcVariable);
+  Result^.VarPtr := VarPtr;
+  Result^.TypePtr := VarPtr^.TypePtr;
+  Result^.IsConstant := VarPtr^.IsConstant;
+  Result^.IsAssignable := true
 end;
 
-function ExFieldAccess(Parent : TExpression; FieldNumber : integer)
+function ExFieldAccess(Parent : TExpression; FieldNum : integer)
 : TExpression;
-var Expr : TExpression;
 begin
-  if not IsRecordType(Parent^.TypeIndex) then
+  if not IsRecordType(Parent^.TypePtr) then
     CompileError('Cannot access field of non-record type ' +
-                 TypeName(Parent^.TypeIndex));
-  if (FieldNumber < 1)
-     or (FieldNumber > Parent^.TypeIndex^.RecordIndex^.Size) then
-    CompileError('Invalid field for ' + TypeName(Parent^.TypeIndex));
-  Expr := _NewExpr(XcFieldAccess);
-  Expr^.FieldEx.Parent := Parent;
-  Expr^.FieldEx.FieldNumber := FieldNumber;
-  Expr^.TypeIndex := Parent^.TypeIndex^.RecordIndex^
-                     .Fields[FieldNumber].TypeIndex;
-  Expr^.IsConstant := Parent^.IsConstant;
-  Expr^.IsAssignable := Parent^.IsAssignable;
-  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-  ExFieldAccess := Expr
+                 TypeName(Parent^.TypePtr));
+  if (FieldNum < 1)
+     or (FieldNum > Parent^.TypePtr^.RecPtr^.Size) then
+    CompileError('Invalid field for ' + TypeName(Parent^.TypePtr));
+  Result := _NewExpr(XcField);
+  Result^.RecExpr := Parent;
+  Result^.RecFieldNum := FieldNum;
+  Result^.TypePtr := Parent^.TypePtr^.RecPtr^
+                     .Fields[FieldNum].TypePtr;
+  Result^.IsConstant := Parent^.IsConstant;
+  Result^.IsAssignable := Parent^.IsAssignable;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
 function ExArrayAccess(Parent, Subscript : TExpression) : TExpression;
-var Expr : TExpression;
 begin
-  if not IsArrayType(Parent^.TypeIndex) then
+  if not IsArrayType(Parent^.TypePtr) then
     CompileError('Cannot access subscript of non-array type ' +
-                 TypeName(Parent^.TypeIndex));
-  if not IsIntegerType(Subscript^.TypeIndex) then
-    CompileError('Invalid type for subscript of ' +
-                 TypeName(Parent^.TypeIndex) + ': ' +
-    TypeName(Subscript^.TypeIndex));
-  Expr := _NewExpr(XcArrayAccess);
-  Expr^.ArrayEx.Parent := Parent;
-  Expr^.ArrayEx.Subscript := Subscript;
-  Expr^.TypeIndex := Parent^.TypeIndex^.ArrayIndex^.TypeIndex;
-  Expr^.IsConstant := Parent^.IsConstant;
-  Expr^.IsAssignable := Parent^.IsAssignable;
-  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-  ExArrayAccess := Expr
+                 TypeName(Parent^.TypePtr));
+  if not IsIntegerType(Subscript^.TypePtr) then
+    CompileError('Invalid type for subscript of ' + TypeName(Parent^.TypePtr) +
+    ': ' + TypeName(Subscript^.TypePtr));
+  Result := _NewExpr(XcArray);
+  Result^.ArrayExpr := Parent;
+  Result^.ArrayIndex := Subscript;
+  Result^.TypePtr := Parent^.TypePtr^.ArrayPtr^.TypePtr;
+  Result^.IsConstant := Parent^.IsConstant;
+  Result^.IsAssignable := Parent^.IsAssignable;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
 function ExPointerAccess(Parent : TExpression) : TExpression;
-var Expr : TExpression;
 begin
-  if not IsPointerType(Parent^.TypeIndex) then
+  if not IsPointerType(Parent^.TypePtr) then
     CompileError('Cannot dereference non-pointer type ' +
-                 TypeName(Parent^.TypeIndex));
-  Expr := _NewExpr(XcPointerAccess);
-  Expr^.PointerEx.Parent := Parent;
-  Expr^.TypeIndex := Parent^.TypeIndex^.PointedTypeIndex;
-  Expr^.IsConstant := false;
-  Expr^.IsAssignable := true;
-  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-  ExPointerAccess := Expr
+                 TypeName(Parent^.TypePtr));
+  Result := _NewExpr(XcPointer);
+  Result^.PointerExpr := Parent;
+  Result^.TypePtr := Parent^.TypePtr^.PointedTypePtr;
+  Result^.IsConstant := false;
+  Result^.IsAssignable := true;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
 function ExStringChar(Parent, Subscript : TExpression) : TExpression;
-var Expr : TExpression;
 begin
-  if not IsStringyType(Parent^.TypeIndex) then
+  if not IsStringyType(Parent^.TypePtr) then
     CompileError('Cannot access subscript of non-string type ' +
-                 TypeName(Parent^.TypeIndex));
-  if not IsIntegerType(Subscript^.TypeIndex) then
+                 TypeName(Parent^.TypePtr));
+  if not IsIntegerType(Subscript^.TypePtr) then
     CompileError('Invalid type for subscript of string: ' +
-                 TypeName(Subscript^.TypeIndex));
-  Expr := _NewExpr(XcStringChar);
-  Expr^.ArrayEx.Parent := ExToString(Parent);
-  Expr^.ArrayEx.Subscript := Subscript;
-  Expr^.TypeIndex := PrimitiveTypes.PtChar;
-  Expr^.IsConstant := Parent^.IsConstant;
-  Expr^.IsAssignable := Parent^.IsAssignable;
-  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-  ExStringChar := Expr
+                 TypeName(Subscript^.TypePtr));
+  Result := _NewExpr(XcStringChar);
+  Result^.ArrayExpr := ExToString(Parent);
+  Result^.ArrayIndex := Subscript;
+  Result^.TypePtr := PrimitiveTypes.PtChar;
+  Result^.IsConstant := Parent^.IsConstant;
+  Result^.IsAssignable := Parent^.IsAssignable;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExFunctionRef(FunctionIndex : TPsFunctionIndex) : TExpression;
-var Expr : TExpression;
+function ExFnRef(FnPtr : TPsFnPtr) : TExpression;
 begin
-  Expr := _NewExpr(XcFunctionRef);
-  Expr^.FunctionEx.FunctionIndex := FunctionIndex;
-  Expr^.TypeIndex := nil;
-  Expr^.IsConstant := true;
-  ExFunctionRef := Expr
+  Result := _NewExpr(XcFnRef);
+  Result^.FnPtr := FnPtr;
+  Result^.TypePtr := nil;
+  Result^.IsConstant := true
 end;
 
-function ExFunctionCall(FunctionRef : TExpression; var Args : TExFunctionArgs)
+function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
 : TExpression;
-var 
-  Expr : TExpression;
-  Pos : integer;
+var Pos : integer;
 begin
-  if FunctionRef^.Cls <> XcFunctionRef then
+  if FnExpr^.Cls <> XcFnRef then
     CompileError('Cannot call non-function');
-  with FunctionRef^.FunctionEx do
   begin
-    if Args.Size <> FunctionIndex^.ArgCount then
+    if Args.Size <> FnExpr^.FnPtr^.ArgCount then
       CompileError('Wrong number of arguments in function call');
-    Expr := _NewExpr(XcFunctionCall);
-    Expr^.CallEx.FunctionRef := FunctionRef;
-    Expr^.CallEx.Args.Size := Args.Size;
+    Result := _NewExpr(XcFnCall);
+    Result^.FnExpr := FnExpr;
+    Result^.CallArgs.Size := Args.Size;
     for Pos := 1 to Args.Size do
     begin
-      Expr^.CallEx.Args.Values[Pos] := ExCoerce(Args.Values[Pos],
-                                       FunctionIndex^.Args[Pos].TypeIndex);
-      if FunctionIndex^.Args[Pos].IsReference
-         and (Expr^.CallEx.Args.Values[Pos]^.IsConstant
-         or not Expr^.CallEx.Args.Values[Pos]^.IsAssignable) then
+      Result^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
+                                      FnExpr^.FnPtr^.Args[Pos].TypePtr);
+      if FnExpr^.FnPtr^.Args[Pos].IsReference
+         and (Result^.CallArgs.Values[Pos]^.IsConstant
+         or not Result^.CallArgs.Values[Pos]^.IsAssignable) then
         CompileError('Pass-by-reference argument must be assignable')
     end;
-    Expr^.TypeIndex := FunctionIndex^.ReturnTypeIndex;
+    Result^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
   end;
-  Expr^.IsConstant := false;
-  Expr^.IsAssignable := false;
-  Expr^.IsFunctionResult := true;
-  ExFunctionCall := Expr
+  Result^.IsConstant := false;
+  Result^.IsAssignable := false;
+  Result^.IsFunctionResult := true
 end;
 
-function ExPseudoFun(SpecialFn : TPsPseudoFun) : TExpression;
-var Expr : TExpression;
+function ExPseudoFn(SpecialFn : TPsPseudoFn) : TExpression;
 begin
-  Expr := _NewExpr(XcPseudoFunRef);
-  Expr^.PseudoFunEx.PseudoFun := SpecialFn;
-  ExPseudoFun := Expr
+  Result := _NewExpr(XcPseudoFnRef);
+  Result^.PseudoFn := SpecialFn
 end;
 
-function ExPseudoFunCall(Expr : TExpression) : TExpression;
-var Fn : TPsPseudoFun;
+function ExPseudoFnCall(Expr : TExpression) : TExpression;
+var Fn : TPsPseudoFn;
 begin
-  if Expr^.Cls <> XcPseudoFunRef then
+  if Expr^.Cls <> XcPseudoFnRef then
     CompileError('Expected a pseudofunction');
-  Fn := Expr^.PseudoFunEx.PseudoFun;
-  Expr^.Cls := XcPseudoFunCall;
-  Expr^.PseudoFunCallEx.PseudoFun := Fn;
-  Expr^.PseudoFunCallEx.Arg1 := nil;
-  Expr^.PseudoFunCallEx.Arg2 := nil;
-  Expr^.PseudoFunCallEx.ReadArgs := nil;
-  Expr^.PseudoFunCallEx.WriteArgs := nil;
-  ExPseudoFunCall := Expr
+  Fn := Expr^.PseudoFn;
+  Expr^.Cls := XcPseudoFnCall;
+  Expr^.PseudoFnCall.PseudoFn := Fn;
+  Expr^.PseudoFnCall.Arg1 := nil;
+  Expr^.PseudoFnCall.Arg2 := nil;
+  Expr^.PseudoFnCall.ReadArgs := nil;
+  Expr^.PseudoFnCall.WriteArgs := nil;
+  Result := Expr
 end;
 
 function _ExPfcUnImm(FnExpr, Arg : TExpression) : TExpression;
 forward;
 function _ExPfcUnCmp(FnExpr, Arg : TExpression) : TExpression;
 forward;
-function ExPseudoFunCallUnary(FnExpr, Arg : TExpression) : TExpression;
+function ExPseudoFnCallUnary(FnExpr, Arg : TExpression) : TExpression;
 begin
   if Arg^.Cls = XcImmediate then Result := _ExPfcUnImm(FnExpr, Arg)
   else Result := _ExPfcUnCmp(FnExpr, Arg)
@@ -651,8 +603,7 @@ function _ExPfcBiImm(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
 forward;
 function _ExPfcBiCmp(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
 forward;
-function ExPseudoFunCallBinary(FnExpr, Arg1, Arg2 : TExpression)
-: TExpression;
+function ExPseudoFnCallBinary(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
 begin
   if (Arg1^.Cls = XcImmediate) and (Arg2^.Cls = XcImmediate) then
     Result := _ExPfcBiImm(FnExpr, Arg1, Arg2)
@@ -668,16 +619,16 @@ function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
   if (Op = TkMinus) or (Op = TkPlus) then
   begin
-    if not IsIntegerType(Parent^.TypeIndex) then
+    if not IsIntegerType(Parent^.TypePtr) then
       CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
-      TypeName(Parent^.TypeIndex))
+      TypeName(Parent^.TypePtr))
   end
   else if Op = TkNot then
   begin
-    if not IsBooleanType(Parent^.TypeIndex)
-       and not IsIntegerType(Parent^.TypeIndex) then
+    if not IsBooleanType(Parent^.TypePtr)
+       and not IsIntegerType(Parent^.TypePtr) then
       CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
-      TypeName(Parent^.TypeIndex))
+      TypeName(Parent^.TypePtr))
   end
   else CompileError('Invalid unary operator: ' + LxTokenName(Op));
 
@@ -687,31 +638,27 @@ end;
 
 function _ExUnOpImm;
 begin
-  if (Op = TkMinus) and (Parent^.ImmediateEx.Cls = XicInteger) then
-    Parent^.ImmediateEx.IntegerValue := -Parent^.ImmediateEx.IntegerValue
-  else if (Op = TkPlus) and (Parent^.ImmediateEx.Cls = XicInteger) then
+  if (Op = TkMinus) and (Parent^.Immediate.Cls = XicInteger) then
+    Parent^.Immediate.IntegerVal := -Parent^.Immediate.IntegerVal
+  else if (Op = TkPlus) and (Parent^.Immediate.Cls = XicInteger) then
     { do nothing }
-  else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicBoolean) then
-         Parent^.ImmediateEx.BooleanValue := not Parent^.ImmediateEx.
-                                             BooleanValue
-  else if (Op = TkNot) and (Parent^.ImmediateEx.Cls = XicInteger) then
-         Parent^.ImmediateEx.IntegerValue := not Parent^.ImmediateEx.
-                                             IntegerValue
+  else if (Op = TkNot) and (Parent^.Immediate.Cls = XicBoolean) then
+         Parent^.Immediate.BooleanVal := not Parent^.Immediate.BooleanVal
+  else if (Op = TkNot) and (Parent^.Immediate.Cls = XicInteger) then
+         Parent^.Immediate.IntegerVal := not Parent^.Immediate.IntegerVal
   else CompileError('Internal error: invalid immediate unary operation');
   _ExUnOpImm := Parent
 end;
 
 function _ExUnOpCmp;
-var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcUnaryOp);
-  Expr^.UnaryEx.Parent := Parent;
-  Expr^.UnaryEx.Op := Op;
-  Expr^.TypeIndex := Parent^.TypeIndex;
-  Expr^.IsConstant := true;
-  Expr^.IsAssignable := false;
-  Expr^.IsFunctionResult := Parent^.IsFunctionResult;
-  _ExUnOpCmp := Expr
+  Result := _NewExpr(XcUnaryOp);
+  Result^.Unary.Parent := Parent;
+  Result^.Unary.Op := Op;
+  Result^.TypePtr := Parent^.TypePtr;
+  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
 function _ExBinOpBoolImm(Left, Right : TExpression;
@@ -750,41 +697,39 @@ begin
   Right := ExOutrange(Right);
 
   Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
-  if IsBooleanType(Left^.TypeIndex) and IsBooleanType(Right^.TypeIndex) then
+  if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
   begin
-    if Immediate then ExBinaryOp := _ExBinOpBoolImm(Left, Right, Op)
-    else ExBinaryOp := _ExBinOpBoolCmp(Left, Right, Op)
+    if Immediate then Result := _ExBinOpBoolImm(Left, Right, Op)
+    else Result := _ExBinOpBoolCmp(Left, Right, Op)
   end
-  else if IsIntegerType(Left^.TypeIndex)
-          and IsIntegerType(Right^.TypeIndex) then
+  else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
   begin
-    if Immediate then ExBinaryOp := _ExBinOpIntImm(Left, Right, Op)
-    else ExBinaryOp := _ExBinOpIntCmp(Left, Right, Op)
+    if Immediate then Result := _ExBinOpIntImm(Left, Right, Op)
+    else Result := _ExBinOpIntCmp(Left, Right, Op)
   end
-  else if IsStringyType(Left^.TypeIndex)
-          and IsStringyType(Right^.TypeIndex) then
+  else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
   begin
-    if Immediate then ExBinaryOp := _ExBinOpStrImm(Left, Right, Op)
-    else ExBinaryOp := _ExBinOpStrCmp(Left, Right, Op)
+    if Immediate then Result := _ExBinOpStrImm(Left, Right, Op)
+    else Result := _ExBinOpStrCmp(Left, Right, Op)
   end
-  else if IsEnumType(Left^.TypeIndex)
-          and IsSameType(Left^.TypeIndex, Right^.TypeIndex) then
+  else if IsEnumType(Left^.TypePtr)
+          and IsSameType(Left^.TypePtr, Right^.TypePtr) then
   begin
-    if Immediate then ExBinaryOp := _ExBinOpEnumImm(Left, Right, Op)
-    else ExBinaryOp := _ExBinOpEnumCmp(Left, Right, Op)
+    if Immediate then Result := _ExBinOpEnumImm(Left, Right, Op)
+    else Result := _ExBinOpEnumCmp(Left, Right, Op)
   end
-  else if ArePointersCompatible(Left^.TypeIndex, Right^.TypeIndex) then
-         ExBinaryOp := _ExBinOpPtrCmp(Left, Right, Op)
+  else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
+         Result := _ExBinOpPtrCmp(Left, Right, Op)
   else
     CompileError('Type mismatch for operator ' + LxTokenName(Op) + ': ' +
-    TypeName(Left^.TypeIndex) + ' and ' + TypeName(Right^.TypeIndex))
+    TypeName(Left^.TypePtr) + ' and ' + TypeName(Right^.TypePtr))
 end;
 
 function _ExBinOpBoolImm;
 var Lt, Rt : boolean;
 begin
-  Lt := Left^.ImmediateEx.BooleanValue;
-  Rt := Right^.ImmediateEx.BooleanValue;
+  Lt := Left^.Immediate.BooleanVal;
+  Rt := Right^.Immediate.BooleanVal;
   DisposeExpr(Right);
   case Op of 
     TkAnd : Lt := Lt and Rt;
@@ -797,9 +742,9 @@ begin
     TkMoreOrEquals : Lt := Lt >= Rt;
     else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
   end;
-  Left^.ImmediateEx.BooleanValue := Lt;
-  Left^.TypeIndex := PrimitiveTypes.PtBoolean;
-  _ExBinOpBoolImm := Left
+  Left^.Immediate.BooleanVal := Lt;
+  Left^.TypePtr := PrimitiveTypes.PtBoolean;
+  Result := Left
 end;
 
 function _ExBinOpIntImm;
@@ -807,8 +752,8 @@ var
   Lt, Rt : integer;
   Bo : boolean;
 begin
-  Lt := Left^.ImmediateEx.IntegerValue;
-  Rt := Right^.ImmediateEx.IntegerValue;
+  Lt := Left^.Immediate.IntegerVal;
+  Rt := Right^.Immediate.IntegerVal;
   DisposeExpr(Right);
   case Op of 
     TkPlus : Lt := Lt + Rt;
@@ -820,7 +765,7 @@ begin
     TkOr : Lt := Lt or Rt;
     else
     begin
-      Left^.ImmediateEx.Cls := XicBoolean;
+      Left^.Immediate.Cls := XicBoolean;
       case Op of 
         TkEquals : Bo := Lt = Rt;
         TkNotEquals : Bo := Lt <> Rt;
@@ -832,17 +777,17 @@ begin
       end
     end
   end;
-  if Left^.ImmediateEx.Cls = XicInteger then
+  if Left^.Immediate.Cls = XicInteger then
   begin
-    Left^.ImmediateEx.IntegerValue := Lt;
-    Left^.TypeIndex := PrimitiveTypes.PtInteger
+    Left^.Immediate.IntegerVal := Lt;
+    Left^.TypePtr := PrimitiveTypes.PtInteger
   end
   else
   begin
-    Left^.ImmediateEx.BooleanValue := Bo;
-    Left^.TypeIndex := PrimitiveTypes.PtBoolean
+    Left^.Immediate.BooleanVal := Bo;
+    Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
-  _ExBinOpIntImm := Left
+  Result := Left
 end;
 
 function _ExBinOpStrImm;
@@ -850,19 +795,19 @@ var
   Lt, Rt : string;
   Bo : boolean;
 begin
-  if Left^.ImmediateEx.Cls = XicChar then Lt := Left^.ImmediateEx.CharValue
-  else Lt := Left^.ImmediateEx.StringValue;
-  if Right^.ImmediateEx.Cls = XicChar then Rt := Right^.ImmediateEx.CharValue
-  else Rt := Right^.ImmediateEx.StringValue;
+  if Left^.Immediate.Cls = XicChar then Lt := Left^.Immediate.CharVal
+  else Lt := Left^.Immediate.StringVal;
+  if Right^.Immediate.Cls = XicChar then Rt := Right^.Immediate.CharVal
+  else Rt := Right^.Immediate.StringVal;
   DisposeExpr(Right);
   if Op = TkPlus then
   begin
-    Left^.ImmediateEx.Cls := XicString;
+    Left^.Immediate.Cls := XicString;
     Lt := Lt + Rt;
   end
   else
   begin
-    Left^.ImmediateEx.Cls := XicBoolean;
+    Left^.Immediate.Cls := XicBoolean;
     case Op of 
       TkEquals : Bo := Lt = Rt;
       TkNotEquals : Bo := Lt <> Rt;
@@ -873,17 +818,17 @@ begin
       else CompileError('Invalid string operator: ' + LxTokenName(Op))
     end;
   end;
-  if Left^.ImmediateEx.Cls = XicString then
+  if Left^.Immediate.Cls = XicString then
   begin
-    Left^.ImmediateEx.StringValue := Lt;
-    Left^.TypeIndex := PrimitiveTypes.PtString
+    Left^.Immediate.StringVal := Lt;
+    Left^.TypePtr := PrimitiveTypes.PtString
   end
   else
   begin
-    Left^.ImmediateEx.BooleanValue := Bo;
-    Left^.TypeIndex := PrimitiveTypes.PtBoolean
+    Left^.Immediate.BooleanVal := Bo;
+    Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
-  _ExBinOpStrImm := Left
+  Result := Left
 end;
 
 function _ExBinOpEnumImm;
@@ -891,8 +836,8 @@ var
   Lt, Rt : integer;
   Bo : boolean;
 begin
-  Lt := Left^.ImmediateEx.EnumOrdinal;
-  Rt := Right^.ImmediateEx.EnumOrdinal;
+  Lt := Left^.Immediate.EnumOrdinal;
+  Rt := Right^.Immediate.EnumOrdinal;
   DisposeExpr(Right);
   case Op of 
     TkEquals : Bo := Lt = Rt;
@@ -903,137 +848,128 @@ begin
     TkMoreOrEquals : Bo := Lt >= Rt;
     else CompileError('Invalid integer operator: ' + LxTokenName(Op))
   end;
-  Left^.ImmediateEx.Cls := XicBoolean;
-  Left^.ImmediateEx.BooleanValue := Bo;
-  Left^.TypeIndex := PrimitiveTypes.PtBoolean;
-  _ExBinOpEnumImm := Left
+  Left^.Immediate.Cls := XicBoolean;
+  Left^.Immediate.BooleanVal := Bo;
+  Left^.TypePtr := PrimitiveTypes.PtBoolean;
+  Result := Left
 end;
 
 function _ExBinOpBoolCmp;
-var Expr : TExpression;
 begin
   if (Op = TkAnd) or (Op = TkOr) or (Op = TkEquals) or (Op = TkNotEquals)
      or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
      or (Op = TkMoreOrEquals) then
   begin
-    Expr := _NewExpr(XcBinaryOp);
-    Expr^.BinaryEx.Left := Left;
-    Expr^.BinaryEx.Right := Right;
-    Expr^.BinaryEx.Op := Op;
-    Expr^.TypeIndex := PrimitiveTypes.PtBoolean;
-    Expr^.IsConstant := true;
-    Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-    _ExBinOpBoolCmp := Expr
+    Result := _NewExpr(XcBinaryOp);
+    Result^.Binary.Left := Left;
+    Result^.Binary.Right := Right;
+    Result^.Binary.Op := Op;
+    Result^.TypePtr := PrimitiveTypes.PtBoolean;
+    Result^.IsConstant := true;
+    Result^.IsFunctionResult := Left^.IsFunctionResult
+                                or Right^.IsFunctionResult
   end
   else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
 end;
 
 function _ExBinOpIntCmp;
-var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcBinaryOp);
-  Expr^.BinaryEx.Left := Left;
-  Expr^.BinaryEx.Right := Right;
-  Expr^.BinaryEx.Op := Op;
-  Expr^.IsConstant := true;
-  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
+  Result := _NewExpr(XcBinaryOp);
+  Result^.Binary.Left := Left;
+  Result^.Binary.Right := Right;
+  Result^.Binary.Op := Op;
+  Result^.IsConstant := true;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkDiv)
      or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) then
-    Expr^.TypeIndex := PrimitiveTypes.PtInteger
+    Result^.TypePtr := PrimitiveTypes.PtInteger
   else if (Op = TkEquals) or (Op = TkNotEquals)
           or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
           or (Op = TkMoreOrEquals) then
-         Expr^.TypeIndex := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid integer operator: ' + LxTokenName(Op));
-  _ExBinOpIntCmp := Expr
+         Result^.TypePtr := PrimitiveTypes.PtBoolean
+  else CompileError('Invalid integer operator: ' + LxTokenName(Op))
 end;
 
 function _ExBinOpStrCmp;
-var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcBinaryOp);
-  Expr^.BinaryEx.Left := Left;
-  Expr^.BinaryEx.Right := Right;
-  Expr^.BinaryEx.Op := Op;
-  Expr^.IsConstant := true;
-  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
+  Result := _NewExpr(XcBinaryOp);
+  Result^.Binary.Left := Left;
+  Result^.Binary.Right := Right;
+  Result^.Binary.Op := Op;
+  Result^.IsConstant := true;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if Op = TkPlus then
-    Expr^.TypeIndex := PrimitiveTypes.PtString
+    Result^.TypePtr := PrimitiveTypes.PtString
   else if (Op = TkEquals) or (Op = TkNotEquals)
           or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
           or (Op = TkMoreOrEquals) then
-         Expr^.TypeIndex := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid string operator: ' + LxTokenName(Op));
-  _ExBinOpStrCmp := Expr
+         Result^.TypePtr := PrimitiveTypes.PtBoolean
+  else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;
 
 function _ExBinOpEnumCmp;
-var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcBinaryOp);
-  Expr^.BinaryEx.Left := Left;
-  Expr^.BinaryEx.Right := Right;
-  Expr^.BinaryEx.Op := Op;
-  Expr^.IsConstant := true;
-  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
+  Result := _NewExpr(XcBinaryOp);
+  Result^.Binary.Left := Left;
+  Result^.Binary.Right := Right;
+  Result^.Binary.Op := Op;
+  Result^.IsConstant := true;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals)
      or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
      or (Op = TkMoreOrEquals) then
-    Expr^.TypeIndex := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid enum operator: ' + LxTokenName(Op));
-  _ExBinOpEnumCmp := Expr
+    Result^.TypePtr := PrimitiveTypes.PtBoolean
+  else CompileError('Invalid enum operator: ' + LxTokenName(Op))
 end;
 
 function _ExBinOpPtrCmp;
-var Expr : TExpression;
 begin
-  Expr := _NewExpr(XcBinaryOp);
-  Expr^.BinaryEx.Left := Left;
-  Expr^.BinaryEx.Right := Right;
-  Expr^.BinaryEx.Op := Op;
-  Expr^.IsConstant := true;
-  Expr^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
+  Result := _NewExpr(XcBinaryOp);
+  Result^.Binary.Left := Left;
+  Result^.Binary.Right := Right;
+  Result^.Binary.Op := Op;
+  Result^.IsConstant := true;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals) then
-    Expr^.TypeIndex := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid string operator: ' + LxTokenName(Op));
-  _ExBinOpPtrCmp := Expr
+    Result^.TypePtr := PrimitiveTypes.PtBoolean
+  else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;
 
 function _ExPfcUnImm;
 var 
-  PF : TPsPseudoFun;
+  PF : TPsPseudoFn;
   OutOfBounds : boolean;
 begin
   OutOfBounds := false;
-  PF := FnExpr^.PseudoFunEx.PseudoFun;
+  PF := FnExpr^.PseudoFn;
   DisposeExpr(FnExpr);
   if (PF = TpfNew) or (PF = TpfDispose) then
     CompileError('Invalid pointer argument for NEW or DISPOSE')
   else if PF = TpfOrd then
   begin
-    with Arg^.ImmediateEx do
+    with Arg^.Immediate do
     begin
       case Cls of 
-        XicBoolean : if BooleanValue then IntegerValue := 1
-                     else IntegerValue := 0;
+        XicBoolean : if BooleanVal then IntegerVal := 1
+                     else IntegerVal := 0;
         XicInteger: {do nothing};
-        XicChar: IntegerValue := Ord(CharValue);
-        XicEnum: IntegerValue := EnumOrdinal;
+        XicChar: IntegerVal := Ord(CharVal);
+        XicEnum: IntegerVal := EnumOrdinal;
         else CompileError('Invalid type for ORD')
       end;
-      Arg^.TypeIndex := PrimitiveTypes.PtInteger;
+      Arg^.TypePtr := PrimitiveTypes.PtInteger;
       Cls := XicInteger
     end
   end
   else if PF = TpfPred then
   begin
-    with Arg^.ImmediateEx do
+    with Arg^.Immediate do
     begin
       case Cls of 
-        XicBoolean : if BooleanValue then BooleanValue := false
+        XicBoolean : if BooleanVal then BooleanVal := false
                      else OutOfBounds := true;
-        XicInteger: IntegerValue := IntegerValue - 1;
-        XicChar: if Ord(CharValue) > 0 then CharValue := Pred(CharValue)
+        XicInteger: IntegerVal := IntegerVal - 1;
+        XicChar: if Ord(CharVal) > 0 then CharVal := Pred(CharVal)
                  else OutOfBounds := true;
         XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
                  else OutOfBounds := true;
@@ -1043,15 +979,15 @@ begin
   end
   else if PF = TpfSucc then
   begin
-    with Arg^.ImmediateEx do
+    with Arg^.Immediate do
     begin
       case Cls of 
-        XicBoolean : if not BooleanValue then BooleanValue := true
+        XicBoolean : if not BooleanVal then BooleanVal := true
                      else OutOfBounds := true;
-        XicInteger: IntegerValue := IntegerValue + 1;
-        XicChar: if Ord(CharValue) < 255 then CharValue := Succ(CharValue)
+        XicInteger: IntegerVal := IntegerVal + 1;
+        XicChar: if Ord(CharVal) < 255 then CharVal := Succ(CharVal)
                  else OutOfBounds := true;
-        XicEnum: if EnumOrdinal < Arg^.TypeIndex^.EnumIndex^.Size - 1 then
+        XicEnum: if EnumOrdinal < Arg^.TypePtr^.EnumPtr^.Size - 1 then
                    EnumOrdinal := EnumOrdinal + 1
                  else
                    OutOfBounds := true;
@@ -1065,29 +1001,30 @@ end;
 
 function _ExPfcUnCmp;
 begin
-  FnExpr := ExPseudoFunCall(FnExpr);
-  FnExpr^.PseudoFunCallEx.Arg1 := Arg;
-  case FnExpr^.PseudoFunCallEx.PseudoFun of 
-    TpfOrd: FnExpr^.TypeIndex := PrimitiveTypes.PtInteger;
-    TpfPred: FnExpr^.TypeIndex := Arg^.TypeIndex;
-    TpfSucc: FnExpr^.TypeIndex := Arg^.TypeIndex;
+  FnExpr := ExPseudoFnCall(FnExpr);
+  FnExpr^.PseudoFnCall.Arg1 := Arg;
+  case FnExpr^.PseudoFnCall.PseudoFn of 
+    TpfOrd: FnExpr^.TypePtr := PrimitiveTypes.PtInteger;
+    TpfPred: FnExpr^.TypePtr := Arg^.TypePtr;
+    TpfSucc: FnExpr^.TypePtr := Arg^.TypePtr;
   end;
   Result := FnExpr
 end;
 
 function _ExPfcBiImm;
 var 
-  PF : TPsPseudoFun;
+  PF : TPsPseudoFn;
 begin
-  PF := FnExpr^.PseudoFunEx.PseudoFun;
+  PF := FnExpr^.PseudoFn;
   if PF = TpfStr then Result := _ExPfcBiCmp(FnExpr, Arg1, Arg2)
+  else CompileError('Internal error: no pseudofun for immediate values')
 end;
 
 function _ExPfcBiCmp;
 begin
-  FnExpr := ExPseudoFunCall(FnExpr);
-  FnExpr^.PseudoFunCallEx.Arg1 := Arg1;
-  FnExpr^.PseudoFunCallEx.Arg2 := Arg2;
+  FnExpr := ExPseudoFnCall(FnExpr);
+  FnExpr^.PseudoFnCall.Arg1 := Arg1;
+  FnExpr^.PseudoFnCall.Arg2 := Arg2;
   Result := FnExpr
 end;
 
@@ -1101,7 +1038,7 @@ begin
   if CmpExpr^.Cls <> XcImmediate then
     CompileError('Internal error: could not calculate if an immediate value ' +
                  'belongs to a range');
-  Result := CmpExpr^.ImmediateEx.BooleanValue;
+  Result := CmpExpr^.Immediate.BooleanVal;
   DisposeExpr(CmpExpr)
 end;
 
@@ -1110,37 +1047,36 @@ var Expr : TExpression;
 begin
   if Parent^.Cls = XcImmediate then
   begin
-    if not _ExBelongsToRange(Parent, TypeIndex^.RangeIndex^.First,
-       TypeIndex^.RangeIndex^.Last) then
+    if not _ExBelongsToRange(Parent, TypePtr^.RangePtr^.First,
+       TypePtr^.RangePtr^.Last) then
       CompileError('Value ' + DescribeExpr(Parent, 2) +
-      ' out of bounds for ' + TypeName(TypeIndex));
-    Parent^.TypeIndex := TypeIndex;
+      ' out of bounds for ' + TypeName(TypePtr));
+    Parent^.TypePtr := TypePtr;
     Result := Parent
   end
   else
   begin
     Result := _NewExpr(XcSubrange);
-    Result^.SubrangeEx.Parent := Parent;
-    Result^.TypeIndex := TypeIndex
+    Result^.SubrangeParent := Parent;
+    Result^.TypePtr := TypePtr
   end
 end;
 
 function ExCoerce;
 begin
-  if IsRangeType(Expr^.TypeIndex)
-     and IsSameType(TypeIndex, Expr^.TypeIndex^.RangeIndex^.BaseTypeIndex)
+  if IsRangeType(Expr^.TypePtr)
+     and IsSameType(TypePtr, Expr^.TypePtr^.RangePtr^.BaseTypePtr)
     then ExCoerce := ExOutrange(Expr)
-  else if IsRangeType(TypeIndex)
-          and IsSameType(TypeIndex^.RangeIndex^.BaseTypeIndex,
-          Expr^.TypeIndex) then
-         ExCoerce := ExSubrange(Expr, TypeIndex)
-  else if IsCharType(Expr^.TypeIndex) and IsStringType(TypeIndex) then
+  else if IsRangeType(TypePtr)
+          and IsSameType(TypePtr^.RangePtr^.BaseTypePtr, Expr^.TypePtr) then
+         ExCoerce := ExSubrange(Expr, TypePtr)
+  else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)
-  else if IsSameType(Expr^.TypeIndex, TypeIndex) then
+  else if IsSameType(Expr^.TypePtr, TypePtr) then
          ExCoerce := Expr
-  else if IsNilType(Expr^.TypeIndex) and IsPointeryType(TypeIndex) then
+  else if IsNilType(Expr^.TypePtr) and IsPointeryType(TypePtr) then
          ExCoerce := Expr
   else
-    CompileError('Type mismatch: expected ' + TypeName(TypeIndex) +
-    ', got ' + TypeName(Expr^.TypeIndex))
+    CompileError('Type mismatch: expected ' + TypeName(TypePtr) +
+    ', got ' + TypeName(Expr^.TypePtr))
 end;

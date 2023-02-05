@@ -170,9 +170,9 @@ echo 'totallymadeuptype' | testtype | is_not_valid
 echo '(One)' | testtype | is_valid
 echo '(One, Two, Three)' | testtype | is_valid
 echo '(One, , Two)' | testtype | is_not_valid
-echo '1..10' | testtype | will_be_valid
-echo "'a'..'z'" | testtype | will_be_valid
-echo '(One, Two, Three); X = One..Two' | testtype | will_be_valid
+echo '1..10' | testtype | is_valid
+echo "'a'..'z'" | testtype | is_valid
+echo '(One, Two, Three); X = One..Two' | testtype | is_valid
 echo 'array[1..10] of integer' | testtype | is_valid
 echo 'array[6..15] of integer' | testtype | is_valid
 echo 'array[-4..5] of integer' | testtype | is_valid
@@ -240,7 +240,7 @@ echo '1..5;
                2, 3 : (C : integer);
                4 : (D : string);
                5 : (E : boolean)
-      end' | testtype | will_be_valid
+      end' | testtype | is_valid
 echo 'record A : integer;
              case 1..5 of
                1 : (B : char);

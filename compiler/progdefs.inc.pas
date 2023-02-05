@@ -1,7 +1,7 @@
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
-    PtNil, PtBoolean, PtInteger, PtChar, PtString, PtText : TPsTypeIndex
+    PtNil, PtBoolean, PtInteger, PtChar, PtString, PtText : TPsTypePtr
   end;
 
 function DefCounter : integer;
@@ -13,7 +13,7 @@ end;
 procedure InitDefs;
 begin
   Defs.Latest := nil;
-  Defs.CurrentFunction := nil;
+  Defs.CurrentFn := nil;
   Defs.Counter := 0
 end;
 
@@ -26,20 +26,20 @@ begin
   Def^.Next := nil;
   Def^.Cls := Cls;
   case Cls of 
-    TdcName : new(Def^.NameIndex);
-    TdcType : new(Def^.TypeIndex);
-    TdcEnum : new(Def^.EnumIndex);
-    TdcRange : new(Def^.RangeIndex);
-    TdcRecord : new(Def^.RecordIndex);
-    TdcArray : new(Def^.ArrayIndex);
-    TdcConstant : new(Def^.ConstantIndex);
-    TdcVariable : new(Def^.VariableIndex);
-    TdcFunction : new(Def^.FunctionIndex);
-    TdcWithVar : new(Def^.WithVarIndex);
+    TdcName : new(Def^.NamePtr);
+    TdcType : new(Def^.TypePtr);
+    TdcEnum : new(Def^.EnumPtr);
+    TdcRange : new(Def^.RangePtr);
+    TdcRecord : new(Def^.RecPtr);
+    TdcArray : new(Def^.ArrayPtr);
+    TdcConstant : new(Def^.ConstPtr);
+    TdcVariable : new(Def^.VarPtr);
+    TdcFunction : new(Def^.FnPtr);
+    TdcWithVar : new(Def^.WithVarPtr);
     TdcScopeBoundary :
                        begin
                          Def^.TemporaryScope := false;
-                         Def^.CurrentFunction := nil
+                         Def^.CurrentFn := nil
                        end
   end;
   _NewDef := Def
@@ -48,26 +48,26 @@ end;
 procedure _DisposeDef(Def : TPsDefPtr);
 begin
   case Def^.Cls of 
-    TdcName : dispose(Def^.NameIndex);
-    TdcType : dispose(Def^.TypeIndex);
-    TdcEnum : dispose(Def^.EnumIndex);
+    TdcName : dispose(Def^.NamePtr);
+    TdcType : dispose(Def^.TypePtr);
+    TdcEnum : dispose(Def^.EnumPtr);
     TdcRange:
               begin
-                DisposeExpr(Def^.RangeIndex^.First);
-                DisposeExpr(Def^.RangeIndex^.Last);
-                dispose(Def^.RangeIndex)
+                DisposeExpr(Def^.RangePtr^.First);
+                DisposeExpr(Def^.RangePtr^.Last);
+                dispose(Def^.RangePtr)
               end;
-    TdcRecord : dispose(Def^.RecordIndex);
+    TdcRecord : dispose(Def^.RecPtr);
     TdcArray :
                begin
-                 DisposeExpr(Def^.ArrayIndex^.LowBound);
-                 DisposeExpr(Def^.ArrayIndex^.HighBound);
-                 dispose(Def^.ArrayIndex)
+                 DisposeExpr(Def^.ArrayPtr^.LowBound);
+                 DisposeExpr(Def^.ArrayPtr^.HighBound);
+                 dispose(Def^.ArrayPtr)
                end;
-    TdcConstant : dispose(Def^.ConstantIndex);
-    TdcVariable : dispose(Def^.VariableIndex);
-    TdcFunction : dispose(Def^.FunctionIndex);
-    TdcWithVar : dispose(Def^.WithVarIndex)
+    TdcConstant : dispose(Def^.ConstPtr);
+    TdcVariable : dispose(Def^.VarPtr);
+    TdcFunction : dispose(Def^.FnPtr);
+    TdcWithVar : dispose(Def^.WithVarPtr)
   end;
   dispose(Def)
 end;
@@ -95,15 +95,15 @@ begin
   end
 end;
 
-procedure _StartScope(Temporary : boolean; NewFunction : TPsFunctionIndex);
+procedure _StartScope(Temporary : boolean; NewFunction : TPsFnPtr);
 var 
   Def : TPsDefPtr;
 begin
   Def := _AddDef(TdcScopeBoundary);
   Def^.TemporaryScope := Temporary;
-  Def^.CurrentFunction := Defs.CurrentFunction;
+  Def^.CurrentFn := Defs.CurrentFn;
   if not Temporary then
-    Defs.CurrentFunction := NewFunction
+    Defs.CurrentFn := NewFunction
 end;
 
 procedure _CloseScope(Temporary : boolean);
@@ -116,10 +116,10 @@ begin
   until not Deleted
         or ((DeletedDef.Cls = TdcScopeBoundary)
         and (Temporary or not DeletedDef.TemporaryScope));
-  Defs.CurrentFunction := DeletedDef.CurrentFunction
+  Defs.CurrentFn := DeletedDef.CurrentFn
 end;
 
-procedure StartLocalScope(NewFunction : TPsFunctionIndex);
+procedure StartLocalScope(NewFunction : TPsFnPtr);
 begin
   _StartScope({Temporary=}false, NewFunction)
 end;
@@ -140,10 +140,10 @@ begin
 end;
 
 function _FindName(Name : string; Required : boolean;
-                   FromLocalScope : boolean) : TPsNameIndex;
+                   FromLocalScope : boolean) : TPsNamePtr;
 var 
   Def : TPsDefPtr;
-  Ret : TPsNameIndex;
+  Ret : TPsNamePtr;
 begin
   Ret := nil;
   Def := Defs.Latest;
@@ -151,166 +151,164 @@ begin
         and (Def <> nil)
         and (not FromLocalScope or (Def^.Cls <> TdcScopeBoundary)) do
   begin
-    if (Def^.Cls = TdcName) and (Name = Def^.NameIndex^.Name) then
-      Ret := Def^.NameIndex;
+    if (Def^.Cls = TdcName) and (Name = Def^.NamePtr^.Name) then
+      Ret := Def^.NamePtr;
     Def := Def^.Prev
   end;
   if Required and (Ret = nil) then CompileError('Unknown identifier: ' + Name);
   _FindName := Ret
 end;
 
-function _CheckNameClass(NameIndex : TPsNameIndex; Cls : TPsNameClass)
-: TPSNameIndex;
+function _CheckNameClass(NamePtr : TPsNamePtr; Cls : TPsNameClass) : TPSNamePtr;
 begin
-  if (NameIndex <> nil) and (NameIndex^.Cls <> Cls) then
+  if (NamePtr <> nil) and (NamePtr^.Cls <> Cls) then
     case Cls of 
-      TncType : CompileError('Not a type: ' + NameIndex^.Name);
-      TncVariable : CompileError('Not a variable: ' + NameIndex^.Name);
-      TncEnumValue : CompileError('Not an enumeration value: ' +
-                                  NameIndex^.Name);
+      TncType : CompileError('Not a type: ' + NamePtr^.Name);
+      TncVariable : CompileError('Not a variable: ' + NamePtr^.Name);
+      TncEnumVal : CompileError('Not an enumeration value: ' + NamePtr^.Name);
       TncFunction : CompileError('Not a procedure or function: ' +
-                                 NameIndex^.Name);
-      TncPseudoFun : CompileError('Not a procedure or function: ' +
-                                  NameIndex^.Name);
+                                 NamePtr^.Name);
+      TncPseudoFn : CompileError('Not a procedure or function: ' +
+                                 NamePtr^.Name);
       else CompileError('Internal error: name class mismatch')
     end;
-  _CheckNameClass := NameIndex
+  _CheckNameClass := NamePtr
 end;
 
-function FindNameInLocalScope(Name : string; Required : boolean) : TPsNameIndex;
+function FindNameInLocalScope(Name : string; Required : boolean) : TPsNamePtr;
 begin
   FindNameInLocalScope := _FindName(Name, Required, {FromLocalScope=}true)
 end;
 
 function FindNameOfClassInLocalScope(Name : string; Cls : TPsNameClass;
-                                     Required : boolean) : TPsNameIndex;
+                                     Required : boolean) : TPsNamePtr;
 begin
   FindNameOfClassInLocalScope := _CheckNameClass(
                                  FindNameInLocalScope(Name, Required), Cls)
 end;
 
-function FindName(Name : string; Required : boolean) : TPsNameIndex;
+function FindName(Name : string; Required : boolean) : TPsNamePtr;
 begin
   FindName := _FindName(Name, Required, {FromLocalScope=}false)
 end;
 
 function FindNameOfClass(Name : string; Cls : TPsNameClass; Required : boolean)
-: TPsNameIndex;
+: TPsNamePtr;
 begin
   FindNameOfClass := _CheckNameClass(FindName(Name, Required), Cls)
 end;
 
-function _AddName(Name : string; Cls : TPsNameClass) : TPsNameIndex;
+function _AddName(Name : string; Cls : TPsNameClass) : TPsNamePtr;
 var 
-  Pos : TPsNameIndex;
+  Pos : TPsNamePtr;
 begin
   if FindNameInLocalScope(Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Name + ' already defined');
-  Pos := _AddDef(TdcName)^.NameIndex;
+  Pos := _AddDef(TdcName)^.NamePtr;
   Pos^.Name := Name;
   Pos^.Cls := Cls;
   _AddName := Pos
 end;
 
-function AddTypeName(Name : string; Idx : TPsTypeIndex) : TPsNameIndex;
+function AddTypeName(Name : string; Idx : TPsTypePtr) : TPsNamePtr;
 var 
-  Def : TPsNameIndex;
+  Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncType);
-  Def^.TypeIndex := Idx;
+  Def^.TypePtr := Idx;
   AddTypeName := Def
 end;
 
-function AddVariableName(Name : string; Idx : TPsVariableIndex) : TPsNameIndex;
+function AddVariableName(Name : string; Idx : TPsVarPtr) : TPsNamePtr;
 var 
-  Def : TPsNameIndex;
+  Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncVariable);
-  Def^.VariableIndex := Idx;
+  Def^.VarPtr := Idx;
   AddVariableName := Def
 end;
 
-function AddConstantName(Name : string; Idx : TPsConstantIndex) : TPsNameIndex;
+function AddConstantName(Name : string; Idx : TPsConstPtr) : TPsNamePtr;
 var 
-  Def : TPsNameIndex;
+  Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncConstant);
-  Def^.ConstantIndex := Idx;
+  Def^.ConstPtr := Idx;
   Result := Def
 end;
 
-function AddFunctionName(Name : string; Idx : TPsFunctionIndex) : TPsNameIndex;
+function AddFunctionName(Name : string; Idx : TPsFnPtr) : TPsNamePtr;
 var 
-  Def : TPsNameIndex;
+  Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncFunction);
-  Def^.FunctionIndex := Idx;
+  Def^.FnPtr := Idx;
   AddFunctionName := Def
 end;
 
-function AddEnumValueName(Ordinal : integer;
-                          TypeIdx : TPsTypeIndex) : TPsNameIndex;
-var Def : TPsNameIndex;
+function AddEnumValName(Ordinal : integer;
+                        TypeIdx : TPsTypePtr) : TPsNamePtr;
+var Def : TPsNamePtr;
 begin
-  Def := _AddName(TypeIdx^.EnumIndex^.Values[Ordinal], TncEnumValue);
-  Def^.EnumTypeIndex := TypeIdx;
+  Def := _AddName(TypeIdx^.EnumPtr^.Values[Ordinal], TncEnumVal);
+  Def^.EnumTypePtr := TypeIdx;
   Def^.Ordinal := Ordinal;
-  AddEnumValueName := Def
+  AddEnumValName := Def
 end;
 
-function AddPseudoFun(Name : string; Fn : TPsPseudoFun) : TPsNameIndex;
-var Def : TPsNameIndex;
+function AddPseudoFn(Name : string; Fn : TPsPseudoFn) : TPsNamePtr;
+var Def : TPsNamePtr;
 begin
-  Def := _AddName(Name, TncPseudoFun);
-  Def^.PseudoFun := Fn;
-  AddPseudoFun := Def
+  Def := _AddName(Name, TncPseudoFn);
+  Def^.PseudoFn := Fn;
+  AddPseudoFn := Def
 end;
 
-function DeepTypeName(TypeIndex : TPsTypeIndex; UseOriginal : boolean) : string;
+function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
 var 
   Typ : TPsType;
   Ret : string;
   Pos : integer;
 begin
   repeat
-    Typ := TypeIndex^;
-    TypeIndex := Typ.AliasFor
-  until not UseOriginal or (TypeIndex = nil);
+    Typ := TypePtr^;
+    TypePtr := Typ.AliasFor
+  until not UseOriginal or (TypePtr = nil);
   if Typ.Name <> '' then DeepTypeName := Typ.Name
   else if Typ.Cls = TtcEnum then
   begin
     Ret := '(';
-    for Pos := 0 to Typ.EnumIndex^.Size - 1 do
+    for Pos := 0 to Typ.EnumPtr^.Size - 1 do
     begin
       if Pos <> 0 then
         Ret := Ret + ',';
-      Ret := Ret + Typ.EnumIndex^.Values[Pos]
+      Ret := Ret + Typ.EnumPtr^.Values[Pos]
     end;
     DeepTypeName := Ret + ')'
   end
   else if Typ.Cls = TtcRange then
-         DeepTypeName := DescribeExpr(Typ.RangeIndex^.First, 1) +
-                '..' + DescribeExpr(Typ.RangeIndex^.Last, 1)
+         DeepTypeName := DescribeExpr(Typ.RangePtr^.First, 1) +
+                         '..' + DescribeExpr(Typ.RangePtr^.Last, 1)
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
-    for Pos := 1 to Typ.RecordIndex^.Size do
+    for Pos := 1 to Typ.RecPtr^.Size do
     begin
       if Pos <> 1 then Ret := Ret + ',';
-      Ret := Ret + DeepTypeName(Typ.RecordIndex^.Fields[Pos].TypeIndex, true);
-      Ret := Ret + ':' + Typ.RecordIndex^.Fields[Pos].Name
+      Ret := Ret + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
+      Ret := Ret + ':' + Typ.RecPtr^.Fields[Pos].Name
     end;
     DeepTypeName := Ret + ' end'
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [' + DescribeExpr(Typ.ArrayIndex^.LowBound, 1) +
-           '..' + DescribeExpr(Typ.ArrayIndex^.HighBound, 1) +
-           '] of ' + DeepTypeName(Typ.ArrayIndex^.TypeIndex, true);
+    Ret := 'array [' + DescribeExpr(Typ.ArrayPtr^.LowBound, 1) +
+           '..' + DescribeExpr(Typ.ArrayPtr^.HighBound, 1) +
+           '] of ' + DeepTypeName(Typ.ArrayPtr^.TypePtr, true);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
-         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypeIndex, true)
+         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypePtr, true)
   else
   begin
     Str(Typ.Cls, Ret);
@@ -318,10 +316,10 @@ begin
   end
 end;
 
-function TypeName(TypeIndex : TPsTypeIndex) : string;
+function TypeName(TypePtr : TPsTypePtr) : string;
 begin
-  if TypeIndex = nil then TypeName := '(none)'
-  else TypeName := DeepTypeName(TypeIndex, false)
+  if TypePtr = nil then TypeName := '(none)'
+  else TypeName := DeepTypeName(TypePtr, false)
 end;
 
 function EmptyType : TPsType;
@@ -334,15 +332,15 @@ begin
   EmptyType := Ret
 end;
 
-function CopyType(TypeIndex : TPsTypeIndex) : TPsType;
+function CopyType(TypePtr : TPsTypePtr) : TPsType;
 var 
   NewTyp : TPsType;
 begin
-  NewTyp := TypeIndex^;
+  NewTyp := TypePtr^;
   if NewTyp.Cls = TtcPointerUnknown then
   begin
     new(NewTyp.TargetName);
-    NewTyp.TargetName^ := TypeIndex^.TargetName^
+    NewTyp.TargetName^ := TypePtr^.TargetName^
   end;
   CopyType := NewTyp
 end;
@@ -361,9 +359,9 @@ begin
   IntegerType := TypeOfClass(TtcInteger)
 end;
 
-function IsIntegerType(TypeIndex : TPsTypeIndex) : boolean;
+function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsIntegerType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcInteger)
+  IsIntegerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcInteger)
 end;
 
 function StringType : TPsType;
@@ -376,19 +374,19 @@ begin
   CharType := TypeOfClass(TtcChar)
 end;
 
-function IsStringType(TypeIndex : TPsTypeIndex) : boolean;
+function IsStringType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsStringType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcString)
+  IsStringType := (TypePtr <> nil) and (TypePtr^.Cls = TtcString)
 end;
 
-function IsCharType(TypeIndex : TPsTypeIndex) : boolean;
+function IsCharType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsCharType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcChar)
+  IsCharType := (TypePtr <> nil) and (TypePtr^.Cls = TtcChar)
 end;
 
-function IsStringyType(TypeIndex : TPsTypeIndex) : boolean;
+function IsStringyType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsStringyType := IsStringType(TypeIndex) or IsCharType(TypeIndex)
+  IsStringyType := IsStringType(TypePtr) or IsCharType(TypePtr)
 end;
 
 function BooleanType : TPsType;
@@ -396,9 +394,9 @@ begin
   BooleanType := TypeOfClass(TtcBoolean)
 end;
 
-function IsBooleanType(TypeIndex : TPsTypeIndex) : boolean;
+function IsBooleanType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsBooleanType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcBoolean)
+  IsBooleanType := (TypePtr <> nil) and (TypePtr^.Cls = TtcBoolean)
 end;
 
 function TextType : TPsType;
@@ -406,43 +404,43 @@ begin
   TextType := TypeOfClass(TtcText)
 end;
 
-function IsTextType(TypeIndex : TPsTypeIndex) : boolean;
+function IsTextType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsTextType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcText)
+  IsTextType := (TypePtr <> nil) and (TypePtr^.Cls = TtcText)
 end;
 
-function IsEnumType(TypeIndex : TPsTypeIndex) : boolean;
+function IsEnumType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsEnumType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcEnum)
+  IsEnumType := (TypePtr <> nil) and (TypePtr^.Cls = TtcEnum)
 end;
 
-function IsRangeType(TypeIndex : TPsTypeIndex) : boolean;
+function IsRangeType(TypePtr : TPsTypePtr) : boolean;
 begin
-  Result := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcRange)
+  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcRange)
 end;
 
-function IsRecordType(TypeIndex : TPsTypeIndex) : boolean;
+function IsRecordType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsRecordType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcRecord)
+  IsRecordType := (TypePtr <> nil) and (TypePtr^.Cls = TtcRecord)
 end;
 
-function IsArrayType(TypeIndex : TPsTypeIndex) : boolean;
+function IsArrayType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsArrayType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcArray)
+  IsArrayType := (TypePtr <> nil) and (TypePtr^.Cls = TtcArray)
 end;
 
-function PointerType(TypeIndex : TPsTypeIndex) : TPsType;
+function PointerType(TypePtr : TPsTypePtr) : TPsType;
 var 
   Typ : TPsType;
 begin
   Typ := TypeOfClass(TtcPointer);
-  Typ.PointedTypeIndex := TypeIndex;
+  Typ.PointedTypePtr := TypePtr;
   PointerType := Typ
 end;
 
-function IsPointerType(TypeIndex : TPsTypeIndex) : boolean;
+function IsPointerType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointerType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcPointer)
+  IsPointerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcPointer)
 end;
 
 function NilType : TPsType;
@@ -450,14 +448,14 @@ begin
   NilType := TypeOfClass(TtcNil)
 end;
 
-function IsNilType(TypeIndex : TPsTypeIndex) : boolean;
+function IsNilType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsNilType := (TypeIndex <> nil) and (TypeIndex^.Cls = TtcNil)
+  IsNilType := (TypePtr <> nil) and (TypePtr^.Cls = TtcNil)
 end;
 
-function IsPointeryType(TypeIndex : TPsTypeIndex) : boolean;
+function IsPointeryType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointeryType := IsPointerType(TypeIndex) or IsNilType(TypeIndex)
+  IsPointeryType := IsPointerType(TypePtr) or IsNilType(TypePtr)
 end;
 
 function PointerUnknownType(TargetName : string) : TPsType;
@@ -470,27 +468,27 @@ begin
   PointerUnknownType := Typ
 end;
 
-function IsPointerUnknownType(TypeIndex : TPsTypeIndex) : boolean;
+function IsPointerUnknownType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointerUnknownType := (TypeIndex <> nil)
-                          and (TypeIndex^.Cls = TtcPointerUnknown)
+  IsPointerUnknownType := (TypePtr <> nil)
+                          and (TypePtr^.Cls = TtcPointerUnknown)
 end;
 
-function IsOrdinalType(TypeIndex : TPsTypeIndex) : boolean;
+function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsOrdinalType := IsBooleanType(TypeIndex)
-                   or IsIntegerType(TypeIndex)
-                   or IsCharType(TypeIndex)
-                   or IsEnumType(TypeIndex)
-                   or IsRangeType(TypeIndex)
+  IsOrdinalType := IsBooleanType(TypePtr)
+                   or IsIntegerType(TypePtr)
+                   or IsCharType(TypePtr)
+                   or IsEnumType(TypePtr)
+                   or IsRangeType(TypePtr)
 end;
 
-function IsSimpleType(TypeIndex : TPsTypeIndex) : boolean;
+function IsSimpleType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsSimpleType := IsOrdinalType(TypeIndex) or IsStringType(TypeIndex)
+  IsSimpleType := IsOrdinalType(TypePtr) or IsStringType(TypePtr)
 end;
 
-function IsSameType(A, B : TPsTypeIndex) : boolean;
+function IsSameType(A, B : TPsTypePtr) : boolean;
 begin
   if (A = nil) or (B = nil) then IsSameType := A = B
   else
@@ -501,95 +499,95 @@ begin
       B := B^.AliasFor;
     IsSameType := (A = B)
                   or (IsPointerType(A) and IsPointerType(B)
-                  and IsSameType(A^.PointedTypeIndex, B^.PointedTypeIndex))
+                  and IsSameType(A^.PointedTypePtr, B^.PointedTypePtr))
   end
 end;
 
-function ArePointersCompatible(A, B : TPsTypeIndex) : boolean;
+function ArePointersCompatible(A, B : TPsTypePtr) : boolean;
 begin
   ArePointersCompatible := IsPointeryType(A) and IsPointeryType(B) and
                            (IsNilType(A) or IsNilType(B)
                            or IsSameType(A, B))
 end;
 
-function AddType(Typ : TPsType) : TPsTypeIndex;
+function AddType(Typ : TPsType) : TPsTypePtr;
 var 
-  TypeIndex : TPsTypeIndex;
+  TypePtr : TPsTypePtr;
   EnumPos : integer;
 begin
-  TypeIndex := _AddDef(TdcType)^.TypeIndex;
-  TypeIndex^ := Typ;
-  AddType := TypeIndex;
+  TypePtr := _AddDef(TdcType)^.TypePtr;
+  TypePtr^ := Typ;
+  AddType := TypePtr;
 
   if Typ.Name <> '' then
   begin
     if FindNameInLocalScope(Typ.Name, {Required=}false) <> nil then
       CompileError('Identifier ' + Typ.Name + ' already defined');
-    AddTypeName(Typ.Name, TypeIndex)
+    AddTypeName(Typ.Name, TypePtr)
   end;
 
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = nil) then
-    for EnumPos := 0 to Typ.EnumIndex^.Size - 1 do
-      AddEnumValueName(EnumPos, TypeIndex)
+    for EnumPos := 0 to Typ.EnumPtr^.Size - 1 do
+      AddEnumValName(EnumPos, TypePtr)
 end;
 
-function AddEnum(Enum : TPsEnumDef) : TPsEnumIndex;
+function AddEnum(Enum : TPsEnumDef) : TPsEnumPtr;
 var 
-  EnumIndex : TPsEnumIndex;
+  EnumPtr : TPsEnumPtr;
 begin
-  EnumIndex := _AddDef(TdcEnum)^.EnumIndex;
-  EnumIndex^ := Enum;
-  EnumIndex^.Id := DefCounter;
-  AddEnum := EnumIndex
+  EnumPtr := _AddDef(TdcEnum)^.EnumPtr;
+  EnumPtr^ := Enum;
+  EnumPtr^.Id := DefCounter;
+  AddEnum := EnumPtr
 end;
 
-function AddRange(Range : TPsRangeDef) : TPsRangeIndex;
+function AddRange(Range : TPsRangeDef) : TPsRangePtr;
 begin
-  Result := _AddDef(TdcRange)^.RangeIndex;
+  Result := _AddDef(TdcRange)^.RangePtr;
   Result^ := Range
 end;
 
-function AddRecord(Rec : TPsRecordDef) : TPsRecordIndex;
+function AddRecord(Rec : TPsRecordDef) : TPsRecPtr;
 var 
-  RecordIndex : TPsRecordIndex;
+  RecPtr : TPsRecPtr;
 begin
-  RecordIndex := _AddDef(TdcRecord)^.RecordIndex;
-  RecordIndex^ := Rec;
-  RecordIndex^.Id := DefCounter;
-  AddRecord := RecordIndex
+  RecPtr := _AddDef(TdcRecord)^.RecPtr;
+  RecPtr^ := Rec;
+  RecPtr^.Id := DefCounter;
+  AddRecord := RecPtr
 end;
 
-function AddArray(Arr : TPsArrayDef) : TPsArrayIndex;
+function AddArray(Arr : TPsArrayDef) : TPsArrayPtr;
 var 
-  ArrayIndex : TPsArrayIndex;
+  ArrayPtr : TPsArrayPtr;
 begin
-  ArrayIndex := _AddDef(TdcArray)^.ArrayIndex;
-  ArrayIndex^ := Arr;
-  AddArray := ArrayIndex
+  ArrayPtr := _AddDef(TdcArray)^.ArrayPtr;
+  ArrayPtr^ := Arr;
+  AddArray := ArrayPtr
 end;
 
-function AddConstant(Constant : TPsConstant) : TPsConstantIndex;
+function AddConstant(Constant : TPsConstant) : TPsConstPtr;
 var 
-  ConstantIndex : TPsConstantIndex;
+  ConstPtr : TPsConstPtr;
 begin
   if FindNameInLocalScope(Constant.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Constant.Name + ' already defined');
-  ConstantIndex := _AddDef(TdcConstant)^.ConstantIndex;
-  AddConstantName(Constant.Name, ConstantIndex);
-  ConstantIndex^ := Constant;
-  AddConstant := ConstantIndex
+  ConstPtr := _AddDef(TdcConstant)^.ConstPtr;
+  AddConstantName(Constant.Name, ConstPtr);
+  ConstPtr^ := Constant;
+  AddConstant := ConstPtr
 end;
 
-function AddVariable(VarDef : TPsVariable) : TPsVariableIndex;
+function AddVariable(VarDef : TPsVariable) : TPsVarPtr;
 var 
-  VariableIndex : TPsVariableIndex;
+  VarPtr : TPsVarPtr;
 begin
   if FindNameInLocalScope(VarDef.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + VarDef.Name + ' already defined');
-  VariableIndex := _AddDef(TdcVariable)^.VariableIndex;
-  AddVariableName(VarDef.Name, VariableIndex);
-  VariableIndex^ := VarDef;
-  AddVariable := VariableIndex;
+  VarPtr := _AddDef(TdcVariable)^.VarPtr;
+  AddVariableName(VarDef.Name, VarPtr);
+  VarPtr^ := VarDef;
+  AddVariable := VarPtr;
 end;
 
 function EmptyFunction : TPsFunction;
@@ -598,7 +596,7 @@ var
 begin
   Ret.Name := '';
   Ret.ArgCount := 0;
-  Ret.ReturnTypeIndex := nil;
+  Ret.ReturnTypePtr := nil;
   Ret.IsDeclaration := false;
   EmptyFunction := Ret
 end;
@@ -608,56 +606,56 @@ begin
   IsEmptyFunction := Fn.Name = ''
 end;
 
-function IsSameFunctionDefinition(DeclIndex : TPsFunctionIndex; Fun :
-                                  TPsFunction) : boolean;
+function IsSameFunctionDefinition(DeclPtr : TPsFnPtr;
+                                  Fun : TPsFunction) : boolean;
 var 
   Decl : TPsFunction;
   Same : boolean;
   Pos : integer;
 begin
-  Decl := DeclIndex^;
-  Same := IsSameType(Decl.ReturnTypeIndex, Fun.ReturnTypeIndex)
+  Decl := DeclPtr^;
+  Same := IsSameType(Decl.ReturnTypePtr, Fun.ReturnTypePtr)
           and (Decl.ArgCount = Fun.ArgCount);
   for Pos := 1 to Decl.ArgCount do
     Same := Same
-            and IsSameType(Decl.Args[Pos].TypeIndex, Fun.Args[Pos].TypeIndex)
+            and IsSameType(Decl.Args[Pos].TypePtr, Fun.Args[Pos].TypePtr)
             and (Decl.Args[Pos].IsReference = Fun.Args[Pos].IsReference);
   IsSameFunctionDefinition := Same
 end;
 
 function HasForwardDeclaration(Name : string) : boolean;
 var 
-  NameIndex : TPsNameIndex;
+  NamePtr : TPsNamePtr;
 begin
-  NameIndex := FindNameOfClassInLocalScope(Name, TncFunction, {Required=}false);
-  HasForwardDeclaration := (NameIndex <> nil)
-                           and (NameIndex^.FunctionIndex^.IsDeclaration)
+  NamePtr := FindNameOfClassInLocalScope(Name, TncFunction, {Required=}false);
+  HasForwardDeclaration := (NamePtr <> nil)
+                           and (NamePtr^.FnPtr^.IsDeclaration)
 end;
 
-function AddFunction(Fun : TPsFunction) : TPsFunctionIndex;
+function AddFunction(Fun : TPsFunction) : TPsFnPtr;
 var 
-  NameIndex : TPsNameIndex;
-  FnIndex : TPsFunctionIndex;
+  NamePtr : TPsNamePtr;
+  FnPtr : TPsFnPtr;
   IsProcedure : boolean;
 begin
-  IsProcedure := Fun.ReturnTypeIndex = nil;
-  NameIndex := FindNameInLocalScope(Fun.Name, {Required=}false);
-  if NameIndex = nil then
+  IsProcedure := Fun.ReturnTypePtr = nil;
+  NamePtr := FindNameInLocalScope(Fun.Name, {Required=}false);
+  if NamePtr = nil then
   begin
-    FnIndex := _AddDef(TdcFunction)^.FunctionIndex;
-    FnIndex^ := Fun;
-    AddFunctionName(Fun.Name, FnIndex)
+    FnPtr := _AddDef(TdcFunction)^.FnPtr;
+    FnPtr^ := Fun;
+    AddFunctionName(Fun.Name, FnPtr)
   end
   else
   begin
-    if (NameIndex^.Cls <> TncFunction) or Fun.IsDeclaration then
+    if (NamePtr^.Cls <> TncFunction) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
-    FnIndex := NameIndex^.FunctionIndex;
-    if FnIndex^.IsDeclaration then
+    FnPtr := NamePtr^.FnPtr;
+    if FnPtr^.IsDeclaration then
     begin
-      if ((Fun.ArgCount = 0) and (Fun.ReturnTypeIndex = nil))
-         or IsSameFunctionDefinition(FnIndex, Fun) then
-        FnIndex^.IsDeclaration := false
+      if ((Fun.ArgCount = 0) and (Fun.ReturnTypePtr = nil))
+         or IsSameFunctionDefinition(FnPtr, Fun) then
+        FnPtr^.IsDeclaration := false
       else
       begin
         if IsProcedure then
@@ -676,18 +674,18 @@ begin
         CompileError('Function ' + Fun.Name + ' already defined')
     end
   end;
-  AddFunction := FnIndex;
+  AddFunction := FnPtr;
 end;
 
-function FindField(TypeIndex : TPsTypeIndex; Name : string; Required : boolean)
+function FindField(TypePtr : TPsTypePtr; Name : string; Required : boolean)
 : integer;
 var 
   Pos : integer;
   Ret : integer;
 begin
-  if TypeIndex^.Cls <> TtcRecord then
-    CompileError('Not a record: ' + TypeIndex^.Name);
-  with TypeIndex^.RecordIndex^ do
+  if TypePtr^.Cls <> TtcRecord then
+    CompileError('Not a record: ' + TypeName(TypePtr));
+  with TypePtr^.RecPtr^ do
   begin
     Ret := 0;
     Pos := Size;
@@ -701,21 +699,21 @@ begin
   FindField := Ret
 end;
 
-function FindFieldType(TypeIndex : TPsTypeIndex; Name : string;
-                       Required : boolean) : TPsTypeIndex;
+function FindFieldType(TypePtr : TPsTypePtr; Name : string;
+                       Required : boolean) : TPsTypePtr;
 var 
   Pos : integer;
 begin
-  Pos := FindField(TypeIndex, Name, Required);
+  Pos := FindField(TypePtr, Name, Required);
   if Pos = 0 then FindFieldType := nil
-  else FindFieldType := TypeIndex^.RecordIndex^.Fields[Pos].TypeIndex
+  else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function FindWithVar(Name : string) : TPsWithVarIndex;
+function FindWithVar(Name : string) : TPsWithVarPtr;
 var 
-  Ret : TPsWithVarIndex;
+  Ret : TPsWithVarPtr;
   Def : TPsDefPtr;
-  TypeIndex : TPsTypeIndex;
+  TypePtr : TPsTypePtr;
 begin
   Ret := nil;
   Def := Defs.Latest;
@@ -723,34 +721,34 @@ begin
   begin
     if Def^.Cls = TdcWithVar then
     begin
-      TypeIndex := Def^.WithVarIndex^.VariableIndex^.TypeIndex;
-      if FindFieldType(TypeIndex, Name, false) <> nil then
-        Ret := Def^.WithVarIndex;
+      TypePtr := Def^.WithVarPtr^.VarPtr^.TypePtr;
+      if FindFieldType(TypePtr, Name, false) <> nil then
+        Ret := Def^.WithVarPtr;
     end;
     Def := Def^.Prev
   end;
   FindWithVar := Ret
 end;
 
-function AddWithVar(Base : TExpression) : TPsVariableIndex;
+function AddWithVar(Base : TExpression) : TPsVarPtr;
 var 
   TmpVarNum : string;
   TmpVar : TPsVariable;
-  TmpVarIndex : TPsVariableIndex;
-  WithVarIndex : TPsWithVarIndex;
+  TmpVarPtr : TPsVarPtr;
+  WithVarPtr : TPsWithVarPtr;
 begin
-  if not IsRecordType(Base^.TypeIndex) then
+  if not IsRecordType(Base^.TypePtr) then
     CompileError('''With'' variable is not a record');
 
   Str(DefCounter, TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;
-  TmpVar.TypeIndex := Base^.TypeIndex;
+  TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := Base^.IsConstant;
   TmpVar.IsReference := true;
-  TmpVarIndex := AddVariable(TmpVar);
-  WithVarIndex := _AddDef(TdcWithVar)^.WithVarIndex;
-  WithVarIndex^.VariableIndex := TmpVarIndex;
-  AddWithVar := TmpVarIndex
+  TmpVarPtr := AddVariable(TmpVar);
+  WithVarPtr := _AddDef(TdcWithVar)^.WithVarPtr;
+  WithVarPtr^.VarPtr := TmpVarPtr;
+  AddWithVar := TmpVarPtr
 end;
 
 function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;
@@ -773,25 +771,25 @@ begin
   MakeConstant := Constant
 end;
 
-function MakeTypedConstant(Name : string; TypeIndex : TPsTypeIndex)
+function MakeTypedConstant(Name : string; TypePtr : TPsTypePtr)
 : TPsVariable;
 var 
   VarDef : TPsVariable;
 begin
   VarDef.Name := Name;
-  VarDef.TypeIndex := TypeIndex;
+  VarDef.TypePtr := TypePtr;
   VarDef.IsReference := false;
   VarDef.IsConstant := true;
   MakeTypedConstant := VarDef
 end;
 
-function MakeVariable(Name : string; TypeIndex : TPsTypeIndex; IsRef : boolean)
+function MakeVariable(Name : string; TypePtr : TPsTypePtr; IsRef : boolean)
 : TPsVariable;
 var 
   VarDef : TPsVariable;
 begin
   VarDef.Name := Name;
-  VarDef.TypeIndex := TypeIndex;
+  VarDef.TypePtr := TypePtr;
   VarDef.IsReference := IsRef;
   VarDef.IsConstant := false;
   MakeVariable := VarDef

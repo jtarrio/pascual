@@ -1,7 +1,7 @@
 const 
-  MaxEnumValues = 128;
+  MaxEnumVals = 128;
   MaxRecordFields = 32;
-  MaxFunctionArguments = 4;
+  MaxFnArgs = 4;
 
 type 
   TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkNumber, TkString,
@@ -23,61 +23,30 @@ type
     Pos : TLxPos
   end;
 
-  TPsPseudoFun = (TpfDispose, TpfNew, TpfOrd, TpfPred, TpfRead, TpfReadln,
-                  TpfStr, TpfSucc, TpfWrite, TpfWriteln);
+  TPsPseudoFn = (TpfDispose, TpfNew, TpfOrd, TpfPred, TpfRead, TpfReadln,
+                 TpfStr, TpfSucc, TpfWrite, TpfWriteln);
 
-  TPsTypeIndex = ^TPsType;
-  TPsVariableIndex = ^TPsVariable;
-  TPsFunctionIndex = ^TPsFunction;
+  TPsTypePtr = ^TPsType;
+  TPsVarPtr = ^TPsVariable;
+  TPsFnPtr = ^TPsFunction;
 
   TExpression = ^TExpressionObj;
   TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicChar, XicString,
                        XicEnum);
   TExImmediate = record
     case Cls : TExImmediateClass of 
-      XicBoolean : (BooleanValue : boolean);
-      XicInteger : (IntegerValue : integer);
-      XicChar : (CharValue : char);
-      XicString : (StringValue : string);
+      XicBoolean : (BooleanVal : boolean);
+      XicInteger : (IntegerVal : integer);
+      XicChar : (CharVal : char);
+      XicString : (StringVal : string);
       XicEnum : (EnumOrdinal : integer)
-  end;
-  TExToString = record
-    Parent : TExpression
-  end;
-  TExSubrange = record
-    Parent : TExpression
-  end;
-  TExVariableAccess = record
-    VariableIndex : TPsVariableIndex
-  end;
-  TExFieldAccess = record
-    Parent : TExpression;
-    FieldNumber : integer
-  end;
-  TExArrayAccess = record
-    Parent : TExpression;
-    Subscript : TExpression
-  end;
-  TExPointerAccess = record
-    Parent : TExpression
-  end;
-  TExStringChar = record
-    Parent : TExpression;
-    Subscript : TExpression
-  end;
-  TExFunctionRef = record
-    FunctionIndex : TPsFunctionIndex
   end;
   TExFunctionArgs = record
     Size : integer;
-    Values : array[1..MaxFunctionArguments] of TExpression
+    Values : array[1..MaxFnArgs] of TExpression;
   end;
-  TExFunctionCall = record
-    FunctionRef : TExpression;
-    Args : TExFunctionArgs
-  end;
-  TExPseudoFunRef = record
-    PseudoFun : TPsPseudoFun
+  TExPseudoFnRef = record
+    PseudoFn : TPsPseudoFn
   end;
   TExReadArgs = record
     Arg : TExpression;
@@ -87,10 +56,10 @@ type
     Arg : TExpression;
     Next : ^TExWriteArgs
   end;
-  TExPseudoFunCall = record
+  TExPseudoFnCall = record
     Arg1 : TExpression;
     Arg2 : TExpression;
-    case PseudoFun : TPsPseudoFun of 
+    case PseudoFn : TPsPseudoFn of 
       TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
       TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);
   end;
@@ -105,71 +74,75 @@ type
   end;
 
   TExpressionClass = (XcImmediate, XcToString, XcSubrange,
-                      XcVariableAccess, XcFieldAccess,
-                      XcArrayAccess, XcPointerAccess, XcStringChar,
-                      XcFunctionRef, XcFunctionCall, XcPseudoFunRef,
-                      XcPseudoFunCall, XcUnaryOp, XcBinaryOp);
+                      XcVariable, XcField,
+                      XcArray, XcPointer, XcStringChar,
+                      XcFnRef, XcFnCall, XcPseudoFnRef,
+                      XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
-    TypeIndex : TPsTypeIndex;
+    TypePtr : TPsTypePtr;
     IsConstant : boolean;
     IsAssignable : boolean;
     IsFunctionResult : boolean;
     case Cls : TExpressionClass of 
-      XcImmediate : (ImmediateEx : TExImmediate);
-      XcToString : (ToStringEx : TExToString);
-      XcSubrange : (SubrangeEx : TExSubrange);
-      XcVariableAccess : (VariableEx : TExVariableAccess);
-      XcFieldAccess : (FieldEx : TExFieldAccess);
-      XcArrayAccess : (ArrayEx : TExArrayAccess);
-      XcPointerAccess : (PointerEx : TExPointerAccess);
-      XcStringChar : (StringCharEx : TExStringChar);
-      XcFunctionRef : (FunctionEx : TExFunctionRef);
-      XcFunctionCall : (CallEx : TExFunctionCall);
-      XcPseudoFunRef : (PseudoFunEx : TExPseudoFunRef);
-      XcPseudoFunCall : (PseudoFunCallEx : TExPseudoFunCall);
-      XcUnaryOp : (UnaryEx : TExUnaryOp);
-      XcBinaryOp : (BinaryEx : TExBinaryOp);
+      XcImmediate : (Immediate : TExImmediate);
+      XcToString : (ToStrParent : TExpression);
+      XcSubrange : (SubrangeParent : TExpression);
+      XcVariable : (VarPtr : TPsVarPtr);
+      XcField : (RecExpr : TExpression;
+                 RecFieldNum : integer);
+      XcArray : (ArrayExpr : TExpression;
+                 ArrayIndex : TExpression);
+      XcPointer : (PointerExpr : TExpression);
+      XcStringChar : (StringExpr : TExpression;
+                      StringIndex : TExpression);
+      XcFnRef : (FnPtr : TPsFnPtr);
+      XcFnCall : (FnExpr : TExpression;
+                  CallArgs : TExFunctionArgs);
+      XcPseudoFnRef : (PseudoFn : TPsPseudoFn);
+      XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
+      XcUnaryOp : (Unary : TExUnaryOp);
+      XcBinaryOp : (Binary : TExBinaryOp);
   end;
 
   TPsIdentifier = record
     Name : string;
   end;
 
-  TPsEnumIndex = ^TPsEnumDef;
-  TPsRangeIndex = ^TPsRangeDef;
-  TPsRecordIndex = ^TPsRecordDef;
-  TPsArrayIndex = ^TPsArrayDef;
-  TPsConstantIndex = ^TPsConstant;
-  TPsWithVarIndex = ^TPsWithVar;
-  TPsNameIndex = ^TPsName;
+  TPsEnumPtr = ^TPsEnumDef;
+  TPsRangePtr = ^TPsRangeDef;
+  TPsRecPtr = ^TPsRecordDef;
+  TPsArrayPtr = ^TPsArrayDef;
+  TPsConstPtr = ^TPsConstant;
+  TPsWithVarPtr = ^TPsWithVar;
+  TPsNamePtr = ^TPsName;
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcRecord, TtcArray, TtcPointer, TtcNil,
                   TtcPointerUnknown);
   TPsType = record
     Name : string;
-    AliasFor : TPsTypeIndex;
+    AliasFor : TPsTypePtr;
     case Cls : TPsTypeClass of 
-      TtcEnum : (EnumIndex : TPsEnumIndex);
-      TtcRange : (RangeIndex : TPsRangeIndex);
-      TtcRecord : (RecordIndex : TPsRecordIndex);
-      TtcArray : (ArrayIndex : TPsArrayIndex);
-      TtcPointer : (PointedTypeIndex : TPsTypeIndex);
+      TtcEnum : (EnumPtr : TPsEnumPtr);
+      TtcRange : (RangePtr : TPsRangePtr);
+      TtcRecord : (RecPtr : TPsRecPtr);
+      TtcArray : (ArrayPtr : TPsArrayPtr);
+      TtcPointer : (PointedTypePtr : TPsTypePtr);
       TtcPointerUnknown : (TargetName : ^string);
   end;
   TPsEnumDef = record
     Size : integer;
-    Values : array[0..MaxEnumValues - 1] of string;
+    Values : array[0..MaxEnumVals - 1] of string;
     Id : integer;
     HasBeenDefined : boolean
   end;
   TPsRangeDef = record
     First, Last : TExpression;
-    BaseTypeIndex : TPsTypeIndex
+    BaseTypePtr : TPsTypePtr
   end;
   TPsRecordField = record
     Name : string;
-    TypeIndex : TPsTypeIndex
+    TypePtr : TPsTypePtr
   end;
   TPsRecordDef = record
     Size : integer;
@@ -181,7 +154,7 @@ type
   end;
   TPsArrayDef = record
     LowBound, HighBound : TExpression;
-    TypeIndex : TPsTypeIndex
+    TypePtr : TPsTypePtr
   end;
   TPsConstant = record
     Name : string;
@@ -189,32 +162,32 @@ type
   end;
   TPsVariable = record
     Name : string;
-    TypeIndex : TPsTypeIndex;
+    TypePtr : TPsTypePtr;
     IsReference : boolean;
     IsConstant : boolean
   end;
   TPsFunction = record
     Name : string;
     ArgCount : integer;
-    Args : array[1..MaxFunctionArguments] of TPsVariable;
-    ReturnTypeIndex : TPsTypeIndex;
+    Args : array[1..MaxFnArgs] of TPsVariable;
+    ReturnTypePtr : TPsTypePtr;
     IsDeclaration : boolean;
   end;
   TPsWithVar = record
-    VariableIndex : TPsVariableIndex
+    VarPtr : TPsVarPtr
   end;
-  TPsNameClass = (TncType, TncVariable, TncConstant, TncEnumValue, TncFunction,
-                  TncPseudoFun);
+  TPsNameClass = (TncType, TncVariable, TncConstant, TncEnumVal, TncFunction,
+                  TncPseudoFn);
   TPsName = record
     Name : string;
     case Cls : TPsNameClass of 
-      TncType : (TypeIndex : TPsTypeIndex);
-      TncVariable : (VariableIndex : TPsVariableIndex);
-      TncConstant : (ConstantIndex : TPsConstantIndex);
-      TncEnumValue : (EnumTypeIndex : TPsTypeIndex;
-                      Ordinal : integer);
-      TncFunction : (FunctionIndex : TPsFunctionIndex);
-      TncPseudoFun : (PseudoFun : TPsPseudoFun)
+      TncType : (TypePtr : TPsTypePtr);
+      TncVariable : (VarPtr : TPsVarPtr);
+      TncConstant : (ConstPtr : TPsConstPtr);
+      TncEnumVal : (EnumTypePtr : TPsTypePtr;
+                    Ordinal : integer);
+      TncFunction : (FnPtr : TPsFnPtr);
+      TncPseudoFn : (PseudoFn : TPsPseudoFn)
   end;
 
   TPsDefPtr = ^TPsDefEntry;
@@ -225,22 +198,22 @@ type
     Prev : TPsDefPtr;
     Next : TPsDefPtr;
     case Cls : TPsDefClass of 
-      TdcName : (NameIndex : TPsNameIndex);
-      TdcType : (TypeIndex : TPsTypeIndex);
-      TdcEnum : (EnumIndex : TPsEnumIndex);
-      TdcRange : (RangeIndex : TPsRangeIndex);
-      TdcRecord : (RecordIndex : TPsRecordIndex);
-      TdcArray : (ArrayIndex : TPsArrayIndex);
-      TdcConstant : (ConstantIndex : TPsConstantIndex);
-      TdcVariable : (VariableIndex : TPsVariableIndex);
-      TdcFunction : (FunctionIndex : TPsFunctionIndex);
-      TdcWithVar : (WithVarIndex : TPsWithVarIndex);
+      TdcName : (NamePtr : TPsNamePtr);
+      TdcType : (TypePtr : TPsTypePtr);
+      TdcEnum : (EnumPtr : TPsEnumPtr);
+      TdcRange : (RangePtr : TPsRangePtr);
+      TdcRecord : (RecPtr : TPsRecPtr);
+      TdcArray : (ArrayPtr : TPsArrayPtr);
+      TdcConstant : (ConstPtr : TPsConstPtr);
+      TdcVariable : (VarPtr : TPsVarPtr);
+      TdcFunction : (FnPtr : TPsFnPtr);
+      TdcWithVar : (WithVarPtr : TPsWithVarPtr);
       TdcScopeBoundary : (TemporaryScope : boolean;
-                          CurrentFunction : TPsFunctionIndex)
+                          CurrentFn : TPsFnPtr)
   end;
 
   TPsDefs = record
     Latest : TPsDefPtr;
-    CurrentFunction : TPsFunctionIndex;
+    CurrentFn : TPsFnPtr;
     Counter : integer;
   end;
