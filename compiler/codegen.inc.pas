@@ -205,18 +205,23 @@ end;
 
 procedure _OutExFieldAccess(Expr : TExpression);
 begin
-  if Expr^.RecExpr^.Cls = XcPointer then
+  with Expr^.RecExpr^ do
   begin
-    _OutExpressionParens(Expr^.RecExpr^.PointerExpr, Expr);
-    write(Codegen.Output, '->')
+    if Cls = XcPointer then
+    begin
+      _OutExpressionParens(PointerExpr, Expr);
+      write(Codegen.Output, '->')
+    end
+    else if (Cls = XcVariable) and VarPtr^.IsReference then
+           write(Codegen.Output, VarPtr^.Name, '->')
+    else
+    begin
+      _OutExpressionParens(Expr^.RecExpr, Expr);
+      write(Codegen.Output, '.')
+    end;
+    write(Codegen.Output, Expr^.RecExpr^.TypePtr^.RecPtr^
+          .Fields[Expr^.RecFieldNum].Name)
   end
-  else
-  begin
-    _OutExpressionParens(Expr^.RecExpr, Expr);
-    write(Codegen.Output, '.')
-  end;
-  write(Codegen.Output, Expr^.RecExpr^.TypePtr^.RecPtr^
-        .Fields[Expr^.RecFieldNum].Name)
 end;
 
 procedure _OutExFunctionCall(Expr : TExpression);
