@@ -108,6 +108,7 @@ begin
   else if (Call.PseudoFn = TpfRead) or (Call.PseudoFn = TpfReadln) then
   begin
     WriteArg := Call.WriteArgs;
+    CopyWriteArg := nil;
     while WriteArg <> nil do
     begin
       NextWriteArg := WriteArg^.Next;
@@ -189,7 +190,6 @@ begin
 end;
 
 function _UnparseChar(Chr : char) : string;
-var Pos : integer;
 begin
   case Chr of 
     '''': Result := '''''''''';
@@ -227,7 +227,7 @@ function _DescribePseudoCallExpr(Expr : TExpression; Levels : integer) : string;
 begin
   with Expr^.PseudoFnCall do
     case PseudoFn of 
-      TpfDispose: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfDispose: Result := 'DISPOSE(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfRead: Result := 'READ(...)';
@@ -469,7 +469,8 @@ begin
   Result^.VarPtr := VarPtr;
   Result^.TypePtr := VarPtr^.TypePtr;
   Result^.IsConstant := VarPtr^.IsConstant;
-  Result^.IsAssignable := true
+  Result^.IsAssignable := true;
+  VarPtr^.WasUsed := true
 end;
 
 function ExFieldAccess(Parent : TExpression; FieldNum : integer)
@@ -541,7 +542,8 @@ begin
   Result := _NewExpr(XcFnRef);
   Result^.FnPtr := FnPtr;
   Result^.TypePtr := nil;
-  Result^.IsConstant := true
+  Result^.IsConstant := true;
+  FnPtr^.WasUsed := true
 end;
 
 function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
@@ -550,23 +552,24 @@ var Pos : integer;
 begin
   if FnExpr^.Cls <> XcFnRef then
     CompileError('Cannot call non-function');
+  if Args.Size <> FnExpr^.FnPtr^.ArgCount then
+    CompileError('Wrong number of arguments in function call');
+  Result := _NewExpr(XcFnCall);
+  Result^.FnExpr := FnExpr;
+  Result^.CallArgs.Size := Args.Size;
+  for Pos := 1 to Args.Size do
   begin
-    if Args.Size <> FnExpr^.FnPtr^.ArgCount then
-      CompileError('Wrong number of arguments in function call');
-    Result := _NewExpr(XcFnCall);
-    Result^.FnExpr := FnExpr;
-    Result^.CallArgs.Size := Args.Size;
-    for Pos := 1 to Args.Size do
+    Result^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
+                                    FnExpr^.FnPtr^.Args[Pos].TypePtr);
+    if FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      Result^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
-                                      FnExpr^.FnPtr^.Args[Pos].TypePtr);
-      if FnExpr^.FnPtr^.Args[Pos].IsReference
-         and (Result^.CallArgs.Values[Pos]^.IsConstant
+      if (Result^.CallArgs.Values[Pos]^.IsConstant
          or not Result^.CallArgs.Values[Pos]^.IsAssignable) then
-        CompileError('Pass-by-reference argument must be assignable')
-    end;
-    Result^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
+        CompileError('Pass-by-reference argument must be assignable');
+      ExMarkInitialized(Result^.CallArgs.Values[Pos])
+    end
   end;
+  Result^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
   Result^.IsConstant := false;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := true
@@ -1008,6 +1011,7 @@ begin
   FnExpr := ExPseudoFnCall(FnExpr);
   FnExpr^.PseudoFnCall.Arg1 := Arg;
   case FnExpr^.PseudoFnCall.PseudoFn of 
+    TpfNew: ExMarkInitialized(Arg);
     TpfOrd: FnExpr^.TypePtr := PrimitiveTypes.PtInteger;
     TpfPred: FnExpr^.TypePtr := Arg^.TypePtr;
     TpfSucc: FnExpr^.TypePtr := Arg^.TypePtr;
@@ -1029,6 +1033,7 @@ begin
   FnExpr := ExPseudoFnCall(FnExpr);
   FnExpr^.PseudoFnCall.Arg1 := Arg1;
   FnExpr^.PseudoFnCall.Arg2 := Arg2;
+  if FnExpr^.PseudoFnCall.PseudoFn = TpfStr then ExMarkInitialized(Arg2);
   Result := FnExpr
 end;
 
@@ -1047,7 +1052,6 @@ begin
 end;
 
 function ExSubrange;
-var Expr : TExpression;
 begin
   if Parent^.Cls = XcImmediate then
   begin
@@ -1103,4 +1107,18 @@ begin
   else
     CompileError('Type mismatch: expected ' + TypeName(TypePtr) +
     ', got ' + TypeName(Expr^.TypePtr))
+end;
+
+procedure ExMarkInitialized(Lhs : TExpression);
+var IsTerminal : boolean;
+begin
+  IsTerminal := false;
+  while not IsTerminal do
+    case Lhs^.Cls of 
+      XcField: Lhs := Lhs^.RecExpr;
+      XcArray: Lhs := Lhs^.ArrayExpr;
+      XcStringChar: Lhs := Lhs^.StringExpr;
+      else IsTerminal := true
+    end;
+  if Lhs^.Cls = XcVariable then Lhs^.VarPtr^.WasInitialized := true
 end;

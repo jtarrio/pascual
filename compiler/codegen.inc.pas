@@ -653,9 +653,6 @@ begin
 end;
 
 procedure OutNameAndType(Name : string; TypePtr : TPsTypePtr);
-var 
-  Arr : TPsArrayDef;
-  SizeExpr : TExpression;
 begin
   if TypePtr = nil then write(Codegen.Output, 'void ', Name)
   else if TypePtr^.Cls = TtcPointer then
@@ -978,19 +975,6 @@ begin
                     TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
 end;
 
-procedure _OutExpressionBoundsCheck(Expr : TExpression);
-begin
-  if not IsBoundedType(Expr^.TypePtr) then OutExpression(Expr)
-  else
-  begin
-    write(Codegen.Output, 'subrange(');
-    OutExpression(Expr);
-    write(Codegen.Output, ', ');
-    _OutBounds(Expr^.TypePtr);
-    write(Codegen.Output, ')')
-  end
-end;
-
 procedure _OutPred(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
@@ -1062,15 +1046,6 @@ begin
   _OutIndent;
   OutExpression(Lhs);
   write(Codegen.Output, ' = ');
-  OutExpression(Rhs);
-  write(Codegen.Output, ';');
-  _OutNewline
-end;
-
-procedure OutAssignReturnValue;
-begin
-  _OutIndent;
-  write(Codegen.Output, 'RESULT = ');
   OutExpression(Rhs);
   write(Codegen.Output, ';');
   _OutNewline

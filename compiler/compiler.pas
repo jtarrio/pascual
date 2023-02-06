@@ -94,6 +94,7 @@ begin
   ParseCmdline;
   StartGlobalScope;
   ParseProgram;
+  CloseLocalScope;
   Close(Lexer.Input.Src);
   Close(Codegen.Output)
 end.

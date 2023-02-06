@@ -123,6 +123,7 @@ type
   TPsType = record
     Name : string;
     AliasFor : TPsTypePtr;
+    WasUsed : boolean;
     case Cls : TPsTypeClass of 
       TtcEnum : (EnumPtr : TPsEnumPtr);
       TtcRange : (RangePtr : TPsRangePtr);
@@ -165,7 +166,9 @@ type
     Name : string;
     TypePtr : TPsTypePtr;
     IsReference : boolean;
-    IsConstant : boolean
+    IsConstant : boolean;
+    WasInitialized : boolean;
+    WasUsed : boolean
   end;
   TPsFunction = record
     Name : string;
@@ -173,6 +176,7 @@ type
     Args : array[1..MaxFnArgs] of TPsVariable;
     ReturnTypePtr : TPsTypePtr;
     IsDeclaration : boolean;
+    WasUsed : boolean
   end;
   TPsWithVar = record
     VarPtr : TPsVarPtr

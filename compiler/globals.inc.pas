@@ -1,6 +1,7 @@
 procedure StartGlobalScope;
 var 
   Fun : TPsFunction;
+  Def : TPsDefPtr;
 begin
   InitDefs;
 
@@ -99,4 +100,20 @@ begin
   Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
   Fun.ReturnTypePtr := PrimitiveTypes.PtChar;
   AddFunction(Fun);
+
+  { Mark everything as initialized and used }
+  Def := Defs.Latest;
+  while Def <> nil do
+  begin
+    case Def^.Cls of 
+      TdcVariable:
+                   begin
+                     Def^.VarPtr^.WasInitialized := true;
+                     Def^.VarPtr^.WasUsed := true
+                   end;
+      TdcFunction: Def^.FnPtr^.WasUsed := true;
+      TdcType: Def^.TypePtr^.WasUsed := true;
+    end;
+    Def := Def^.Prev
+  end
 end;

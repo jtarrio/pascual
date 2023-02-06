@@ -67,6 +67,35 @@ begin
   dispose(Def)
 end;
 
+procedure _CheckUnusedVariables(Def : TPsDefPtr);
+var Where : string;
+begin
+  if Defs.CurrentFn = nil then
+    Where := ' in program'
+  else if Defs.CurrentFn^.ReturnTypePtr = nil then
+         Where := ' in procedure ' + Defs.CurrentFn^.Name
+  else
+    Where := ' in function ' + Defs.CurrentFn^.Name;
+
+  case Def^.Cls of 
+    TdcVariable:
+                 if not Def^.VarPtr^.WasUsed then
+                   writeln(StdErr, 'Warning: variable ', Def^.VarPtr^.Name,
+                           ' was not used', Where)
+                 else if not Def^.VarPtr^.WasInitialized then
+                        writeln(StdErr, 'Warning: variable ', Def^.VarPtr^.Name,
+                                ' was not initialized', Where);
+    TdcFunction: if not Def^.FnPtr^.WasUsed then
+                 begin
+                   if Def^.FnPtr^.ReturnTypePtr = nil then
+                     writeln(StdErr, 'Warning: procedure ', Def^.FnPtr^.Name,
+                             ' was not used')
+                   else writeln(StdErr, 'Warning: function ', Def^.FnPtr^.Name,
+                                ' was not used')
+                 end;
+  end
+end;
+
 function _AddDef(Cls : TPsDefClass) : TPsDefPtr;
 var 
   Def : TPsDefPtr;
@@ -83,6 +112,7 @@ begin
   if Defs.Latest = nil then _DeleteDef := false
   else
   begin
+    _CheckUnusedVariables(Defs.Latest);
     DeletedDef := Defs.Latest^;
     _DisposeDef(Defs.Latest);
     Defs.Latest := DeletedDef.Prev;
@@ -480,9 +510,9 @@ end;
 function IsBoundedType(TypePtr : TPsTypePtr) : boolean;
 begin
   Result := IsBooleanType(TypePtr)
-                   or IsCharType(TypePtr)
-                   or IsEnumType(TypePtr)
-                   or IsRangeType(TypePtr)
+            or IsCharType(TypePtr)
+            or IsEnumType(TypePtr)
+            or IsRangeType(TypePtr)
 end;
 
 function IsSimpleType(TypePtr : TPsTypePtr) : boolean;
@@ -593,14 +623,12 @@ begin
 end;
 
 function EmptyFunction : TPsFunction;
-var 
-  Ret : TPsFunction;
 begin
-  Ret.Name := '';
-  Ret.ArgCount := 0;
-  Ret.ReturnTypePtr := nil;
-  Ret.IsDeclaration := false;
-  EmptyFunction := Ret
+  Result.Name := '';
+  Result.ArgCount := 0;
+  Result.ReturnTypePtr := nil;
+  Result.IsDeclaration := false;
+  Result.WasUsed := false
 end;
 
 function IsEmptyFunction(Fn : TPsFunction) : boolean;
@@ -794,5 +822,7 @@ begin
   VarDef.TypePtr := TypePtr;
   VarDef.IsReference := IsRef;
   VarDef.IsConstant := false;
+  VarDef.WasInitialized := false;
+  VarDef.WasUsed := false;
   MakeVariable := VarDef
 end;

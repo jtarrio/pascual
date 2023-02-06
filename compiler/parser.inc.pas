@@ -311,9 +311,7 @@ begin
 end;
 
 procedure PsConstant(Name : string);
-var 
-  Constant : TPsConstant;
-  Value : TExpression;
+var Constant : TPsConstant;
 begin
   WantTokenAndRead(TkEquals);
   Constant.Name := Name;
@@ -417,7 +415,6 @@ procedure PsFunctionBody(FnPtr : TPsFnPtr);
 var 
   Pos : integer;
   Checkpoint : TPsDefPtr;
-  ReturnVar : TPsVariable;
 begin
   StartLocalScope(FnPtr);
   Checkpoint := Defs.Latest;
@@ -461,6 +458,7 @@ begin
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
       Def.Args[Def.ArgCount].IsReference := IsReference;
       Def.Args[Def.ArgCount].IsConstant := false;
+      Def.Args[Def.ArgCount].WasInitialized := true;
       WantToken2(TkColon, TkComma);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
@@ -773,7 +771,6 @@ var
   WithVarPtr : TPsWithVarPtr;
   Found : TPsName;
   Expr : TExpression;
-  Done : boolean;
 begin
   Id := PsIdentifier;
   WithVarPtr := FindWithVar(Id.Name);
@@ -958,26 +955,28 @@ begin
 end;
 
 procedure PsAssign(Lhs, Rhs : TExpression);
+var ResultVarPtr : TPsVarPtr;
 begin
   if Lhs^.Cls = XcFnRef then
   begin
     if Lhs^.FnPtr <> Defs.CurrentFn then
       CompileError('Cannot assign a value to a function');
-    Rhs := ExCoerce(Rhs, Lhs^.FnPtr^.ReturnTypePtr);
-    OutAssignReturnValue(Lhs, Rhs)
-  end
-  else
-  begin
-    Rhs := ExCoerce(Rhs, Lhs^.TypePtr);
-    if not Lhs^.IsAssignable or Lhs^.IsConstant then
-    begin
-      if Lhs^.IsFunctionResult then
-        CompileError('Cannot assign to the result of a function')
-      else
-        CompileError('Cannot assign to a constant value');
-    end;
-    OutAssign(Lhs, Rhs)
+    ResultVarPtr := FindNameOfClass('RESULT',
+                    TncVariable, {Required=}true)^.VarPtr;
+    DisposeExpr(Lhs);
+    Lhs := ExVariable(ResultVarPtr);
   end;
+
+  Rhs := ExCoerce(Rhs, Lhs^.TypePtr);
+  if not Lhs^.IsAssignable or Lhs^.IsConstant then
+  begin
+    if Lhs^.IsFunctionResult then
+      CompileError('Cannot assign to the result of a function')
+    else
+      CompileError('Cannot assign to a constant value');
+  end;
+  ExMarkInitialized(Lhs);
+  OutAssign(Lhs, Rhs);
   DisposeExpr(Lhs);
   DisposeExpr(Rhs)
 end;
@@ -1132,6 +1131,11 @@ begin
     CompileError('Iterator must not be the result of a function');
   if not IsOrdinalType(Iter^.TypePtr) then
     CompileError('Type of iterator is not ordinal: ' + TypeName(Iter^.TypePtr));
+  if Iter^.Cls = XcVariable then
+  begin
+    Iter^.VarPtr^.WasInitialized := true;
+    Iter^.VarPtr^.WasUsed := true
+  end;
   WantTokenAndRead(TkAssign);
   First := ExCoerce(PsExpression, Iter^.TypePtr);
   WantToken2(TkTo, TkDownto);
@@ -1209,9 +1213,7 @@ begin
 end;
 
 procedure ReadToken;
-var 
-  TokenPos : TLxPos;
-  Stop : boolean;
+var Stop : boolean;
 begin
   repeat
     LxReadToken;

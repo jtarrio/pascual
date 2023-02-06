@@ -6,3 +6,6 @@ forward;
 
 function DescribeExpr(Expr : TExpression; Levels : integer) : string;
 forward;
+
+procedure ExMarkInitialized(Lhs : TExpression);
+forward;
