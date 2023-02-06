@@ -47,9 +47,6 @@ type
     Size : integer;
     Values : array[1..MaxFnArgs] of TExpression;
   end;
-  TExPseudoFnRef = record
-    PseudoFn : TPsPseudoFn
-  end;
   TExReadArgs = record
     Arg : TExpression;
     Next : ^TExReadArgs

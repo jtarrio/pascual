@@ -67,6 +67,9 @@ begin
   dispose(Def)
 end;
 
+function TypeName(TypePtr : TPsTypePtr) : string;
+forward;
+
 procedure _CheckUnusedVariables(Def : TPsDefPtr);
 var Where : string;
 begin
@@ -93,6 +96,9 @@ begin
                    else writeln(StdErr, 'Warning: function ', Def^.FnPtr^.Name,
                                 ' was not used')
                  end;
+    TdcType: if (Def^.TypePtr^.Name <> '') and not Def^.TypePtr^.WasUsed then
+               writeln(StdErr, 'Warning: type ', TypeName(Def^.TypePtr),
+               ' was not used')
   end
 end;
 

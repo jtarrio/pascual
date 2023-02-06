@@ -46,8 +46,9 @@ forward;
 function PsTypeIdentifier : TPsTypePtr;
 begin
   WantToken(TkIdentifier);
-  PsTypeIdentifier := FindNameOfClass(Lexer.Token.Value,
+  Result := FindNameOfClass(Lexer.Token.Value,
                       TncType, {Required=}true)^.TypePtr;
+  Result^.WasUsed := true;
   ReadToken
 end;
 
@@ -216,6 +217,7 @@ begin
   NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
   if NamePtr = nil then Typ := PointerUnknownType(Lexer.Token.Value)
   else Typ := PointerType(NamePtr^.TypePtr);
+  Typ.WasUsed := true;
   ReadToken;
   PsPointerType := AddType(Typ)
 end;
@@ -283,7 +285,8 @@ begin
                  TncType, {Required=}true)^.TypePtr;
     dispose(TypePtr^.TargetName);
     TypePtr^.Cls := TtcPointer;
-    TypePtr^.PointedTypePtr := TargetPtr
+    TypePtr^.PointedTypePtr := TargetPtr;
+    TargetPtr^.WasUsed := true
   end
 end;
 
