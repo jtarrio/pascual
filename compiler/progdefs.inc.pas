@@ -70,7 +70,7 @@ end;
 function TypeName(TypePtr : TPsTypePtr) : string;
 forward;
 
-procedure _CheckUnusedVariables(Def : TPsDefPtr);
+procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
   if Defs.CurrentFn = nil then
@@ -118,7 +118,7 @@ begin
   if Defs.Latest = nil then _DeleteDef := false
   else
   begin
-    _CheckUnusedVariables(Defs.Latest);
+    _CheckUnusedSymbols(Defs.Latest);
     DeletedDef := Defs.Latest^;
     _DisposeDef(Defs.Latest);
     Defs.Latest := DeletedDef.Prev;
@@ -359,6 +359,7 @@ begin
   Ret.Name := '';
   Ret.Cls := TtcBoolean;
   Ret.AliasFor := nil;
+  Ret.WasUsed := false;
   EmptyType := Ret
 end;
 

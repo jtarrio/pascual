@@ -60,9 +60,6 @@ begin
   PsIdentifier := Ident
 end;
 
-type 
-  ExpressionType = (Lhs, Rhs);
-
 function PsExpression : TExpression;
 forward;
 
