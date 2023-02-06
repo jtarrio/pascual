@@ -980,7 +980,7 @@ TPSNAME *ADDFUNCTIONNAME(PString NAME, TPSFUNCTION *IDX) {
 TPSNAME *ADDENUMVALNAME(int ORDINAL, TPSTYPE *TYPEIDX) {
   TPSNAME *RESULT;
   TPSNAME *DEF;
-  DEF = _ADDNAME(TYPEIDX->ENUMPTR->VALUES[ORDINAL - 0], TNCENUMVAL);
+  DEF = _ADDNAME(TYPEIDX->ENUMPTR->VALUES[subrange(ORDINAL, 0, 127)], TNCENUMVAL);
   DEF->ENUMTYPEPTR = TYPEIDX;
   DEF->ORDINAL = ORDINAL;
   RESULT = DEF;
@@ -1016,7 +1016,7 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, int USEORIGINAL) {
         while (1) {
           {
             if (POS != 0) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, TYP.ENUMPTR->VALUES[POS - 0]);
+            RET = cat_ss(RET, TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
           }
           if (POS == last) break;
           ++POS;
@@ -1036,8 +1036,8 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, int USEORIGINAL) {
         while (1) {
           {
             if (POS != 1) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, DEEPTYPENAME(TYP.RECPTR->FIELDS[POS - 1].TYPEPTR, 1));
-            RET = cat_ss(cat_sc(RET, ':'), TYP.RECPTR->FIELDS[POS - 1].NAME);
+            RET = cat_ss(RET, DEEPTYPENAME(TYP.RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR, 1));
+            RET = cat_ss(cat_sc(RET, ':'), TYP.RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME);
           }
           if (POS == last) break;
           ++POS;
@@ -1384,7 +1384,7 @@ int ISSAMEFUNCTIONDEFINITION(TPSFUNCTION *DECLPTR, TPSFUNCTION FUN) {
     if (first <= last) {
       POS = first;
       while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS[POS - 1].TYPEPTR, FUN.ARGS[POS - 1].TYPEPTR) && DECL.ARGS[POS - 1].ISREFERENCE == FUN.ARGS[POS - 1].ISREFERENCE;
+        SAME = SAME && ISSAMETYPE(DECL.ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR, FUN.ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR) && DECL.ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE == FUN.ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE;
         if (POS == last) break;
         ++POS;
       }
@@ -1444,7 +1444,7 @@ int FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
       RET = 0;
       POS = with36->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_ss(NAME, with36->FIELDS[POS - 1].NAME) == 0) RET = POS;
+        if (cmp_ss(NAME, with36->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
         POS = POS - 1;
       }
     }
@@ -1459,7 +1459,7 @@ TPSTYPE *FINDFIELDTYPE(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
   int POS;
   POS = FINDFIELD(TYPEPTR, NAME, REQUIRED);
   if (POS == 0) RESULT = (void*)0;
-  else RESULT = TYPEPTR->RECPTR->FIELDS[POS - 1].TYPEPTR;
+  else RESULT = TYPEPTR->RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR;
   return RESULT;
 }
 
@@ -1659,7 +1659,7 @@ void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[POS - 1]);
+              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -1789,7 +1789,7 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              COPY->CALLARGS.VALUES[POS - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[POS - 1]);
+              COPY->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -1885,7 +1885,7 @@ PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
         RESULT = _UNPARSESTRING(with37->STRINGVAL);
         break;
       case XICENUM:
-        RESULT = with37->ENUMPTR->VALUES[with37->ENUMORDINAL - 0];
+        RESULT = with37->ENUMPTR->VALUES[subrange(with37->ENUMORDINAL, 0, 127)];
         break;
       default:
         COMPILEERROR(str_make(47, "Internal error: cannot describe immediate value"));
@@ -2129,7 +2129,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = EXPR->VARPTR->NAME;
       break;
     case XCFIELD:
-      RESULT = cat_ss(cat_sc(DESCRIBEEXPR(EXPR->RECEXPR, LEVELS), '.'), EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[EXPR->RECFIELDNUM - 1].NAME);
+      RESULT = cat_ss(cat_sc(DESCRIBEEXPR(EXPR->RECEXPR, LEVELS), '.'), EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[(int)subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
       break;
     case XCARRAY:
       RESULT = cat_sc(cat_ss(cat_sc(DESCRIBEEXPR(EXPR->ARRAYEXPR, LEVELS), '['), DESCRIBEEXPR(EXPR->ARRAYINDEX, LEVELS - 1)), ']');
@@ -2155,7 +2155,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
             while (1) {
               {
                 if (POS != 1) RESULT = cat_ss(RESULT, str_make(2, ", "));
-                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[POS - 1], LEVELS - 1));
+                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1], LEVELS - 1));
               }
               if (POS == last) break;
               ++POS;
@@ -2299,7 +2299,7 @@ TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, int FIELDNUM) {
   RESULT = _NEWEXPR(XCFIELD);
   RESULT->RECEXPR = PARENT;
   RESULT->RECFIELDNUM = FIELDNUM;
-  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[FIELDNUM - 1].TYPEPTR;
+  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[(int)subrange(FIELDNUM, 1, 32) - 1].TYPEPTR;
   RESULT->ISCONSTANT = PARENT->ISCONSTANT;
   RESULT->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   RESULT->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
@@ -2370,10 +2370,10 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
       POS = first;
       while (1) {
         {
-          RESULT->CALLARGS.VALUES[POS - 1] = EXCOERCE(ARGS->VALUES[POS - 1], FNEXPR->FNPTR->ARGS[POS - 1].TYPEPTR);
-          if (FNEXPR->FNPTR->ARGS[POS - 1].ISREFERENCE) {
-            if (RESULT->CALLARGS.VALUES[POS - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[POS - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
-            EXMARKINITIALIZED(RESULT->CALLARGS.VALUES[POS - 1]);
+          RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1] = EXCOERCE(ARGS->VALUES[(int)subrange(POS, 1, 4) - 1], FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR);
+          if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE) {
+            if (RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+            EXMARKINITIALIZED(RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
           }
         }
         if (POS == last) break;
@@ -3045,7 +3045,7 @@ TPSTYPE *PSENUMERATEDTYPE() {
   do {
     ENUM.SIZE = ENUM.SIZE + 1;
     if (ENUM.SIZE > 128) COMPILEERROR(str_make(23, "Too many values in enum"));
-    ENUM.VALUES[ENUM.SIZE - 1 - 0] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+    ENUM.VALUES[subrange(ENUM.SIZE - 1, 0, 127)] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
     WANTTOKEN2(TKCOMMA, TKRPAREN);
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKRPAREN));
@@ -3072,7 +3072,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
         FIELD = first;
         while (1) {
           {
-            if (cmp_ss(REC->FIELDS[FIELD - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
+            if (cmp_ss(REC->FIELDS[(int)subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
           }
           if (FIELD == last) break;
           ++FIELD;
@@ -3081,7 +3081,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     } while(0);
     REC->SIZE = REC->SIZE + 1;
     if (REC->SIZE > 32) COMPILEERROR(str_make(25, "Too many fields in record"));
-    REC->FIELDS[REC->SIZE - 1].NAME = NAME;
+    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].NAME = NAME;
     WANTTOKEN2(TKCOMMA, TKCOLON);
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3093,7 +3093,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     if (first <= last) {
       FIELD = first;
       while (1) {
-        REC->FIELDS[FIELD - 1].TYPEPTR = TYPEPTR;
+        REC->FIELDS[(int)subrange(FIELD, 1, 32) - 1].TYPEPTR = TYPEPTR;
         if (FIELD == last) break;
         ++FIELD;
       }
@@ -3114,15 +3114,15 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
     READTOKEN();
     TAGTYPE = PSTYPEIDENTIFIER();
     REC->SIZE = REC->SIZE + 1;
-    REC->FIELDS[REC->SIZE - 1].NAME = TAG.NAME;
-    REC->FIELDS[REC->SIZE - 1].TYPEPTR = TAGTYPE;
+    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].NAME = TAG.NAME;
+    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].TYPEPTR = TAGTYPE;
   }
   else TAGTYPE = FINDNAMEOFCLASS(TAG.NAME, TNCTYPE, 1)->TYPEPTR;
   if (!ISORDINALTYPE(TAGTYPE)) COMPILEERROR(str_make(46, "The index of the case statement is not ordinal"));
   WANTTOKENANDREAD(TKOF);
   do {
     REC->NUMVARIANTS = REC->NUMVARIANTS + 1;
-    REC->VARIANTBOUNDS[REC->NUMVARIANTS - 1] = REC->SIZE + 1;
+    REC->VARIANTBOUNDS[(int)subrange(REC->NUMVARIANTS, 1, 32) - 1] = REC->SIZE + 1;
     do {
       CASELABEL = EXCOERCE(PSEXPRESSION(), TAGTYPE);
       if (!CASELABEL->ISCONSTANT) COMPILEERROR(str_make(47, "The label of the case statement is not constant"));
@@ -3339,7 +3339,7 @@ void PSVARDEFINITIONS() {
     do {
       NUMNAMES = NUMNAMES + 1;
       if (NUMNAMES > 8) COMPILEERROR(str_make(37, "Too many names in variable definition"));
-      NAMES[NUMNAMES - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      NAMES[(int)subrange(NUMNAMES, 1, 8) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
       WANTTOKEN2(TKCOMMA, TKCOLON);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3352,7 +3352,7 @@ void PSVARDEFINITIONS() {
       if (first <= last) {
         NUMNAMES = first;
         while (1) {
-          OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(NAMES[NUMNAMES - 1], TYPEPTR, 0)));
+          OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(NAMES[(int)subrange(NUMNAMES, 1, 8) - 1], TYPEPTR, 0)));
           if (NUMNAMES == last) break;
           ++NUMNAMES;
         }
@@ -3376,7 +3376,7 @@ void PSFUNCTIONBODY(TPSFUNCTION *FNPTR) {
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS[POS - 1]);
+        ADDVARIABLE(FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -3412,10 +3412,10 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
     do {
       DEF->ARGCOUNT = DEF->ARGCOUNT + 1;
       if (DEF->ARGCOUNT > 4) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), DEF->NAME));
-      DEF->ARGS[DEF->ARGCOUNT - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-      DEF->ARGS[DEF->ARGCOUNT - 1].ISREFERENCE = ISREFERENCE;
-      DEF->ARGS[DEF->ARGCOUNT - 1].ISCONSTANT = 0;
-      DEF->ARGS[DEF->ARGCOUNT - 1].WASINITIALIZED = 1;
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].ISREFERENCE = ISREFERENCE;
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].ISCONSTANT = 0;
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].WASINITIALIZED = 1;
       WANTTOKEN2(TKCOLON, TKCOMMA);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3427,7 +3427,7 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
       if (first <= last) {
         ARG = first;
         while (1) {
-          DEF->ARGS[ARG - 1].TYPEPTR = TYPEPTR;
+          DEF->ARGS[(int)subrange(ARG, 1, 4) - 1].TYPEPTR = TYPEPTR;
           if (ARG == last) break;
           ++ARG;
         }
@@ -3651,7 +3651,7 @@ TEXPRESSIONOBJ *PSFUNCTIONCALL(TEXPRESSIONOBJ *FN) {
       WANTTOKENANDREAD(TKLPAREN);
       while (LEXER.TOKEN.ID != TKRPAREN) {
         ARGS.SIZE = ARGS.SIZE + 1;
-        ARGS.VALUES[ARGS.SIZE - 1] = PSEXPRESSION();
+        ARGS.VALUES[(int)subrange(ARGS.SIZE, 1, 4) - 1] = PSEXPRESSION();
         WANTTOKEN2(TKCOMMA, TKRPAREN);
         SKIPTOKEN(TKCOMMA);
       }
@@ -4503,7 +4503,7 @@ void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
         _OUTSTRING(&with44->STRINGVAL);
         break;
       case XICENUM:
-        write_s(&CODEGEN.OUTPUT, with44->ENUMPTR->VALUES[with44->ENUMORDINAL - 0]);
+        write_s(&CODEGEN.OUTPUT, with44->ENUMPTR->VALUES[subrange(with44->ENUMORDINAL, 0, 127)]);
         break;
       default:
         break;
@@ -4597,7 +4597,7 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
         _OUTEXPRESSIONPARENS(EXPR->RECEXPR, EXPR);
         write_c(&CODEGEN.OUTPUT, '.');
       }
-      write_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[EXPR->RECFIELDNUM - 1].NAME);
+      write_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[(int)subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
     }
   }
 }
@@ -4614,12 +4614,12 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
       while (1) {
         {
           if (POS != 1) write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          if (EXPR->FNEXPR->FNPTR->ARGS[POS - 1].ISREFERENCE) {
-            if (!EXPR->CALLARGS.VALUES[POS - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+          if (EXPR->FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE) {
+            if (!EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
             write_c(&CODEGEN.OUTPUT, '&');
-            _OUTEXPRESSIONPARENSPREC(EXPR->CALLARGS.VALUES[POS - 1], 2);
+            _OUTEXPRESSIONPARENSPREC(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1], 2);
           }
-          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[POS - 1]);
+          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -4933,7 +4933,7 @@ void OUTENUMVALUES(TPSENUMDEF *ENUMPTR) {
         {
           if (POSINENUM != 0) write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
           write_c(&CODEGEN.OUTPUT, '"');
-          write_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[POSINENUM - 0]);
+          write_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POSINENUM, 0, 127)]);
           write_c(&CODEGEN.OUTPUT, '"');
         }
         if (POSINENUM == last) break;
@@ -5012,7 +5012,7 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
         POS = first;
         while (1) {
           {
-            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[NUMVARIANT + 1 - 1] == POS) {
+            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[(int)subrange(NUMVARIANT + 1, 1, 32) - 1] == POS) {
               NUMVARIANT = NUMVARIANT + 1;
               if (NUMVARIANT == 1) {
                 _OUTINDENT();
@@ -5029,7 +5029,7 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
               OUTBEGIN();
             }
             _OUTINDENT();
-            OUTNAMEANDTYPE(RECPTR->FIELDS[POS - 1].NAME, RECPTR->FIELDS[POS - 1].TYPEPTR);
+            OUTNAMEANDTYPE(RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME, RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR);
             write_c(&CODEGEN.OUTPUT, ';');
             _OUTNEWLINE();
           }
@@ -5067,7 +5067,7 @@ void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMPTR) {
         while (1) {
           {
             if (POS > 0) write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-            write_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[POS - 0]);
+            write_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POS, 0, 127)]);
           }
           if (POS == last) break;
           ++POS;
@@ -5202,7 +5202,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
       POS = first;
       while (1) {
         {
-          OUTVARIABLEDECLARATION(DEF.ARGS[POS - 1]);
+          OUTVARIABLEDECLARATION(DEF.ARGS[(int)subrange(POS, 1, 4) - 1]);
           if (POS != DEF.ARGCOUNT) write_s(&CODEGEN.OUTPUT, str_make(2, ", "));
         }
         if (POS == last) break;
