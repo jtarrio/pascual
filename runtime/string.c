@@ -134,7 +134,7 @@ PString to_str_i(int num) {
 
 PString to_str_r(double num) {
   PString ret;
-  ret.len = snprintf(ret.value, 255, "%f", num);
+  ret.len = snprintf(ret.value, 255, "%g", num);
   return ret;
 }
 

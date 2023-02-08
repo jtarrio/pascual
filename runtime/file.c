@@ -126,7 +126,7 @@ void write_r(PFile* file, double num) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
-  fprintf(file->file, "%f", num);
+  fprintf(file->file, "%g", num);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
