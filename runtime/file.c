@@ -122,6 +122,14 @@ void write_i(PFile* file, int num) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
+void write_r(PFile* file, double num) {
+  check_ioresult();
+  if (!is_open(file)) return;
+  clearerr(file->file);
+  fprintf(file->file, "%f", num);
+  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+}
+
 void write_c(PFile* file, char chr) {
   check_ioresult();
   if (!is_open(file)) return;

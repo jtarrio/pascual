@@ -32,12 +32,13 @@ type
   TPsFnPtr = ^TPsFunction;
 
   TExpression = ^TExpressionObj;
-  TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicChar, XicString,
-                       XicEnum);
+  TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicReal, XicChar,
+                       XicString, XicEnum);
   TExImmediate = record
     case Cls : TExImmediateClass of 
       XicBoolean : (BooleanVal : boolean);
       XicInteger : (IntegerVal : integer);
+      XicReal : (RealVal : real);
       XicChar : (CharVal : char);
       XicString : (StringVal : string);
       XicEnum : (EnumOrdinal : integer;
@@ -72,9 +73,8 @@ type
     Op : TLxTokenId
   end;
 
-  TExpressionClass = (XcImmediate, XcToString, XcSubrange,
-                      XcVariable, XcField,
-                      XcArray, XcPointer, XcStringChar,
+  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcSubrange,
+                      XcVariable, XcField, XcArray, XcPointer, XcStringChar,
                       XcFnRef, XcFnCall, XcPseudoFnRef,
                       XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
@@ -85,6 +85,7 @@ type
     case Cls : TExpressionClass of 
       XcImmediate : (Immediate : TExImmediate);
       XcToString : (ToStrParent : TExpression);
+      XcToReal : (ToRealParent : TExpression);
       XcSubrange : (SubrangeParent : TExpression);
       XcVariable : (VarPtr : TPsVarPtr);
       XcField : (RecExpr : TExpression;

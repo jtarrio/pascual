@@ -47,7 +47,7 @@ function PsTypeIdentifier : TPsTypePtr;
 begin
   WantToken(TkIdentifier);
   Result := FindNameOfClass(Lexer.Token.Value,
-                      TncType, {Required=}true)^.TypePtr;
+            TncType, {Required=}true)^.TypePtr;
   Result^.WasUsed := true;
   ReadToken
 end;

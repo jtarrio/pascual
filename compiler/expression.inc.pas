@@ -45,6 +45,7 @@ var Pos : integer;
 begin
   case Expr^.Cls of 
     XcToString : DisposeExpr(Expr^.ToStrParent);
+    XcToReal : DisposeExpr(Expr^.ToRealParent);
     XcSubrange : DisposeExpr(Expr^.SubrangeParent);
     XcField : DisposeExpr(Expr^.RecExpr);
     XcArray :
@@ -142,6 +143,7 @@ begin
   case Expr^.Cls of 
     XcImmediate: Copy^.Immediate := Expr^.Immediate;
     XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
+    XcToReal: Copy^.ToRealParent := CopyExpr(Expr^.ToRealParent);
     XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
@@ -216,6 +218,7 @@ begin
       XicNil: Result := 'nil';
       XicBoolean: Str(BooleanVal, Result);
       XicInteger: Str(IntegerVal, Result);
+      XicReal: Result := 'TODO(real)';
       XicChar: Result := _UnparseChar(CharVal);
       XicString: Result := _UnparseString(StringVal);
       XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
@@ -244,6 +247,7 @@ begin
   case Expr^.Cls of 
     XcImmediate: Result := 0;
     XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
+    XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
     XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
     XcVariable: Result := 0;
     XcField: Result := 1;
@@ -328,6 +332,7 @@ begin
     case Expr^.Cls of 
       XcImmediate: Result := _DescribeImmediatepr(Expr);
       XcToString: Result := DescribeExpr(Expr^.ToStrParent, Levels);
+      XcToReal: Result := DescribeExpr(Expr^.ToRealParent, Levels);
       XcSubrange: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcVariable: Result := Expr^.VarPtr^.Name;
       XcField: Result := DescribeExpr(Expr^.RecExpr, Levels) + '.' +
@@ -393,6 +398,13 @@ begin
   Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
+function ExRealConstant(Value : real) : TExpression;
+begin
+  Result := _ExImmediate(XicReal);
+  Result^.Immediate.RealVal := Value;
+  Result^.TypePtr := PrimitiveTypes.PtReal
+end;
+
 function ExCharConstant(Value : char) : TExpression;
 begin
   Result := _ExImmediate(XicChar);
@@ -443,6 +455,15 @@ begin
   else if IsStringType(Parent^.TypePtr) then Result := Parent
   else CompileError('Cannot convert a value of this type to string: ' +
                     TypeName(Parent^.TypePtr))
+end;
+
+function ExToReal(Parent : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcToReal);
+  Result^.ToREalParent := Parent;
+  Result^.TypePtr := PrimitiveTypes.PtReal;
+  Result^.IsAssignable := false;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
 function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
@@ -1100,6 +1121,8 @@ begin
          ExCoerce := ExRerange(Expr, TypePtr)
   else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)
+  else if IsIntegerType(Expr^.TypePtr) and IsRealType(TypePtr) then
+         ExCoerce := ExToReal(Expr)
   else if IsSameType(Expr^.TypePtr, TypePtr) then
          ExCoerce := Expr
   else if IsNilType(Expr^.TypePtr) and IsPointeryType(TypePtr) then

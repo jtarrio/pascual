@@ -827,6 +827,7 @@ begin
     TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
+  else if IsRealType(TypePtr) then ShortTypeName := 'r'
   else if IsCharType(TypePtr) then ShortTypeName := 'c'
   else if IsStringType(TypePtr) then ShortTypeName := 's'
   else CompileError('No short type name exists for ' + TypeName(TypePtr))

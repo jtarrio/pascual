@@ -385,24 +385,14 @@ begin
   TypeOfClass := Ret
 end;
 
-function IntegerType : TPsType;
-begin
-  IntegerType := TypeOfClass(TtcInteger)
-end;
-
 function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsIntegerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcInteger)
 end;
 
-function StringType : TPsType;
+function IsRealType(TypePtr : TPsTypePtr) : boolean;
 begin
-  StringType := TypeOfClass(TtcString)
-end;
-
-function CharType : TPsType;
-begin
-  CharType := TypeOfClass(TtcChar)
+  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcReal)
 end;
 
 function IsStringType(TypePtr : TPsTypePtr) : boolean;
@@ -420,19 +410,9 @@ begin
   IsStringyType := IsStringType(TypePtr) or IsCharType(TypePtr)
 end;
 
-function BooleanType : TPsType;
-begin
-  BooleanType := TypeOfClass(TtcBoolean)
-end;
-
 function IsBooleanType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsBooleanType := (TypePtr <> nil) and (TypePtr^.Cls = TtcBoolean)
-end;
-
-function TextType : TPsType;
-begin
-  TextType := TypeOfClass(TtcText)
 end;
 
 function IsTextType(TypePtr : TPsTypePtr) : boolean;
@@ -472,11 +452,6 @@ end;
 function IsPointerType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsPointerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcPointer)
-end;
-
-function NilType : TPsType;
-begin
-  NilType := TypeOfClass(TtcNil)
 end;
 
 function IsNilType(TypePtr : TPsTypePtr) : boolean;

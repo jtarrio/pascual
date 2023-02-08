@@ -132,6 +132,12 @@ PString to_str_i(int num) {
   return ret;
 }
 
+PString to_str_r(double num) {
+  PString ret;
+  ret.len = snprintf(ret.value, 255, "%f", num);
+  return ret;
+}
+
 PString to_str_c(char chr) { return str_of(chr); }
 
 PString to_str_s(PString str) { return str; }
