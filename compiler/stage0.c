@@ -4481,6 +4481,9 @@ int _PRECEDENCE(TEXPRESSIONOBJ *EXPR) {
     case XCTOSTRING:
       RESULT = 0;
       break;
+    case XCTOREAL:
+      RESULT = 2;
+      break;
     case XCSUBRANGE:
       RESULT = 0;
       break;
@@ -4926,6 +4929,12 @@ void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
         write_s(&CODEGEN.OUTPUT, str_make(7, "str_of("));
         OUTEXPRESSION(EXPR->TOSTRPARENT);
         write_c(&CODEGEN.OUTPUT, ')');
+      }
+      break;
+    case XCTOREAL:
+      {
+        write_s(&CODEGEN.OUTPUT, str_make(8, "(double)"));
+        OUTEXPRESSION(EXPR->TOREALPARENT);
       }
       break;
     case XCSUBRANGE:
