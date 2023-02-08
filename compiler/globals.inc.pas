@@ -8,6 +8,7 @@ begin
   PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil));
   PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean));
   PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger));
+  PrimitiveTypes.PtReal := AddType(MakeType('REAL', TtcReal));
   PrimitiveTypes.PtChar := AddType(MakeType('CHAR', TtcChar));
   PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString));
   PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText));

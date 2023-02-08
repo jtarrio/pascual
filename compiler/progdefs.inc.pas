@@ -1,7 +1,7 @@
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
-    PtNil, PtBoolean, PtInteger, PtChar, PtString, PtText : TPsTypePtr
+    PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText : TPsTypePtr
   end;
 
 function DefCounter : integer;

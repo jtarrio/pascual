@@ -114,7 +114,7 @@ type
   TPsWithVarPtr = ^TPsWithVar;
   TPsNamePtr = ^TPsName;
 
-  TPsTypeClass = (TtcBoolean, TtcInteger, TtcChar, TtcString, TtcText,
+  TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcRecord, TtcArray, TtcPointer, TtcNil,
                   TtcPointerUnknown);
   TPsType = record
