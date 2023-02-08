@@ -548,6 +548,7 @@ begin
   end
   else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'int')
   else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'int')
+  else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'double')
   else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'char')
   else if TypePtr^.Cls = TtcString then write(Codegen.Output, 'PString')
   else if TypePtr^.Cls = TtcText then write(Codegen.Output, 'PFile')
@@ -666,6 +667,8 @@ begin
          write(Codegen.Output, 'int ', Name)
   else if TypePtr^.Cls = TtcInteger then
          write(Codegen.Output, 'int ', Name)
+  else if TypePtr^.Cls = TtcReal then
+         write(Codegen.Output, 'double ', Name)
   else if TypePtr^.Cls = TtcChar then
          write(Codegen.Output, 'char ', Name)
   else if TypePtr^.Cls = TtcString then
