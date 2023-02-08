@@ -120,6 +120,7 @@ begin
   case Expr^.Cls of 
     XcImmediate : Result := 0;
     XcToString : Result := 0;
+    XcToReal : Result := 2;
     XcSubrange : Result := 0;
     XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
                  else Result := 0;
@@ -475,6 +476,10 @@ begin
                   OutExpression(Expr^.ToStrParent);
                   write(Codegen.Output, ')')
                 end;
+    XcToReal: begin
+    write(Codegen.Output, '(double)');
+    OutExpression(Expr^.ToRealParent)
+    end;
     XcSubrange: _OutExSubrange(Expr);
     XcVariable : _OutExVariable(Expr);
     XcField: _OutExFieldAccess(Expr);
