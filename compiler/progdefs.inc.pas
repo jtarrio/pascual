@@ -395,6 +395,11 @@ begin
   Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcReal)
 end;
 
+function IsNumericType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := IsIntegerType(TypePtr) or IsRealType(TypePtr)
+end;
+
 function IsStringType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsStringType := (TypePtr <> nil) and (TypePtr^.Cls = TtcString)

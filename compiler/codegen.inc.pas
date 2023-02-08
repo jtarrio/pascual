@@ -164,6 +164,7 @@ begin
       XicBoolean : if BooleanVal then write(Codegen.Output, '1')
                    else write(Codegen.Output, '0');
       XicInteger : write(Codegen.Output, IntegerVal);
+      XicReal : write(Codegen.Output, RealVal);
       XicChar : _OutChar(CharVal);
       XicString : _OutString(StringVal);
       XicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal])
@@ -444,7 +445,7 @@ begin
         write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
       _OutExpressionParensExtra(Right, Expr)
     end
-    else if IsIntegerType(Left^.TypePtr) then
+    else if IsNumericType(Left^.TypePtr) then
     begin
       _OutExpressionParens(Left, Expr);
       if _IsArithmeticOp(Op) then

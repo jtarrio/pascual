@@ -647,7 +647,7 @@ function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
   if (Op = TkMinus) or (Op = TkPlus) then
   begin
-    if not IsIntegerType(Parent^.TypePtr) then
+    if not IsNumericType(Parent^.TypePtr) then
       CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
       TypeName(Parent^.TypePtr))
   end
@@ -695,6 +695,9 @@ forward;
 function _ExBinOpIntImm(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
+function _ExBinOpNumImm(Left, Right : TExpression;
+                        Op : TLxTokenId) : TExpression;
+forward;
 function _ExBinOpStrImm(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
@@ -705,6 +708,9 @@ function _ExBinOpBoolCmp(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
 function _ExBinOpIntCmp(Left, Right : TExpression;
+                        Op : TLxTokenId) : TExpression;
+forward;
+function _ExBinOpNumCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
 function _ExBinOpStrCmp(Left, Right : TExpression;
@@ -734,6 +740,11 @@ begin
   begin
     if Immediate then Result := _ExBinOpIntImm(Left, Right, Op)
     else Result := _ExBinOpIntCmp(Left, Right, Op)
+  end
+  else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
+  begin
+    if Immediate then Result := _ExBinOpNumImm(Left, Right, Op)
+    else Result := _ExBinOpNumCmp(Left, Right, Op)
   end
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
   begin
@@ -816,6 +827,11 @@ begin
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
   Result := Left
+end;
+
+function _ExBinOpNumImm;
+begin
+  Result := _ExBinOpNumCmp(Left, Right, Op)
 end;
 
 function _ExBinOpStrImm;
@@ -916,6 +932,23 @@ begin
           or (Op = TkMoreOrEquals) then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid integer operator: ' + LxTokenName(Op))
+end;
+
+function _ExBinOpNumCmp;
+begin
+  Result := _NewExpr(XcBinaryOp);
+  Result^.Binary.Left := ExCoerce(Left, PrimitiveTypes.PtReal);
+  Result^.Binary.Right := ExCoerce(Right, PrimitiveTypes.PtReal);
+  Result^.Binary.Op := Op;
+  Result^.IsConstant := true;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
+  if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkSlash) then
+    Result^.TypePtr := PrimitiveTypes.PtReal
+  else if (Op = TkEquals) or (Op = TkNotEquals)
+          or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
+          or (Op = TkMoreOrEquals) then
+         Result^.TypePtr := PrimitiveTypes.PtBoolean
+  else CompileError('Invalid real operator: ' + LxTokenName(Op))
 end;
 
 function _ExBinOpStrCmp;
