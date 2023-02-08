@@ -4986,6 +4986,7 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
   }
   else if (TYPEPTR->CLS == TTCBOOLEAN) write_s(&CODEGEN.OUTPUT, str_make(3, "int"));
   else if (TYPEPTR->CLS == TTCINTEGER) write_s(&CODEGEN.OUTPUT, str_make(3, "int"));
+  else if (TYPEPTR->CLS == TTCREAL) write_s(&CODEGEN.OUTPUT, str_make(6, "double"));
   else if (TYPEPTR->CLS == TTCCHAR) write_s(&CODEGEN.OUTPUT, str_make(4, "char"));
   else if (TYPEPTR->CLS == TTCSTRING) write_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
   else if (TYPEPTR->CLS == TTCTEXT) write_s(&CODEGEN.OUTPUT, str_make(5, "PFile"));
@@ -5119,6 +5120,10 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
   }
   else if (TYPEPTR->CLS == TTCINTEGER) {
     write_s(&CODEGEN.OUTPUT, str_make(4, "int "));
+    write_s(&CODEGEN.OUTPUT, NAME);
+  }
+  else if (TYPEPTR->CLS == TTCREAL) {
+    write_s(&CODEGEN.OUTPUT, str_make(7, "double "));
     write_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCCHAR) {
