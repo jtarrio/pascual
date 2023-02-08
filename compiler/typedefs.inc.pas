@@ -4,10 +4,10 @@ const
   MaxFnArgs = 4;
 
 type 
-  TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkNumber, TkString,
-                TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals, TkLessthan,
-                TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma, TkColon,
-                TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
+  TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkInteger, TkReal,
+                TkString, TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals,
+                TkLessthan, TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma,
+                TkColon, TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
                 TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAnd,
                 TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
                 TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,

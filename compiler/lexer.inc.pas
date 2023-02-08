@@ -1,4 +1,4 @@
-type
+type 
   TLxInputFile = record
     Src : text;
     Name : string;
@@ -160,18 +160,34 @@ end;
 procedure LxGetNumber;
 var 
   Chr : char;
-  Pos : integer;
-  InToken : boolean;
+  Pos, Last : integer;
+  State : (IntPart, FracDot, FracPart, ScaleSign, ScalePart, Done);
+  IsInteger : boolean;
 begin
-  Pos := 0;
-  InToken := true;
-  while (Pos < Length(Lexer.Line)) and InToken do
-  begin
-    Chr := Lexer.Line[Pos + 1];
-    InToken := LxIsDigit(Chr);
-    if InToken then Pos := Pos + 1
-  end;
-  LxGetSymbol(TkNumber, Pos)
+  State := IntPart;
+  Last := 0;
+  Pos := 1;
+  repeat
+    Chr := Lexer.Line[Pos];
+    if (Chr = '.') and (State = IntPart) then
+      State := FracDot
+    else if (Chr = 'e') and ((State = IntPart) or (State = FracPart)) then
+           State := ScaleSign
+    else if ((Chr = '-') or (Chr = '+')) and (State = ScaleSign) then
+           State := ScalePart
+    else if LxIsDigit(Chr) then
+    begin
+      IsInteger := State = IntPart;
+      Last := Pos;
+      if State = FracDot then State := FracPart
+      else if State = ScaleSign then State := ScalePart
+    end
+    else State := Done;
+    Pos := Pos + 1;
+    if Pos > Length(Lexer.Line) then State := Done
+  until State = Done;
+  if IsInteger then LxGetSymbol(TkInteger, Last)
+  else LxGetSymbol(TkReal, Last)
 end;
 
 procedure LxGetString;

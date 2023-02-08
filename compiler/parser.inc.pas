@@ -265,7 +265,7 @@ begin
     else if (Idx^.Cls = TncConstant) or (Idx^.Cls = TncEnumVal) then
            Result := PsRangeType
   end
-  else if (Lexer.Token.Id = TkNumber) or (Lexer.Token.Id = TkString)
+  else if (Lexer.Token.Id = TkInteger) or (Lexer.Token.Id = TkString)
           or (Lexer.Token.Id = TkMinus) or (Lexer.Token.Id = TkPlus) then
          Result := PsRangeType;
   if Result = nil then
@@ -885,8 +885,8 @@ begin
     if Length(Str) = 1 then Expr := ExCharConstant(Str[1])
     else Expr := ExStringConstant(Str)
   end
-  else if Lexer.Token.Id = TkNumber then
-         Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkNumber)))
+  else if Lexer.Token.Id = TkInteger then
+         Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkInteger)))
   else if Lexer.Token.Id = TkIdentifier then
          Expr := PsVariableOrFunctionExtension(PsVariable)
   else if Lexer.Token.Id = TkLparen then
