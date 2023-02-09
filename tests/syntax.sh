@@ -62,10 +62,12 @@ testinteger '$CAFE' | will_be_valid
 testreal() {
   echo "program foo; const a : real = $1; begin end."
 }
-testreal 1.234 | will_be_valid
-testreal -1.234 | will_be_valid
-testreal 1.234e3 | will_be_valid
-testreal 1.234e-3 | will_be_valid
+testreal 1.234 | is_valid
+testreal -1.234 | is_valid
+testreal 1e3 | is_valid
+testreal 1e-3 | is_valid
+testreal 1.234e3 | is_valid
+testreal 1.234e-3 | is_valid
 
 # Character strings
 teststring() {
@@ -163,7 +165,7 @@ testtype() {
 }
 echo 'boolean' | testtype | is_valid
 echo 'integer' | testtype | is_valid
-echo 'real' | testtype | will_be_valid
+echo 'real' | testtype | is_valid
 echo 'char' | testtype | is_valid
 echo 'string' | testtype | is_valid
 echo 'totallymadeuptype' | testtype | is_not_valid
@@ -508,7 +510,7 @@ testexpr 'set of char' integer "['a'..'z']" | will_be_valid
 testexpr integer integer '(x + y + z)' | is_valid
 testexpr boolean boolean 'not x' | is_valid
 testexpr integer integer 'x * y * z' | is_valid
-testexpr real real 'x / 2' | will_be_valid
+testexpr real real 'x / 2' | is_valid
 testexpr integer integer 'x div 2' | is_valid
 testexpr integer integer 'x mod 2' | is_valid
 testexpr boolean boolean 'x and y and z' | is_valid
@@ -617,7 +619,7 @@ testwrite() {
 }
 testwrite 'a : boolean' a | is_valid
 testwrite 'a : integer' a | is_valid
-testwrite 'a : real' a | will_be_valid
+testwrite 'a : real' a | is_valid
 testwrite 'a : char' a | is_valid
 testwrite 'a : string' a | is_valid
 testwrite 'a : string; b : string' 'a, b' | is_valid
@@ -632,7 +634,7 @@ testwriteln 'a : boolean' '' | is_valid
 testwriteln 'a : boolean' 'output' | is_valid
 testwriteln 'a : boolean' a | is_valid
 testwriteln 'a : integer' a | is_valid
-testwriteln 'a : real' a | will_be_valid
+testwriteln 'a : real' a | is_valid
 testwriteln 'a : char' a | is_valid
 testwriteln 'a : string' a | is_valid
 testwriteln 'a : string; b : string' 'a, b' | is_valid

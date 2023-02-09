@@ -156,6 +156,51 @@ testvar integer '2' 'Pred(a)' integer | outputs 1
 testvar integer '1' 'Succ(a)' integer | outputs 2
 testvar integer '2' 'Succ(a)' integer | outputs 3
 
+# Real
+testimm '0.0' real | outputs 0
+testimm '1.1' real | outputs 1.1
+testimm '-1.1' real | outputs -1.1
+testimm '6.6 + 2.2' real | outputs 8.8
+testimm '6.6 - 2.2' real | outputs 4.4
+testimm '6.6 * 2.2' real | outputs 14.52
+testimm '6.6 / 2.2' real | outputs 3
+testimm '3.3 + 2' real | outputs 5.3
+testimm '3 + 2.2' real | outputs 5.2
+testimm "2.2 = 1.1" boolean | outputs FALSE
+testimm "2.2 > 1.1" boolean | outputs TRUE
+testimm "2.2 < 1.1" boolean | outputs FALSE
+testimm "2.2 >= 1.1" boolean | outputs TRUE
+testimm "2.2 <= 1.1" boolean | outputs FALSE
+testimm "2.2 <> 1.1" boolean | outputs TRUE
+testimm "2.2 = 2.2" boolean | outputs TRUE
+testimm "2.2 > 2.2" boolean | outputs FALSE
+testimm "2.2 < 2.2" boolean | outputs FALSE
+testimm "2.2 >= 2.2" boolean | outputs TRUE
+testimm "2.2 <= 2.2" boolean | outputs TRUE
+testimm "2.2 <> 2.2" boolean | outputs FALSE
+
+testvar real '0.0' 'a' real | outputs 0
+testvar real '1.1' 'a' real | outputs 1.1
+testvar real '-1.1' 'a' real | outputs -1.1
+testvar real '6.6' '2.2' 'a + b' real | outputs 8.8
+testvar real '6.6' '2.2' 'a - b' real | outputs 4.4
+testvar real '6.6' '2.2' 'a * b' real | outputs 14.52
+testvar real '6.6' '2.2' 'a / b' real | outputs 3
+testvar real '3.3' '2' 'a + b' real | outputs 5.3
+testvar real '3' '2.2' 'a + b' real | outputs 5.2
+testvar real '2.2' '1.1' 'a = b' boolean | outputs FALSE
+testvar real '2.2' '1.1' 'a > b' boolean | outputs TRUE
+testvar real '2.2' '1.1' 'a < b' boolean | outputs FALSE
+testvar real '2.2' '1.1' 'a >= b' boolean | outputs TRUE
+testvar real '2.2' '1.1' 'a <= b' boolean | outputs FALSE
+testvar real '2.2' '1.1' 'a <> b' boolean | outputs TRUE
+testvar real '2.2' '2.2' 'a = b' boolean | outputs TRUE
+testvar real '2.2' '2.2' 'a > b' boolean | outputs FALSE
+testvar real '2.2' '2.2' 'a < b' boolean | outputs FALSE
+testvar real '2.2' '2.2' 'a >= b' boolean | outputs TRUE
+testvar real '2.2' '2.2' 'a <= b' boolean | outputs TRUE
+testvar real '2.2' '2.2' 'a <> b' boolean | outputs FALSE
+
 # Char and string
 testimm "''" char | is_not_valid
 testimm "'a'" char | outputs 'a'

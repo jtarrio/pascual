@@ -218,7 +218,7 @@ begin
       XicNil: Result := 'nil';
       XicBoolean: Str(BooleanVal, Result);
       XicInteger: Str(IntegerVal, Result);
-      XicReal: Result := 'TODO(real)';
+      XicReal: Str(RealVal, Result);
       XicChar: Result := _UnparseChar(CharVal);
       XicString: Result := _UnparseString(StringVal);
       XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
@@ -458,12 +458,24 @@ begin
 end;
 
 function ExToReal(Parent : TExpression) : TExpression;
+var Value : real;
 begin
-  Result := _NewExpr(XcToReal);
-  Result^.ToREalParent := Parent;
-  Result^.TypePtr := PrimitiveTypes.PtReal;
-  Result^.IsAssignable := false;
-  Result^.IsFunctionResult := Parent^.IsFunctionResult
+  if Parent^.Cls = XcImmediate then
+  begin
+    Value := Parent^.Immediate.IntegerVal;
+    Parent^.Immediate.Cls := XicReal;
+    Parent^.Immediate.RealVal := Value;
+    Parent^.TypePtr := PrimitiveTypes.PtReal;
+    Result := Parent
+  end
+  else
+  begin
+    Result := _NewExpr(XcToReal);
+    Result^.ToREalParent := Parent;
+    Result^.TypePtr := PrimitiveTypes.PtReal;
+    Result^.IsAssignable := false;
+    Result^.IsFunctionResult := Parent^.IsFunctionResult
+  end;
 end;
 
 function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
@@ -670,6 +682,10 @@ begin
     Parent^.Immediate.IntegerVal := -Parent^.Immediate.IntegerVal
   else if (Op = TkPlus) and (Parent^.Immediate.Cls = XicInteger) then
     { do nothing }
+  else if (Op = TkMinus) and (Parent^.Immediate.Cls = XicReal) then
+         Parent^.Immediate.RealVal := -Parent^.Immediate.RealVal
+  else if (Op = TkPlus) and (Parent^.Immediate.Cls = XicReal) then
+    { do nothing }
   else if (Op = TkNot) and (Parent^.Immediate.Cls = XicBoolean) then
          Parent^.Immediate.BooleanVal := not Parent^.Immediate.BooleanVal
   else if (Op = TkNot) and (Parent^.Immediate.Cls = XicInteger) then
@@ -830,8 +846,45 @@ begin
 end;
 
 function _ExBinOpNumImm;
+var 
+  Lt, Rt : real;
+  Bo : boolean;
 begin
-  Result := _ExBinOpNumCmp(Left, Right, Op)
+  Left := ExCoerce(Left, PrimitiveTypes.PtReal);
+  Lt := Left^.Immediate.RealVal;
+  Right := ExCoerce(Right, PrimitiveTypes.PtReal);
+  Rt := Right^.Immediate.RealVal;
+  DisposeExpr(Right);
+  case Op of 
+    TkPlus : Lt := Lt + Rt;
+    TkMinus : Lt := Lt - Rt;
+    TkAsterisk : Lt := Lt * Rt;
+    TkSlash : Lt := Lt / Rt;
+    else
+    begin
+      Left^.Immediate.Cls := XicBoolean;
+      case Op of 
+        TkEquals : Bo := Lt = Rt;
+        TkNotEquals : Bo := Lt <> Rt;
+        TkLessthan : Bo := Lt < Rt;
+        TkMorethan : Bo := Lt > Rt;
+        TkLessOrEquals : Bo := Lt <= Rt;
+        TkMoreOrEquals : Bo := Lt >= Rt;
+        else CompileError('Invalid real operator: ' + LxTokenName(Op))
+      end
+    end
+  end;
+  if Left^.Immediate.Cls = XicReal then
+  begin
+    Left^.Immediate.RealVal := Lt;
+    Left^.TypePtr := PrimitiveTypes.PtReal
+  end
+  else
+  begin
+    Left^.Immediate.BooleanVal := Bo;
+    Left^.TypePtr := PrimitiveTypes.PtBoolean
+  end;
+  Result := Left
 end;
 
 function _ExBinOpStrImm;
