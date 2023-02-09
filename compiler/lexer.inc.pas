@@ -48,6 +48,12 @@ begin
   halt(1)
 end;
 
+procedure CompileWarning(Msg : string);
+begin
+  if not Options.SuppressWarnings then
+    writeln(StdErr, 'Warning: ', Msg, LxWhereStr)
+end;
+
 function LxIsAlpha(Chr : char) : boolean;
 begin
   LxIsAlpha := ((Chr >= 'a') and (Chr <= 'z'))

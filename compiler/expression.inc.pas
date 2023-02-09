@@ -502,8 +502,7 @@ begin
   Result^.VarPtr := VarPtr;
   Result^.TypePtr := VarPtr^.TypePtr;
   Result^.IsConstant := VarPtr^.IsConstant;
-  Result^.IsAssignable := true;
-  VarPtr^.WasUsed := true
+  Result^.IsAssignable := true
 end;
 
 function ExFieldAccess(Parent : TExpression; FieldNum : integer)
@@ -575,8 +574,7 @@ begin
   Result := _NewExpr(XcFnRef);
   Result^.FnPtr := FnPtr;
   Result^.TypePtr := nil;
-  Result^.IsConstant := true;
-  FnPtr^.WasUsed := true
+  Result^.IsConstant := true
 end;
 
 function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
@@ -587,6 +585,7 @@ begin
     CompileError('Cannot call non-function');
   if Args.Size <> FnExpr^.FnPtr^.ArgCount then
     CompileError('Wrong number of arguments in function call');
+  FnExpr^.FnPtr^.WasUsed := true;
   Result := _NewExpr(XcFnCall);
   Result^.FnExpr := FnExpr;
   Result^.CallArgs.Size := Args.Size;

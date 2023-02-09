@@ -74,7 +74,7 @@ procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
   if Defs.CurrentFn = nil then
-    Where := ' in program'
+    Where := ''
   else if Defs.CurrentFn^.ReturnTypePtr = nil then
          Where := ' in procedure ' + Defs.CurrentFn^.Name
   else
@@ -83,21 +83,21 @@ begin
   case Def^.Cls of 
     TdcVariable:
                  if not Def^.VarPtr^.WasUsed then
-                   writeln(StdErr, 'Warning: variable ', Def^.VarPtr^.Name,
-                           ' was not used', Where)
+                   CompileWarning('Variable ' + Def^.VarPtr^.Name +
+                                  ' was not used' + Where)
                  else if not Def^.VarPtr^.WasInitialized then
-                        writeln(StdErr, 'Warning: variable ', Def^.VarPtr^.Name,
-                                ' was not initialized', Where);
+                        CompileWarning('Variable ' + Def^.VarPtr^.Name +
+                                       ' was not initialized' + Where);
     TdcFunction: if not Def^.FnPtr^.WasUsed then
                  begin
                    if Def^.FnPtr^.ReturnTypePtr = nil then
-                     writeln(StdErr, 'Warning: procedure ', Def^.FnPtr^.Name,
-                             ' was not used')
-                   else writeln(StdErr, 'Warning: function ', Def^.FnPtr^.Name,
-                                ' was not used')
+                     CompileWarning('Procedure ' + Def^.FnPtr^.Name +
+                                    ' was not used')
+                   else CompileWarning('Function ' + Def^.FnPtr^.Name +
+                                       ' was not used')
                  end;
     TdcType: if (Def^.TypePtr^.Name <> '') and not Def^.TypePtr^.WasUsed then
-               writeln(StdErr, 'Warning: type ', TypeName(Def^.TypePtr),
+               CompileWarning('Type ' + TypeName(Def^.TypePtr) +
                ' was not used')
   end
 end;

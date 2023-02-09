@@ -926,7 +926,11 @@ begin
   else if Lexer.Token.Id = TkReal then
          Expr := ExRealConstant(ParseReal(GetTokenValueAndRead(TkReal)))
   else if Lexer.Token.Id = TkIdentifier then
-         Expr := PsVariableOrFunctionExtension(PsVariable)
+  begin
+    Expr := PsVariable;
+    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
+    Expr := PsVariableOrFunctionExtension(Expr)
+  end
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);

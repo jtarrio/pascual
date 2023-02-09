@@ -1,4 +1,8 @@
-program compiler;
+program Pascual;
+
+var Options : record
+  SuppressWarnings : boolean;
+end;
 
 {$I typedefs.inc.pas}
 {$I expression.forward.inc.pas}
@@ -12,12 +16,19 @@ program compiler;
 
 procedure Usage(Msg : string);
 begin
-  if Msg <> '' then writeln(Msg);
+  if Msg <> '' then
+  begin
+    writeln(Msg);
+    writeln
+  end;
   writeln('Usage:');
-  writeln(ParamStr(0), ' input.pas [-o output.c]');
+  writeln(ParamStr(0), ' input.pas [-o output.c] [-Wnone]');
   writeln;
   writeln('If you specify "-" as the input or output file, ',
           'stdin/stdout will be used.');
+  writeln;
+  writeln('Options:');
+  writeln('   -Wnone    :- Suppress all warning messages.');
   halt(0)
 end;
 
@@ -42,11 +53,13 @@ procedure ParseCmdline;
 var 
   Pos : integer;
   InputFile, OutputFile : string;
+  SuppressWarnings : boolean;
   Flag : (FlagNone, FlagOutput);
   Param : string;
 begin
   InputFile := '';
   OutputFile := '';
+  SuppressWarnings := false;
   Flag := FlagNone;
 
   for Pos := 1 to ParamCount do
@@ -55,6 +68,7 @@ begin
     if (Param[1] = '-') and (Param <> '-') then
     begin
       if Param = '-o' then Flag := FlagOutput
+      else if Param = '-Wnone' then SuppressWarnings := true
       else if Param = '-h' then Usage('')
       else Usage('Unknown option: ' + Param)
     end
@@ -80,7 +94,8 @@ begin
   if OutputFile = '' then Usage('Output file must be specified');
 
   if InputFile <> '-' then LxOpen(InputFile);
-  if OutputFile <> '-' then CodegenSetOutput(OutputFile)
+  if OutputFile <> '-' then CodegenSetOutput(OutputFile);
+  Options.SuppressWarnings := SuppressWarnings
 end;
 
 procedure ClearState;
