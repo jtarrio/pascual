@@ -860,7 +860,7 @@ begin
   while ReadArg <> nil do
   begin
     _OutIndent;
-    write(Codegen.Output, 'read_', ShortTypeName(ReadArg^.Arg^.TypePtr), '(&');
+    write(Codegen.Output, 'READ_', ShortTypeName(ReadArg^.Arg^.TypePtr), '(&');
     _OutExpressionParensPrec(Src, 2);
     write(Codegen.Output,', &');
     _OutExpressionParensPrec(ReadArg^.Arg, 2);
@@ -871,7 +871,7 @@ begin
   if Linefeed then
   begin
     _OutIndent;
-    write(Codegen.Output, 'readln(&');
+    write(Codegen.Output, 'READLN(&');
     _OutExpressionParensPrec(Src, 2);
     write(Codegen.Output, ');');
     _OutNewline
@@ -901,7 +901,7 @@ begin
     if IsEnumType(TypePtr) then
     begin
       _OutIndent;
-      write(Codegen.Output, 'write_e(&');
+      write(Codegen.Output, 'WRITE_e(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
@@ -911,7 +911,7 @@ begin
     else
     begin
       _OutIndent;
-      write(Codegen.Output, 'write_', ShortTypeName(TypePtr), '(&');
+      write(Codegen.Output, 'WRITE_', ShortTypeName(TypePtr), '(&');
       _OutExpressionParensPrec(Dst, 2);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
@@ -923,7 +923,7 @@ begin
   if Linefeed then
   begin
     _OutIndent;
-    write(Codegen.Output, 'writeln(&');
+    write(Codegen.Output, 'WRITELN(&');
     _OutExpressionParensPrec(Dst, 2);
     write(Codegen.Output, ');');
     _OutNewline
@@ -939,18 +939,20 @@ begin
   if IsEnumType(Src^.TypePtr) then
   begin
     _OutIndent;
-    OutExpression(Dst);
-    write(Codegen.Output, ' = to_str_e(');
+    write(Codegen.Output, 'STR_e(');
     OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ');');
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', &');
+    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ');');
     _OutNewline
   end
   else
   begin
     _OutIndent;
-    OutExpression(Dst);
-    write(Codegen.Output, ' = to_str_', ShortTypeName(Src^.TypePtr), '(');
+    write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
     OutExpression(Src);
+    write(Codegen.Output, ', &');
+    _OutExpressionParensPrec(Dst, 2);
     write(Codegen.Output, ');');
     _OutNewline
   end

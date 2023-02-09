@@ -37,13 +37,9 @@ char UPCASE(char src) {
   return src;
 }
 
-char CHR(int pos) {
-  return (char) pos;
-}
+char CHR(int pos) { return (char)pos; }
 
-int ORD(char chr) {
-  return (int) ((unsigned char) chr);
-}
+int ORD(char chr) { return (int)((unsigned char)chr); }
 
 PString str_of(char chr) {
   PString ret;
@@ -119,29 +115,64 @@ int cmp_ss(PString a, PString b) {
   return a.len - b.len;
 }
 
-PString to_str_b(int val) {
+void STR_b(int val, PString* dst) {
   if (val)
-    return str_make(4, "TRUE");
+    *dst = str_make(4, "TRUE");
   else
-    return str_make(5, "FALSE");
+    *dst = str_make(5, "FALSE");
+}
+
+void STR_i(int num, PString* dst) {
+  dst->len = snprintf(dst->value, 255, "%d", num);
+}
+
+void STR_r(double num, PString* dst) {
+  dst->len = snprintf(dst->value, 255, "%g", num);
+}
+
+void STR_c(char chr, PString* dst) {
+  dst->len = 1;
+  dst->value[0] = chr;
+}
+
+void STR_s(PString str, PString* dst) { *dst = str; }
+
+void STR_e(int value, const char** names, PString* dst) {
+  *dst = str_of_pchar(names[value]);
+}
+
+PString to_str_b(int val) {
+  PString ret;
+  STR_b(val, &ret);
+  return ret;
 }
 
 PString to_str_i(int num) {
   PString ret;
-  ret.len = snprintf(ret.value, 255, "%d", num);
+  STR_i(num, &ret);
   return ret;
 }
 
 PString to_str_r(double num) {
   PString ret;
-  ret.len = snprintf(ret.value, 255, "%g", num);
+  STR_r(num, &ret);
   return ret;
 }
 
-PString to_str_c(char chr) { return str_of(chr); }
+PString to_str_c(char chr) {
+  PString ret;
+  STR_c(chr, &ret);
+  return ret;
+}
 
-PString to_str_s(PString str) { return str; }
+PString to_str_s(PString str) {
+  PString ret;
+  STR_s(str, &ret);
+  return ret;
+}
 
 PString to_str_e(int value, const char** names) {
-  return str_of_pchar(names[value]);
+  PString ret;
+  STR_e(value, names, &ret);
+  return ret;
 }

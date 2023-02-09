@@ -68,7 +68,7 @@ void RESET(PFile* file) { open_file(file, "r"); }
 
 void REWRITE(PFile* file) { open_file(file, "w"); }
 
-void readln(PFile* file) {
+void READLN(PFile* file) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -79,7 +79,7 @@ void readln(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieReadError);
 }
 
-void read_s(PFile* file, PString* str) {
+void READ_s(PFile* file, PString* str) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -98,7 +98,7 @@ void read_s(PFile* file, PString* str) {
   if (ferror(file->file)) set_ioresult(file, ieReadError);
 }
 
-void writeln(PFile* file) {
+void WRITELN(PFile* file) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -106,7 +106,7 @@ void writeln(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_b(PFile* file, int val) {
+void WRITE_b(PFile* file, int val) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -114,7 +114,7 @@ void write_b(PFile* file, int val) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_i(PFile* file, int num) {
+void WRITE_i(PFile* file, int num) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -122,7 +122,7 @@ void write_i(PFile* file, int num) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_r(PFile* file, double num) {
+void WRITE_r(PFile* file, double num) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -130,7 +130,7 @@ void write_r(PFile* file, double num) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_c(PFile* file, char chr) {
+void WRITE_c(PFile* file, char chr) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -138,7 +138,7 @@ void write_c(PFile* file, char chr) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_s(PFile* file, PString str) {
+void WRITE_s(PFile* file, PString str) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -146,13 +146,23 @@ void write_s(PFile* file, PString str) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void write_e(PFile* file, int value, const char** names) {
+void WRITE_e(PFile* file, int value, const char** names) {
   check_ioresult();
   clearerr(file->file);
   if (!is_open(file)) return;
   fputs(names[value], file->file);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
+
+void readln(PFile* file) { READLN(file); }
+void read_s(PFile* file, PString* str) { READ_s(file, str); }
+void writeln(PFile* file) { WRITELN(file); }
+void write_b(PFile* file, int val) { WRITE_b(file, val); }
+void write_i(PFile* file, int num) { WRITE_i(file, num); }
+void write_r(PFile* file, double num) {WRITE_r(file, num); }
+void write_c(PFile* file, char chr) { WRITE_c(file, chr); }
+void write_s(PFile* file, PString str) { WRITE_s(file, str); }
+void write_e(PFile* file, int value, const char** names) { WRITE_e(file, value, names); }
 
 PFile INPUT = {};
 PFile OUTPUT = {};

@@ -26,6 +26,13 @@ int cmp_cs(char a, PString b);
 int cmp_sc(PString a, char b);
 int cmp_ss(PString a, PString b);
 
+void STR_b(int val, PString* dst);
+void STR_i(int num, PString* dst);
+void STR_r(double num, PString* dst);
+void STR_c(char chr, PString* dst);
+void STR_s(PString str, PString* dst);
+void STR_e(int value, const char** names, PString* dst);
+
 PString to_str_b(int val);
 PString to_str_i(int num);
 PString to_str_r(double num);

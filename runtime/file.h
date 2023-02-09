@@ -19,9 +19,19 @@ void RESET(PFile* file);
 void REWRITE(PFile* file);
 int EOF(PFile* file);
 
+void READLN(PFile* file);
+void READ_s(PFile* file, PString* str);
+
+void WRITELN(PFile* file);
+void WRITE_b(PFile* file, int val);
+void WRITE_i(PFile* file, int num);
+void WRITE_r(PFile* file, double num);
+void WRITE_c(PFile* file, char chr);
+void WRITE_s(PFile* file, PString str);
+void WRITE_e(PFile* file, int value, const char** names);
+
 void readln(PFile* file);
 void read_s(PFile* file, PString* str);
-
 void writeln(PFile* file);
 void write_b(PFile* file, int val);
 void write_i(PFile* file, int num);
