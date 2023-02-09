@@ -30,16 +30,6 @@ void WRITE_c(PFile* file, char chr);
 void WRITE_s(PFile* file, PString str);
 void WRITE_e(PFile* file, int value, const char** names);
 
-void readln(PFile* file);
-void read_s(PFile* file, PString* str);
-void writeln(PFile* file);
-void write_b(PFile* file, int val);
-void write_i(PFile* file, int num);
-void write_r(PFile* file, double num);
-void write_c(PFile* file, char chr);
-void write_s(PFile* file, PString str);
-void write_e(PFile* file, int value, const char** names);
-
 void InitFile();
 
 #endif  // __PASCUAL_FILE_H

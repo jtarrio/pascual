@@ -33,11 +33,4 @@ void STR_c(char chr, PString* dst);
 void STR_s(PString str, PString* dst);
 void STR_e(int value, const char** names, PString* dst);
 
-PString to_str_b(int val);
-PString to_str_i(int num);
-PString to_str_r(double num);
-PString to_str_c(char chr);
-PString to_str_s(PString str);
-PString to_str_e(int value, const char** names);
-
 #endif  // __PASCUAL_STRING_H

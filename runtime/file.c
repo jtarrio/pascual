@@ -154,16 +154,6 @@ void WRITE_e(PFile* file, int value, const char** names) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void readln(PFile* file) { READLN(file); }
-void read_s(PFile* file, PString* str) { READ_s(file, str); }
-void writeln(PFile* file) { WRITELN(file); }
-void write_b(PFile* file, int val) { WRITE_b(file, val); }
-void write_i(PFile* file, int num) { WRITE_i(file, num); }
-void write_r(PFile* file, double num) {WRITE_r(file, num); }
-void write_c(PFile* file, char chr) { WRITE_c(file, chr); }
-void write_s(PFile* file, PString str) { WRITE_s(file, str); }
-void write_e(PFile* file, int value, const char** names) { WRITE_e(file, value, names); }
-
 PFile INPUT = {};
 PFile OUTPUT = {};
 PFile STDERR = {};

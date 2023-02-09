@@ -140,39 +140,3 @@ void STR_s(PString str, PString* dst) { *dst = str; }
 void STR_e(int value, const char** names, PString* dst) {
   *dst = str_of_pchar(names[value]);
 }
-
-PString to_str_b(int val) {
-  PString ret;
-  STR_b(val, &ret);
-  return ret;
-}
-
-PString to_str_i(int num) {
-  PString ret;
-  STR_i(num, &ret);
-  return ret;
-}
-
-PString to_str_r(double num) {
-  PString ret;
-  STR_r(num, &ret);
-  return ret;
-}
-
-PString to_str_c(char chr) {
-  PString ret;
-  STR_c(chr, &ret);
-  return ret;
-}
-
-PString to_str_s(PString str) {
-  PString ret;
-  STR_s(str, &ret);
-  return ret;
-}
-
-PString to_str_e(int value, const char** names) {
-  PString ret;
-  STR_e(value, names, &ret);
-  return ret;
-}
