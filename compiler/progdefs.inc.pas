@@ -502,11 +502,6 @@ begin
             or IsRangeType(TypePtr)
 end;
 
-function IsSimpleType(TypePtr : TPsTypePtr) : boolean;
-begin
-  IsSimpleType := IsOrdinalType(TypePtr) or IsStringType(TypePtr)
-end;
-
 function IsSameType(A, B : TPsTypePtr) : boolean;
 begin
   if (A = nil) or (B = nil) then IsSameType := A = B
@@ -616,11 +611,6 @@ begin
   Result.ReturnTypePtr := nil;
   Result.IsDeclaration := false;
   Result.WasUsed := false
-end;
-
-function IsEmptyFunction(Fn : TPsFunction) : boolean;
-begin
-  IsEmptyFunction := Fn.Name = ''
 end;
 
 function IsSameFunctionDefinition(DeclPtr : TPsFnPtr;

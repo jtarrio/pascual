@@ -175,8 +175,7 @@ end;
 function _GetLowBound(TypePtr : TPsTypePtr) : TExpression;
 begin
   if IsRangeType(TypePtr) then
-    Result := ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
-              CopyExpr(TypePtr^.RangePtr^.First))
+    Result := PfOrd(CopyExpr(TypePtr^.RangePtr^.First))
   else if IsBoundedType(TypePtr) then
          Result := ExIntegerConstant(0)
   else CompileError('Internal error: unknown low bound for ' +
@@ -190,8 +189,7 @@ begin
   else if IsEnumType(TypePtr) then
          Result := ExIntegerConstant(TypePtr^.EnumPtr^.Size - 1)
   else if IsRangeType(TypePtr) then
-         Result := ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
-                   CopyExpr(TypePtr^.RangePtr^.Last))
+         Result := PfOrd(CopyExpr(TypePtr^.RangePtr^.Last))
   else CompileError('Internal error: unknown high bound for ' +
                     TypeName(TypePtr))
 end;
@@ -221,9 +219,7 @@ begin
   end
   else
   begin
-    SizeExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
-                CopyExpr(Index)),
-                LowBound, TkMinus);
+    SizeExpr := ExBinaryOp(PfOrd(CopyExpr(Index)), LowBound, TkMinus);
     OutExpression(SizeExpr);
     DisposeExpr(SizeExpr)
   end
@@ -425,7 +421,9 @@ begin
       else if IsCharType(Left^.TypePtr) and IsCharType(Right^.TypePtr) then
       begin
         _OutExpressionParens(Left, Expr);
-        write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ');
+        if _IsRelationalOp(Op) then
+          write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ')
+        else CompileError('Not a valid operator: ' + LxTokenName(Op));
         _OutExpressionParensExtra(Right, Expr)
       end
       else
@@ -434,7 +432,9 @@ begin
         OutExpression(Left);
         write(Codegen.Output, ', ');
         OutExpression(Right);
-        write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
+        if _IsRelationalOp(Op) then
+          write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
+        else CompileError('Not a valid operator: ' + LxTokenName(Op))
       end
     end
     else if IsBooleanType(Left^.TypePtr) then
@@ -442,8 +442,9 @@ begin
       _OutExpressionParens(Left, Expr);
       if _IsLogicalOrBitwiseOp(Op) then
         write(Codegen.Output, ' ', _GetLogicalOp(Op), ' ')
-      else
-        write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
+      else if _IsRelationalOp(Op) then
+             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
+      else CompileError('Not a valid operator: ' + LxTokenName(Op));
       _OutExpressionParensExtra(Right, Expr)
     end
     else if IsNumericType(Left^.TypePtr) then
@@ -453,14 +454,17 @@ begin
         write(Codegen.Output, ' ', _GetArithmeticOp(Op), ' ')
       else if _IsLogicalOrBitwiseOp(Op) then
              write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
-      else
-        write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ');
+      else if _IsRelationalOp(Op) then
+             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
+      else CompileError('Not a valid operator: ' + LxTokenName(Op));
       _OutExpressionParensExtra(Right, Expr)
     end
     else
     begin
       _OutExpressionParens(Left, Expr);
-      write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ');
+      if _IsRelationalOp(Op) then
+        write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ')
+      else CompileError('Not a valid operator: ' + LxTokenName(Op));
       _OutExpressionParensExtra(Right, Expr)
     end
   end
@@ -476,10 +480,11 @@ begin
                   OutExpression(Expr^.ToStrParent);
                   write(Codegen.Output, ')')
                 end;
-    XcToReal: begin
-    write(Codegen.Output, '(double)');
-    OutExpression(Expr^.ToRealParent)
-    end;
+    XcToReal:
+              begin
+                write(Codegen.Output, '(double)');
+                OutExpression(Expr^.ToRealParent)
+              end;
     XcSubrange: _OutExSubrange(Expr);
     XcVariable : _OutExVariable(Expr);
     XcField: _OutExFieldAccess(Expr);
@@ -999,8 +1004,7 @@ begin
   begin
     if not CodeGen.CheckBounds then
     begin
-      TmpExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
-                 CopyExpr(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkMinus);
       OutExpression(TmpExpr);
       DisposeExpr(TmpExpr)
@@ -1032,8 +1036,7 @@ begin
   begin
     if not CodeGen.CheckBounds then
     begin
-      TmpExpr := ExBinaryOp(ExPseudoFnCallUnary(ExPseudoFn(TpfOrd),
-                 CopyExpr(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkPlus);
       OutExpression(TmpExpr);
       DisposeExpr(TmpExpr)

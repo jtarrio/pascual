@@ -628,28 +628,6 @@ begin
   Result := Expr
 end;
 
-function _ExPfcUnImm(FnExpr, Arg : TExpression) : TExpression;
-forward;
-function _ExPfcUnCmp(FnExpr, Arg : TExpression) : TExpression;
-forward;
-function ExPseudoFnCallUnary(FnExpr, Arg : TExpression) : TExpression;
-begin
-  if Arg^.Cls = XcImmediate then Result := _ExPfcUnImm(FnExpr, Arg)
-  else Result := _ExPfcUnCmp(FnExpr, Arg)
-end;
-
-function _ExPfcBiImm(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
-forward;
-function _ExPfcBiCmp(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
-forward;
-function ExPseudoFnCallBinary(FnExpr, Arg1, Arg2 : TExpression) : TExpression;
-begin
-  if (Arg1^.Cls = XcImmediate) and (Arg2^.Cls = XcImmediate) then
-    Result := _ExPfcBiImm(FnExpr, Arg1, Arg2)
-  else
-    Result := _ExPfcBiCmp(FnExpr, Arg1, Arg2)
-end;
-
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
 forward;
 function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -1046,101 +1024,6 @@ begin
   if (Op = TkEquals) or (Op = TkNotEquals) then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid string operator: ' + LxTokenName(Op))
-end;
-
-function _ExPfcUnImm;
-var 
-  PF : TPsPseudoFn;
-  OutOfBounds : boolean;
-begin
-  OutOfBounds := false;
-  PF := FnExpr^.PseudoFn;
-  DisposeExpr(FnExpr);
-  if (PF = TpfNew) or (PF = TpfDispose) then
-    CompileError('Invalid pointer argument for NEW or DISPOSE')
-  else if PF = TpfOrd then
-  begin
-    with Arg^.Immediate do
-    begin
-      case Cls of 
-        XicBoolean : if BooleanVal then IntegerVal := 1
-                     else IntegerVal := 0;
-        XicInteger: {do nothing};
-        XicChar: IntegerVal := Ord(CharVal);
-        XicEnum: IntegerVal := EnumOrdinal;
-        else CompileError('Invalid type for ORD')
-      end;
-      Arg^.TypePtr := PrimitiveTypes.PtInteger;
-      Cls := XicInteger
-    end
-  end
-  else if PF = TpfPred then
-  begin
-    with Arg^.Immediate do
-    begin
-      case Cls of 
-        XicBoolean : if BooleanVal then BooleanVal := false
-                     else OutOfBounds := true;
-        XicInteger: IntegerVal := IntegerVal - 1;
-        XicChar: if Ord(CharVal) > 0 then CharVal := Pred(CharVal)
-                 else OutOfBounds := true;
-        XicEnum: if EnumOrdinal > 0 then EnumOrdinal := EnumOrdinal - 1
-                 else OutOfBounds := true;
-        else CompileError('Invalid type for PRED')
-      end
-    end
-  end
-  else if PF = TpfSucc then
-  begin
-    with Arg^.Immediate do
-    begin
-      case Cls of 
-        XicBoolean : if not BooleanVal then BooleanVal := true
-                     else OutOfBounds := true;
-        XicInteger: IntegerVal := IntegerVal + 1;
-        XicChar: if Ord(CharVal) < 255 then CharVal := Succ(CharVal)
-                 else OutOfBounds := true;
-        XicEnum: if EnumOrdinal < EnumPtr^.Size - 1 then
-                   EnumOrdinal := EnumOrdinal + 1
-                 else
-                   OutOfBounds := true;
-        else CompileError('Invalid type for SUCC')
-      end
-    end
-  end;
-  if OutOfBounds then CompileError('Out of bounds');
-  Result := Arg
-end;
-
-function _ExPfcUnCmp;
-begin
-  FnExpr := ExPseudoFnCall(FnExpr);
-  FnExpr^.PseudoFnCall.Arg1 := Arg;
-  case FnExpr^.PseudoFnCall.PseudoFn of 
-    TpfNew: ExMarkInitialized(Arg);
-    TpfOrd: FnExpr^.TypePtr := PrimitiveTypes.PtInteger;
-    TpfPred: FnExpr^.TypePtr := Arg^.TypePtr;
-    TpfSucc: FnExpr^.TypePtr := Arg^.TypePtr;
-  end;
-  Result := FnExpr
-end;
-
-function _ExPfcBiImm;
-var 
-  PF : TPsPseudoFn;
-begin
-  PF := FnExpr^.PseudoFn;
-  if PF = TpfStr then Result := _ExPfcBiCmp(FnExpr, Arg1, Arg2)
-  else CompileError('Internal error: no pseudofun for immediate values')
-end;
-
-function _ExPfcBiCmp;
-begin
-  FnExpr := ExPseudoFnCall(FnExpr);
-  FnExpr^.PseudoFnCall.Arg1 := Arg1;
-  FnExpr^.PseudoFnCall.Arg2 := Arg2;
-  if FnExpr^.PseudoFnCall.PseudoFn = TpfStr then ExMarkInitialized(Arg2);
-  Result := FnExpr
 end;
 
 function _ExBelongsToRange(Expr, First, Last : TExpression) : boolean;

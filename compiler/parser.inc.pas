@@ -276,7 +276,7 @@ procedure _ResolvePointerUnknown(TypePtr : TPsTypePtr);
 var 
   TargetPtr : TPsTypePtr;
 begin
-  if TypePtr^.Cls = TtcPointerUnknown then
+  if IsPointerUnknownType(TypePtr) then
   begin
     TargetPtr := FindNameOfClass(TypePtr^.TargetName^,
                  TncType, {Required=}true)^.TypePtr;
@@ -415,6 +415,7 @@ procedure PsFunctionBody(FnPtr : TPsFnPtr);
 var 
   Pos : integer;
   Checkpoint : TPsDefPtr;
+  ResultPtr : TPsVarPtr;
 begin
   StartLocalScope(FnPtr);
   Checkpoint := Defs.Latest;
@@ -423,8 +424,12 @@ begin
   OutFunctionDefinition(FnPtr);
   OutEnumValuesFromCheckpoint(Checkpoint);
   if FnPtr^.ReturnTypePtr <> nil then
-    OutVariableDefinition(AddVariable(MakeVariable('RESULT',
-                          FnPtr^.ReturnTypePtr, false)));
+  begin
+    ResultPtr := AddVariable(MakeVariable('RESULT',
+                 FnPtr^.ReturnTypePtr, false));
+    ResultPtr^.WasUsed := true;
+    OutVariableDefinition(ResultPtr);
+  end;
   PsDefinitions;
   WantTokenAndRead(TkBegin);
   while Lexer.Token.Id <> TkEnd do
@@ -565,144 +570,6 @@ begin
   PsPointerDeref := ExPointerAccess(Ptr)
 end;
 
-function PsRead(FnExpr : TExpression) : TExpression;
-var 
-  Expr : TExpression;
-  First : boolean;
-  OutVar : TExpression;
-  ReadArg : ^TExReadArgs;
-begin
-  Expr := ExPseudoFnCall(FnExpr);
-  Expr^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('INPUT',
-                             TncVariable, {Required=}true)^.VarPtr);
-  ReadArg := nil;
-  if Lexer.Token.Id = TkLparen then
-  begin
-    First := true;
-    WantTokenAndRead(TkLparen);
-    while Lexer.Token.Id <> TkRparen do
-    begin
-      OutVar := PsExpression;
-      if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypePtr) then
-      begin
-        DisposeExpr(Expr^.PseudoFnCall.Arg1);
-        Expr^.PseudoFnCall.Arg1 := OutVar
-      end
-      else
-      begin
-        if not OutVar^.IsAssignable
-           or not IsStringyType(OutVar^.TypePtr) then
-          CompileError('Invalid expression for read argument');
-        if ReadArg = nil then
-        begin
-          new(Expr^.PseudoFnCall.ReadArgs);
-          ReadArg := Expr^.PseudoFnCall.ReadArgs
-        end
-        else
-        begin
-          new(ReadArg^.Next);
-          ReadArg := ReadArg^.Next;
-        end;
-        ReadArg^.Next := nil;
-        ReadArg^.Arg := OutVar;
-      end;
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
-      First := false
-    end;
-    WantTokenAndRead(TkRparen)
-  end;
-  PsRead := Expr
-end;
-
-function PsWrite(FnExpr : TExpression) : TExpression;
-var 
-  Expr : TExpression;
-  First : boolean;
-  OutExpr : TExpression;
-  WriteArg : ^TExWriteArgs;
-begin
-  Expr := ExPseudoFnCall(FnExpr);
-  Expr^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
-                             TncVariable, {Required=}true)^.VarPtr);
-  WriteArg := nil;
-  if Lexer.Token.Id = TkLparen then
-  begin
-    First := true;
-    WantTokenAndRead(TkLparen);
-    while Lexer.Token.Id <> TkRparen do
-    begin
-      OutExpr := PsExpression;
-      if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypePtr) then
-      begin
-        DisposeExpr(Expr^.PseudoFnCall.Arg1);
-        Expr^.PseudoFnCall.Arg1 := OutExpr
-      end
-      else
-      begin
-        if WriteArg = nil then
-        begin
-          new(Expr^.PseudoFnCall.WriteArgs);
-          WriteArg := Expr^.PseudoFnCall.WriteArgs
-        end
-        else
-        begin
-          new(WriteArg^.Next);
-          WriteArg := WriteArg^.Next;
-        end;
-        WriteArg^.Next := nil;
-        WriteArg^.Arg := OutExpr;
-      end;
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
-      First := false
-    end;
-    WantTokenAndRead(TkRparen)
-  end;
-  PsWrite := Expr
-end;
-
-function PsStr(FnExpr : TExpression) : TExpression;
-var 
-  Expr, Src, Dest : TExpression;
-begin
-  WantTokenAndRead(TkLparen);
-  Src := PsExpression;
-  WantTokenAndRead(TkComma);
-  Dest := PsExpression;
-  if not Dest^.IsAssignable or not IsStringType(Dest^.TypePtr) then
-    CompileError('Destination argument is not a string variable');
-  WantTokenAndRead(TkRparen);
-  Expr := ExPseudoFnCallBinary(FnExpr, Src, Dest);
-  PsStr := Expr
-end;
-
-function PsOrdPrecSucc(FnExpr : TExpression) : TExpression;
-var 
-  Expr, Value : TExpression;
-begin
-  WantTokenAndRead(TkLparen);
-  Value := PsExpression;
-  WantTokenAndRead(TkRparen);
-  if not IsOrdinalType(Value^.TypePtr) then
-    CompileError('Argument does not have an ordinal type');
-  Expr := ExPseudoFnCallUnary(FnExpr, Value);
-  Result := Expr
-end;
-
-function PsNewDispose(FnExpr : TExpression) : TExpression;
-var 
-  Expr, Ptr : TExpression;
-begin
-  WantTokenAndRead(TkLparen);
-  Ptr := PsExpression;
-  WantTokenAndRead(TkRparen);
-  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypePtr) then
-    CompileError('Argument is not a pointer');
-  Expr := ExPseudoFnCallUnary(FnExpr, Ptr);
-  Result := Expr
-end;
-
 function PsFunctionCall(Fn : TExpression) : TExpression;
 var 
   Args : TExFunctionArgs;
@@ -727,18 +594,18 @@ begin
   else if Fn^.Cls = XcPseudoFnRef then
   begin
     case Fn^.PseudoFn of 
-      TpfDispose : PsFunctionCall := PsNewDispose(Fn);
-      TpfNew : PsFunctionCall := PsNewDispose(Fn);
-      TpfOrd : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TpfPred : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TpfRead : PsFunctionCall := PsRead(Fn);
-      TpfReadln : PsFunctionCall := PsRead(Fn);
-      TpfStr : PsFunctionCall := PsStr(Fn);
-      TpfSucc : PsFunctionCall := PsOrdPrecSucc(Fn);
-      TpfWrite : PsFunctionCall := PsWrite(Fn);
-      TpfWriteln : PsFunctionCall := PsWrite(Fn);
+      TpfDispose : PsFunctionCall := PfDispose_Parse(Fn);
+      TpfNew : PsFunctionCall := PfNew_Parse(Fn);
+      TpfOrd : PsFunctionCall := PfOrd_Parse(Fn);
+      TpfPred : PsFunctionCall := PfPred_Parse(Fn);
+      TpfRead : PsFunctionCall := PfRead_Parse(Fn);
+      TpfReadln : PsFunctionCall := PfRead_Parse(Fn);
+      TpfStr : PsFunctionCall := PfStr_Parse(Fn);
+      TpfSucc : PsFunctionCall := PfSucc_Parse(Fn);
+      TpfWrite : PsFunctionCall := PfWrite_Parse(Fn);
+      TpfWriteln : PsFunctionCall := PfWrite_Parse(Fn);
       else CompileError('Internal error: unimplemented special function')
-    end;
+    end
   end;
 end;
 
@@ -803,6 +670,11 @@ function PsVariableOrFunctionExtension(Expr : TExpression) : TExpression;
 var 
   Done : boolean;
 begin
+  if (Expr^.Cls = XcVariable)
+     and ((Lexer.Token.Id = TkDot)
+     or (Lexer.Token.Id = TkLbracket)
+     or (Lexer.Token.Id = TkCaret)) then
+    Expr^.VarPtr^.WasUsed := true;
   Done := false;
   repeat
     if (Expr^.Cls = XcFnRef) or (Expr^.Cls = XcPseudoFnRef) then

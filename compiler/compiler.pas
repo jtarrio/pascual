@@ -6,6 +6,7 @@ end;
 
 {$I typedefs.inc.pas}
 {$I expression.forward.inc.pas}
+{$I pseudofuns.forward.inc.pas}
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
 {$I codegen.defs.inc.pas}
@@ -13,6 +14,7 @@ end;
 {$I parser.inc.pas}
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
+{$I pseudofuns.inc.pas}
 
 procedure Usage(Msg : string);
 begin
