@@ -732,50 +732,17 @@ begin
 end;
 
 function ParseInt(Pstr : string) : integer;
-var 
-  Ret : integer;
-  Pos : integer;
+var Code : integer;
 begin
-  Ret := 0;
-  for Pos := 1 to Length(Pstr) do
-    Ret := Ret * 10 + Ord(Pstr[Pos]) - 48;
-  ParseInt := Ret
+  Val(Pstr, Result, Code);
+  if Code <> 0 then CompileError('Could not parse integer: ' + Pstr)
 end;
 
 function ParseReal(Pstr : string) : real;
-var 
-  Value, Divisor : real;
-  Scale : integer;
-  NegScale : boolean;
-  Pos : integer;
-  Chr : char;
-  State : (IntPart, FracPart, ScalePart);
+var Code : integer;
 begin
-  Value := 0;
-  Divisor := 1;
-  Scale := 0;
-  NegScale := false;
-  for Pos := 1 to Length(Pstr) do
-  begin
-    Chr := Pstr[Pos];
-    if Chr = '.' then State := FracPart
-    else if Chr = 'e' then State := ScalePart
-    else if Chr = '-' then NegScale := true
-    else if Chr = '+' then NegScale := false
-    else
-    begin
-      if State <> ScalePart then Value := Value * 10 + Ord(Chr) - 48
-      else Scale := Scale * 10 + Ord(Chr) - 48;
-      if State = FracPart then Divisor := Divisor * 10
-    end
-  end;
-  Result := Value / Divisor;
-  while Scale > 0 do
-  begin
-    if NegScale then Result := Result / 10
-    else Result := Result * 10;
-    Scale := Scale - 1
-  end
+  Val(Pstr, Result, Code);
+  if Code <> 0 then CompileError('Could not parse real number: ' + Pstr)
 end;
 
 function PsFactor : TExpression;
