@@ -3662,68 +3662,17 @@ PString PARSESTRING(PString PSTR) {
 
 int PARSEINT(PString PSTR) {
   int RESULT;
-  int RET;
-  int POS;
-  RET = 0;
-  do {
-    int first = 1;
-    int last = LENGTH(PSTR);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        RET = RET * 10 + (int)PSTR.chr[POS] - 48;
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  RESULT = RET;
+  int CODE;
+  VAL_i(&PSTR, &RESULT, &CODE);
+  if (CODE != 0) COMPILEERROR(cat_ss(str_make(25, "Could not parse integer: "), PSTR));
   return RESULT;
 }
 
 double PARSEREAL(PString PSTR) {
   double RESULT;
-  double VALUE;
-  double DIVISOR;
-  int SCALE;
-  int NEGSCALE;
-  int POS;
-  char CHR;
-  enum enum41 { INTPART, FRACPART, SCALEPART } STATE;
-  const char* enumvalues41[] = { "INTPART", "FRACPART", "SCALEPART" };
-  VALUE = 0;
-  DIVISOR = 1;
-  SCALE = 0;
-  NEGSCALE = 0;
-  do {
-    int first = 1;
-    int last = LENGTH(PSTR);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          CHR = PSTR.chr[POS];
-          if (CHR == '.') STATE = FRACPART;
-          else if (CHR == 'e') STATE = SCALEPART;
-          else if (CHR == '-') NEGSCALE = 1;
-          else if (CHR == '+') NEGSCALE = 0;
-          else {
-            if (STATE != SCALEPART) VALUE = VALUE * 10 + (double)(int)CHR - 48;
-            else SCALE = SCALE * 10 + (int)CHR - 48;
-            if (STATE == FRACPART) DIVISOR = DIVISOR * 10;
-          }
-        }
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  RESULT = VALUE / DIVISOR;
-  while (SCALE > 0) {
-    if (NEGSCALE) RESULT = RESULT / 10;
-    else RESULT = RESULT * 10;
-    SCALE = SCALE - 1;
-  }
+  int CODE;
+  VAL_r(&PSTR, &RESULT, &CODE);
+  if (CODE != 0) COMPILEERROR(cat_ss(str_make(29, "Could not parse real number: "), PSTR));
   return RESULT;
 }
 
@@ -4158,11 +4107,11 @@ void STARTGLOBALSCOPE() {
   }
 }
 
-typedef enum enum42 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum enum41 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
-const char* enumvalues42[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
+const char* enumvalues41[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record43 {
+struct record42 {
   PFile OUTPUT;
   int ISMULTISTATEMENT;
   int INDENT;
@@ -4392,29 +4341,29 @@ void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXIMMEDIATE *with44 = &EXPR->IMMEDIATE;
-    switch (with44->CLS) {
+    TEXIMMEDIATE *with43 = &EXPR->IMMEDIATE;
+    switch (with43->CLS) {
       case XICNIL:
         WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"));
         break;
       case XICBOOLEAN:
-        if (with44->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
+        if (with43->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
         else WRITE_c(&CODEGEN.OUTPUT, '0');
         break;
       case XICINTEGER:
-        WRITE_i(&CODEGEN.OUTPUT, with44->INTEGERVAL);
+        WRITE_i(&CODEGEN.OUTPUT, with43->INTEGERVAL);
         break;
       case XICREAL:
-        WRITE_r(&CODEGEN.OUTPUT, with44->REALVAL);
+        WRITE_r(&CODEGEN.OUTPUT, with43->REALVAL);
         break;
       case XICCHAR:
-        _OUTCHAR(with44->CHARVAL);
+        _OUTCHAR(with43->CHARVAL);
         break;
       case XICSTRING:
-        _OUTSTRING(&with44->STRINGVAL);
+        _OUTSTRING(&with43->STRINGVAL);
         break;
       case XICENUM:
-        WRITE_s(&CODEGEN.OUTPUT, with44->ENUMPTR->VALUES[subrange(with44->ENUMORDINAL, 0, 127)]);
+        WRITE_s(&CODEGEN.OUTPUT, with43->ENUMPTR->VALUES[subrange(with43->ENUMORDINAL, 0, 127)]);
         break;
       default:
         break;
@@ -4494,14 +4443,14 @@ void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXPRESSIONOBJ *with45 = &*EXPR->RECEXPR;
+    TEXPRESSIONOBJ *with44 = &*EXPR->RECEXPR;
     {
-      if (with45->CLS == XCPOINTER) {
-        _OUTEXPRESSIONPARENS(with45->POINTEREXPR, EXPR);
+      if (with44->CLS == XCPOINTER) {
+        _OUTEXPRESSIONPARENS(with44->POINTEREXPR, EXPR);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
-      else if (with45->CLS == XCVARIABLE && with45->VARPTR->ISREFERENCE) {
-        WRITE_s(&CODEGEN.OUTPUT, with45->VARPTR->NAME);
+      else if (with44->CLS == XCVARIABLE && with44->VARPTR->ISREFERENCE) {
+        WRITE_s(&CODEGEN.OUTPUT, with44->VARPTR->NAME);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
       else {
@@ -4688,93 +4637,93 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   char LTYPE;
   char RTYPE;
   {
-    TEXBINARYOP *with46 = &EXPR->BINARY;
+    TEXBINARYOP *with45 = &EXPR->BINARY;
     {
-      if (ISSTRINGYTYPE(with46->LEFT->TYPEPTR)) {
-        if (ISCHARTYPE(with46->LEFT->TYPEPTR)) LTYPE = 'c';
+      if (ISSTRINGYTYPE(with45->LEFT->TYPEPTR)) {
+        if (ISCHARTYPE(with45->LEFT->TYPEPTR)) LTYPE = 'c';
         else LTYPE = 's';
-        if (ISCHARTYPE(with46->RIGHT->TYPEPTR)) RTYPE = 'c';
+        if (ISCHARTYPE(with45->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
-        if (with46->OP == TKPLUS) {
+        if (with45->OP == TKPLUS) {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with46->LEFT);
+          OUTEXPRESSION(with45->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with46->RIGHT);
+          OUTEXPRESSION(with45->RIGHT);
           WRITE_c(&CODEGEN.OUTPUT, ')');
         }
-        else if (ISCHARTYPE(with46->LEFT->TYPEPTR) && ISCHARTYPE(with46->RIGHT->TYPEPTR)) {
-          _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-          if (_ISRELATIONALOP(with46->OP)) {
+        else if (ISCHARTYPE(with45->LEFT->TYPEPTR) && ISCHARTYPE(with45->RIGHT->TYPEPTR)) {
+          _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
+          if (_ISRELATIONALOP(with45->OP)) {
             WRITE_c(&CODEGEN.OUTPUT, ' ');
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
             WRITE_c(&CODEGEN.OUTPUT, ' ');
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-          _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
+          _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
         }
         else {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with46->LEFT);
+          OUTEXPRESSION(with45->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with46->RIGHT);
-          if (_ISRELATIONALOP(with46->OP)) {
+          OUTEXPRESSION(with45->RIGHT);
+          if (_ISRELATIONALOP(with45->OP)) {
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"));
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
         }
       }
-      else if (ISBOOLEANTYPE(with46->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISLOGICALORBITWISEOP(with46->OP)) {
+      else if (ISBOOLEANTYPE(with45->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
+        if (_ISLOGICALORBITWISEOP(with45->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with46->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with46->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with45->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with45->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
       }
-      else if (ISNUMERICTYPE(with46->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISARITHMETICOP(with46->OP)) {
+      else if (ISNUMERICTYPE(with45->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
+        if (_ISARITHMETICOP(with45->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with46->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISLOGICALORBITWISEOP(with46->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with45->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else if (_ISRELATIONALOP(with46->OP)) {
+        else if (_ISLOGICALORBITWISEOP(with45->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with45->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with45->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
       }
       else {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISRELATIONALOP(with46->OP)) {
+        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
+        if (_ISRELATIONALOP(with45->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
       }
     }
   }
@@ -5972,9 +5921,9 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   int SUPPRESSWARNINGS;
-  enum enum47 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum enum46 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
-  const char* enumvalues47[] = { "FLAGNONE", "FLAGOUTPUT" };
+  const char* enumvalues46[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
