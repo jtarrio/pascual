@@ -80,9 +80,9 @@ teststring '"A"' | is_not_valid
 teststring "'abcdef'" | is_valid
 teststring '"abcdef"' | is_not_valid
 teststring "'abc''def'" | is_valid
-teststring "#65" | will_be_valid
-teststring "#65#66#67" | will_be_valid
-teststring "'abc'#68'def'" | will_be_valid
+teststring "#65" | is_valid
+teststring "#65#66#67" | is_valid
+teststring "'abc'#68'def'" | is_valid
 teststring "^G" | will_be_valid
 teststring "^g" | will_be_valid
 teststring "^[" | will_be_valid
@@ -97,7 +97,7 @@ testchar "'a'" | is_valid
 testchar '"a"' | is_not_valid
 testchar "'ab'" | is_not_valid
 testchar '"ab"' | is_not_valid
-testchar "#65" | will_be_valid
+testchar "#65" | is_valid
 testchar "^G" | will_be_valid
 testchar "^g" | will_be_valid
 testchar "^[" | will_be_valid

@@ -694,24 +694,50 @@ end;
 
 function ParseString(Pstr : string) : string;
 var 
-  InStr : boolean;
+  State : (None, QuotedStr, NumChar);
   Pos : integer;
-  Chr : char;
+  Ch : char;
+  ChNum : integer;
   Str : string;
 begin
   Str := '';
-  InStr := false;
+  State := None;
   for Pos := 1 to Length(Pstr) do
   begin
-    Chr := Pstr[Pos];
-    if Chr = '''' then
+    Ch := Pstr[Pos];
+    if State = None then
     begin
-      InStr := not InStr;
-      if InStr and (Pos > 1) and (Pstr[Pos - 1] = '''') then
-        Str := Str + ''''
+      if Ch = '''' then State := QuotedStr
+      else if Ch = '#' then
+      begin
+        ChNum := 0;
+        State := NumChar
+      end
+      else CompileError('Invalid character in string: ' + Pstr)
     end
-    else if InStr then Str := Str + Chr
+    else if State = NumChar then
+    begin
+      if (Ch >= '0') and (Ch <= '9') then
+      begin
+        ChNum := ChNum * 10 + ord(Ch) - 48;
+        if ChNum > 255 then
+          CompileError('Invalid ASCII code in string: ' + Pstr)
+      end
+      else
+      begin
+        Str := Str + Chr(ChNum);
+        if Ch = '''' then State := QuotedStr
+        else if Ch = '#' then ChNum := 0
+        else CompileError('Invalid character in string: ' + Pstr)
+      end
+    end
+    else
+    begin
+      if Ch = '''' then State := None
+      else Str := Str + Ch
+    end
   end;
+  if State = NumChar then Str := Str + Chr(ChNum);
   ParseString := Str
 end;
 
@@ -793,7 +819,8 @@ var
   Expr : TExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
-  if Negative then ReadToken else SkipToken(TkPlus);
+  if Negative then ReadToken
+  else SkipToken(TkPlus);
   Expr := PsTerm;
   if Negative then Expr := ExUnaryOp(Expr, TkMinus);
   while IsOpAdding(Lexer.Token) do

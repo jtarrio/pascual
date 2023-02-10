@@ -56,12 +56,28 @@ begin
   write(Codegen.Output, '}')
 end;
 
+procedure _OutEscapedChar(Ch : char);
+var Code, N1, N2 : integer;
+begin
+  Code := Ord(Ch);
+  N1 := Code div 16;
+  N2 := Code mod 16;
+  write(Codegen.Output, '\x');
+  if N1 < 10 then write(Codegen.Output, Chr(N1 + 48))
+  else write(Codegen.Output, Chr(N1 + 87));
+  if N2 < 10 then write(Codegen.Output, Chr(N2 + 48))
+  else write(Codegen.Output, Chr(N2 + 87))
+end;
+
+
 procedure _OutChar(Chr : char);
 begin
-  if Chr = '''' then write(Codegen.Output, '''\''''')
-  else if Chr = '\' then write(Codegen.Output, '''\\''')
-  else if Chr >= ' ' then write(Codegen.Output, '''', Chr, '''')
-  else CompileError('Internal error: escaped chars are not supported yet')
+  write(Codegen.Output, '''');
+  if Chr = '''' then write(Codegen.Output, '\''')
+  else if Chr = '\' then write(Codegen.Output, '\\')
+  else if Chr >= ' ' then write(Codegen.Output, Chr)
+  else _OutEscapedChar(Chr);
+  write(Codegen.Output, '''')
 end;
 
 procedure _OutString(var Str : string);
@@ -84,7 +100,7 @@ begin
       if Chr = '"' then write(Codegen.Output, '\"')
       else if Chr = '\' then write(Codegen.Output, '\\')
       else if Chr >= ' ' then write(Codegen.Output, Chr)
-      else CompileError('Internal error: escaped chars are not supported yet')
+      else _OutEscapedChar(Chr)
     end;
     write(Codegen.Output, '")')
   end

@@ -181,23 +181,34 @@ procedure LxGetString;
 var 
   Chr : char;
   Pos : integer;
-  Instring : boolean;
+  Last : integer;
+  State : (None, QuotedStr, NumChar, Done);
 begin
-  Pos := 1;
-  Instring := True;
-  while Instring do
-  begin
+  Pos := 0;
+  State := None;
+  repeat
     Pos := Pos + 1;
     Chr := Lexer.Line[Pos];
-    if Chr = '''' then
+    if State = None then
     begin
-      if (Length(Lexer.Line) > Pos + 1) and (Lexer.Line[Pos + 1] = '''') then
-        Pos := Pos + 1
-      else
-        Instring := False;
+      if Chr = '''' then State := QuotedStr
+      else if Chr = '#' then State := NumChar
+      else State := Done;
     end
-  end;
-  LxGetSymbol(TkString, Pos)
+    else if State = NumChar then
+    begin
+      if (Chr >= '0') and (Chr <= '9') then Last := Pos
+      else if Chr = '''' then State := QuotedStr
+      else if Chr = '#' then State := NumChar
+      else State := Done
+    end
+    else if State = QuotedStr then
+    begin
+      Last := Pos;
+      if Chr = '''' then State := None
+    end
+  until State = Done;
+  LxGetSymbol(TkString, Last)
 end;
 
 procedure LxGetComment;
@@ -259,6 +270,7 @@ begin
     else if LxIsDigit(Chr) then LxGetNumber
     else case Chr of 
            '''' : LxGetString;
+           '#' : LxGetString;
            '$' : LxGetNumber;
            '+' : LxGetSymbol(TkPlus, 1);
            '-' : LxGetSymbol(TkMinus, 1);
