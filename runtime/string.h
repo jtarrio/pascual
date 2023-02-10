@@ -29,8 +29,12 @@ int cmp_ss(PString a, PString b);
 void STR_b(int val, PString* dst);
 void STR_i(int num, PString* dst);
 void STR_r(double num, PString* dst);
-void STR_c(char chr, PString* dst);
-void STR_s(PString str, PString* dst);
 void STR_e(int value, const char** names, PString* dst);
+
+void VAL_b(PString* str, int* dst, int* code);
+void VAL_i(PString* str, int* dst, int* code);
+void VAL_r(PString* str, double* dst, int* code);
+void VAL_e(PString* str, void* dst, int num_names, const char** names,
+           int* code);
 
 #endif  // __PASCUAL_STRING_H

@@ -29,6 +29,7 @@ begin
   AddPseudoFn('READLN', TpfReadln);
   AddPseudoFn('STR', TpfStr);
   AddPseudoFn('SUCC', TpfSucc);
+  AddPseudoFn('VAL', TpfVal);
   AddPseudoFn('WRITE', TpfWrite);
   AddPseudoFn('WRITELN', TpfWriteln);
 

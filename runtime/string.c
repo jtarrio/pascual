@@ -140,3 +140,104 @@ void STR_s(PString str, PString* dst) { *dst = str; }
 void STR_e(int value, const char** names, PString* dst) {
   *dst = str_of_pchar(names[value]);
 }
+
+void VAL_b(PString* str, int* dst, int* code) {
+  *code = 0;
+  if (str->len == 4 && ((str->value[0] | 0x20) == 't') &&
+      ((str->value[1] | 0x20) == 'r') && ((str->value[2] | 0x20) == 'u') &&
+      ((str->value[3] | 0x20) == 'e'))
+    *dst = 1;
+  else if (str->len == 5 && ((str->value[0] | 0x20) == 'f') &&
+           ((str->value[1] | 0x20) == 'a') && ((str->value[2] | 0x20) == 'l') &&
+           ((str->value[3] | 0x20) == 's') && ((str->value[4] | 0x20) == 'e'))
+    *dst = 1;
+  else
+    *code = 1;
+}
+
+void VAL_i(PString* str, int* dst, int* code) {
+  int neg = 0;
+  *code = 0;
+  *dst = 0;
+  for (int pos = 0; pos < str->len && *code == 0; ++pos) {
+    char chr = str->value[pos];
+    if (chr == '-' && pos == 0)
+      neg = 1;
+    else if (chr == '+' && pos == 0)
+      neg = 0;
+    else if (chr >= '0' && chr <= '9')
+      *dst = *dst * 10 + str->value[pos] - '0';
+    else {
+      *code = pos + 1;
+      return;
+    }
+  }
+  if (neg) *dst = -*dst;
+}
+
+void VAL_r(PString* str, double* dst, int* code) {
+  double value = 0.0;
+  double divisor = 1.0;
+  int scale = 0;
+  int neg = 0;
+  int neg_scale = 0;
+  enum { IntPart, FracDot, FracPart, ScaleDot, ScalePart } state = IntPart;
+
+  *code = 0;
+  for (int pos = 0; pos < str->len && *code == 0; ++pos) {
+    char chr = str->value[pos];
+    if (chr == '-' && pos == 0)
+      neg = 1;
+    else if (chr == '+' && pos == 0)
+      neg = 0;
+    else if (chr == '.' && state == IntPart)
+      state = FracDot;
+    else if (chr == 'e' && (state == IntPart || state == FracPart))
+      state = ScaleDot;
+    else if (chr == '-' && state == ScaleDot) {
+      neg_scale = 1;
+      state = ScalePart;
+    } else if (chr == '+' && state == ScaleDot) {
+      neg_scale = 0;
+      state = ScalePart;
+    } else if (chr >= '0' && chr <= '9') {
+      if (state == FracDot) state = FracPart;
+      if (state == IntPart || state == FracPart) value = value * 10 + chr - '0';
+      if (state == FracPart) divisor = divisor * 10;
+      if (state == ScaleDot) state = ScalePart;
+      if (state == ScalePart) scale = scale * 10 + chr - '0';
+    } else {
+      *code = pos + 1;
+      return;
+    }
+  }
+  if (state == FracDot || state == ScaleDot) {
+    *code = str->len;
+    return;
+  }
+
+  if (neg) value = -value;
+  value = value / divisor;
+  for (int i = 0; i < scale; ++i) {
+    if (neg_scale)
+      value = value / 10;
+    else
+      value = value * 10;
+  }
+  *dst = value;
+}
+
+void VAL_e(PString* str, void* dst, int num_names, const char** names,
+           int* code) {
+  *code = 0;
+  for (int e = 0; e < num_names; ++e) {
+    for (int i = 0; i < str->len; ++i) {
+      if ((str->value[i] & 0x20) != (names[e][i] & 0x20)) break;
+    }
+    if (names[e][str->len] == 0) {
+      *(int*)dst = e;
+      return;
+    }
+  }
+  *code = 1;
+}

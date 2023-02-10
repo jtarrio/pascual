@@ -315,6 +315,8 @@ procedure _OutStr(Expr : TExpression);
 forward;
 procedure _OutSucc(Expr : TExpression);
 forward;
+procedure _OutVal(Expr : TExpression);
+forward;
 procedure _OutWrite(Expr : TExpression);
 forward;
 
@@ -329,6 +331,7 @@ begin
     TpfReadln : _OutRead(Expr);
     TpfStr : _OutStr(Expr);
     TpfSucc : _OutSucc(Expr);
+    TpfVal : _OutVal(Expr);
     TpfWrite : _OutWrite(Expr);
     TpfWriteln : _OutWrite(Expr);
     else CompileError('Internal error: unimplemented special function')
@@ -953,6 +956,42 @@ begin
     OutExpression(Src);
     write(Codegen.Output, ', &');
     _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ');');
+    _OutNewline
+  end
+end;
+
+procedure _OutVal(Expr : TExpression);
+var Src, Dst, Code, TmpExpr : TExpression;
+begin
+  Src := Expr^.PseudoFnCall.Arg1;
+  Dst := Expr^.PseudoFnCall.Arg2;
+  Code := Expr^.PseudoFnCall.Arg3;
+  if IsEnumType(Dst^.TypePtr) then
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'VAL_e(&');
+    _OutExpressionParensPrec(Src, 2);
+    write(Codegen.Output, ', &');
+    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ', ');
+    TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
+    OutExpression(TmpExpr);
+    DisposeExpr(TmpExpr);
+    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id, ', &');
+    _OutExpressionParensPrec(Code, 2);
+    write(Codegen.Output, ');');
+    _OutNewline
+  end
+  else
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(&');
+    _OutExpressionParensPrec(Src, 2);
+    write(Codegen.Output, ', &');
+    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ', &');
+    _OutExpressionParensPrec(Code, 2);
     write(Codegen.Output, ');');
     _OutNewline
   end

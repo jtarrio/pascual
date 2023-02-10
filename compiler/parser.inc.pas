@@ -602,6 +602,7 @@ begin
       TpfReadln : PsFunctionCall := PfRead_Parse(Fn);
       TpfStr : PsFunctionCall := PfStr_Parse(Fn);
       TpfSucc : PsFunctionCall := PfSucc_Parse(Fn);
+      TpfVal : PsFunctionCall := PfVal_Parse(Fn);
       TpfWrite : PsFunctionCall := PfWrite_Parse(Fn);
       TpfWriteln : PsFunctionCall := PfWrite_Parse(Fn);
       else CompileError('Internal error: unimplemented special function')

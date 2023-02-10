@@ -150,12 +150,16 @@ var
   Src, Dest : TExpression;
 begin
   WantTokenAndRead(TkLparen);
-  Src := PsExpression;
+  Src := ExOutrange(PsExpression);
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
   if not Dest^.IsAssignable or not IsStringType(Dest^.TypePtr) then
     CompileError('Destination argument is not a string variable');
+  if not IsBooleanType(Src^.TypePtr) and not IsIntegerType(Src^.TypePtr)
+     and not IsRealType(Src^.TypePtr) and not IsEnumType(Src^.TypePtr) then
+    CompileError('Source argument has an invalid type: ' +
+                 TypeName(Src^.TypePtr));
   ExMarkInitialized(Dest);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Src;
@@ -199,6 +203,36 @@ begin
     Result^.TypePtr := Arg^.TypePtr
   end
 end;
+
+function PfVal_Parse(FnExpr : TExpression) : TExpression;
+var 
+  Src, Dest, Code : TExpression;
+begin
+  WantTokenAndRead(TkLparen);
+  Src := ExOutrange(PsExpression);
+  WantTokenAndRead(TkComma);
+  Dest := PsExpression;
+  WantTokenAndRead(TkComma);
+  Code := PsExpression;
+  WantTokenAndRead(TkRparen);
+  if not Src^.IsAssignable or not IsStringType(Src^.TypePtr) then
+    CompileError('Source argument is not a string variable');
+  if not Dest^.IsAssignable or Dest^.IsConstant then
+    CompileError('Destination argument is not a variable');
+  if not IsBooleanType(Dest^.TypePtr) and not IsIntegerType(Dest^.TypePtr)
+     and not IsRealType(Dest^.TypePtr) and not IsEnumType(Dest^.TypePtr) then
+    CompileError('Destination argument has an invalid type: ' +
+                 TypeName(Dest^.TypePtr));
+  if not Code^.IsAssignable or not IsIntegerType(Code^.TypePtr) then
+    CompileError('Code argument is not an integer variable');
+  ExMarkInitialized(Dest);
+  ExMarkInitialized(Code);
+  Result := ExPseudoFnCall(FnExpr);
+  Result^.PseudoFnCall.Arg1 := Src;
+  Result^.PseudoFnCall.Arg2 := Dest;
+  Result^.PseudoFnCall.Arg3 := Code;
+end;
+
 
 function PfWrite_Parse(FnExpr : TExpression) : TExpression;
 var 

@@ -16,6 +16,7 @@ var
 begin
   if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
   if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
+  if Call.Arg3 <> nil then DisposeExpr(Call.Arg3);
   if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
@@ -84,6 +85,7 @@ begin
   Copy.PseudoFn := Call.PseudoFn;
   if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
+  if Call.Arg3 <> nil then Copy.Arg3 := CopyExpr(Call.Arg3);
   if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
   begin
     ReadArg := Call.ReadArgs;
@@ -235,7 +237,12 @@ begin
       TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfRead: Result := 'READ(...)';
       TpfReadln: Result := 'READLN(...)';
+      TpfStr: Result := 'STR(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
+                        DescribeExpr(Arg2, Levels - 1) + ')';
       TpfSucc: Result := 'SUCC(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfVal: Result := 'VAL(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
+                        DescribeExpr(Arg2, Levels - 1) + ', ' +
+                        DescribeExpr(Arg3, Levels - 1) + ')';
       TpfWrite: Result := 'WRITE(...)';
       TpfWriteln: Result := 'WRITELN(...)';
       else CompileError('Internal error: cannot describe pseudofun')
@@ -471,7 +478,7 @@ begin
   else
   begin
     Result := _NewExpr(XcToReal);
-    Result^.ToREalParent := Parent;
+    Result^.ToRealParent := Parent;
     Result^.TypePtr := PrimitiveTypes.PtReal;
     Result^.IsAssignable := false;
     Result^.IsFunctionResult := Parent^.IsFunctionResult
@@ -623,6 +630,7 @@ begin
   Expr^.PseudoFnCall.PseudoFn := Fn;
   Expr^.PseudoFnCall.Arg1 := nil;
   Expr^.PseudoFnCall.Arg2 := nil;
+  Expr^.PseudoFnCall.Arg3 := nil;
   Expr^.PseudoFnCall.ReadArgs := nil;
   Expr^.PseudoFnCall.WriteArgs := nil;
   Result := Expr

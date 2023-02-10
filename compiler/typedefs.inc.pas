@@ -24,7 +24,7 @@ type
   end;
 
   TPsPseudoFn = (TpfDispose, TpfNew, TpfOrd, TpfPred, TpfRead, TpfReadln,
-                 TpfStr, TpfSucc, TpfWrite, TpfWriteln);
+                 TpfStr, TpfSucc, TpfVal, TpfWrite, TpfWriteln);
 
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
@@ -59,6 +59,7 @@ type
   TExPseudoFnCall = record
     Arg1 : TExpression;
     Arg2 : TExpression;
+    Arg3 : TExpression;
     case PseudoFn : TPsPseudoFn of 
       TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
       TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);
