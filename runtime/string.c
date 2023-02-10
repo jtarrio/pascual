@@ -192,7 +192,8 @@ void VAL_r(PString* str, double* dst, int* code) {
       neg = 0;
     else if (chr == '.' && state == IntPart)
       state = FracDot;
-    else if (chr == 'e' && (state == IntPart || state == FracPart))
+    else if ((chr == 'e' || chr == 'E') &&
+             (state == IntPart || state == FracPart))
       state = ScaleDot;
     else if (chr == '-' && state == ScaleDot) {
       neg_scale = 1;

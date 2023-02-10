@@ -177,7 +177,8 @@ begin
     Chr := Lexer.Line[Pos];
     if (Chr = '.') and (State = IntPart) then
       State := FracDot
-    else if (Chr = 'e') and ((State = IntPart) or (State = FracPart)) then
+    else if ((Chr = 'e') or (Chr = 'E'))
+            and ((State = IntPart) or (State = FracPart)) then
            State := ScaleSign
     else if ((Chr = '-') or (Chr = '+')) and (State = ScaleSign) then
            State := ScalePart
