@@ -150,7 +150,7 @@ void VAL_b(PString* str, int* dst, int* code) {
   else if (str->len == 5 && ((str->value[0] | 0x20) == 'f') &&
            ((str->value[1] | 0x20) == 'a') && ((str->value[2] | 0x20) == 'l') &&
            ((str->value[3] | 0x20) == 's') && ((str->value[4] | 0x20) == 'e'))
-    *dst = 1;
+    *dst = 0;
   else
     *code = 1;
 }
@@ -159,6 +159,17 @@ void VAL_i(PString* str, int* dst, int* code) {
   int neg = 0;
   *code = 0;
   *dst = 0;
+  if (str->len > 1 && str->value[0] == '$') {
+    for (int pos = 1; pos < str->len && *code == 0; ++pos) {
+      char chr = str->value[pos];
+      if (chr >= '0' && chr <= '9') *dst = *dst * 16 + chr - '0';
+      else if (chr >= 'a' && chr <= 'f') *dst = *dst * 16 + chr - 'a' + 10;
+      else if (chr >= 'A' && chr <= 'F') *dst = *dst * 16 + chr - 'A' + 10;
+      else *code = pos + 1;
+    }
+    return;
+  }
+  
   for (int pos = 0; pos < str->len && *code == 0; ++pos) {
     char chr = str->value[pos];
     if (chr == '-' && pos == 0)
@@ -166,7 +177,7 @@ void VAL_i(PString* str, int* dst, int* code) {
     else if (chr == '+' && pos == 0)
       neg = 0;
     else if (chr >= '0' && chr <= '9')
-      *dst = *dst * 10 + str->value[pos] - '0';
+      *dst = *dst * 10 + chr - '0';
     else {
       *code = pos + 1;
       return;
@@ -181,6 +192,7 @@ void VAL_r(PString* str, double* dst, int* code) {
   int scale = 0;
   int neg = 0;
   int neg_scale = 0;
+  int last = 0;
   enum { IntPart, FracDot, FracPart, ScaleDot, ScalePart } state = IntPart;
 
   *code = 0;
@@ -207,13 +219,14 @@ void VAL_r(PString* str, double* dst, int* code) {
       if (state == FracPart) divisor = divisor * 10;
       if (state == ScaleDot) state = ScalePart;
       if (state == ScalePart) scale = scale * 10 + chr - '0';
+      last = pos + 1;
     } else {
-      *code = pos + 1;
+      *code = last + 1;
       return;
     }
   }
   if (state == FracDot || state == ScaleDot) {
-    *code = str->len;
+    *code = last + 1;
     return;
   }
 

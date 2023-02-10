@@ -793,7 +793,7 @@ var
   Expr : TExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
-  if Negative then ReadToken;
+  if Negative then ReadToken else SkipToken(TkPlus);
   Expr := PsTerm;
   if Negative then Expr := ExUnaryOp(Expr, TkMinus);
   while IsOpAdding(Lexer.Token) do

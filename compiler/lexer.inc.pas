@@ -165,36 +165,16 @@ end;
 
 procedure LxGetNumber;
 var 
-  Chr : char;
-  Pos, Last : integer;
-  State : (IntPart, FracDot, FracPart, ScaleSign, ScalePart, Done);
-  IsInteger : boolean;
+  AsInt : integer;
+  AsReal : real;
+  AsIntCode, AsRealCode : integer;
 begin
-  State := IntPart;
-  Last := 0;
-  Pos := 1;
-  repeat
-    Chr := Lexer.Line[Pos];
-    if (Chr = '.') and (State = IntPart) then
-      State := FracDot
-    else if ((Chr = 'e') or (Chr = 'E'))
-            and ((State = IntPart) or (State = FracPart)) then
-           State := ScaleSign
-    else if ((Chr = '-') or (Chr = '+')) and (State = ScaleSign) then
-           State := ScalePart
-    else if LxIsDigit(Chr) then
-    begin
-      IsInteger := State = IntPart;
-      Last := Pos;
-      if State = FracDot then State := FracPart
-      else if State = ScaleSign then State := ScalePart
-    end
-    else State := Done;
-    Pos := Pos + 1;
-    if Pos > Length(Lexer.Line) then State := Done
-  until State = Done;
-  if IsInteger then LxGetSymbol(TkInteger, Last)
-  else LxGetSymbol(TkReal, Last)
+  Val(Lexer.Line, AsInt, AsIntCode);
+  Val(Lexer.Line, AsReal, AsRealCode);
+  if AsIntCode = 0 then AsIntCode := Length(Lexer.Line) + 1;
+  if AsRealCode = 0 then AsRealCode := Length(Lexer.Line) + 1;
+  if AsRealCode > AsIntCode then LxGetSymbol(TkReal, AsRealCode - 1)
+  else LxGetSymbol(TkInteger, AsIntCode - 1)
 end;
 
 procedure LxGetString;
@@ -279,6 +259,7 @@ begin
     else if LxIsDigit(Chr) then LxGetNumber
     else case Chr of 
            '''' : LxGetString;
+           '$' : LxGetNumber;
            '+' : LxGetSymbol(TkPlus, 1);
            '-' : LxGetSymbol(TkMinus, 1);
            '*' : LxGetSymbol(TkAsterisk, 1);

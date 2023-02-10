@@ -55,10 +55,10 @@ testinteger 1 | is_valid
 testinteger 1234 | is_valid
 testinteger -1 | is_valid
 testinteger -1234 | is_valid
-testinteger +1 | will_be_valid
-testinteger +1234 | will_be_valid
-testinteger '$1234' | will_be_valid
-testinteger '$CAFE' | will_be_valid
+testinteger +1 | is_valid
+testinteger +1234 | is_valid
+testinteger '$1234' | is_valid
+testinteger '$CAFE' | is_valid
 testreal() {
   echo "program foo; const a : real = $1; begin end."
 }
