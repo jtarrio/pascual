@@ -278,3 +278,21 @@ begin
     WantTokenAndRead(TkRparen)
   end
 end;
+
+function Pf_Parse(Fn : TExpression) : TExpression;
+begin
+    case Fn^.PseudoFn of 
+      TpfDispose : Result := PfDispose_Parse(Fn);
+      TpfNew : Result := PfNew_Parse(Fn);
+      TpfOrd : Result := PfOrd_Parse(Fn);
+      TpfPred : Result := PfPred_Parse(Fn);
+      TpfRead : Result := PfRead_Parse(Fn);
+      TpfReadln : Result := PfRead_Parse(Fn);
+      TpfStr : Result := PfStr_Parse(Fn);
+      TpfSucc : Result := PfSucc_Parse(Fn);
+      TpfVal : Result := PfVal_Parse(Fn);
+      TpfWrite : Result := PfWrite_Parse(Fn);
+      TpfWriteln : Result := PfWrite_Parse(Fn);
+      else CompileError('Internal error: unimplemented special function')
+    end
+end;

@@ -591,23 +591,7 @@ begin
     end;
     PsFunctionCall := ExFunctionCall(Fn, Args)
   end
-  else if Fn^.Cls = XcPseudoFnRef then
-  begin
-    case Fn^.PseudoFn of 
-      TpfDispose : PsFunctionCall := PfDispose_Parse(Fn);
-      TpfNew : PsFunctionCall := PfNew_Parse(Fn);
-      TpfOrd : PsFunctionCall := PfOrd_Parse(Fn);
-      TpfPred : PsFunctionCall := PfPred_Parse(Fn);
-      TpfRead : PsFunctionCall := PfRead_Parse(Fn);
-      TpfReadln : PsFunctionCall := PfRead_Parse(Fn);
-      TpfStr : PsFunctionCall := PfStr_Parse(Fn);
-      TpfSucc : PsFunctionCall := PfSucc_Parse(Fn);
-      TpfVal : PsFunctionCall := PfVal_Parse(Fn);
-      TpfWrite : PsFunctionCall := PfWrite_Parse(Fn);
-      TpfWriteln : PsFunctionCall := PfWrite_Parse(Fn);
-      else CompileError('Internal error: unimplemented special function')
-    end
-  end;
+  else if Fn^.Cls = XcPseudoFnRef then PsFunctionCall := Pf_Parse(Fn)
 end;
 
 function PsArrayAccess(Arr : TExpression) : TExpression;
