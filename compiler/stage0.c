@@ -313,18 +313,10 @@ void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR);
 TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR);
 PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS);
 void EXMARKINITIALIZED(TEXPRESSIONOBJ *LHS);
-TEXPRESSIONOBJ *PFDISPOSE_PARSE(TEXPRESSIONOBJ *FNEXPR);
-TEXPRESSIONOBJ *PFNEW_PARSE(TEXPRESSIONOBJ *FNEXPR);
-TEXPRESSIONOBJ *PFORD_PARSE(TEXPRESSIONOBJ *FNEXPR);
+TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN);
 TEXPRESSIONOBJ *PFORD(TEXPRESSIONOBJ *ARG);
-TEXPRESSIONOBJ *PFPRED_PARSE(TEXPRESSIONOBJ *FNEXPR);
 TEXPRESSIONOBJ *PFPRED(TEXPRESSIONOBJ *ARG);
-TEXPRESSIONOBJ *PFREAD_PARSE(TEXPRESSIONOBJ *FNEXPR);
-TEXPRESSIONOBJ *PFSUCC_PARSE(TEXPRESSIONOBJ *FNEXPR);
 TEXPRESSIONOBJ *PFSUCC(TEXPRESSIONOBJ *ARG);
-TEXPRESSIONOBJ *PFSTR_PARSE(TEXPRESSIONOBJ *FNEXPR);
-TEXPRESSIONOBJ *PFVAL_PARSE(TEXPRESSIONOBJ *FNEXPR);
-TEXPRESSIONOBJ *PFWRITE_PARSE(TEXPRESSIONOBJ *FNEXPR);
 
 typedef struct record33 {
   PFile SRC;
@@ -397,6 +389,12 @@ int LXISALPHA(char CHR) {
 int LXISDIGIT(char CHR) {
   int RESULT;
   RESULT = CHR >= '0' && CHR <= '9';
+  return RESULT;
+}
+
+int LXISHEXDIGIT(char CHR) {
+  int RESULT;
+  RESULT = LXISDIGIT(CHR) || CHR >= 'a' && CHR <= 'f' || CHR >= 'A' && CHR <= 'F';
   return RESULT;
 }
 
@@ -507,49 +505,70 @@ void LXGETIDENTIFIER() {
 }
 
 void LXGETNUMBER() {
-  char CHR;
-  int POS;
-  int LAST;
-  enum enum36 { INTPART, FRACDOT, FRACPART, SCALESIGN, SCALEPART, DONE } STATE;
-  int ISINTEGER;
-  const char* enumvalues36[] = { "INTPART", "FRACDOT", "FRACPART", "SCALESIGN", "SCALEPART", "DONE" };
-  STATE = INTPART;
-  LAST = 0;
-  POS = 1;
-  do {
-    CHR = LEXER.LINE.chr[POS];
-    if (CHR == '.' && STATE == INTPART) STATE = FRACDOT;
-    else if (CHR == 'e' && (STATE == INTPART || STATE == FRACPART)) STATE = SCALESIGN;
-    else if ((CHR == '-' || CHR == '+') && STATE == SCALESIGN) STATE = SCALEPART;
-    else if (LXISDIGIT(CHR)) {
-      ISINTEGER = STATE == INTPART;
-      LAST = POS;
-      if (STATE == FRACDOT) STATE = FRACPART;
-      else if (STATE == SCALESIGN) STATE = SCALEPART;
-    }
-    else STATE = DONE;
-    POS = POS + 1;
-    if (POS > LENGTH(LEXER.LINE)) STATE = DONE;
-  } while (!(STATE == DONE));
-  if (ISINTEGER) LXGETSYMBOL(TKINTEGER, LAST);
-  else LXGETSYMBOL(TKREAL, LAST);
+  int ASINT;
+  double ASREAL;
+  int ASINTCODE;
+  int ASREALCODE;
+  VAL_i(&LEXER.LINE, &ASINT, &ASINTCODE);
+  VAL_r(&LEXER.LINE, &ASREAL, &ASREALCODE);
+  if (ASINTCODE == 0) ASINTCODE = LENGTH(LEXER.LINE) + 1;
+  if (ASREALCODE == 0) ASREALCODE = LENGTH(LEXER.LINE) + 1;
+  if (ASREALCODE > ASINTCODE) LXGETSYMBOL(TKREAL, ASREALCODE - 1);
+  else LXGETSYMBOL(TKINTEGER, ASINTCODE - 1);
 }
 
 void LXGETSTRING() {
   char CHR;
   int POS;
-  int INSTRING;
-  POS = 1;
-  INSTRING = 1;
-  while (INSTRING) {
+  int LAST;
+  enum enum36 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
+  const char* enumvalues36[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
+  POS = 0;
+  STATE = NONE;
+  do {
     POS = POS + 1;
     CHR = LEXER.LINE.chr[POS];
-    if (CHR == '\'') {
-      if (LENGTH(LEXER.LINE) > POS + 1 && LEXER.LINE.chr[POS + 1] == '\'') POS = POS + 1;
-      else INSTRING = 0;
+    if (STATE == NONE) {
+      if (CHR == '\'') STATE = QUOTEDSTR;
+      else if (CHR == '#') STATE = HASH;
+      else if (CHR == '^') STATE = CARET;
+      else STATE = DONE;
     }
-  }
-  LXGETSYMBOL(TKSTRING, POS);
+    else if (STATE == HASH) {
+      if (CHR == '$') STATE = NUMCHARHEX;
+      else if (LXISDIGIT(CHR)) {
+        STATE = NUMCHARDEC;
+        LAST = POS;
+      }
+      else STATE = DONE;
+    }
+    else if (STATE == NUMCHARDEC) {
+      if (LXISDIGIT(CHR)) LAST = POS;
+      else if (CHR == '\'') STATE = QUOTEDSTR;
+      else if (CHR == '#') STATE = HASH;
+      else if (CHR == '^') STATE = CARET;
+      else STATE = DONE;
+    }
+    else if (STATE == NUMCHARHEX) {
+      if (LXISHEXDIGIT(CHR)) LAST = POS;
+      else if (CHR == '\'') STATE = QUOTEDSTR;
+      else if (CHR == '#') STATE = HASH;
+      else if (CHR == '^') STATE = CARET;
+      else STATE = DONE;
+    }
+    else if (STATE == CARET) {
+      if (CHR >= '@' && CHR <= '_' || CHR >= 'a' && CHR <= 'z') {
+        LAST = POS;
+        STATE = NONE;
+      }
+      else STATE = DONE;
+    }
+    else if (STATE == QUOTEDSTR) {
+      LAST = POS;
+      if (CHR == '\'') STATE = NONE;
+    }
+  } while (!(STATE == DONE));
+  LXGETSYMBOL(TKSTRING, LAST);
 }
 
 void LXGETCOMMENT() {
@@ -603,6 +622,12 @@ void LXREADTOKEN() {
     else switch (CHR) {
       case '\'':
         LXGETSTRING();
+        break;
+      case '#':
+        LXGETSTRING();
+        break;
+      case '$':
+        LXGETNUMBER();
         break;
       case '+':
         LXGETSYMBOL(TKPLUS, 1);
@@ -1819,41 +1844,54 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
 
 PString _UNPARSECHAR(char CHR) {
   PString RESULT;
-  switch (CHR) {
-    case '\'':
-      RESULT = str_make(4, "''''");
-      break;
-    default:
-      RESULT = cat_sc(cat_cc('\'', CHR), '\'');
-      break;
+  PString CHNUM;
+  if (CHR == '\'') RESULT = str_make(4, "''''");
+  else if (CHR < ' ') {
+    STR_i((int)CHR, &CHNUM);
+    RESULT = cat_cs('#', CHNUM);
   }
+  else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
   return RESULT;
 }
 
-PString _UNPARSESTRING(PString STR) {
+PString _UNPARSESTRING(PString ST) {
   PString RESULT;
   int POS;
-  RESULT = str_of('\'');
+  PString CHNUM;
+  int QUOTED;
+  QUOTED = 0;
+  RESULT = str_make(0, "");
   do {
     int first = 1;
-    int last = LENGTH(STR);
+    int last = LENGTH(ST);
     if (first <= last) {
       POS = first;
       while (1) {
-        switch (STR.chr[POS]) {
-          case '\'':
-            RESULT = cat_ss(RESULT, str_make(2, "''"));
-            break;
-          default:
-            RESULT = cat_sc(RESULT, STR.chr[POS]);
-            break;
+        {
+          if (ST.chr[POS] < ' ') {
+            if (QUOTED) {
+              QUOTED = 0;
+              RESULT = cat_sc(RESULT, '\'');
+            }
+            STR_i((int)ST.chr[POS], &CHNUM);
+            RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
+          }
+          else {
+            if (!QUOTED) {
+              QUOTED = 1;
+              RESULT = cat_sc(RESULT, '\'');
+            }
+            if (ST.chr[POS] == '\'') RESULT = cat_ss(RESULT, str_make(2, "''"));
+            else RESULT = cat_sc(RESULT, ST.chr[POS]);
+          }
         }
         if (POS == last) break;
         ++POS;
       }
     }
   } while(0);
-  RESULT = cat_sc(RESULT, '\'');
+  if (QUOTED) RESULT = cat_sc(RESULT, '\'');
+  if (cmp_ss(RESULT, str_make(0, "")) == 0) RESULT = str_make(2, "''");
   return RESULT;
 }
 
@@ -3507,46 +3545,7 @@ TEXPRESSIONOBJ *PSFUNCTIONCALL(TEXPRESSIONOBJ *FN) {
     }
     RESULT = EXFUNCTIONCALL(FN, &ARGS);
   }
-  else if (FN->CLS == XCPSEUDOFNREF) {
-    switch (FN->PSEUDOFN) {
-      case TPFDISPOSE:
-        RESULT = PFDISPOSE_PARSE(FN);
-        break;
-      case TPFNEW:
-        RESULT = PFNEW_PARSE(FN);
-        break;
-      case TPFORD:
-        RESULT = PFORD_PARSE(FN);
-        break;
-      case TPFPRED:
-        RESULT = PFPRED_PARSE(FN);
-        break;
-      case TPFREAD:
-        RESULT = PFREAD_PARSE(FN);
-        break;
-      case TPFREADLN:
-        RESULT = PFREAD_PARSE(FN);
-        break;
-      case TPFSTR:
-        RESULT = PFSTR_PARSE(FN);
-        break;
-      case TPFSUCC:
-        RESULT = PFSUCC_PARSE(FN);
-        break;
-      case TPFVAL:
-        RESULT = PFVAL_PARSE(FN);
-        break;
-      case TPFWRITE:
-        RESULT = PFWRITE_PARSE(FN);
-        break;
-      case TPFWRITELN:
-        RESULT = PFWRITE_PARSE(FN);
-        break;
-      default:
-        COMPILEERROR(str_make(46, "Internal error: unimplemented special function"));
-        break;
-    }
-  }
+  else if (FN->CLS == XCPSEUDOFNREF) RESULT = PF_PARSE(FN);
   return RESULT;
 }
 
@@ -3631,32 +3630,70 @@ int ISOPRELATIONAL(TLXTOKEN TOK) {
 
 PString PARSESTRING(PString PSTR) {
   PString RESULT;
-  int INSTR;
+  enum enum41 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   int POS;
-  char CHR;
-  PString STR;
-  STR = str_make(0, "");
-  INSTR = 0;
-  do {
-    int first = 1;
-    int last = LENGTH(PSTR);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          CHR = PSTR.chr[POS];
-          if (CHR == '\'') {
-            INSTR = !INSTR;
-            if (INSTR && POS > 1 && PSTR.chr[POS - 1] == '\'') STR = cat_sc(STR, '\'');
-          }
-          else if (INSTR) STR = cat_sc(STR, CHR);
-        }
-        if (POS == last) break;
-        ++POS;
+  char CH;
+  int CHNUM;
+  const char* enumvalues41[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
+  RESULT = str_make(0, "");
+  STATE = NONE;
+  POS = 1;
+  while (POS <= LENGTH(PSTR)) {
+    CH = PSTR.chr[POS];
+    if (STATE == NONE) {
+      POS = POS + 1;
+      if (CH == '\'') {
+        STATE = QUOTEDSTR;
+        if (POS > 2 && PSTR.chr[POS - 2] == '\'') RESULT = cat_sc(RESULT, '\'');
+      }
+      else if (CH == '#') STATE = HASH;
+      else if (CH == '^') STATE = CARET;
+      else STATE = ERROR;
+    }
+    else if (STATE == QUOTEDSTR) {
+      POS = POS + 1;
+      if (CH == '\'') STATE = NONE;
+      else RESULT = cat_sc(RESULT, CH);
+    }
+    else if (STATE == HASH) {
+      CHNUM = 0;
+      if (LXISDIGIT(CH)) STATE = NUMCHARDEC;
+      else if (CH == '$') {
+        STATE = NUMCHARHEX;
+        POS = POS + 1;
       }
     }
-  } while(0);
-  RESULT = STR;
+    else if (STATE == NUMCHARDEC) {
+      if (LXISDIGIT(CH)) {
+        POS = POS + 1;
+        CHNUM = CHNUM * 10 + (int)CH - 48;
+      }
+      else STATE = NUMCHARREADY;
+    }
+    else if (STATE == NUMCHARHEX) {
+      if (LXISHEXDIGIT(CH)) {
+        POS = POS + 1;
+        if (CH <= '9') CHNUM = CHNUM * 16 + (int)CH - 48;
+        else if (CH <= 'F') CHNUM = CHNUM * 16 + (int)CH - 54;
+        else if (CH <= 'f') CHNUM = CHNUM * 16 + (int)CH - 87;
+      }
+      else STATE = NUMCHARREADY;
+    }
+    else if (STATE == NUMCHARREADY) {
+      RESULT = cat_sc(RESULT, CHR(CHNUM));
+      STATE = NONE;
+    }
+    else if (STATE == CARET) {
+      POS = POS + 1;
+      STATE = NONE;
+      if (CH >= '@' && CH <= '_') RESULT = cat_sc(RESULT, CHR((int)CH - 64));
+      else if (CH >= 'a' && CH <= 'z') RESULT = cat_sc(RESULT, CHR((int)CH - 96));
+      else STATE = ERROR;
+    }
+    else if (STATE == ERROR) COMPILEERROR(cat_ss(str_make(29, "Invalid character in string: "), PSTR));
+  }
+  if (STATE == QUOTEDSTR || STATE == CARET) COMPILEERROR(cat_ss(str_make(26, "String is not terminated: "), PSTR));
+  if (STATE == NUMCHARDEC || STATE == NUMCHARHEX) RESULT = cat_sc(RESULT, CHR(CHNUM));
   return RESULT;
 }
 
@@ -3731,6 +3768,7 @@ TEXPRESSIONOBJ *PSSIMPLEEXPRESSION() {
   TEXPRESSIONOBJ *EXPR;
   NEGATIVE = LEXER.TOKEN.ID == TKMINUS;
   if (NEGATIVE) READTOKEN();
+  else SKIPTOKEN(TKPLUS);
   EXPR = PSTERM();
   if (NEGATIVE) EXPR = EXUNARYOP(EXPR, TKMINUS);
   while (ISOPADDING(LEXER.TOKEN)) {
@@ -4107,11 +4145,11 @@ void STARTGLOBALSCOPE() {
   }
 }
 
-typedef enum enum41 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum enum42 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
-const char* enumvalues41[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
+const char* enumvalues42[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record42 {
+struct record43 {
   PFile OUTPUT;
   int ISMULTISTATEMENT;
   int INDENT;
@@ -4167,15 +4205,27 @@ void OUTENDSAMELINE() {
   WRITE_c(&CODEGEN.OUTPUT, '}');
 }
 
+void _OUTESCAPEDCHAR(char CH) {
+  int CODE;
+  int N1;
+  int N2;
+  CODE = (int)CH;
+  N1 = CODE / 16;
+  N2 = CODE % 16;
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\x"));
+  if (N1 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 48));
+  else WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 87));
+  if (N2 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 48));
+  else WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 87));
+}
+
 void _OUTCHAR(char CHR) {
-  if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(4, "'\\''"));
-  else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(4, "'\\\\'"));
-  else if (CHR >= ' ') {
-    WRITE_c(&CODEGEN.OUTPUT, '\'');
-    WRITE_c(&CODEGEN.OUTPUT, CHR);
-    WRITE_c(&CODEGEN.OUTPUT, '\'');
-  }
-  else COMPILEERROR(str_make(51, "Internal error: escaped chars are not supported yet"));
+  WRITE_c(&CODEGEN.OUTPUT, '\'');
+  if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\'"));
+  else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
+  else if (CHR >= ' ') WRITE_c(&CODEGEN.OUTPUT, CHR);
+  else _OUTESCAPEDCHAR(CHR);
+  WRITE_c(&CODEGEN.OUTPUT, '\'');
 }
 
 void _OUTSTRING(PString *STR) {
@@ -4201,7 +4251,7 @@ void _OUTSTRING(PString *STR) {
             if (CHR == '"') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\""));
             else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
             else if (CHR >= ' ') WRITE_c(&CODEGEN.OUTPUT, CHR);
-            else COMPILEERROR(str_make(51, "Internal error: escaped chars are not supported yet"));
+            else _OUTESCAPEDCHAR(CHR);
           }
           if (POS == last) break;
           ++POS;
@@ -4341,29 +4391,29 @@ void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXIMMEDIATE *with43 = &EXPR->IMMEDIATE;
-    switch (with43->CLS) {
+    TEXIMMEDIATE *with44 = &EXPR->IMMEDIATE;
+    switch (with44->CLS) {
       case XICNIL:
         WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"));
         break;
       case XICBOOLEAN:
-        if (with43->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
+        if (with44->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
         else WRITE_c(&CODEGEN.OUTPUT, '0');
         break;
       case XICINTEGER:
-        WRITE_i(&CODEGEN.OUTPUT, with43->INTEGERVAL);
+        WRITE_i(&CODEGEN.OUTPUT, with44->INTEGERVAL);
         break;
       case XICREAL:
-        WRITE_r(&CODEGEN.OUTPUT, with43->REALVAL);
+        WRITE_r(&CODEGEN.OUTPUT, with44->REALVAL);
         break;
       case XICCHAR:
-        _OUTCHAR(with43->CHARVAL);
+        _OUTCHAR(with44->CHARVAL);
         break;
       case XICSTRING:
-        _OUTSTRING(&with43->STRINGVAL);
+        _OUTSTRING(&with44->STRINGVAL);
         break;
       case XICENUM:
-        WRITE_s(&CODEGEN.OUTPUT, with43->ENUMPTR->VALUES[subrange(with43->ENUMORDINAL, 0, 127)]);
+        WRITE_s(&CODEGEN.OUTPUT, with44->ENUMPTR->VALUES[subrange(with44->ENUMORDINAL, 0, 127)]);
         break;
       default:
         break;
@@ -4443,14 +4493,14 @@ void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXPRESSIONOBJ *with44 = &*EXPR->RECEXPR;
+    TEXPRESSIONOBJ *with45 = &*EXPR->RECEXPR;
     {
-      if (with44->CLS == XCPOINTER) {
-        _OUTEXPRESSIONPARENS(with44->POINTEREXPR, EXPR);
+      if (with45->CLS == XCPOINTER) {
+        _OUTEXPRESSIONPARENS(with45->POINTEREXPR, EXPR);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
-      else if (with44->CLS == XCVARIABLE && with44->VARPTR->ISREFERENCE) {
-        WRITE_s(&CODEGEN.OUTPUT, with44->VARPTR->NAME);
+      else if (with45->CLS == XCVARIABLE && with45->VARPTR->ISREFERENCE) {
+        WRITE_s(&CODEGEN.OUTPUT, with45->VARPTR->NAME);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
       else {
@@ -4637,93 +4687,93 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   char LTYPE;
   char RTYPE;
   {
-    TEXBINARYOP *with45 = &EXPR->BINARY;
+    TEXBINARYOP *with46 = &EXPR->BINARY;
     {
-      if (ISSTRINGYTYPE(with45->LEFT->TYPEPTR)) {
-        if (ISCHARTYPE(with45->LEFT->TYPEPTR)) LTYPE = 'c';
+      if (ISSTRINGYTYPE(with46->LEFT->TYPEPTR)) {
+        if (ISCHARTYPE(with46->LEFT->TYPEPTR)) LTYPE = 'c';
         else LTYPE = 's';
-        if (ISCHARTYPE(with45->RIGHT->TYPEPTR)) RTYPE = 'c';
+        if (ISCHARTYPE(with46->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
-        if (with45->OP == TKPLUS) {
+        if (with46->OP == TKPLUS) {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with45->LEFT);
+          OUTEXPRESSION(with46->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with45->RIGHT);
+          OUTEXPRESSION(with46->RIGHT);
           WRITE_c(&CODEGEN.OUTPUT, ')');
         }
-        else if (ISCHARTYPE(with45->LEFT->TYPEPTR) && ISCHARTYPE(with45->RIGHT->TYPEPTR)) {
-          _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
-          if (_ISRELATIONALOP(with45->OP)) {
+        else if (ISCHARTYPE(with46->LEFT->TYPEPTR) && ISCHARTYPE(with46->RIGHT->TYPEPTR)) {
+          _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
+          if (_ISRELATIONALOP(with46->OP)) {
             WRITE_c(&CODEGEN.OUTPUT, ' ');
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
             WRITE_c(&CODEGEN.OUTPUT, ' ');
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
-          _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+          _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
         }
         else {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with45->LEFT);
+          OUTEXPRESSION(with46->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with45->RIGHT);
-          if (_ISRELATIONALOP(with45->OP)) {
+          OUTEXPRESSION(with46->RIGHT);
+          if (_ISRELATIONALOP(with46->OP)) {
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"));
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
         }
       }
-      else if (ISBOOLEANTYPE(with45->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
-        if (_ISLOGICALORBITWISEOP(with45->OP)) {
+      else if (ISBOOLEANTYPE(with46->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
+        if (_ISLOGICALORBITWISEOP(with46->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with45->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with45->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with46->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with46->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
       }
-      else if (ISNUMERICTYPE(with45->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
-        if (_ISARITHMETICOP(with45->OP)) {
+      else if (ISNUMERICTYPE(with46->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
+        if (_ISARITHMETICOP(with46->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with45->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISLOGICALORBITWISEOP(with45->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with45->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with46->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else if (_ISRELATIONALOP(with45->OP)) {
+        else if (_ISLOGICALORBITWISEOP(with46->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with46->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with46->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
       }
       else {
-        _OUTEXPRESSIONPARENS(with45->LEFT, EXPR);
-        if (_ISRELATIONALOP(with45->OP)) {
+        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
+        if (_ISRELATIONALOP(with46->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with45->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with45->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with45->RIGHT, EXPR);
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
       }
     }
   }
@@ -5867,6 +5917,49 @@ TEXPRESSIONOBJ *PFWRITE_PARSE(TEXPRESSIONOBJ *FNEXPR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN) {
+  TEXPRESSIONOBJ *RESULT;
+  switch (FN->PSEUDOFN) {
+    case TPFDISPOSE:
+      RESULT = PFDISPOSE_PARSE(FN);
+      break;
+    case TPFNEW:
+      RESULT = PFNEW_PARSE(FN);
+      break;
+    case TPFORD:
+      RESULT = PFORD_PARSE(FN);
+      break;
+    case TPFPRED:
+      RESULT = PFPRED_PARSE(FN);
+      break;
+    case TPFREAD:
+      RESULT = PFREAD_PARSE(FN);
+      break;
+    case TPFREADLN:
+      RESULT = PFREAD_PARSE(FN);
+      break;
+    case TPFSTR:
+      RESULT = PFSTR_PARSE(FN);
+      break;
+    case TPFSUCC:
+      RESULT = PFSUCC_PARSE(FN);
+      break;
+    case TPFVAL:
+      RESULT = PFVAL_PARSE(FN);
+      break;
+    case TPFWRITE:
+      RESULT = PFWRITE_PARSE(FN);
+      break;
+    case TPFWRITELN:
+      RESULT = PFWRITE_PARSE(FN);
+      break;
+    default:
+      COMPILEERROR(str_make(46, "Internal error: unimplemented special function"));
+      break;
+  }
+  return RESULT;
+}
+
 void USAGE(PString MSG) {
   if (cmp_ss(MSG, str_make(0, "")) != 0) {
     WRITE_s(&OUTPUT, MSG);
@@ -5921,9 +6014,9 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   int SUPPRESSWARNINGS;
-  enum enum46 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum enum47 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
-  const char* enumvalues46[] = { "FLAGNONE", "FLAGOUTPUT" };
+  const char* enumvalues47[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
