@@ -35,7 +35,7 @@ typedef struct record7 {
       double REALVAL;
     };
     struct {
-      char CHARVAL;
+      unsigned char CHARVAL;
     };
     struct {
       PString STRINGVAL;
@@ -380,37 +380,37 @@ void COMPILEWARNING(PString MSG) {
   }
 }
 
-int LXISALPHA(char CHR) {
+int LXISALPHA(unsigned char CHR) {
   int RESULT;
   RESULT = CHR >= 'a' && CHR <= 'z' || CHR >= 'A' && CHR <= 'Z';
   return RESULT;
 }
 
-int LXISDIGIT(char CHR) {
+int LXISDIGIT(unsigned char CHR) {
   int RESULT;
   RESULT = CHR >= '0' && CHR <= '9';
   return RESULT;
 }
 
-int LXISHEXDIGIT(char CHR) {
+int LXISHEXDIGIT(unsigned char CHR) {
   int RESULT;
   RESULT = LXISDIGIT(CHR) || CHR >= 'a' && CHR <= 'f' || CHR >= 'A' && CHR <= 'F';
   return RESULT;
 }
 
-int LXISALPHANUM(char CHR) {
+int LXISALPHANUM(unsigned char CHR) {
   int RESULT;
   RESULT = LXISALPHA(CHR) || LXISDIGIT(CHR);
   return RESULT;
 }
 
-int LXISIDENTIFIERFIRST(char CHR) {
+int LXISIDENTIFIERFIRST(unsigned char CHR) {
   int RESULT;
   RESULT = LXISALPHA(CHR) || CHR == '_';
   return RESULT;
 }
 
-int LXISIDENTIFIERCHAR(char CHR) {
+int LXISIDENTIFIERCHAR(unsigned char CHR) {
   int RESULT;
   RESULT = LXISALPHANUM(CHR) || CHR == '_';
   return RESULT;
@@ -443,7 +443,7 @@ void LXGETSYMBOL(TLXTOKENID ID, int LENGTH) {
 }
 
 void LXGETIDENTIFIER() {
-  char CHR;
+  unsigned char CHR;
   int POS;
   int INTOKEN;
   POS = 0;
@@ -518,7 +518,7 @@ void LXGETNUMBER() {
 }
 
 void LXGETSTRING() {
-  char CHR;
+  unsigned char CHR;
   int POS;
   int LAST;
   enum enum36 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
@@ -602,7 +602,7 @@ void LXGETCOMMENT() {
 }
 
 void LXREADTOKEN() {
-  char CHR;
+  unsigned char CHR;
   PString PFX;
   LEXER.TOKEN.VALUE = str_make(0, "");
   LEXER.TOKEN.ID = TKUNKNOWN;
@@ -1842,7 +1842,7 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
   return RESULT;
 }
 
-PString _UNPARSECHAR(char CHR) {
+PString _UNPARSECHAR(unsigned char CHR) {
   PString RESULT;
   PString CHNUM;
   if (CHR == '\'') RESULT = str_make(4, "''''");
@@ -2270,7 +2270,7 @@ TEXPRESSIONOBJ *EXREALCONSTANT(double VALUE) {
   return RESULT;
 }
 
-TEXPRESSIONOBJ *EXCHARCONSTANT(char VALUE) {
+TEXPRESSIONOBJ *EXCHARCONSTANT(unsigned char VALUE) {
   TEXPRESSIONOBJ *RESULT;
   RESULT = _EXIMMEDIATE(XICCHAR);
   RESULT->IMMEDIATE.CHARVAL = VALUE;
@@ -3632,7 +3632,7 @@ PString PARSESTRING(PString PSTR) {
   PString RESULT;
   enum enum41 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   int POS;
-  char CH;
+  unsigned char CH;
   int CHNUM;
   const char* enumvalues41[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
   RESULT = str_make(0, "");
@@ -4205,7 +4205,7 @@ void OUTENDSAMELINE() {
   WRITE_c(&CODEGEN.OUTPUT, '}');
 }
 
-void _OUTESCAPEDCHAR(char CH) {
+void _OUTESCAPEDCHAR(unsigned char CH) {
   int CODE;
   int N1;
   int N2;
@@ -4219,7 +4219,7 @@ void _OUTESCAPEDCHAR(char CH) {
   else WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 87));
 }
 
-void _OUTCHAR(char CHR) {
+void _OUTCHAR(unsigned char CHR) {
   WRITE_c(&CODEGEN.OUTPUT, '\'');
   if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\'"));
   else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
@@ -4230,7 +4230,7 @@ void _OUTCHAR(char CHR) {
 
 void _OUTSTRING(PString *STR) {
   int POS;
-  char CHR;
+  unsigned char CHR;
   if (LENGTH(*STR) == 1) {
     WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("));
     _OUTCHAR((*STR).chr[1]);
@@ -4684,8 +4684,8 @@ PString _GETRELATIONALOP(TLXTOKENID OP) {
 }
 
 void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
-  char LTYPE;
-  char RTYPE;
+  unsigned char LTYPE;
+  unsigned char RTYPE;
   {
     TEXBINARYOP *with46 = &EXPR->BINARY;
     {
@@ -5181,8 +5181,8 @@ void OUTPROGRAMHEADING(PString NAME) {
   _OUTNEWLINE();
 }
 
-char SHORTTYPENAME(TPSTYPE *TYPEPTR) {
-  char RESULT;
+unsigned char SHORTTYPENAME(TPSTYPE *TYPEPTR) {
+  unsigned char RESULT;
   while (ISRANGETYPE(TYPEPTR)) TYPEPTR = TYPEPTR->RANGEPTR->BASETYPEPTR;
   if (ISBOOLEANTYPE(TYPEPTR)) RESULT = 'b';
   else if (ISINTEGERTYPE(TYPEPTR)) RESULT = 'i';
