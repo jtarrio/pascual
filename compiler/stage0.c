@@ -4223,7 +4223,7 @@ void _OUTCHAR(char CHR) {
   WRITE_c(&CODEGEN.OUTPUT, '\'');
   if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\'"));
   else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
-  else if (CHR >= ' ') WRITE_c(&CODEGEN.OUTPUT, CHR);
+  else if (CHR >= ' ' && CHR <= '~') WRITE_c(&CODEGEN.OUTPUT, CHR);
   else _OUTESCAPEDCHAR(CHR);
   WRITE_c(&CODEGEN.OUTPUT, '\'');
 }
@@ -4250,7 +4250,7 @@ void _OUTSTRING(PString *STR) {
             CHR = (*STR).chr[POS];
             if (CHR == '"') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\""));
             else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
-            else if (CHR >= ' ') WRITE_c(&CODEGEN.OUTPUT, CHR);
+            else if (CHR >= ' ' && CHR <= '~') WRITE_c(&CODEGEN.OUTPUT, CHR);
             else _OUTESCAPEDCHAR(CHR);
           }
           if (POS == last) break;
@@ -4901,7 +4901,7 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
   else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE_s(&CODEGEN.OUTPUT, str_make(3, "int"));
   else if (TYPEPTR->CLS == TTCINTEGER) WRITE_s(&CODEGEN.OUTPUT, str_make(3, "int"));
   else if (TYPEPTR->CLS == TTCREAL) WRITE_s(&CODEGEN.OUTPUT, str_make(6, "double"));
-  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(4, "char"));
+  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(13, "unsigned char"));
   else if (TYPEPTR->CLS == TTCSTRING) WRITE_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
   else if (TYPEPTR->CLS == TTCTEXT) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PFile"));
   else if (TYPEPTR->CLS == TTCENUM) {
@@ -5041,7 +5041,7 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCCHAR) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "char "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(14, "unsigned char "));
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCSTRING) {
