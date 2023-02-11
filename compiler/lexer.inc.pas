@@ -65,6 +65,12 @@ begin
   LxIsDigit := (Chr >= '0') and (Chr <= '9')
 end;
 
+function LxIsHexDigit(Chr : char) : boolean;
+begin
+  LxIsHexDigit := LxIsDigit(Chr) or ((Chr >= 'a') and (Chr <= 'f'))
+                  or ((Chr >= 'A') and (Chr <= 'F'))
+end;
+
 function LxIsAlphaNum(Chr : char) : boolean;
 begin
   LxIsAlphaNum := LxIsAlpha(Chr) or LxIsDigit(Chr)
@@ -182,7 +188,7 @@ var
   Chr : char;
   Pos : integer;
   Last : integer;
-  State : (None, QuotedStr, NumChar, Done);
+  State : (None, QuotedStr, Hash, NumCharDec, NumCharHex, Caret, Done);
 begin
   Pos := 0;
   State := None;
@@ -192,14 +198,43 @@ begin
     if State = None then
     begin
       if Chr = '''' then State := QuotedStr
-      else if Chr = '#' then State := NumChar
+      else if Chr = '#' then State := Hash
+      else if Chr = '^' then State := Caret
       else State := Done;
     end
-    else if State = NumChar then
+    else if State = Hash then
     begin
-      if (Chr >= '0') and (Chr <= '9') then Last := Pos
+      if Chr = '$' then State := NumCharHex
+      else if LxIsDigit(Chr) then
+      begin
+        State := NumCharDec;
+        Last := Pos
+      end
+      else State := Done
+    end
+    else if State = NumCharDec then
+    begin
+      if LxIsDigit(Chr) then Last := Pos
       else if Chr = '''' then State := QuotedStr
-      else if Chr = '#' then State := NumChar
+      else if Chr = '#' then State := Hash
+      else if Chr = '^' then State := Caret
+      else State := Done
+    end
+    else if State = NumCharHex then
+    begin
+      if LxIsHexDigit(Chr) then Last := Pos
+      else if Chr = '''' then State := QuotedStr
+      else if Chr = '#' then State := Hash
+      else if Chr = '^' then State := Caret
+      else State := Done
+    end
+    else if State = Caret then
+    begin
+      if ((Chr >= '@') and (Chr <= '_')) or ((Chr >= 'a') and (Chr <= 'z')) then
+      begin
+        Last := Pos;
+        State := None
+      end
       else State := Done
     end
     else if State = QuotedStr then

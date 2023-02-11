@@ -694,51 +694,88 @@ end;
 
 function ParseString(Pstr : string) : string;
 var 
-  State : (None, QuotedStr, NumChar);
+  State : (None, QuotedStr, Hash, NumCharDec, NumCharHex, NumCharReady,
+           Caret, Error, Done);
   Pos : integer;
   Ch : char;
   ChNum : integer;
-  Str : string;
 begin
-  Str := '';
+  Result := '';
   State := None;
-  for Pos := 1 to Length(Pstr) do
+  Pos := 1;
+  while Pos <= Length(Pstr) do
   begin
     Ch := Pstr[Pos];
     if State = None then
     begin
-      if Ch = '''' then State := QuotedStr
-      else if Ch = '#' then
+      Pos := Pos + 1;
+      if Ch = '''' then
       begin
-        ChNum := 0;
-        State := NumChar
+        State := QuotedStr;
+        if (Pos > 2) and (Pstr[Pos - 2] = '''') then Result := Result + ''''
       end
-      else CompileError('Invalid character in string: ' + Pstr)
+      else if Ch = '#' then State := Hash
+      else if Ch = '^' then State := Caret
+      else State := Error
     end
-    else if State = NumChar then
+    else if State = QuotedStr then
     begin
-      if (Ch >= '0') and (Ch <= '9') then
-      begin
-        ChNum := ChNum * 10 + ord(Ch) - 48;
-        if ChNum > 255 then
-          CompileError('Invalid ASCII code in string: ' + Pstr)
-      end
-      else
-      begin
-        Str := Str + Chr(ChNum);
-        if Ch = '''' then State := QuotedStr
-        else if Ch = '#' then ChNum := 0
-        else CompileError('Invalid character in string: ' + Pstr)
-      end
-    end
-    else
-    begin
+      Pos := Pos + 1;
       if Ch = '''' then State := None
-      else Str := Str + Ch
+      else Result := Result + Ch
     end
+    else if State = Hash then
+    begin
+      ChNum := 0;
+      if LxIsDigit(Ch) then State := NumCharDec
+      else if Ch = '$' then
+      begin
+        State := NumCharHex;
+        Pos := Pos + 1
+      end
+    end
+    else if State = NumCharDec then
+    begin
+      if LxIsDigit(Ch) then
+      begin
+        Pos := Pos + 1;
+        ChNum := ChNum * 10 + Ord(Ch) - 48
+      end
+      else State := NumCharReady
+    end
+    else if State = NumCharHex then
+    begin
+      if LxIsHexDigit(Ch) then
+      begin
+        Pos := Pos + 1;
+        if Ch <= '9' then ChNum := ChNum * 16 + Ord(Ch) - 48
+        else if Ch <= 'F' then ChNum := ChNum * 16 + Ord(Ch) - 54
+        else if Ch <= 'f' then ChNum := ChNum * 16 + Ord(Ch) - 87
+      end
+      else State := NumCharReady
+    end
+    else if State = NumCharReady then
+    begin
+      Result := Result + Chr(ChNum);
+      State := None
+    end
+    else if State = Caret then
+    begin
+      Pos := Pos + 1;
+      State := None;
+      if (Ch >= '@') and (Ch <= '_') then
+        Result := Result + Chr(Ord(Ch) - 64)
+      else if (Ch >= 'a') and (Ch <= 'z') then
+             Result := Result + Chr(Ord(Ch) - 96)
+      else State := Error
+    end
+    else if State = Error then
+           CompileError('Invalid character in string: ' + Pstr)
   end;
-  if State = NumChar then Str := Str + Chr(ChNum);
-  ParseString := Str
+  if (State = QuotedStr) or (State = Caret) then
+    CompileError('String is not terminated: ' + Pstr);
+  if (State = NumCharDec) or (State = NumCharHex) then
+    Result := Result + Chr(ChNum);
 end;
 
 function ParseInt(Pstr : string) : integer;

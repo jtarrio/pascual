@@ -83,11 +83,11 @@ teststring "'abc''def'" | is_valid
 teststring "#65" | is_valid
 teststring "#65#66#67" | is_valid
 teststring "'abc'#68'def'" | is_valid
-teststring "^G" | will_be_valid
-teststring "^g" | will_be_valid
-teststring "^[" | will_be_valid
-teststring "'abc'^G'def'" | will_be_valid
-teststring "^G^G^G" | will_be_valid
+teststring "'abc'^G'def'" | is_valid
+teststring "''^G" | is_valid
+teststring "''^g" | is_valid
+teststring "''^[" | is_valid
+teststring "''^G^G^G" | is_valid
 testchar() {
   echo "program foo; var a : char; begin a := $1 end."
 }
@@ -98,9 +98,9 @@ testchar '"a"' | is_not_valid
 testchar "'ab'" | is_not_valid
 testchar '"ab"' | is_not_valid
 testchar "#65" | is_valid
-testchar "^G" | will_be_valid
-testchar "^g" | will_be_valid
-testchar "^[" | will_be_valid
+testchar "''^G" | is_valid
+testchar "''^g" | is_valid
+testchar "''^[" | is_valid
 
 # Comments
 echo '{Short comment}program foo; begin end.' | is_valid

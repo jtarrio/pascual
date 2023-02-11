@@ -194,23 +194,51 @@ begin
 end;
 
 function _UnparseChar(Chr : char) : string;
+var 
+  ChNum : string;
 begin
-  case Chr of 
-    '''': Result := '''''''''';
-    else Result := '''' + Chr + ''''
+  if Chr = '''' then Result := ''''''''''
+  else if Chr < ' ' then
+  begin
+    Str(Ord(Chr), ChNum);
+    Result := '#' + ChNum
   end
+  else Result := '''' + Chr + ''''
 end;
 
-function _UnparseString(Str : string) : string;
-var Pos : integer;
+function _UnparseString(St : string) : string;
+var 
+  Pos : integer;
+  ChNum : string;
+  Quoted : boolean;
 begin
-  Result := '''';
-  for Pos := 1 to Length(Str) do
-    case Str[Pos] of 
-      '''': Result := Result + '''''';
-      else Result := Result + Str[Pos]
-    end;
-  Result := Result + ''''
+  Quoted := false;
+  Result := '';
+  for Pos := 1 to Length(St) do
+  begin
+    if St[Pos] < ' ' then
+    begin
+      if Quoted then
+      begin
+        Quoted := false;
+        Result := Result + ''''
+      end;
+      Str(Ord(St[Pos]), ChNum);
+      Result := Result + '#' + ChNum
+    end
+    else
+    begin
+      if not Quoted then
+      begin
+        Quoted := true;
+        Result := Result + ''''
+      end;
+      if St[Pos] = '''' then Result := Result + ''''''
+      else Result := Result + St[Pos]
+    end
+  end;
+  if Quoted then Result := Result + '''';
+  if Result = '' then Result := ''''''
 end;
 
 function _DescribeImmediatepr(Expr : TExpression) : string;
