@@ -75,7 +75,7 @@ begin
   write(Codegen.Output, '''');
   if Chr = '''' then write(Codegen.Output, '\''')
   else if Chr = '\' then write(Codegen.Output, '\\')
-  else if Chr >= ' ' then write(Codegen.Output, Chr)
+  else if (Chr >= ' ') and (Chr <= #126) then write(Codegen.Output, Chr)
   else _OutEscapedChar(Chr);
   write(Codegen.Output, '''')
 end;
@@ -99,7 +99,7 @@ begin
       Chr := Str[Pos];
       if Chr = '"' then write(Codegen.Output, '\"')
       else if Chr = '\' then write(Codegen.Output, '\\')
-      else if Chr >= ' ' then write(Codegen.Output, Chr)
+      else if (Chr >= ' ') and (Chr <= #126) then write(Codegen.Output, Chr)
       else _OutEscapedChar(Chr)
     end;
     write(Codegen.Output, '")')
@@ -579,7 +579,7 @@ begin
   else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'int')
   else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'int')
   else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'double')
-  else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'char')
+  else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'unsigned char')
   else if TypePtr^.Cls = TtcString then write(Codegen.Output, 'PString')
   else if TypePtr^.Cls = TtcText then write(Codegen.Output, 'PFile')
   else if TypePtr^.Cls = TtcEnum then
@@ -700,7 +700,7 @@ begin
   else if TypePtr^.Cls = TtcReal then
          write(Codegen.Output, 'double ', Name)
   else if TypePtr^.Cls = TtcChar then
-         write(Codegen.Output, 'char ', Name)
+         write(Codegen.Output, 'unsigned char ', Name)
   else if TypePtr^.Cls = TtcString then
          write(Codegen.Output, 'PString ', Name)
   else if TypePtr^.Cls = TtcText then

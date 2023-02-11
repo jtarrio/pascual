@@ -130,7 +130,7 @@ void WRITE_r(PFile* file, double num) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_c(PFile* file, char chr) {
+void WRITE_c(PFile* file, unsigned char chr) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);

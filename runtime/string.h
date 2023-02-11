@@ -6,24 +6,24 @@
 int LENGTH(PString s);
 PString COPY(PString src, int pos, int num);
 void DELETE(PString* src, int pos, int num);
-char UPCASE(char src);
-char CHR(int pos);
-int ORD(char chr);
+unsigned char UPCASE(unsigned char src);
+unsigned char CHR(int pos);
+int ORD(unsigned char chr);
 
-PString str_of(char chr);
+PString str_of(unsigned char chr);
 #define str_make(l, s) \
   (PString) { .len = l, .value = s }
 PString str_of_pchar(const char* str);
 const char* pchar_of_str(PString* str);
 
-PString cat_cc(char a, char b);
-PString cat_cs(char a, PString b);
-PString cat_sc(PString a, char b);
+PString cat_cc(unsigned char a, unsigned char b);
+PString cat_cs(unsigned char a, PString b);
+PString cat_sc(PString a, unsigned char b);
 PString cat_ss(PString a, PString b);
 
-int cmp_cc(char a, char b);
-int cmp_cs(char a, PString b);
-int cmp_sc(PString a, char b);
+int cmp_cc(unsigned char a, unsigned char b);
+int cmp_cs(unsigned char a, PString b);
+int cmp_sc(PString a, unsigned char b);
 int cmp_ss(PString a, PString b);
 
 void STR_b(int val, PString* dst);

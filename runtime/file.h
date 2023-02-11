@@ -26,7 +26,7 @@ void WRITELN(PFile* file);
 void WRITE_b(PFile* file, int val);
 void WRITE_i(PFile* file, int num);
 void WRITE_r(PFile* file, double num);
-void WRITE_c(PFile* file, char chr);
+void WRITE_c(PFile* file, unsigned char chr);
 void WRITE_s(PFile* file, PString str);
 void WRITE_e(PFile* file, int value, const char** names);
 

@@ -32,16 +32,16 @@ void DELETE(PString* str, int pos, int num) {
   str->len = str->len - num;
 }
 
-char UPCASE(char src) {
+unsigned char UPCASE(unsigned char src) {
   if ((src >= 'a') && (src <= 'z')) return src - ('a' - 'A');
   return src;
 }
 
-char CHR(int pos) { return (char)pos; }
+unsigned char CHR(int pos) { return pos; }
 
-int ORD(char chr) { return (int)((unsigned char)chr); }
+int ORD(unsigned char chr) { return chr; }
 
-PString str_of(char chr) {
+PString str_of(unsigned char chr) {
   PString ret;
   ret.len = 1;
   ret.value[0] = chr;
@@ -62,7 +62,7 @@ const char* pchar_of_str(PString* str) {
   return buffer;
 }
 
-PString cat_cc(char a, char b) {
+PString cat_cc(unsigned char a, unsigned char b) {
   PString ret;
   ret.len = 2;
   ret.value[0] = a;
@@ -70,14 +70,14 @@ PString cat_cc(char a, char b) {
   return ret;
 }
 
-PString cat_cs(char a, PString b) {
+PString cat_cs(unsigned char a, PString b) {
   memmove(b.value + 1, b.value, 254);
   b.value[0] = a;
   if (b.len < 255) ++b.len;
   return b;
 }
 
-PString cat_sc(PString a, char b) {
+PString cat_sc(PString a, unsigned char b) {
   if (a.len < 255) {
     a.value[a.len] = b;
     ++a.len;
@@ -93,15 +93,15 @@ PString cat_ss(PString a, PString b) {
   return a;
 }
 
-int cmp_cc(char a, char b) { return (unsigned char)(a) - (unsigned char)(b); }
+int cmp_cc(unsigned char a, unsigned char b) { return a - b; }
 
-int cmp_cs(char a, PString b) {
+int cmp_cs(unsigned char a, PString b) {
   int c = cmp_cc(a, b.value[0]);
   if (c != 0) return c;
   return 1 - b.len;
 }
 
-int cmp_sc(PString a, char b) {
+int cmp_sc(PString a, unsigned char b) {
   if (a.len == 0) return -1;
   if (a.len == 1) return cmp_cc(a.value[0], b);
   return 1;
@@ -130,7 +130,7 @@ void STR_r(double num, PString* dst) {
   dst->len = snprintf(dst->value, 255, "%g", num);
 }
 
-void STR_c(char chr, PString* dst) {
+void STR_c(unsigned char chr, PString* dst) {
   dst->len = 1;
   dst->value[0] = chr;
 }
@@ -169,7 +169,7 @@ void VAL_i(PString* str, int* dst, int* code) {
     }
     return;
   }
-  
+
   for (int pos = 0; pos < str->len && *code == 0; ++pos) {
     char chr = str->value[pos];
     if (chr == '-' && pos == 0)

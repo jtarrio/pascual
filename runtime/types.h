@@ -6,10 +6,10 @@
 
 typedef struct {
   union {
-    char chr[256];
+    unsigned char chr[256];
     struct __attribute__((__packed__)) {
       unsigned char len;
-      char value[255];
+      unsigned char value[255];
     };
   };
 } PString;
