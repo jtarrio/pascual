@@ -252,11 +252,17 @@ typedef struct record29 {
     };
   };
 } TPSNAME;
-typedef struct record31 *TPSDEFPTR;
-typedef enum enum30 { TDCNAME, TDCTYPE, TDCENUM, TDCRANGE, TDCRECORD, TDCARRAY, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
+typedef enum enum30 { TCTENUM, TCTRECORD, TCTWITHVAR } TPSCOUNTERTYPE;
 typedef struct record31 {
-  struct record31 *PREV;
-  struct record31 *NEXT;
+  int ENUMCTR;
+  int RECORDCTR;
+  int WITHVARCTR;
+} TPSCOUNTERS;
+typedef struct record33 *TPSDEFPTR;
+typedef enum enum32 { TDCNAME, TDCTYPE, TDCENUM, TDCRANGE, TDCRECORD, TDCARRAY, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
+typedef struct record33 {
+  struct record33 *PREV;
+  struct record33 *NEXT;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -291,14 +297,15 @@ typedef struct record31 {
     };
     struct {
       int TEMPORARYSCOPE;
+      TPSCOUNTERS COUNTERS;
       TPSFUNCTION *CURRENTFN;
     };
   };
 } TPSDEFENTRY;
-typedef struct record32 {
+typedef struct record34 {
   TPSDEFENTRY *LATEST;
   TPSFUNCTION *CURRENTFN;
-  int COUNTER;
+  TPSCOUNTERS COUNTERS;
 } TPSDEFS;
 
 const char* enumvalues2[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
@@ -307,7 +314,8 @@ const char* enumvalues6[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "
 const char* enumvalues14[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCSUBRANGE", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
 const char* enumvalues17[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
 const char* enumvalues28[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
-const char* enumvalues30[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRANGE", "TDCRECORD", "TDCARRAY", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
+const char* enumvalues30[] = { "TCTENUM", "TCTRECORD", "TCTWITHVAR" };
+const char* enumvalues32[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRANGE", "TDCRECORD", "TDCARRAY", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
 
 void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR);
 TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR);
@@ -318,17 +326,17 @@ TEXPRESSIONOBJ *PFORD(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFPRED(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFSUCC(TEXPRESSIONOBJ *ARG);
 
-typedef struct record33 {
+typedef struct record35 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
 
-struct record35 {
+struct record37 {
   PString LINE;
   TLXTOKEN TOKEN;
   TLXINPUTFILE INPUT;
-  struct record34 {
+  struct record36 {
     int EXISTS;
     TLXINPUTFILE INPUT;
   } PREV;
@@ -521,8 +529,8 @@ void LXGETSTRING() {
   unsigned char CHR;
   int POS;
   int LAST;
-  enum enum36 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
-  const char* enumvalues36[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
+  enum enum38 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
+  const char* enumvalues38[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
   POS = 0;
   STATE = NONE;
   do {
@@ -712,7 +720,7 @@ void LXINCLUDE(PString FILENAME) {
 }
 
 TPSDEFS DEFS;
-struct record37 {
+struct record39 {
   TPSTYPE *PTNIL;
   TPSTYPE *PTBOOLEAN;
   TPSTYPE *PTINTEGER;
@@ -722,17 +730,39 @@ struct record37 {
   TPSTYPE *PTTEXT;
 } PRIMITIVETYPES;
 
-int DEFCOUNTER() {
+int DEFCOUNTER(TPSCOUNTERTYPE COUNTERTYPE) {
   int RESULT;
-  DEFS.COUNTER = DEFS.COUNTER + 1;
-  RESULT = DEFS.COUNTER;
+  switch (COUNTERTYPE) {
+    case TCTENUM:
+      {
+        DEFS.COUNTERS.ENUMCTR = DEFS.COUNTERS.ENUMCTR + 1;
+        RESULT = DEFS.COUNTERS.ENUMCTR;
+      }
+      break;
+    case TCTRECORD:
+      {
+        DEFS.COUNTERS.RECORDCTR = DEFS.COUNTERS.RECORDCTR + 1;
+        RESULT = DEFS.COUNTERS.RECORDCTR;
+      }
+      break;
+    case TCTWITHVAR:
+      {
+        DEFS.COUNTERS.WITHVARCTR = DEFS.COUNTERS.WITHVARCTR + 1;
+        RESULT = DEFS.COUNTERS.WITHVARCTR;
+      }
+      break;
+    default:
+      break;
+  }
   return RESULT;
 }
 
 void INITDEFS() {
   DEFS.LATEST = (void*)0;
+  DEFS.COUNTERS.ENUMCTR = 0;
+  DEFS.COUNTERS.RECORDCTR = 0;
+  DEFS.COUNTERS.WITHVARCTR = 0;
   DEFS.CURRENTFN = (void*)0;
-  DEFS.COUNTER = 0;
 }
 
 TPSDEFENTRY *_NEWDEF(TPSDEFCLASS CLS) {
@@ -882,6 +912,7 @@ void _STARTSCOPE(int TEMPORARY, TPSFUNCTION *NEWFUNCTION) {
   TPSDEFENTRY *DEF;
   DEF = _ADDDEF(TDCSCOPEBOUNDARY);
   DEF->TEMPORARYSCOPE = TEMPORARY;
+  DEF->COUNTERS = DEFS.COUNTERS;
   DEF->CURRENTFN = DEFS.CURRENTFN;
   if (!TEMPORARY) DEFS.CURRENTFN = NEWFUNCTION;
 }
@@ -893,6 +924,7 @@ void _CLOSESCOPE(int TEMPORARY) {
     DELETED = _DELETEDEF(&DELETEDDEF);
   } while (!(!DELETED || DELETEDDEF.CLS == TDCSCOPEBOUNDARY && (TEMPORARY || !DELETEDDEF.TEMPORARYSCOPE)));
   DEFS.CURRENTFN = DELETEDDEF.CURRENTFN;
+  DEFS.COUNTERS = DELETEDDEF.COUNTERS;
 }
 
 void STARTLOCALSCOPE(TPSFUNCTION *NEWFUNCTION) {
@@ -1318,7 +1350,7 @@ TPSENUMDEF *ADDENUM(TPSENUMDEF ENUM) {
   TPSENUMDEF *ENUMPTR;
   ENUMPTR = _ADDDEF(TDCENUM)->ENUMPTR;
   *ENUMPTR = ENUM;
-  ENUMPTR->ID = DEFCOUNTER();
+  ENUMPTR->ID = DEFCOUNTER(TCTENUM);
   RESULT = ENUMPTR;
   return RESULT;
 }
@@ -1335,7 +1367,7 @@ TPSRECORDDEF *ADDRECORD(TPSRECORDDEF REC) {
   TPSRECORDDEF *RECPTR;
   RECPTR = _ADDDEF(TDCRECORD)->RECPTR;
   *RECPTR = REC;
-  RECPTR->ID = DEFCOUNTER();
+  RECPTR->ID = DEFCOUNTER(TCTRECORD);
   RESULT = RECPTR;
   return RESULT;
 }
@@ -1449,12 +1481,12 @@ int FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
   int RET;
   if (TYPEPTR->CLS != TTCRECORD) COMPILEERROR(cat_ss(str_make(14, "Not a record: "), TYPENAME(TYPEPTR)));
   {
-    TPSRECORDDEF *with38 = &*TYPEPTR->RECPTR;
+    TPSRECORDDEF *with40 = &*TYPEPTR->RECPTR;
     {
       RET = 0;
-      POS = with38->SIZE;
+      POS = with40->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_ss(NAME, with38->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
+        if (cmp_ss(NAME, with40->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
         POS = POS - 1;
       }
     }
@@ -1498,7 +1530,7 @@ TPSVARIABLE *ADDWITHVAR(TEXPRESSIONOBJ *BASE) {
   TPSVARIABLE *TMPVARPTR;
   TPSWITHVAR *WITHVARPTR;
   if (!ISRECORDTYPE(BASE->TYPEPTR)) COMPILEERROR(str_make(31, "'With' variable is not a record"));
-  STR_i(DEFCOUNTER(), &TMPVARNUM);
+  STR_i(DEFCOUNTER(TCTWITHVAR), &TMPVARNUM);
   TMPVAR.NAME = cat_ss(str_make(4, "with"), TMPVARNUM);
   TMPVAR.TYPEPTR = BASE->TYPEPTR;
   TMPVAR.ISCONSTANT = BASE->ISCONSTANT;
@@ -1978,28 +2010,28 @@ PString _UNPARSESTRING(PString ST) {
 PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
   {
-    TEXIMMEDIATE *with39 = &EXPR->IMMEDIATE;
-    switch (with39->CLS) {
+    TEXIMMEDIATE *with41 = &EXPR->IMMEDIATE;
+    switch (with41->CLS) {
       case XICNIL:
         RESULT = str_make(3, "nil");
         break;
       case XICBOOLEAN:
-        STR_b(with39->BOOLEANVAL, &RESULT);
+        STR_b(with41->BOOLEANVAL, &RESULT);
         break;
       case XICINTEGER:
-        STR_i(with39->INTEGERVAL, &RESULT);
+        STR_i(with41->INTEGERVAL, &RESULT);
         break;
       case XICREAL:
-        STR_r(with39->REALVAL, &RESULT);
+        STR_r(with41->REALVAL, &RESULT);
         break;
       case XICCHAR:
-        RESULT = _UNPARSECHAR(with39->CHARVAL);
+        RESULT = _UNPARSECHAR(with41->CHARVAL);
         break;
       case XICSTRING:
-        RESULT = _UNPARSESTRING(with39->STRINGVAL);
+        RESULT = _UNPARSESTRING(with41->STRINGVAL);
         break;
       case XICENUM:
-        RESULT = with39->ENUMPTR->VALUES[subrange(with39->ENUMORDINAL, 0, 127)];
+        RESULT = with41->ENUMPTR->VALUES[subrange(with41->ENUMORDINAL, 0, 127)];
         break;
       default:
         COMPILEERROR(str_make(47, "Internal error: cannot describe immediate value"));
@@ -2012,16 +2044,16 @@ PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
 PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
   PString RESULT;
   {
-    TEXPSEUDOFNCALL *with40 = &EXPR->PSEUDOFNCALL;
-    switch (with40->PSEUDOFN) {
+    TEXPSEUDOFNCALL *with42 = &EXPR->PSEUDOFNCALL;
+    switch (with42->PSEUDOFN) {
       case TPFDISPOSE:
-        RESULT = cat_sc(cat_ss(str_make(8, "DISPOSE("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(8, "DISPOSE("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
         break;
       case TPFNEW:
-        RESULT = cat_sc(cat_ss(str_make(4, "NEW("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(4, "NEW("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
         break;
       case TPFPRED:
-        RESULT = cat_sc(cat_ss(str_make(5, "PRED("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(5, "PRED("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
         break;
       case TPFREAD:
         RESULT = str_make(9, "READ(...)");
@@ -2030,13 +2062,13 @@ PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
         RESULT = str_make(11, "READLN(...)");
         break;
       case TPFSTR:
-        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(str_make(4, "STR("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with40->ARG2, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(str_make(4, "STR("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG2, LEVELS - 1)), ')');
         break;
       case TPFSUCC:
-        RESULT = cat_sc(cat_ss(str_make(5, "SUCC("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(5, "SUCC("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
         break;
       case TPFVAL:
-        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "VAL("), DESCRIBEEXPR(with40->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with40->ARG2, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with40->ARG3, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "VAL("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG2, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG3, LEVELS - 1)), ')');
         break;
       case TPFWRITE:
         RESULT = str_make(10, "WRITE(...)");
@@ -2396,7 +2428,7 @@ TEXPRESSIONOBJ *EXTOSTRING(TEXPRESSIONOBJ *PARENT) {
     }
   }
   else if (ISSTRINGTYPE(PARENT->TYPEPTR)) RESULT = PARENT;
-  else COMPILEERROR(cat_ss(str_make(47, "Cannot convert a value of this type to string: "), TYPENAME(PARENT->TYPEPTR)));
+  else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Cannot convert value of type "), TYPENAME(PARENT->TYPEPTR)), str_make(12, " to string: ")), DESCRIBEEXPR(PARENT, 10)));
   return RESULT;
 }
 
@@ -2447,8 +2479,8 @@ TEXPRESSIONOBJ *EXVARIABLE(TPSVARIABLE *VARPTR) {
 
 TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, int FIELDNUM) {
   TEXPRESSIONOBJ *RESULT;
-  if (!ISRECORDTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(39, "Cannot access field of non-record type "), TYPENAME(PARENT->TYPEPTR)));
-  if (FIELDNUM < 1 || FIELDNUM > PARENT->TYPEPTR->RECPTR->SIZE) COMPILEERROR(cat_ss(str_make(18, "Invalid field for "), TYPENAME(PARENT->TYPEPTR)));
+  if (!ISRECORDTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(48, "Cannot access field of non-record value of type "), TYPENAME(PARENT->TYPEPTR)));
+  if (FIELDNUM < 1 || FIELDNUM > PARENT->TYPEPTR->RECPTR->SIZE) COMPILEERROR(cat_ss(str_make(23, "Invalid field for type "), TYPENAME(PARENT->TYPEPTR)));
   RESULT = _NEWEXPR(XCFIELD);
   RESULT->RECEXPR = PARENT;
   RESULT->RECFIELDNUM = FIELDNUM;
@@ -2461,7 +2493,7 @@ TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, int FIELDNUM) {
 
 TEXPRESSIONOBJ *EXARRAYACCESS(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT) {
   TEXPRESSIONOBJ *RESULT;
-  if (!ISARRAYTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(42, "Cannot access subscript of non-array type "), TYPENAME(PARENT->TYPEPTR)));
+  if (!ISARRAYTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(51, "Cannot access subscript of non-array value of type "), TYPENAME(PARENT->TYPEPTR)), str_make(2, ": ")), DESCRIBEEXPR(PARENT, 10)));
   RESULT = _NEWEXPR(XCARRAY);
   RESULT->ARRAYEXPR = PARENT;
   RESULT->ARRAYINDEX = EXCOERCE(SUBSCRIPT, PARENT->TYPEPTR->ARRAYPTR->INDEXTYPEPTR);
@@ -2474,7 +2506,7 @@ TEXPRESSIONOBJ *EXARRAYACCESS(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT)
 
 TEXPRESSIONOBJ *EXPOINTERACCESS(TEXPRESSIONOBJ *PARENT) {
   TEXPRESSIONOBJ *RESULT;
-  if (!ISPOINTERTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(36, "Cannot dereference non-pointer type "), TYPENAME(PARENT->TYPEPTR)));
+  if (!ISPOINTERTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(45, "Cannot dereference non-pointer value of type "), TYPENAME(PARENT->TYPEPTR)), str_make(2, ": ")), DESCRIBEEXPR(PARENT, 10)));
   RESULT = _NEWEXPR(XCPOINTER);
   RESULT->POINTEREXPR = PARENT;
   RESULT->TYPEPTR = PARENT->TYPEPTR->POINTEDTYPEPTR;
@@ -2486,8 +2518,8 @@ TEXPRESSIONOBJ *EXPOINTERACCESS(TEXPRESSIONOBJ *PARENT) {
 
 TEXPRESSIONOBJ *EXSTRINGCHAR(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT) {
   TEXPRESSIONOBJ *RESULT;
-  if (!ISSTRINGYTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(43, "Cannot access subscript of non-string type "), TYPENAME(PARENT->TYPEPTR)));
-  if (!ISINTEGERTYPE(SUBSCRIPT->TYPEPTR)) COMPILEERROR(cat_ss(str_make(38, "Invalid type for subscript of string: "), TYPENAME(SUBSCRIPT->TYPEPTR)));
+  if (!ISSTRINGYTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(52, "Cannot access subscript of non-string value of type "), TYPENAME(PARENT->TYPEPTR)), str_make(2, ": ")), DESCRIBEEXPR(PARENT, 10)));
+  if (!ISINTEGERTYPE(SUBSCRIPT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(38, "Invalid type for subscript of string: "), TYPENAME(SUBSCRIPT->TYPEPTR)), str_make(2, ": ")), DESCRIBEEXPR(SUBSCRIPT, 10)));
   RESULT = _NEWEXPR(XCSTRINGCHAR);
   RESULT->ARRAYEXPR = EXTOSTRING(PARENT);
   RESULT->ARRAYINDEX = SUBSCRIPT;
@@ -2525,7 +2557,7 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
         {
           RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[(int)subrange(POS, 1, 8) - 1], FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR);
           if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE) {
-            if (RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+            if (RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(cat_ss(str_make(47, "Pass-by-reference argument must be assignable: "), DESCRIBEEXPR(RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], 10)));
             EXMARKINITIALIZED(RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
           }
         }
@@ -2551,7 +2583,7 @@ TEXPRESSIONOBJ *EXPSEUDOFN(TPSPSEUDOFN SPECIALFN) {
 TEXPRESSIONOBJ *EXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *RESULT;
   TPSPSEUDOFN FN;
-  if (EXPR->CLS != XCPSEUDOFNREF) COMPILEERROR(str_make(25, "Expected a pseudofunction"));
+  if (EXPR->CLS != XCPSEUDOFNREF) COMPILEERROR(cat_ss(str_make(47, "Internal error: Expected a pseudofunction, got "), DESCRIBEEXPR(EXPR, 10)));
   FN = EXPR->PSEUDOFN;
   EXPR->CLS = XCPSEUDOFNCALL;
   EXPR->PSEUDOFNCALL.PSEUDOFN = FN;
@@ -3253,16 +3285,32 @@ TPSTYPE *PSARRAYTYPE() {
   TPSTYPE *RESULT;
   TPSTYPE TYP;
   TPSARRAYDEF ARR;
+  TPSTYPE *TYPEPTR;
+  TPSARRAYDEF *ARRPTR;
+  ARR.INDEXTYPEPTR = (void*)0;
+  ARR.VALUETYPEPTR = (void*)0;
+  ARRPTR = ADDARRAY(ARR);
+  TYP = TYPEOFCLASS(TTCARRAY);
+  TYP.ARRAYPTR = ARRPTR;
+  TYPEPTR = ADDTYPE(TYP);
+  RESULT = TYPEPTR;
   WANTTOKENANDREAD(TKARRAY);
   WANTTOKENANDREAD(TKLBRACKET);
-  ARR.INDEXTYPEPTR = PSTYPEDENOTER();
-  if (!ISBOUNDEDTYPE(ARR.INDEXTYPEPTR)) COMPILEERROR(str_make(51, "Array indices must belong to a bounded ordinal type"));
+  do {
+    ARRPTR->INDEXTYPEPTR = PSTYPEDENOTER();
+    if (!ISBOUNDEDTYPE(ARRPTR->INDEXTYPEPTR)) COMPILEERROR(str_make(51, "Array indices must belong to a bounded ordinal type"));
+    WANTTOKEN2(TKCOMMA, TKRBRACKET);
+    if (LEXER.TOKEN.ID == TKCOMMA) {
+      TYPEPTR = ADDTYPE(TYP);
+      ARRPTR->VALUETYPEPTR = TYPEPTR;
+      ARRPTR = ADDARRAY(ARR);
+      TYPEPTR->ARRAYPTR = ARRPTR;
+    }
+    SKIPTOKEN(TKCOMMA);
+  } while (!(LEXER.TOKEN.ID == TKRBRACKET));
   WANTTOKENANDREAD(TKRBRACKET);
   WANTTOKENANDREAD(TKOF);
-  ARR.VALUETYPEPTR = PSTYPEDENOTER();
-  TYP = TYPEOFCLASS(TTCARRAY);
-  TYP.ARRAYPTR = ADDARRAY(ARR);
-  RESULT = ADDTYPE(TYP);
+  ARRPTR->VALUETYPEPTR = PSTYPEDENOTER();
   return RESULT;
 }
 
@@ -3636,10 +3684,16 @@ TEXPRESSIONOBJ *PSARRAYACCESS(TEXPRESSIONOBJ *ARR) {
   TEXPRESSIONOBJ *RESULT;
   TEXPRESSIONOBJ *IDX;
   WANTTOKENANDREAD(TKLBRACKET);
-  IDX = PSEXPRESSION();
+  do {
+    IDX = PSEXPRESSION();
+    if (ISSTRINGYTYPE(ARR->TYPEPTR)) ARR = EXSTRINGCHAR(ARR, IDX);
+    else ARR = EXARRAYACCESS(ARR, IDX);
+    WANTTOKEN2(TKCOMMA, TKRBRACKET);
+    if (LEXER.TOKEN.ID == TKCOMMA && !ISARRAYTYPE(ARR->TYPEPTR) && !ISSTRINGYTYPE(ARR->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(41, "Array element is not an array or string: "), DESCRIBEEXPR(ARR, 10)), str_make(14, "; it has type ")), TYPENAME(ARR->TYPEPTR)));
+    SKIPTOKEN(TKCOMMA);
+  } while (!(LEXER.TOKEN.ID == TKRBRACKET));
   WANTTOKENANDREAD(TKRBRACKET);
-  if (ISSTRINGYTYPE(ARR->TYPEPTR)) RESULT = EXSTRINGCHAR(ARR, IDX);
-  else RESULT = EXARRAYACCESS(ARR, IDX);
+  RESULT = ARR;
   return RESULT;
 }
 
@@ -3713,11 +3767,11 @@ int ISOPRELATIONAL(TLXTOKEN TOK) {
 
 PString PARSESTRING(PString PSTR) {
   PString RESULT;
-  enum enum41 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
+  enum enum43 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   int POS;
   unsigned char CH;
   int CHNUM;
-  const char* enumvalues41[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
+  const char* enumvalues43[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
   RESULT = str_make(0, "");
   STATE = NONE;
   POS = 1;
@@ -4174,11 +4228,11 @@ void STARTGLOBALSCOPE() {
   }
 }
 
-typedef enum enum42 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum enum44 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
-const char* enumvalues42[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
+const char* enumvalues44[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record43 {
+struct record45 {
   PFile OUTPUT;
   int ISMULTISTATEMENT;
   int INDENT;
@@ -4431,29 +4485,29 @@ void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXIMMEDIATE *with44 = &EXPR->IMMEDIATE;
-    switch (with44->CLS) {
+    TEXIMMEDIATE *with46 = &EXPR->IMMEDIATE;
+    switch (with46->CLS) {
       case XICNIL:
         WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"));
         break;
       case XICBOOLEAN:
-        if (with44->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
+        if (with46->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
         else WRITE_c(&CODEGEN.OUTPUT, '0');
         break;
       case XICINTEGER:
-        WRITE_i(&CODEGEN.OUTPUT, with44->INTEGERVAL);
+        WRITE_i(&CODEGEN.OUTPUT, with46->INTEGERVAL);
         break;
       case XICREAL:
-        WRITE_r(&CODEGEN.OUTPUT, with44->REALVAL);
+        WRITE_r(&CODEGEN.OUTPUT, with46->REALVAL);
         break;
       case XICCHAR:
-        _OUTCHAR(with44->CHARVAL);
+        _OUTCHAR(with46->CHARVAL);
         break;
       case XICSTRING:
-        _OUTSTRING(&with44->STRINGVAL);
+        _OUTSTRING(&with46->STRINGVAL);
         break;
       case XICENUM:
-        WRITE_s(&CODEGEN.OUTPUT, with44->ENUMPTR->VALUES[subrange(with44->ENUMORDINAL, 0, 127)]);
+        WRITE_s(&CODEGEN.OUTPUT, with46->ENUMPTR->VALUES[subrange(with46->ENUMORDINAL, 0, 127)]);
         break;
       default:
         break;
@@ -4533,14 +4587,14 @@ void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXPRESSIONOBJ *with45 = &*EXPR->RECEXPR;
+    TEXPRESSIONOBJ *with47 = &*EXPR->RECEXPR;
     {
-      if (with45->CLS == XCPOINTER) {
-        _OUTEXPRESSIONPARENS(with45->POINTEREXPR, EXPR);
+      if (with47->CLS == XCPOINTER) {
+        _OUTEXPRESSIONPARENS(with47->POINTEREXPR, EXPR);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
-      else if (with45->CLS == XCVARIABLE && with45->VARPTR->ISREFERENCE) {
-        WRITE_s(&CODEGEN.OUTPUT, with45->VARPTR->NAME);
+      else if (with47->CLS == XCVARIABLE && with47->VARPTR->ISREFERENCE) {
+        WRITE_s(&CODEGEN.OUTPUT, with47->VARPTR->NAME);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
       else {
@@ -4727,93 +4781,93 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   unsigned char LTYPE;
   unsigned char RTYPE;
   {
-    TEXBINARYOP *with46 = &EXPR->BINARY;
+    TEXBINARYOP *with48 = &EXPR->BINARY;
     {
-      if (ISSTRINGYTYPE(with46->LEFT->TYPEPTR)) {
-        if (ISCHARTYPE(with46->LEFT->TYPEPTR)) LTYPE = 'c';
+      if (ISSTRINGYTYPE(with48->LEFT->TYPEPTR)) {
+        if (ISCHARTYPE(with48->LEFT->TYPEPTR)) LTYPE = 'c';
         else LTYPE = 's';
-        if (ISCHARTYPE(with46->RIGHT->TYPEPTR)) RTYPE = 'c';
+        if (ISCHARTYPE(with48->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
-        if (with46->OP == TKPLUS) {
+        if (with48->OP == TKPLUS) {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with46->LEFT);
+          OUTEXPRESSION(with48->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with46->RIGHT);
+          OUTEXPRESSION(with48->RIGHT);
           WRITE_c(&CODEGEN.OUTPUT, ')');
         }
-        else if (ISCHARTYPE(with46->LEFT->TYPEPTR) && ISCHARTYPE(with46->RIGHT->TYPEPTR)) {
-          _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-          if (_ISRELATIONALOP(with46->OP)) {
+        else if (ISCHARTYPE(with48->LEFT->TYPEPTR) && ISCHARTYPE(with48->RIGHT->TYPEPTR)) {
+          _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
+          if (_ISRELATIONALOP(with48->OP)) {
             WRITE_c(&CODEGEN.OUTPUT, ' ');
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
             WRITE_c(&CODEGEN.OUTPUT, ' ');
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-          _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
+          _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
         }
         else {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with46->LEFT);
+          OUTEXPRESSION(with48->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with46->RIGHT);
-          if (_ISRELATIONALOP(with46->OP)) {
+          OUTEXPRESSION(with48->RIGHT);
+          if (_ISRELATIONALOP(with48->OP)) {
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"));
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
         }
       }
-      else if (ISBOOLEANTYPE(with46->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISLOGICALORBITWISEOP(with46->OP)) {
+      else if (ISBOOLEANTYPE(with48->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
+        if (_ISLOGICALORBITWISEOP(with48->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with46->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with46->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with48->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with48->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
       }
-      else if (ISNUMERICTYPE(with46->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISARITHMETICOP(with46->OP)) {
+      else if (ISNUMERICTYPE(with48->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
+        if (_ISARITHMETICOP(with48->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with46->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISLOGICALORBITWISEOP(with46->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with48->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else if (_ISRELATIONALOP(with46->OP)) {
+        else if (_ISLOGICALORBITWISEOP(with48->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with48->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with48->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
       }
       else {
-        _OUTEXPRESSIONPARENS(with46->LEFT, EXPR);
-        if (_ISRELATIONALOP(with46->OP)) {
+        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
+        if (_ISRELATIONALOP(with48->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with46->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with46->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with46->RIGHT, EXPR);
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
       }
     }
   }
@@ -5053,6 +5107,20 @@ void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMPTR) {
   WRITE_s(&CODEGEN.OUTPUT, NAME);
 }
 
+void OUTNAMEANDARRAY(PString NAME, TPSTYPE *TYPEPTR) {
+  TPSTYPE *THETYPE;
+  THETYPE = TYPEPTR;
+  while (ISARRAYTYPE(THETYPE)) THETYPE = THETYPE->ARRAYPTR->VALUETYPEPTR;
+  OUTNAMEANDTYPE(NAME, THETYPE);
+  THETYPE = TYPEPTR;
+  while (ISARRAYTYPE(THETYPE)) {
+    WRITE_c(&CODEGEN.OUTPUT, '[');
+    _OUTSIZE(THETYPE->ARRAYPTR->INDEXTYPEPTR);
+    WRITE_c(&CODEGEN.OUTPUT, ']');
+    THETYPE = THETYPE->ARRAYPTR->VALUETYPEPTR;
+  }
+}
+
 void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
   if (TYPEPTR == (void*)0) {
     WRITE_s(&CODEGEN.OUTPUT, str_make(5, "void "));
@@ -5095,12 +5163,7 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
   else if (TYPEPTR->CLS == TTCENUM) OUTNAMEANDENUM(NAME, TYPEPTR->ENUMPTR);
   else if (TYPEPTR->CLS == TTCRANGE) OUTNAMEANDTYPE(NAME, TYPEPTR->RANGEPTR->FIRST->TYPEPTR);
   else if (TYPEPTR->CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYPEPTR->RECPTR);
-  else if (TYPEPTR->CLS == TTCARRAY) {
-    OUTNAMEANDTYPE(NAME, TYPEPTR->ARRAYPTR->VALUETYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, '[');
-    _OUTSIZE(TYPEPTR->ARRAYPTR->INDEXTYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, ']');
-  }
+  else if (TYPEPTR->CLS == TTCARRAY) OUTNAMEANDARRAY(NAME, TYPEPTR);
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Error writing name and type: "), NAME), str_make(2, ", ")), TYPENAME(TYPEPTR)));
 }
 
@@ -6075,9 +6138,9 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   int SUPPRESSWARNINGS;
-  enum enum47 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum enum49 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
-  const char* enumvalues47[] = { "FLAGNONE", "FLAGOUTPUT" };
+  const char* enumvalues49[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
