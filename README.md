@@ -4,7 +4,7 @@ Pascual is a Pascal compiler by [Jacobo Tarrío](https://jacobo.tarrio.org). Pas
 
 Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 
-* `Boolean`, `integer`, `char`, and `string`; enumerated types, subranges; arrays, records, and pointers; text files.
+* `Boolean`, `integer`, `real`, `char`, and `string`; enumerated types, subranges; arrays, records, and pointers; text files.
     * Missing sets, non-text files.
     * Missing comma syntax for multidimensional arrays.
     * Missing packed arrays and records.
@@ -12,6 +12,7 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 * Type definitions, variable definitions, untyped constant definitions, typed constant definitions.
     * Missing record typed constants.
 * Functions and procedures, pass by value and pass by reference.
+    * Missing `const` arguments.
     * Missing functions and procedures as arguments.
     * Missing nested functions and procedures.
     * Missing parameterized array bounds.
