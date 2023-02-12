@@ -5,24 +5,24 @@ struct record1 {
   int SUPPRESSWARNINGS;
 } OPTIONS;
 
-typedef enum enum2 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH } TLXTOKENID;
-typedef struct record3 {
+typedef enum enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH } TLXTOKENID;
+typedef struct record2 {
   int ROW;
   int COL;
 } TLXPOS;
-typedef struct record4 {
+typedef struct record3 {
   TLXTOKENID ID;
   PString VALUE;
   TLXPOS POS;
 } TLXTOKEN;
-typedef enum enum5 { TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFREAD, TPFREADLN, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
-typedef struct record18 *TPSTYPEPTR;
-typedef struct record19 *TPSENUMPTR;
-typedef struct record25 *TPSVARPTR;
-typedef struct record26 *TPSFNPTR;
-typedef struct record15 *TEXPRESSION;
-typedef enum enum6 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM } TEXIMMEDIATECLASS;
-typedef struct record7 {
+typedef enum enum2 { TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFREAD, TPFREADLN, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
+typedef struct record13 *TPSTYPEPTR;
+typedef struct record14 *TPSENUMPTR;
+typedef struct record20 *TPSVARPTR;
+typedef struct record21 *TPSFNPTR;
+typedef struct record11 *TEXPRESSION;
+typedef enum enum3 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM } TEXIMMEDIATECLASS;
+typedef struct record4 {
   TEXIMMEDIATECLASS CLS;
   union {
     struct {
@@ -42,26 +42,26 @@ typedef struct record7 {
     };
     struct {
       int ENUMORDINAL;
-      struct record19 *ENUMPTR;
+      struct record14 *ENUMPTR;
     };
   };
 } TEXIMMEDIATE;
-typedef struct record8 {
+typedef struct record5 {
   int SIZE;
-  struct record15 *VALUES[8];
+  struct record11 *VALUES[8];
 } TEXFUNCTIONARGS;
-typedef struct record9 {
-  struct record15 *ARG;
-  struct record9 *NEXT;
+typedef struct record6 {
+  struct record11 *ARG;
+  struct record6 *NEXT;
 } TEXREADARGS;
-typedef struct record10 {
-  struct record15 *ARG;
-  struct record10 *NEXT;
+typedef struct record7 {
+  struct record11 *ARG;
+  struct record7 *NEXT;
 } TEXWRITEARGS;
-typedef struct record11 {
-  struct record15 *ARG1;
-  struct record15 *ARG2;
-  struct record15 *ARG3;
+typedef struct record8 {
+  struct record11 *ARG1;
+  struct record11 *ARG2;
+  struct record11 *ARG3;
   TPSPSEUDOFN PSEUDOFN;
   union {
     struct {
@@ -72,18 +72,18 @@ typedef struct record11 {
     };
   };
 } TEXPSEUDOFNCALL;
-typedef struct record12 {
-  struct record15 *PARENT;
+typedef struct record9 {
+  struct record11 *PARENT;
   TLXTOKENID OP;
 } TEXUNARYOP;
-typedef struct record13 {
-  struct record15 *LEFT;
-  struct record15 *RIGHT;
+typedef struct record10 {
+  struct record11 *LEFT;
+  struct record11 *RIGHT;
   TLXTOKENID OP;
 } TEXBINARYOP;
-typedef enum enum14 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCSUBRANGE, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
-typedef struct record15 {
-  struct record18 *TYPEPTR;
+typedef enum enum4 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCSUBRANGE, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
+typedef struct record11 {
+  struct record13 *TYPEPTR;
   int ISCONSTANT;
   int ISASSIGNABLE;
   int ISFUNCTIONRESULT;
@@ -93,37 +93,37 @@ typedef struct record15 {
       TEXIMMEDIATE IMMEDIATE;
     };
     struct {
-      struct record15 *TOSTRPARENT;
+      struct record11 *TOSTRPARENT;
     };
     struct {
-      struct record15 *TOREALPARENT;
+      struct record11 *TOREALPARENT;
     };
     struct {
-      struct record15 *SUBRANGEPARENT;
+      struct record11 *SUBRANGEPARENT;
     };
     struct {
-      struct record25 *VARPTR;
+      struct record20 *VARPTR;
     };
     struct {
-      struct record15 *RECEXPR;
+      struct record11 *RECEXPR;
       int RECFIELDNUM;
     };
     struct {
-      struct record15 *ARRAYEXPR;
-      struct record15 *ARRAYINDEX;
+      struct record11 *ARRAYEXPR;
+      struct record11 *ARRAYINDEX;
     };
     struct {
-      struct record15 *POINTEREXPR;
+      struct record11 *POINTEREXPR;
     };
     struct {
-      struct record15 *STRINGEXPR;
-      struct record15 *STRINGINDEX;
+      struct record11 *STRINGEXPR;
+      struct record11 *STRINGINDEX;
     };
     struct {
-      struct record26 *FNPTR;
+      struct record21 *FNPTR;
     };
     struct {
-      struct record15 *FNEXPR;
+      struct record11 *FNEXPR;
       TEXFUNCTIONARGS CALLARGS;
     };
     struct {
@@ -140,58 +140,58 @@ typedef struct record15 {
     };
   };
 } TEXPRESSIONOBJ;
-typedef struct record16 {
+typedef struct record12 {
   PString NAME;
 } TPSIDENTIFIER;
-typedef struct record20 *TPSRANGEPTR;
-typedef struct record22 *TPSRECPTR;
-typedef struct record23 *TPSARRAYPTR;
-typedef struct record24 *TPSCONSTPTR;
-typedef struct record27 *TPSWITHVARPTR;
-typedef struct record29 *TPSNAMEPTR;
-typedef enum enum17 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
-typedef struct record18 {
+typedef struct record15 *TPSRANGEPTR;
+typedef struct record17 *TPSRECPTR;
+typedef struct record18 *TPSARRAYPTR;
+typedef struct record19 *TPSCONSTPTR;
+typedef struct record22 *TPSWITHVARPTR;
+typedef struct record23 *TPSNAMEPTR;
+typedef enum enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
+typedef struct record13 {
   PString NAME;
-  struct record18 *ALIASFOR;
+  struct record13 *ALIASFOR;
   int WASUSED;
   TPSTYPECLASS CLS;
   union {
     struct {
-      struct record19 *ENUMPTR;
+      struct record14 *ENUMPTR;
     };
     struct {
-      struct record20 *RANGEPTR;
+      struct record15 *RANGEPTR;
     };
     struct {
-      struct record22 *RECPTR;
+      struct record17 *RECPTR;
     };
     struct {
-      struct record23 *ARRAYPTR;
+      struct record18 *ARRAYPTR;
     };
     struct {
-      struct record18 *POINTEDTYPEPTR;
+      struct record13 *POINTEDTYPEPTR;
     };
     struct {
       PString *TARGETNAME;
     };
   };
 } TPSTYPE;
-typedef struct record19 {
+typedef struct record14 {
   int SIZE;
   PString VALUES[128];
   int ID;
   int HASBEENDEFINED;
 } TPSENUMDEF;
-typedef struct record20 {
+typedef struct record15 {
   TEXPRESSIONOBJ *FIRST;
   TEXPRESSIONOBJ *LAST;
   TPSTYPE *BASETYPEPTR;
 } TPSRANGEDEF;
-typedef struct record21 {
+typedef struct record16 {
   PString NAME;
   TPSTYPE *TYPEPTR;
 } TPSRECORDFIELD;
-typedef struct record22 {
+typedef struct record17 {
   int SIZE;
   TPSRECORDFIELD FIELDS[32];
   int NUMVARIANTS;
@@ -199,15 +199,15 @@ typedef struct record22 {
   int ID;
   int HASBEENDEFINED;
 } TPSRECORDDEF;
-typedef struct record23 {
+typedef struct record18 {
   TPSTYPE *INDEXTYPEPTR;
   TPSTYPE *VALUETYPEPTR;
 } TPSARRAYDEF;
-typedef struct record24 {
+typedef struct record19 {
   PString NAME;
   TEXPRESSIONOBJ *VALUE;
 } TPSCONSTANT;
-typedef struct record25 {
+typedef struct record20 {
   PString NAME;
   TPSTYPE *TYPEPTR;
   int ISREFERENCE;
@@ -215,7 +215,7 @@ typedef struct record25 {
   int WASINITIALIZED;
   int WASUSED;
 } TPSVARIABLE;
-typedef struct record26 {
+typedef struct record21 {
   PString NAME;
   int ARGCOUNT;
   TPSVARIABLE ARGS[8];
@@ -223,11 +223,11 @@ typedef struct record26 {
   int ISDECLARATION;
   int WASUSED;
 } TPSFUNCTION;
-typedef struct record27 {
+typedef struct record22 {
   TPSVARIABLE *VARPTR;
 } TPSWITHVAR;
-typedef enum enum28 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
-typedef struct record29 {
+typedef enum enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
+typedef struct record23 {
   PString NAME;
   TPSNAMECLASS CLS;
   union {
@@ -252,17 +252,17 @@ typedef struct record29 {
     };
   };
 } TPSNAME;
-typedef enum enum30 { TCTENUM, TCTRECORD, TCTWITHVAR } TPSCOUNTERTYPE;
-typedef struct record31 {
+typedef enum enum7 { TCTENUM, TCTRECORD, TCTWITHVAR } TPSCOUNTERTYPE;
+typedef struct record24 {
   int ENUMCTR;
   int RECORDCTR;
   int WITHVARCTR;
 } TPSCOUNTERS;
-typedef struct record33 *TPSDEFPTR;
-typedef enum enum32 { TDCNAME, TDCTYPE, TDCENUM, TDCRANGE, TDCRECORD, TDCARRAY, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
-typedef struct record33 {
-  struct record33 *PREV;
-  struct record33 *NEXT;
+typedef struct record25 *TPSDEFPTR;
+typedef enum enum8 { TDCNAME, TDCTYPE, TDCENUM, TDCRANGE, TDCRECORD, TDCARRAY, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
+typedef struct record25 {
+  struct record25 *PREV;
+  struct record25 *NEXT;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -302,20 +302,20 @@ typedef struct record33 {
     };
   };
 } TPSDEFENTRY;
-typedef struct record34 {
+typedef struct record26 {
   TPSDEFENTRY *LATEST;
   TPSFUNCTION *CURRENTFN;
   TPSCOUNTERS COUNTERS;
 } TPSDEFS;
 
-const char* enumvalues2[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
-const char* enumvalues5[] = { "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFREAD", "TPFREADLN", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
-const char* enumvalues6[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM" };
-const char* enumvalues14[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCSUBRANGE", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
-const char* enumvalues17[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
-const char* enumvalues28[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
-const char* enumvalues30[] = { "TCTENUM", "TCTRECORD", "TCTWITHVAR" };
-const char* enumvalues32[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRANGE", "TDCRECORD", "TDCARRAY", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
+const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
+const char* enumvalues2[] = { "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFREAD", "TPFREADLN", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
+const char* enumvalues3[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM" };
+const char* enumvalues4[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCSUBRANGE", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
+const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
+const char* enumvalues6[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
+const char* enumvalues7[] = { "TCTENUM", "TCTRECORD", "TCTWITHVAR" };
+const char* enumvalues8[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRANGE", "TDCRECORD", "TDCARRAY", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
 
 void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR);
 TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR);
@@ -326,17 +326,17 @@ TEXPRESSIONOBJ *PFORD(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFPRED(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFSUCC(TEXPRESSIONOBJ *ARG);
 
-typedef struct record35 {
+typedef struct record27 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
 
-struct record37 {
+struct record29 {
   PString LINE;
   TLXTOKEN TOKEN;
   TLXINPUTFILE INPUT;
-  struct record36 {
+  struct record28 {
     int EXISTS;
     TLXINPUTFILE INPUT;
   } PREV;
@@ -345,7 +345,7 @@ struct record37 {
 PString LXTOKENNAME(TLXTOKENID ID) {
   PString RESULT;
   PString NAME;
-  STR_e(ID, enumvalues2, &NAME);
+  STR_e(ID, enumvalues1, &NAME);
   RESULT = NAME;
   return RESULT;
 }
@@ -529,8 +529,8 @@ void LXGETSTRING() {
   unsigned char CHR;
   int POS;
   int LAST;
-  enum enum38 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
-  const char* enumvalues38[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
+  enum enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
+  const char* enumvalues9[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
   POS = 0;
   STATE = NONE;
   do {
@@ -720,7 +720,7 @@ void LXINCLUDE(PString FILENAME) {
 }
 
 TPSDEFS DEFS;
-struct record39 {
+struct record30 {
   TPSTYPE *PTNIL;
   TPSTYPE *PTBOOLEAN;
   TPSTYPE *PTINTEGER;
@@ -1130,7 +1130,7 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, int USEORIGINAL) {
   }
   else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
   else {
-    STR_e(TYP.CLS, enumvalues17, &RET);
+    STR_e(TYP.CLS, enumvalues5, &RET);
     COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
   }
   return RESULT;
@@ -1481,12 +1481,12 @@ int FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
   int RET;
   if (TYPEPTR->CLS != TTCRECORD) COMPILEERROR(cat_ss(str_make(14, "Not a record: "), TYPENAME(TYPEPTR)));
   {
-    TPSRECORDDEF *with40 = &*TYPEPTR->RECPTR;
+    TPSRECORDDEF *with1 = &*TYPEPTR->RECPTR;
     {
       RET = 0;
-      POS = with40->SIZE;
+      POS = with1->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_ss(NAME, with40->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
+        if (cmp_ss(NAME, with1->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
         POS = POS - 1;
       }
     }
@@ -2010,28 +2010,28 @@ PString _UNPARSESTRING(PString ST) {
 PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
   {
-    TEXIMMEDIATE *with41 = &EXPR->IMMEDIATE;
-    switch (with41->CLS) {
+    TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
+    switch (with1->CLS) {
       case XICNIL:
         RESULT = str_make(3, "nil");
         break;
       case XICBOOLEAN:
-        STR_b(with41->BOOLEANVAL, &RESULT);
+        STR_b(with1->BOOLEANVAL, &RESULT);
         break;
       case XICINTEGER:
-        STR_i(with41->INTEGERVAL, &RESULT);
+        STR_i(with1->INTEGERVAL, &RESULT);
         break;
       case XICREAL:
-        STR_r(with41->REALVAL, &RESULT);
+        STR_r(with1->REALVAL, &RESULT);
         break;
       case XICCHAR:
-        RESULT = _UNPARSECHAR(with41->CHARVAL);
+        RESULT = _UNPARSECHAR(with1->CHARVAL);
         break;
       case XICSTRING:
-        RESULT = _UNPARSESTRING(with41->STRINGVAL);
+        RESULT = _UNPARSESTRING(with1->STRINGVAL);
         break;
       case XICENUM:
-        RESULT = with41->ENUMPTR->VALUES[subrange(with41->ENUMORDINAL, 0, 127)];
+        RESULT = with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)];
         break;
       default:
         COMPILEERROR(str_make(47, "Internal error: cannot describe immediate value"));
@@ -2044,16 +2044,16 @@ PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
 PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
   PString RESULT;
   {
-    TEXPSEUDOFNCALL *with42 = &EXPR->PSEUDOFNCALL;
-    switch (with42->PSEUDOFN) {
+    TEXPSEUDOFNCALL *with1 = &EXPR->PSEUDOFNCALL;
+    switch (with1->PSEUDOFN) {
       case TPFDISPOSE:
-        RESULT = cat_sc(cat_ss(str_make(8, "DISPOSE("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(8, "DISPOSE("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
         break;
       case TPFNEW:
-        RESULT = cat_sc(cat_ss(str_make(4, "NEW("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(4, "NEW("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
         break;
       case TPFPRED:
-        RESULT = cat_sc(cat_ss(str_make(5, "PRED("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(5, "PRED("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
         break;
       case TPFREAD:
         RESULT = str_make(9, "READ(...)");
@@ -2062,13 +2062,13 @@ PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
         RESULT = str_make(11, "READLN(...)");
         break;
       case TPFSTR:
-        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(str_make(4, "STR("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG2, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(str_make(4, "STR("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with1->ARG2, LEVELS - 1)), ')');
         break;
       case TPFSUCC:
-        RESULT = cat_sc(cat_ss(str_make(5, "SUCC("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(str_make(5, "SUCC("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
         break;
       case TPFVAL:
-        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "VAL("), DESCRIBEEXPR(with42->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG2, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with42->ARG3, LEVELS - 1)), ')');
+        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "VAL("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with1->ARG2, LEVELS - 1)), str_make(2, ", ")), DESCRIBEEXPR(with1->ARG3, LEVELS - 1)), ')');
         break;
       case TPFWRITE:
         RESULT = str_make(10, "WRITE(...)");
@@ -3767,11 +3767,11 @@ int ISOPRELATIONAL(TLXTOKEN TOK) {
 
 PString PARSESTRING(PString PSTR) {
   PString RESULT;
-  enum enum43 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
+  enum enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   int POS;
   unsigned char CH;
   int CHNUM;
-  const char* enumvalues43[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
+  const char* enumvalues9[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
   RESULT = str_make(0, "");
   STATE = NONE;
   POS = 1;
@@ -4228,11 +4228,11 @@ void STARTGLOBALSCOPE() {
   }
 }
 
-typedef enum enum44 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
-const char* enumvalues44[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
+const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record45 {
+struct record31 {
   PFile OUTPUT;
   int ISMULTISTATEMENT;
   int INDENT;
@@ -4485,29 +4485,29 @@ void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXIMMEDIATE *with46 = &EXPR->IMMEDIATE;
-    switch (with46->CLS) {
+    TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
+    switch (with1->CLS) {
       case XICNIL:
         WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"));
         break;
       case XICBOOLEAN:
-        if (with46->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
+        if (with1->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
         else WRITE_c(&CODEGEN.OUTPUT, '0');
         break;
       case XICINTEGER:
-        WRITE_i(&CODEGEN.OUTPUT, with46->INTEGERVAL);
+        WRITE_i(&CODEGEN.OUTPUT, with1->INTEGERVAL);
         break;
       case XICREAL:
-        WRITE_r(&CODEGEN.OUTPUT, with46->REALVAL);
+        WRITE_r(&CODEGEN.OUTPUT, with1->REALVAL);
         break;
       case XICCHAR:
-        _OUTCHAR(with46->CHARVAL);
+        _OUTCHAR(with1->CHARVAL);
         break;
       case XICSTRING:
-        _OUTSTRING(&with46->STRINGVAL);
+        _OUTSTRING(&with1->STRINGVAL);
         break;
       case XICENUM:
-        WRITE_s(&CODEGEN.OUTPUT, with46->ENUMPTR->VALUES[subrange(with46->ENUMORDINAL, 0, 127)]);
+        WRITE_s(&CODEGEN.OUTPUT, with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)]);
         break;
       default:
         break;
@@ -4587,14 +4587,14 @@ void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXPRESSIONOBJ *with47 = &*EXPR->RECEXPR;
+    TEXPRESSIONOBJ *with1 = &*EXPR->RECEXPR;
     {
-      if (with47->CLS == XCPOINTER) {
-        _OUTEXPRESSIONPARENS(with47->POINTEREXPR, EXPR);
+      if (with1->CLS == XCPOINTER) {
+        _OUTEXPRESSIONPARENS(with1->POINTEREXPR, EXPR);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
-      else if (with47->CLS == XCVARIABLE && with47->VARPTR->ISREFERENCE) {
-        WRITE_s(&CODEGEN.OUTPUT, with47->VARPTR->NAME);
+      else if (with1->CLS == XCVARIABLE && with1->VARPTR->ISREFERENCE) {
+        WRITE_s(&CODEGEN.OUTPUT, with1->VARPTR->NAME);
         WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
       }
       else {
@@ -4781,93 +4781,93 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   unsigned char LTYPE;
   unsigned char RTYPE;
   {
-    TEXBINARYOP *with48 = &EXPR->BINARY;
+    TEXBINARYOP *with1 = &EXPR->BINARY;
     {
-      if (ISSTRINGYTYPE(with48->LEFT->TYPEPTR)) {
-        if (ISCHARTYPE(with48->LEFT->TYPEPTR)) LTYPE = 'c';
+      if (ISSTRINGYTYPE(with1->LEFT->TYPEPTR)) {
+        if (ISCHARTYPE(with1->LEFT->TYPEPTR)) LTYPE = 'c';
         else LTYPE = 's';
-        if (ISCHARTYPE(with48->RIGHT->TYPEPTR)) RTYPE = 'c';
+        if (ISCHARTYPE(with1->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
-        if (with48->OP == TKPLUS) {
+        if (with1->OP == TKPLUS) {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with48->LEFT);
+          OUTEXPRESSION(with1->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with48->RIGHT);
+          OUTEXPRESSION(with1->RIGHT);
           WRITE_c(&CODEGEN.OUTPUT, ')');
         }
-        else if (ISCHARTYPE(with48->LEFT->TYPEPTR) && ISCHARTYPE(with48->RIGHT->TYPEPTR)) {
-          _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
-          if (_ISRELATIONALOP(with48->OP)) {
+        else if (ISCHARTYPE(with1->LEFT->TYPEPTR) && ISCHARTYPE(with1->RIGHT->TYPEPTR)) {
+          _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+          if (_ISRELATIONALOP(with1->OP)) {
             WRITE_c(&CODEGEN.OUTPUT, ' ');
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
             WRITE_c(&CODEGEN.OUTPUT, ' ');
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
-          _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+          _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
         }
         else {
           WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"));
           WRITE_c(&CODEGEN.OUTPUT, LTYPE);
           WRITE_c(&CODEGEN.OUTPUT, RTYPE);
           WRITE_c(&CODEGEN.OUTPUT, '(');
-          OUTEXPRESSION(with48->LEFT);
+          OUTEXPRESSION(with1->LEFT);
           WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          OUTEXPRESSION(with48->RIGHT);
-          if (_ISRELATIONALOP(with48->OP)) {
+          OUTEXPRESSION(with1->RIGHT);
+          if (_ISRELATIONALOP(with1->OP)) {
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
             WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"));
           }
-          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
+          else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         }
       }
-      else if (ISBOOLEANTYPE(with48->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
-        if (_ISLOGICALORBITWISEOP(with48->OP)) {
+      else if (ISBOOLEANTYPE(with1->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+        if (_ISLOGICALORBITWISEOP(with1->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with48->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with48->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
-      else if (ISNUMERICTYPE(with48->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
-        if (_ISARITHMETICOP(with48->OP)) {
+      else if (ISNUMERICTYPE(with1->LEFT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+        if (_ISARITHMETICOP(with1->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with48->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISLOGICALORBITWISEOP(with48->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with48->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else if (_ISRELATIONALOP(with48->OP)) {
+        else if (_ISLOGICALORBITWISEOP(with1->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
+        else if (_ISRELATIONALOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
       else {
-        _OUTEXPRESSIONPARENS(with48->LEFT, EXPR);
-        if (_ISRELATIONALOP(with48->OP)) {
+        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+        if (_ISRELATIONALOP(with1->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with48->OP));
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with48->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with48->RIGHT, EXPR);
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
     }
   }
@@ -6138,9 +6138,9 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   int SUPPRESSWARNINGS;
-  enum enum49 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum enum10 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
-  const char* enumvalues49[] = { "FLAGNONE", "FLAGOUTPUT" };
+  const char* enumvalues10[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
