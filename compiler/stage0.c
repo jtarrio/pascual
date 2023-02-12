@@ -48,7 +48,7 @@ typedef struct record7 {
 } TEXIMMEDIATE;
 typedef struct record8 {
   int SIZE;
-  struct record15 *VALUES[4];
+  struct record15 *VALUES[8];
 } TEXFUNCTIONARGS;
 typedef struct record9 {
   struct record15 *ARG;
@@ -218,7 +218,7 @@ typedef struct record25 {
 typedef struct record26 {
   PString NAME;
   int ARGCOUNT;
-  TPSVARIABLE ARGS[4];
+  TPSVARIABLE ARGS[8];
   TPSTYPE *RETURNTYPEPTR;
   int ISDECLARATION;
   int WASUSED;
@@ -1394,7 +1394,7 @@ int ISSAMEFUNCTIONDEFINITION(TPSFUNCTION *DECLPTR, TPSFUNCTION FUN) {
     if (first <= last) {
       POS = first;
       while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR, FUN.ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR) && DECL.ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE == FUN.ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE;
+        SAME = SAME && ISSAMETYPE(DECL.ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE;
         if (POS == last) break;
         ++POS;
       }
@@ -1673,7 +1673,7 @@ void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
+              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -1807,7 +1807,7 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              COPY->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
+              COPY->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -2201,7 +2201,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
             while (1) {
               {
                 if (POS != 1) RESULT = cat_ss(RESULT, str_make(2, ", "));
-                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1], LEVELS - 1));
+                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], LEVELS - 1));
               }
               if (POS == last) break;
               ++POS;
@@ -2443,10 +2443,10 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
       POS = first;
       while (1) {
         {
-          RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1] = EXCOERCE(ARGS->VALUES[(int)subrange(POS, 1, 4) - 1], FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].TYPEPTR);
-          if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE) {
-            if (RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
-            EXMARKINITIALIZED(RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
+          RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[(int)subrange(POS, 1, 8) - 1], FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR);
+          if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE) {
+            if (RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISCONSTANT || !RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+            EXMARKINITIALIZED(RESULT->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
           }
         }
         if (POS == last) break;
@@ -3381,7 +3381,7 @@ void PSFUNCTIONBODY(TPSFUNCTION *FNPTR) {
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1]);
+        ADDVARIABLE(FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -3420,11 +3420,11 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
     LASTARG = DEF->ARGCOUNT;
     do {
       DEF->ARGCOUNT = DEF->ARGCOUNT + 1;
-      if (DEF->ARGCOUNT > 4) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), DEF->NAME));
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].ISREFERENCE = ISREFERENCE;
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].ISCONSTANT = 0;
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 4) - 1].WASINITIALIZED = 1;
+      if (DEF->ARGCOUNT > 8) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), DEF->NAME));
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].ISREFERENCE = ISREFERENCE;
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].ISCONSTANT = 0;
+      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].WASINITIALIZED = 1;
       WANTTOKEN2(TKCOLON, TKCOMMA);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3436,7 +3436,7 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
       if (first <= last) {
         ARG = first;
         while (1) {
-          DEF->ARGS[(int)subrange(ARG, 1, 4) - 1].TYPEPTR = TYPEPTR;
+          DEF->ARGS[(int)subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
           if (ARG == last) break;
           ++ARG;
         }
@@ -3537,7 +3537,7 @@ TEXPRESSIONOBJ *PSFUNCTIONCALL(TEXPRESSIONOBJ *FN) {
       WANTTOKENANDREAD(TKLPAREN);
       while (LEXER.TOKEN.ID != TKRPAREN) {
         ARGS.SIZE = ARGS.SIZE + 1;
-        ARGS.VALUES[(int)subrange(ARGS.SIZE, 1, 4) - 1] = PSEXPRESSION();
+        ARGS.VALUES[(int)subrange(ARGS.SIZE, 1, 8) - 1] = PSEXPRESSION();
         WANTTOKEN2(TKCOMMA, TKRPAREN);
         SKIPTOKEN(TKCOMMA);
       }
@@ -4524,12 +4524,12 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
       while (1) {
         {
           if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          if (EXPR->FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 4) - 1].ISREFERENCE) {
-            if (!EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+          if (EXPR->FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE) {
+            if (!EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
             WRITE_c(&CODEGEN.OUTPUT, '&');
-            _OUTEXPRESSIONPARENSPREC(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1], 2);
+            _OUTEXPRESSIONPARENSPREC(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], 2);
           }
-          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 4) - 1]);
+          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -5138,7 +5138,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
       POS = first;
       while (1) {
         {
-          OUTVARIABLEDECLARATION(DEF.ARGS[(int)subrange(POS, 1, 4) - 1]);
+          OUTVARIABLEDECLARATION(DEF.ARGS[(int)subrange(POS, 1, 8) - 1]);
           if (POS != DEF.ARGCOUNT) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
         }
         if (POS == last) break;

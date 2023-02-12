@@ -1,7 +1,7 @@
 const 
   MaxEnumVals = 128;
   MaxRecordFields = 32;
-  MaxFnArgs = 4;
+  MaxFnArgs = 8;
 
 type 
   TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkInteger, TkReal,

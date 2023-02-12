@@ -1,10 +1,10 @@
 procedure StartGlobalScope;
 var 
-  Fun : TPsFunction;
   Def : TPsDefPtr;
 begin
   InitDefs;
 
+  { Primitive types }
   PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil));
   PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean));
   PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger));
@@ -13,109 +13,74 @@ begin
   PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString));
   PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText));
 
+  { Mandatory constants }
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
   AddConstant(MakeConstant('TRUE', ExBooleanConstant(true)));
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
-  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText, false));
-  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
-  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
+  { Default files }
+  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText));
+  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText));
+  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
 
-  AddPseudoFn('CONCAT', TpfConcat);
-  AddPseudoFn('DISPOSE', TpfDispose);
-  AddPseudoFn('NEW', TpfNew);
+  { Ordinal subroutines }
   AddPseudoFn('ORD', TpfOrd);
   AddPseudoFn('PRED', TpfPred);
+  AddPseudoFn('SUCC', TpfSucc);
+
+  { Memory subroutines }
+  AddPseudoFn('DISPOSE', TpfDispose);
+  AddPseudoFn('NEW', TpfNew);
+
+  { I/O subroutines }
   AddPseudoFn('READ', TpfRead);
   AddPseudoFn('READLN', TpfReadln);
-  AddPseudoFn('STR', TpfStr);
-  AddPseudoFn('SUCC', TpfSucc);
-  AddPseudoFn('VAL', TpfVal);
   AddPseudoFn('WRITE', TpfWrite);
   AddPseudoFn('WRITELN', TpfWriteln);
+  AddFunction(MakeProcedure2('ASSIGN',
+              MakeArg('F', PrimitiveTypes.PtText, true),
+              MakeArg('NAME', PrimitiveTypes.PtString, false)));
+  AddFunction(MakeProcedure1('CLOSE',
+              MakeArg('F', PrimitiveTypes.PtText, true)));
+  AddFunction(MakeFunction1('EOF', PrimitiveTypes.PtBoolean,
+              MakeArg('F', PrimitiveTypes.PtText, true)));
+  AddFunction(MakeProcedure1('RESET',
+              MakeArg('F', PrimitiveTypes.PtText, true)));
+  AddFunction(MakeProcedure1('REWRITE',
+              MakeArg('F', PrimitiveTypes.PtText, true)));
 
-  Fun.Name := 'ASSIGN';
-  Fun.ArgCount := 2;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.Args[2] := MakeVariable('NAME', PrimitiveTypes.PtString, false);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'CHR';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtChar;
-  AddFunction(Fun);
-  Fun.Name := 'CLOSE';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'COPY';
-  Fun.ArgCount := 3;
-  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
-  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
-  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtString;
-  AddFunction(Fun);
-  Fun.Name := 'DELETE';
-  Fun.ArgCount := 3;
-  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, true);
-  Fun.Args[2] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
-  Fun.Args[3] := MakeVariable('NUM', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'EOF';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtBoolean;
-  AddFunction(Fun);
-  Fun.Name := 'HALT';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('CODE', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'INSERT';
-  Fun.ArgCount := 3;
-  Fun.Args[1] := MakeVariable('INS', PrimitiveTypes.PtString, false);
-  Fun.Args[2] := MakeVariable('TARGET', PrimitiveTypes.PtString, true);
-  Fun.Args[3] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'LENGTH';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtInteger;
-  AddFunction(Fun);
-  Fun.Name := 'PARAMCOUNT';
-  Fun.ArgCount := 0;
-  Fun.ReturnTypePtr := PrimitiveTypes.PtInteger;
-  AddFunction(Fun);
-  Fun.Name := 'PARAMSTR';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('I', PrimitiveTypes.PtInteger, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtString;
-  AddFunction(Fun);
-  Fun.Name := 'POS';
-  Fun.ArgCount := 2;
-  Fun.Args[1] := MakeVariable('NEEDLE', PrimitiveTypes.PtString, false);
-  Fun.Args[2] := MakeVariable('HAYSTACK', PrimitiveTypes.PtString, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtInteger;
-  AddFunction(Fun);
-  Fun.Name := 'RESET';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'REWRITE';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('F', PrimitiveTypes.PtText, true);
-  Fun.ReturnTypePtr := nil;
-  AddFunction(Fun);
-  Fun.Name := 'UPCASE';
-  Fun.ArgCount := 1;
-  Fun.Args[1] := MakeVariable('CHR', PrimitiveTypes.PtChar, false);
-  Fun.ReturnTypePtr := PrimitiveTypes.PtChar;
-  AddFunction(Fun);
+  { Character and String subroutines }
+  AddPseudoFn('CONCAT', TpfConcat);
+  AddPseudoFn('STR', TpfStr);
+  AddPseudoFn('VAL', TpfVal);
+  AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
+              MakeArg('POS', PrimitiveTypes.PtInteger, false)));
+  AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
+              MakeArg('STR', PrimitiveTypes.PtString, false),
+              MakeArg('POS', PrimitiveTypes.PtInteger, false),
+              MakeArg('NUM', PrimitiveTypes.PtInteger, false)));
+  AddFunction(MakeProcedure3('DELETE',
+              MakeArg('STR', PrimitiveTypes.PtString, true),
+              MakeArg('POS', PrimitiveTypes.PtInteger, false),
+              MakeArg('NUM', PrimitiveTypes.PtInteger, false)));
+  AddFunction(MakeProcedure3('INSERT',
+              MakeArg('INS', PrimitiveTypes.PtString, false),
+              MakeArg('TARGET', PrimitiveTypes.PtString, true),
+              MakeArg('POS', PrimitiveTypes.PtInteger, false)));
+  AddFunction(MakeFunction1('LENGTH', PrimitiveTypes.PtInteger,
+              MakeArg('STR', PrimitiveTypes.PtString, false)));
+  AddFunction(MakeFunction2('POS', PrimitiveTypes.PtInteger,
+              MakeArg('NEEDLE', PrimitiveTypes.PtString, false),
+              MakeArg('HAYSTACK', PrimitiveTypes.PtString, false)));
+  AddFunction(MakeFunction1('UPCASE', PrimitiveTypes.PtChar,
+              MakeArg('CHR', PrimitiveTypes.PtChar, false)));
+
+  { Misc subroutines }
+  AddFunction(MakeProcedure1('HALT',
+              MakeArg('CODE', PrimitiveTypes.PtInteger, false)));
+  AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
+  AddFunction(MakeFunction1('PARAMSTR', PrimitiveTypes.PtString,
+              MakeArg('I', PrimitiveTypes.PtInteger, false)));
 
   { Mark everything as initialized and used }
   Def := Defs.Latest;

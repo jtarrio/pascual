@@ -790,16 +790,91 @@ begin
   MakeTypedConstant := VarDef
 end;
 
-function MakeVariable(Name : string; TypePtr : TPsTypePtr; IsRef : boolean)
-: TPsVariable;
-var 
-  VarDef : TPsVariable;
+function MakeVariable(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
 begin
-  VarDef.Name := Name;
-  VarDef.TypePtr := TypePtr;
-  VarDef.IsReference := IsRef;
-  VarDef.IsConstant := false;
-  VarDef.WasInitialized := false;
-  VarDef.WasUsed := false;
-  MakeVariable := VarDef
+  Result.Name := Name;
+  Result.TypePtr := TypePtr;
+  Result.IsReference := false;
+  Result.IsConstant := false;
+  Result.WasInitialized := false;
+  Result.WasUsed := false
+end;
+
+function MakeArg(Name : string; TypePtr : TPsTypePtr; IsRef : boolean)
+: TPsVariable;
+begin
+  Result.Name := Name;
+  Result.TypePtr := TypePtr;
+  Result.IsReference := IsRef;
+  Result.IsConstant := false;
+  Result.WasInitialized := false;
+  Result.WasUsed := false
+end;
+
+function MakeProcedure1(Name : string; Arg : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ArgCount := 1;
+  Result.Args[1] := Arg
+end;
+
+function MakeProcedure2(Name : string; Arg1, Arg2 : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ArgCount := 2;
+  Result.Args[1] := Arg1;
+  Result.Args[2] := Arg2
+end;
+
+function MakeProcedure3(Name : string;
+                        Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ArgCount := 3;
+  Result.Args[1] := Arg1;
+  Result.Args[2] := Arg2;
+  Result.Args[3] := Arg3
+end;
+
+function MakeFunction0(Name : string; RetTypePtr : TPsTypePtr) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ReturnTypePtr := RetTypePtr
+end;
+
+function MakeFunction1(Name : string; RetTypePtr : TPsTypePtr;
+                       Arg : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ReturnTypePtr := RetTypePtr;
+  Result.ArgCount := 1;
+  Result.Args[1] := Arg
+end;
+
+function MakeFunction2(Name : string; RetTypePtr : TPsTypePtr;
+                       Arg1, Arg2 : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ReturnTypePtr := RetTypePtr;
+  Result.ArgCount := 2;
+  Result.Args[1] := Arg1;
+  Result.Args[2] := Arg2
+end;
+
+function MakeFunction3(Name : string; RetTypePtr : TPsTypePtr;
+                       Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ReturnTypePtr := RetTypePtr;
+  Result.ArgCount := 3;
+  Result.Args[1] := Arg1;
+  Result.Args[2] := Arg2;
+  Result.Args[3] := Arg3
 end;

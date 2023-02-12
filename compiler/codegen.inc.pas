@@ -1267,8 +1267,8 @@ var
 begin
   LimitType := Iter^.TypePtr;
   if IsEnumType(LimitType) then LimitType := PrimitiveTypes.PtInteger;
-  First := MakeVariable('first', LimitType, false);
-  Last := MakeVariable('last', LimitType, false);
+  First := MakeVariable('first', LimitType);
+  Last := MakeVariable('last', LimitType);
   _OutIndent;
   write(Codegen.Output, 'do ');
   OutBegin;

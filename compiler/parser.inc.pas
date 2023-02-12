@@ -403,7 +403,7 @@ begin
     WantTokenAndRead(TkSemicolon);
     for NumNames := 1 to NumNames do
       OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
-                            TypePtr, false)));
+                            TypePtr)));
   until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
@@ -428,8 +428,7 @@ begin
   OutEnumValuesFromCheckpoint(Checkpoint);
   if FnPtr^.ReturnTypePtr <> nil then
   begin
-    ResultPtr := AddVariable(MakeVariable('RESULT',
-                 FnPtr^.ReturnTypePtr, false));
+    ResultPtr := AddVariable(MakeVariable('RESULT', FnPtr^.ReturnTypePtr));
     ResultPtr^.WasUsed := true;
     OutVariableDefinition(ResultPtr);
   end;
