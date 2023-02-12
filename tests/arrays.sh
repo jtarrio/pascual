@@ -58,21 +58,21 @@ testelem 'array[1..10] of array[20..30] of integer' '1][30' 123 | outputs 123
 testelem 'array[1..10] of array[20..30] of integer' '1][31' 123 | is_not_valid
 testelem 'array[1..10] of array[20..30] of integer' '10][20' 123 | outputs 123
 testelem 'array[1..10] of array[20..30] of integer' '11][20' 123 | is_not_valid
-testelem 'array[1..10] of array[20..30] of integer' '1, 20' 123 | will_be_valid
-testelem 'array[1..10] of array[20..30] of integer' '1, 30' 123 | will_be_valid
-testelem 'array[1..10] of array[20..30] of integer' '1, 31' 123 | will_be_valid
-testelem 'array[1..10] of array[20..30] of integer' '10, 20' 123 | will_be_valid
-testelem 'array[1..10] of array[20..30] of integer' '11, 20' 123 | will_be_valid
+testelem 'array[1..10] of array[20..30] of integer' '1, 20' 123 | is_valid
+testelem 'array[1..10] of array[20..30] of integer' '1, 30' 123 | is_valid
+testelem 'array[1..10] of array[20..30] of integer' '1, 31' 123 | is_not_valid
+testelem 'array[1..10] of array[20..30] of integer' '10, 20' 123 | is_valid
+testelem 'array[1..10] of array[20..30] of integer' '11, 20' 123 | is_not_valid
 testelem 'array[1..10, 20..30] of integer' '1][20' 123 | outputs 123
 testelem 'array[1..10, 20..30] of integer' '1][30' 123 | outputs 123
 testelem 'array[1..10, 20..30] of integer' '1][31' 123 | is_not_valid
 testelem 'array[1..10, 20..30] of integer' '10][20' 123 | outputs 123
 testelem 'array[1..10, 20..30] of integer' '11][20' 123 | is_not_valid
-testelem 'array[1..10, 20..30] of integer' '1, 20' 123 | will_be_valid
-testelem 'array[1..10, 20..30] of integer' '1, 30' 123 | will_be_valid
-testelem 'array[1..10, 20..30] of integer' '1, 31' 123 | will_be_valid
-testelem 'array[1..10, 20..30] of integer' '10, 20' 123 | will_be_valid
-testelem 'array[1..10, 20..30] of integer' '11, 20' 123 | will_be_valid
+testelem 'array[1..10, 20..30] of integer' '1, 20' 123 | is_valid
+testelem 'array[1..10, 20..30] of integer' '1, 30' 123 | is_valid
+testelem 'array[1..10, 20..30] of integer' '1, 31' 123 | is_not_valid
+testelem 'array[1..10, 20..30] of integer' '10, 20' 123 | is_valid
+testelem 'array[1..10, 20..30] of integer' '11, 20' 123 | is_not_valid
 
 testelem 'array[1..3] of char' 1 "'a'" | outputs a
 testelem 'array[1..3] of string' 1 "'abcde'" | outputs abcde

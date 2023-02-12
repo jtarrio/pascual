@@ -619,12 +619,20 @@ var
   Idx : TExpression;
 begin
   WantTokenAndRead(TkLbracket);
-  Idx := PsExpression;
+  repeat
+    Idx := PsExpression;
+    if IsStringyType(Arr^.TypePtr) then Arr := ExStringChar(Arr, Idx)
+    else Arr := ExArrayAccess(Arr, Idx);
+    WantToken2(TkComma, TkRbracket);
+    if (Lexer.Token.Id = TkComma) and not IsArrayType(Arr^.TypePtr)
+       and not IsStringyType(Arr^.TypePtr) then
+      CompileError('Array element is not an array or string: ' +
+                   DescribeExpr(Arr, 10) +
+      '; it has type ' + TypeName(Arr^.TypePtr));
+    SkipToken(TkComma)
+  until Lexer.Token.Id = TkRbracket;
   WantTokenAndRead(TkRbracket);
-  if IsStringyType(Arr^.TypePtr) then
-    PsArrayAccess := ExStringChar(Arr, Idx)
-  else
-    PsArrayAccess := ExArrayAccess(Arr, Idx)
+  Result := Arr
 end;
 
 function PsFieldAccess(Rec : TExpression) : TExpression;

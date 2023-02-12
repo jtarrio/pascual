@@ -279,7 +279,8 @@ echo 'integer' | testvar 'A' | is_valid
 echo 'array[1..10] of integer' | testvar 'A[1]' | is_valid
 echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1][2]' | is_valid
 echo 'array[1..10, 1..10] of integer' | testvar 'A[1][2]' | is_valid
-echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1, 2]' | will_be_valid
+echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1, 2]' | is_valid
+echo 'array[1..10, 1..10] of integer' | testvar 'A[1, 2]' | is_valid
 echo 'record
         B : integer;
         C : record
