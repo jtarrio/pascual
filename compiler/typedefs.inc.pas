@@ -195,6 +195,13 @@ type
       TncPseudoFn : (PseudoFn : TPsPseudoFn)
   end;
 
+  TPsCounterType = (TctEnum, TctRecord, TctWithVar);
+  TPsCounters = record
+    EnumCtr : integer;
+    RecordCtr : integer;
+    WithVarCtr : integer;
+  end;
+
   TPsDefPtr = ^TPsDefEntry;
   TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRange, TdcRecord, TdcArray,
                  TdcConstant, TdcVariable, TdcFunction, TdcWithVar,
@@ -214,11 +221,12 @@ type
       TdcFunction : (FnPtr : TPsFnPtr);
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
       TdcScopeBoundary : (TemporaryScope : boolean;
+                          Counters : TPsCounters;
                           CurrentFn : TPsFnPtr)
   end;
 
   TPsDefs = record
     Latest : TPsDefPtr;
     CurrentFn : TPsFnPtr;
-    Counter : integer;
+    Counters : TPsCounters;
   end;

@@ -4,17 +4,34 @@ var
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText : TPsTypePtr
   end;
 
-function DefCounter : integer;
+function DefCounter(CounterType : TPsCounterType) : integer;
 begin
-  Defs.Counter := Defs.Counter + 1;
-  DefCounter := Defs.Counter
+  case CounterType of 
+    TctEnum:
+             begin
+               Defs.Counters.EnumCtr := Defs.Counters.EnumCtr + 1;
+               Result := Defs.Counters.EnumCtr
+             end;
+    TctRecord:
+               begin
+                 Defs.Counters.RecordCtr := Defs.Counters.RecordCtr + 1;
+                 Result := Defs.Counters.RecordCtr
+               end;
+    TctWithVar:
+                begin
+                  Defs.Counters.WithVarCtr := Defs.Counters.WithVarCtr + 1;
+                  Result := Defs.Counters.WithVarCtr
+                end;
+  end
 end;
 
 procedure InitDefs;
 begin
   Defs.Latest := nil;
+  Defs.Counters.EnumCtr := 0;
+  Defs.Counters.RecordCtr := 0;
+  Defs.Counters.WithVarCtr := 0;
   Defs.CurrentFn := nil;
-  Defs.Counter := 0
 end;
 
 function _NewDef(Cls : TPsDefClass) : TPsDefPtr;
@@ -132,6 +149,7 @@ var
 begin
   Def := _AddDef(TdcScopeBoundary);
   Def^.TemporaryScope := Temporary;
+  Def^.Counters := Defs.Counters;
   Def^.CurrentFn := Defs.CurrentFn;
   if not Temporary then
     Defs.CurrentFn := NewFunction
@@ -147,7 +165,8 @@ begin
   until not Deleted
         or ((DeletedDef.Cls = TdcScopeBoundary)
         and (Temporary or not DeletedDef.TemporaryScope));
-  Defs.CurrentFn := DeletedDef.CurrentFn
+  Defs.CurrentFn := DeletedDef.CurrentFn;
+  Defs.Counters := DeletedDef.Counters
 end;
 
 procedure StartLocalScope(NewFunction : TPsFnPtr);
@@ -551,7 +570,7 @@ var
 begin
   EnumPtr := _AddDef(TdcEnum)^.EnumPtr;
   EnumPtr^ := Enum;
-  EnumPtr^.Id := DefCounter;
+  EnumPtr^.Id := DefCounter(TctEnum);
   AddEnum := EnumPtr
 end;
 
@@ -567,7 +586,7 @@ var
 begin
   RecPtr := _AddDef(TdcRecord)^.RecPtr;
   RecPtr^ := Rec;
-  RecPtr^.Id := DefCounter;
+  RecPtr^.Id := DefCounter(TctRecord);
   AddRecord := RecPtr
 end;
 
@@ -747,7 +766,7 @@ begin
   if not IsRecordType(Base^.TypePtr) then
     CompileError('''With'' variable is not a record');
 
-  Str(DefCounter, TmpVarNum);
+  Str(DefCounter(TctWithVar), TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := Base^.IsConstant;
