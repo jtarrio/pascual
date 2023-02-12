@@ -7,6 +7,7 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 * `Boolean`, `integer`, `real`, `char`, and `string`; enumerated types, subranges; arrays, records, and pointers; text files.
     * Missing sets, non-text files.
     * Missing comma syntax for multidimensional arrays.
+    * Missing narrow machine types for subranges (eg 16-bit word for 0..65535).
     * Missing packed arrays and records.
     * Missing active I/O result checking.
 * Type definitions, variable definitions, untyped constant definitions, typed constant definitions.
