@@ -698,6 +698,23 @@ begin
   write(Codegen.Output, ' ', Name)
 end;
 
+procedure OutNameAndArray(Name : string; TypePtr : TPsTypePtr);
+var
+  TheType : TPsTypePtr;
+begin
+  TheType := TypePtr;
+  while IsArrayType(TheType) do TheType := TheType^.ArrayPtr^.ValueTypePtr;
+  OutNameAndType(Name, TheType);
+  TheType := TypePtr;
+  while IsArrayType(TheType) do
+  begin
+    write(Codegen.Output, '[');
+    _OutSize(TheType^.ArrayPtr^.IndexTypePtr);
+    write(Codegen.Output, ']');
+    TheType := TheType^.ArrayPtr^.ValueTypePtr
+  end
+end;
+
 procedure OutNameAndType(Name : string; TypePtr : TPsTypePtr);
 begin
   if TypePtr = nil then write(Codegen.Output, 'void ', Name)
@@ -726,13 +743,7 @@ begin
          OutNameAndType(Name, TypePtr^.RangePtr^.First^.TypePtr)
   else if TypePtr^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
-  else if TypePtr^.Cls = TtcArray then
-  begin
-    OutNameAndType(Name, TypePtr^.ArrayPtr^.ValueTypePtr);
-    write(Codegen.Output, '[');
-    _OutSize(TypePtr^.ArrayPtr^.IndexTypePtr);
-    write(Codegen.Output, ']')
-  end
+  else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)
   else
     CompileError('Error writing name and type: ' + Name + ', ' +
                  TypeName(TypePtr))
@@ -868,8 +879,7 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'

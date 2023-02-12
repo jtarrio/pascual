@@ -179,7 +179,7 @@ echo 'array[1..10] of integer' | testtype | is_valid
 echo 'array[6..15] of integer' | testtype | is_valid
 echo 'array[-4..5] of integer' | testtype | is_valid
 echo 'array[1..10] of array[1..20] of integer' | testtype | is_valid
-echo 'array[1..10,1..20] of integer' | testtype | will_be_valid
+echo 'array[1..10,1..20] of integer' | testtype | is_valid
 echo '(One, Two, Three);
       X = array[One..Two] of integer' | testtype | is_valid
 echo 'array[boolean] of integer' | testtype | is_valid
@@ -278,7 +278,7 @@ testvar() {
 echo 'integer' | testvar 'A' | is_valid
 echo 'array[1..10] of integer' | testvar 'A[1]' | is_valid
 echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1][2]' | is_valid
-echo 'array[1..10, 1..10] of integer' | testvar 'A[1][2]' | will_be_valid
+echo 'array[1..10, 1..10] of integer' | testvar 'A[1][2]' | is_valid
 echo 'array[1..10] of array[1..10] of integer' | testvar 'A[1, 2]' | will_be_valid
 echo 'record
         B : integer;

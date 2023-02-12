@@ -190,18 +190,36 @@ function PsArrayType : TPsTypePtr;
 var 
   Typ : TPsType;
   Arr : TPsArrayDef;
+  TypePtr : TPsTypePtr;
+  ArrPtr : TPsArrayPtr;
 begin
+  Arr.IndexTypePtr := nil;
+  Arr.ValueTypePtr := nil;
+  ArrPtr := AddArray(Arr);
+  Typ := TypeOfClass(TtcArray);
+  Typ.ArrayPtr := ArrPtr;
+  TypePtr := AddType(Typ);
+  Result := TypePtr;
+
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
-  Arr.IndexTypePtr := PsTypeDenoter;
-  if not IsBoundedType(Arr.IndexTypePtr) then
-    CompileError('Array indices must belong to a bounded ordinal type');
+  repeat
+    ArrPtr^.IndexTypePtr := PsTypeDenoter;
+    if not IsBoundedType(ArrPtr^.IndexTypePtr) then
+      CompileError('Array indices must belong to a bounded ordinal type');
+    WantToken2(TkComma, TkRbracket);
+    if Lexer.Token.Id = TkComma then
+    begin
+      TypePtr := AddType(Typ);
+      ArrPtr^.ValueTypePtr := TypePtr;
+      ArrPtr := AddArray(Arr);
+      TypePtr^.ArrayPtr := ArrPtr
+    end;
+    SkipToken(TkComma)
+  until Lexer.Token.Id = TkRbracket;
   WantTokenAndRead(TkRbracket);
   WantTokenAndRead(TkOf);
-  Arr.ValueTypePtr := PsTypeDenoter;
-  Typ := TypeOfClass(TtcArray);
-  Typ.ArrayPtr := AddArray(Arr);
-  PsArrayType := AddType(Typ)
+  ArrPtr^.ValueTypePtr := PsTypeDenoter
 end;
 
 function PsPointerType : TPsTypePtr;
