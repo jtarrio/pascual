@@ -21,6 +21,7 @@ begin
   AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText, false));
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText, false));
 
+  AddPseudoFn('CONCAT', TpfConcat);
   AddPseudoFn('DISPOSE', TpfDispose);
   AddPseudoFn('NEW', TpfNew);
   AddPseudoFn('ORD', TpfOrd);
@@ -73,6 +74,13 @@ begin
   Fun.Args[1] := MakeVariable('CODE', PrimitiveTypes.PtInteger, false);
   Fun.ReturnTypePtr := nil;
   AddFunction(Fun);
+  Fun.Name := 'INSERT';
+  Fun.ArgCount := 3;
+  Fun.Args[1] := MakeVariable('INS', PrimitiveTypes.PtString, false);
+  Fun.Args[2] := MakeVariable('TARGET', PrimitiveTypes.PtString, true);
+  Fun.Args[3] := MakeVariable('POS', PrimitiveTypes.PtInteger, false);
+  Fun.ReturnTypePtr := nil;
+  AddFunction(Fun);
   Fun.Name := 'LENGTH';
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('STR', PrimitiveTypes.PtString, false);
@@ -86,6 +94,12 @@ begin
   Fun.ArgCount := 1;
   Fun.Args[1] := MakeVariable('I', PrimitiveTypes.PtInteger, false);
   Fun.ReturnTypePtr := PrimitiveTypes.PtString;
+  AddFunction(Fun);
+  Fun.Name := 'POS';
+  Fun.ArgCount := 2;
+  Fun.Args[1] := MakeVariable('NEEDLE', PrimitiveTypes.PtString, false);
+  Fun.Args[2] := MakeVariable('HAYSTACK', PrimitiveTypes.PtString, false);
+  Fun.ReturnTypePtr := PrimitiveTypes.PtInteger;
   AddFunction(Fun);
   Fun.Name := 'RESET';
   Fun.ArgCount := 1;

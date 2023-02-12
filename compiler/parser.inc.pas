@@ -361,7 +361,9 @@ end;
 procedure PsConstDefinitions;
 var 
   Name : string;
+  Checkpoint : TPsDefPtr;
 begin
+  Checkpoint := Defs.Latest;
   WantTokenAndRead(TkConst);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
@@ -372,6 +374,7 @@ begin
       PsTypedConstant(Name);
     WantTokenAndRead(TkSemicolon)
   until Lexer.Token.Id <> TkIdentifier;
+  OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
 procedure PsVarDefinitions;
@@ -749,7 +752,7 @@ begin
       begin
         Pos := Pos + 1;
         if Ch <= '9' then ChNum := ChNum * 16 + Ord(Ch) - 48
-        else if Ch <= 'F' then ChNum := ChNum * 16 + Ord(Ch) - 54
+        else if Ch <= 'F' then ChNum := ChNum * 16 + Ord(Ch) - 55
         else if Ch <= 'f' then ChNum := ChNum * 16 + Ord(Ch) - 87
       end
       else State := NumCharReady

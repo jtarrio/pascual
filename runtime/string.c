@@ -5,14 +5,12 @@
 #include "error.h"
 
 void ClampStringBounds(PString* src, int* pos, int* len) {
-  if (*pos < 1) rt_error(reOutOfBounds);
+  if (*pos < 1 || *pos > 255) rt_error(reOutOfBounds);
   if (*pos > src->len) *pos = src->len + 1;
   if (*len < 1) *len = 0;
   int max_len = 1 + src->len - *pos;
   if (*len > max_len) *len = max_len;
 }
-
-int LENGTH(PString s) { return s.len; }
 
 PString COPY(PString src, int pos, int num) {
   ClampStringBounds(&src, &pos, &num);
@@ -20,7 +18,8 @@ PString COPY(PString src, int pos, int num) {
   if ((pos <= src.len) && (num > 0)) {
     ret.len = num;
     memcpy(ret.value, src.value + pos - 1, num);
-  }
+  } else
+    ret.len = 0;
   return ret;
 }
 
@@ -32,6 +31,36 @@ void DELETE(PString* str, int pos, int num) {
   str->len = str->len - num;
 }
 
+void INSERT(PString ins, PString* target, int pos) {
+  if (pos < 1 || pos > 255) rt_error(reOutOfBounds);
+  if (pos > target->len) pos = target->len + 1;
+
+  int target_off = pos + ins.len - 1;
+  int src_off = pos - 1;
+  int copy_len = 255 - target_off;
+  if (copy_len > 0)
+    memmove(target->value + target_off, target->value + src_off, copy_len);
+  copy_len = ins.len;
+  if (copy_len + src_off > 255) copy_len = 255 - src_off;
+  memmove(target->value + src_off, ins.value, ins.len);
+  int new_len = target->len + ins.len;
+  if (new_len > 255) new_len = 255;
+  target->len = new_len;
+}
+
+int POS(PString needle, PString haystack) {
+  if (needle.len == 0 || haystack.len == 0 || needle.len > haystack.len)
+    return 0;
+  for (int i = 0; i < haystack.len - needle.len; ++i) {
+    int matches = 1;
+    for (int j = 0; j < needle.len && matches; ++j) {
+      if (needle.value[j] != haystack.value[i + j]) matches = 0;
+    }
+    if (matches) return i + 1;
+  }
+  return 0;
+}
+
 unsigned char UPCASE(unsigned char src) {
   if ((src >= 'a') && (src <= 'z')) return src - ('a' - 'A');
   return src;
@@ -41,13 +70,6 @@ unsigned char CHR(int pos) { return pos; }
 
 int ORD(unsigned char chr) { return chr; }
 
-PString str_of(unsigned char chr) {
-  PString ret;
-  ret.len = 1;
-  ret.value[0] = chr;
-  return ret;
-}
-
 PString str_of_pchar(const char* str) {
   PString ret;
   ret.len = strnlen(str, 255);
@@ -55,7 +77,7 @@ PString str_of_pchar(const char* str) {
   return ret;
 }
 
-const char* pchar_of_str(PString* str) {
+const char* pchar_of_str(const PString* str) {
   static char buffer[256];
   memcpy(buffer, str->value, str->len);
   buffer[str->len] = 0;
@@ -141,7 +163,7 @@ void STR_e(int value, const char** names, PString* dst) {
   *dst = str_of_pchar(names[value]);
 }
 
-void VAL_b(PString* str, int* dst, int* code) {
+void VAL_b(const PString* str, int* dst, int* code) {
   *code = 0;
   if (str->len == 4 && ((str->value[0] | 0x20) == 't') &&
       ((str->value[1] | 0x20) == 'r') && ((str->value[2] | 0x20) == 'u') &&
@@ -155,17 +177,21 @@ void VAL_b(PString* str, int* dst, int* code) {
     *code = 1;
 }
 
-void VAL_i(PString* str, int* dst, int* code) {
+void VAL_i(const PString* str, int* dst, int* code) {
   int neg = 0;
   *code = 0;
   *dst = 0;
   if (str->len > 1 && str->value[0] == '$') {
     for (int pos = 1; pos < str->len && *code == 0; ++pos) {
       char chr = str->value[pos];
-      if (chr >= '0' && chr <= '9') *dst = *dst * 16 + chr - '0';
-      else if (chr >= 'a' && chr <= 'f') *dst = *dst * 16 + chr - 'a' + 10;
-      else if (chr >= 'A' && chr <= 'F') *dst = *dst * 16 + chr - 'A' + 10;
-      else *code = pos + 1;
+      if (chr >= '0' && chr <= '9')
+        *dst = *dst * 16 + chr - '0';
+      else if (chr >= 'a' && chr <= 'f')
+        *dst = *dst * 16 + chr - 'a' + 10;
+      else if (chr >= 'A' && chr <= 'F')
+        *dst = *dst * 16 + chr - 'A' + 10;
+      else
+        *code = pos + 1;
     }
     return;
   }
@@ -186,14 +212,21 @@ void VAL_i(PString* str, int* dst, int* code) {
   if (neg) *dst = -*dst;
 }
 
-void VAL_r(PString* str, double* dst, int* code) {
+void VAL_r(const PString* str, double* dst, int* code) {
   double value = 0.0;
   double divisor = 1.0;
   int scale = 0;
   int neg = 0;
   int neg_scale = 0;
   int last = 0;
-  enum { IntPart, FracDot, FracPart, ScaleDot, ScalePart } state = IntPart;
+  enum {
+    IntPart,
+    FracDot,
+    FracPart,
+    ScaleDot,
+    ScaleSign,
+    ScalePart
+  } state = IntPart;
 
   *code = 0;
   for (int pos = 0; pos < str->len && *code == 0; ++pos) {
@@ -209,15 +242,16 @@ void VAL_r(PString* str, double* dst, int* code) {
       state = ScaleDot;
     else if (chr == '-' && state == ScaleDot) {
       neg_scale = 1;
-      state = ScalePart;
+      state = ScaleSign;
     } else if (chr == '+' && state == ScaleDot) {
       neg_scale = 0;
-      state = ScalePart;
+      state = ScaleSign;
     } else if (chr >= '0' && chr <= '9') {
       if (state == FracDot) state = FracPart;
       if (state == IntPart || state == FracPart) value = value * 10 + chr - '0';
       if (state == FracPart) divisor = divisor * 10;
       if (state == ScaleDot) state = ScalePart;
+      if (state == ScaleSign) state = ScalePart;
       if (state == ScalePart) scale = scale * 10 + chr - '0';
       last = pos + 1;
     } else {
@@ -225,7 +259,7 @@ void VAL_r(PString* str, double* dst, int* code) {
       return;
     }
   }
-  if (state == FracDot || state == ScaleDot) {
+  if (state != IntPart && state != FracPart && state != ScalePart) {
     *code = last + 1;
     return;
   }
@@ -241,14 +275,15 @@ void VAL_r(PString* str, double* dst, int* code) {
   *dst = value;
 }
 
-void VAL_e(PString* str, void* dst, int num_names, const char** names,
+void VAL_e(const PString* str, void* dst, int num_names, const char** names,
            int* code) {
   *code = 0;
   for (int e = 0; e < num_names; ++e) {
-    for (int i = 0; i < str->len; ++i) {
-      if ((str->value[i] & 0x20) != (names[e][i] & 0x20)) break;
+    int matches = 1;
+    for (int i = 0; i < str->len && matches; ++i) {
+      if ((str->value[i] & ~0x20) != (names[e][i])) matches = 0;
     }
-    if (names[e][str->len] == 0) {
+    if (matches && names[e][str->len] == 0) {
       *(int*)dst = e;
       return;
     }

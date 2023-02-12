@@ -619,7 +619,7 @@ begin
   if FnExpr^.Cls <> XcFnRef then
     CompileError('Cannot call non-function');
   if Args.Size <> FnExpr^.FnPtr^.ArgCount then
-    CompileError('Wrong number of arguments in function call');
+    CompileError('Wrong number of arguments in call to ' + FnExpr^.FnPtr^.Name);
   FnExpr^.FnPtr^.WasUsed := true;
   Result := _NewExpr(XcFnCall);
   Result^.FnExpr := FnExpr;

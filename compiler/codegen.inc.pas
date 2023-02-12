@@ -80,10 +80,32 @@ begin
   write(Codegen.Output, '''')
 end;
 
-procedure _OutString(var Str : string);
+procedure _OutCstring(var Str : string);
 var 
   Pos : integer;
-  Chr : char;
+  Ch : char;
+begin
+  write(Codegen.Output, '"');
+  for Pos := 1 to Length(Str) do
+  begin
+    Ch := Str[Pos];
+    if (Ch < ' ') or (Ch > #126) then
+    begin
+      _OutEscapedChar(Ch);
+      if (Pos < Length(Str)) and LxIsHexDigit(Str[Pos + 1]) then
+        write(Codegen.Output, '""')
+    end
+    else
+    begin
+      if Ch = '"' then write(Codegen.Output, '\"')
+      else if Ch = '\' then write(Codegen.Output, '\\')
+      else write(Codegen.Output, Ch)
+    end
+  end;
+  write(Codegen.Output, '"')
+end;
+
+procedure _OutString(var Str : string);
 begin
   if Length(Str) = 1 then
   begin
@@ -93,16 +115,9 @@ begin
   end
   else
   begin
-    write(Codegen.Output, 'str_make(', Length(Str), ', "');
-    for Pos := 1 to Length(Str) do
-    begin
-      Chr := Str[Pos];
-      if Chr = '"' then write(Codegen.Output, '\"')
-      else if Chr = '\' then write(Codegen.Output, '\\')
-      else if (Chr >= ' ') and (Chr <= #126) then write(Codegen.Output, Chr)
-      else _OutEscapedChar(Chr)
-    end;
-    write(Codegen.Output, '")')
+    write(Codegen.Output, 'str_make(', Length(Str), ', ');
+    _OutCstring(Str);
+    write(Codegen.Output, ')')
   end
 end;
 

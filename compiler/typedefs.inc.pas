@@ -23,8 +23,9 @@ type
     Pos : TLxPos
   end;
 
-  TPsPseudoFn = (TpfDispose, TpfNew, TpfOrd, TpfPred, TpfRead, TpfReadln,
-                 TpfStr, TpfSucc, TpfVal, TpfWrite, TpfWriteln);
+  TPsPseudoFn = (TpfConcat, TpfDispose, TpfNew, TpfOrd, TpfPred,
+                 TpfRead, TpfReadln, TpfStr, TpfSucc, TpfVal,
+                 TpfWrite, TpfWriteln);
 
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;

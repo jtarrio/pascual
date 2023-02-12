@@ -5,12 +5,30 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
+function PfConcat_Parse(FnExpr : TExpression) : TExpression;
+var Operand : TExpression;
+begin
+  DisposeExpr(FnExpr);
+  Result := nil;
+  WantTokenAndRead(TkLparen);
+  repeat
+    Operand := PSExpression;
+    if not IsStringyType(Operand^.TypePtr) then
+      CompileError('Argument for CONCAT is not a string');
+    if Result = nil then Result := Operand
+    else Result := ExBinaryOp(Result, Operand, TkPlus);
+    WantToken2(TkComma, TkRparen);
+    SkipToken(TkComma)
+  until Lexer.Token.Id = TkRparen;
+  WantTokenAndRead(TkRparen)
+end;
+
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
   Ptr := _Pf_Unary_Parse;
   if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypePtr) then
-    CompileError('Argument is not a pointer');
+    CompileError('Argument for DISPOSE is not a pointer');
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Ptr
 end;
@@ -20,7 +38,7 @@ var Ptr : TExpression;
 begin
   Ptr := _Pf_Unary_Parse;
   if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypePtr) then
-    CompileError('Argument is not a pointer');
+    CompileError('Argument for NEW is not a pointer');
   ExMarkInitialized(Ptr);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Ptr
@@ -36,7 +54,7 @@ function PfOrd(Arg : TExpression) : TExpression;
 var Imm : TExImmediate;
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument does not have an ordinal type');
+    CompileError('Argument for ORD does not have an ordinal type');
   if Arg^.Cls = XcImmediate then
   begin
     Imm := Arg^.Immediate;
@@ -70,7 +88,7 @@ var
   OutOfBounds : boolean;
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument does not have an ordinal type');
+    CompileError('Argument for PRED does not have an ordinal type');
   if Arg^.Cls = XcImmediate then
   begin
     Imm := Arg^.Immediate;
@@ -122,7 +140,7 @@ begin
       begin
         if not OutVar^.IsAssignable
            or not IsStringyType(OutVar^.TypePtr) then
-          CompileError('Invalid expression for read argument');
+          CompileError('Invalid argument for READ');
         if ReadArg = nil then
         begin
           new(Result^.PseudoFnCall.ReadArgs);
@@ -155,10 +173,10 @@ begin
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
   if not Dest^.IsAssignable or not IsStringType(Dest^.TypePtr) then
-    CompileError('Destination argument is not a string variable');
+    CompileError('Second argument for STR is not a string variable');
   if not IsBooleanType(Src^.TypePtr) and not IsIntegerType(Src^.TypePtr)
      and not IsRealType(Src^.TypePtr) and not IsEnumType(Src^.TypePtr) then
-    CompileError('Source argument has an invalid type: ' +
+    CompileError('First argument for STR has an invalid type: ' +
                  TypeName(Src^.TypePtr));
   ExMarkInitialized(Dest);
   Result := ExPseudoFnCall(FnExpr);
@@ -178,7 +196,7 @@ var
   OutOfBounds : boolean;
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument does not have an ordinal type');
+    CompileError('Argument for SUCC does not have an ordinal type');
   if Arg^.Cls = XcImmediate then
   begin
     Imm := Arg^.Immediate;
@@ -216,15 +234,15 @@ begin
   Code := PsExpression;
   WantTokenAndRead(TkRparen);
   if not Src^.IsAssignable or not IsStringType(Src^.TypePtr) then
-    CompileError('Source argument is not a string variable');
+    CompileError('First argument for VAL is not a string variable');
   if not Dest^.IsAssignable or Dest^.IsConstant then
-    CompileError('Destination argument is not a variable');
+    CompileError('Second argument for VAL is not a variable');
   if not IsBooleanType(Dest^.TypePtr) and not IsIntegerType(Dest^.TypePtr)
      and not IsRealType(Dest^.TypePtr) and not IsEnumType(Dest^.TypePtr) then
-    CompileError('Destination argument has an invalid type: ' +
+    CompileError('Second argument for VAL has an invalid type: ' +
                  TypeName(Dest^.TypePtr));
   if not Code^.IsAssignable or not IsIntegerType(Code^.TypePtr) then
-    CompileError('Code argument is not an integer variable');
+    CompileError('Third argument for VAL is not an integer variable');
   ExMarkInitialized(Dest);
   ExMarkInitialized(Code);
   Result := ExPseudoFnCall(FnExpr);
@@ -281,18 +299,19 @@ end;
 
 function Pf_Parse(Fn : TExpression) : TExpression;
 begin
-    case Fn^.PseudoFn of 
-      TpfDispose : Result := PfDispose_Parse(Fn);
-      TpfNew : Result := PfNew_Parse(Fn);
-      TpfOrd : Result := PfOrd_Parse(Fn);
-      TpfPred : Result := PfPred_Parse(Fn);
-      TpfRead : Result := PfRead_Parse(Fn);
-      TpfReadln : Result := PfRead_Parse(Fn);
-      TpfStr : Result := PfStr_Parse(Fn);
-      TpfSucc : Result := PfSucc_Parse(Fn);
-      TpfVal : Result := PfVal_Parse(Fn);
-      TpfWrite : Result := PfWrite_Parse(Fn);
-      TpfWriteln : Result := PfWrite_Parse(Fn);
-      else CompileError('Internal error: unimplemented special function')
-    end
+  case Fn^.PseudoFn of 
+    TpfConcat : Result := PfConcat_Parse(Fn);
+    TpfDispose : Result := PfDispose_Parse(Fn);
+    TpfNew : Result := PfNew_Parse(Fn);
+    TpfOrd : Result := PfOrd_Parse(Fn);
+    TpfPred : Result := PfPred_Parse(Fn);
+    TpfRead : Result := PfRead_Parse(Fn);
+    TpfReadln : Result := PfRead_Parse(Fn);
+    TpfStr : Result := PfStr_Parse(Fn);
+    TpfSucc : Result := PfSucc_Parse(Fn);
+    TpfVal : Result := PfVal_Parse(Fn);
+    TpfWrite : Result := PfWrite_Parse(Fn);
+    TpfWriteln : Result := PfWrite_Parse(Fn);
+    else CompileError('Internal error: unimplemented special function')
+  end
 end;
