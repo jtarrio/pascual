@@ -488,8 +488,9 @@ begin
     end
   end
   else if IsStringType(Parent^.TypePtr) then Result := Parent
-  else CompileError('Cannot convert a value of this type to string: ' +
-                    TypeName(Parent^.TypePtr))
+  else
+    CompileError('Cannot convert value of type ' + TypeName(Parent^.TypePtr) +
+    ' to string: ' + DescribeExpr(Parent, 10))
 end;
 
 function ExToReal(Parent : TExpression) : TExpression;
@@ -544,11 +545,11 @@ function ExFieldAccess(Parent : TExpression; FieldNum : integer)
 : TExpression;
 begin
   if not IsRecordType(Parent^.TypePtr) then
-    CompileError('Cannot access field of non-record type ' +
+    CompileError('Cannot access field of non-record value of type ' +
                  TypeName(Parent^.TypePtr));
   if (FieldNum < 1)
      or (FieldNum > Parent^.TypePtr^.RecPtr^.Size) then
-    CompileError('Invalid field for ' + TypeName(Parent^.TypePtr));
+    CompileError('Invalid field for type ' + TypeName(Parent^.TypePtr));
   Result := _NewExpr(XcField);
   Result^.RecExpr := Parent;
   Result^.RecFieldNum := FieldNum;
@@ -562,8 +563,8 @@ end;
 function ExArrayAccess(Parent, Subscript : TExpression) : TExpression;
 begin
   if not IsArrayType(Parent^.TypePtr) then
-    CompileError('Cannot access subscript of non-array type ' +
-                 TypeName(Parent^.TypePtr));
+    CompileError('Cannot access subscript of non-array value of type ' +
+                 TypeName(Parent^.TypePtr) + ': ' + DescribeExpr(Parent, 10));
   Result := _NewExpr(XcArray);
   Result^.ArrayExpr := Parent;
   Result^.ArrayIndex := ExCoerce(Subscript,
@@ -577,8 +578,8 @@ end;
 function ExPointerAccess(Parent : TExpression) : TExpression;
 begin
   if not IsPointerType(Parent^.TypePtr) then
-    CompileError('Cannot dereference non-pointer type ' +
-                 TypeName(Parent^.TypePtr));
+    CompileError('Cannot dereference non-pointer value of type ' +
+                 TypeName(Parent^.TypePtr) + ': ' + DescribeExpr(Parent, 10));
   Result := _NewExpr(XcPointer);
   Result^.PointerExpr := Parent;
   Result^.TypePtr := Parent^.TypePtr^.PointedTypePtr;
@@ -590,11 +591,12 @@ end;
 function ExStringChar(Parent, Subscript : TExpression) : TExpression;
 begin
   if not IsStringyType(Parent^.TypePtr) then
-    CompileError('Cannot access subscript of non-string type ' +
-                 TypeName(Parent^.TypePtr));
+    CompileError('Cannot access subscript of non-string value of type ' +
+                 TypeName(Parent^.TypePtr) + ': ' + DescribeExpr(Parent, 10));
   if not IsIntegerType(Subscript^.TypePtr) then
     CompileError('Invalid type for subscript of string: ' +
-                 TypeName(Subscript^.TypePtr));
+                 TypeName(Subscript^.TypePtr) +
+    ': ' + DescribeExpr(Subscript, 10));
   Result := _NewExpr(XcStringChar);
   Result^.ArrayExpr := ExToString(Parent);
   Result^.ArrayIndex := Subscript;
@@ -632,7 +634,8 @@ begin
     begin
       if (Result^.CallArgs.Values[Pos]^.IsConstant
          or not Result^.CallArgs.Values[Pos]^.IsAssignable) then
-        CompileError('Pass-by-reference argument must be assignable');
+        CompileError('Pass-by-reference argument must be assignable: ' +
+                     DescribeExpr(Result^.CallArgs.Values[Pos], 10));
       ExMarkInitialized(Result^.CallArgs.Values[Pos])
     end
   end;
@@ -652,7 +655,8 @@ function ExPseudoFnCall(Expr : TExpression) : TExpression;
 var Fn : TPsPseudoFn;
 begin
   if Expr^.Cls <> XcPseudoFnRef then
-    CompileError('Expected a pseudofunction');
+    CompileError('Internal error: Expected a pseudofunction, got ' +
+                 DescribeExpr(Expr, 10));
   Fn := Expr^.PseudoFn;
   Expr^.Cls := XcPseudoFnCall;
   Expr^.PseudoFnCall.PseudoFn := Fn;
