@@ -769,8 +769,8 @@ begin
   Str(DefCounter(TctWithVar), TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;
   TmpVar.TypePtr := Base^.TypePtr;
-  TmpVar.IsConstant := Base^.IsConstant;
-  TmpVar.IsReference := true;
+  TmpVar.IsConstant := false;
+  TmpVar.IsReference := Base^.IsAssignable;
   TmpVarPtr := AddVariable(TmpVar);
   WithVarPtr := _AddDef(TdcWithVar)^.WithVarPtr;
   WithVarPtr^.VarPtr := TmpVarPtr;

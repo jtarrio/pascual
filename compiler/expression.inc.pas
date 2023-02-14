@@ -3,7 +3,6 @@ var Expr : TExpression;
 begin
   new(Expr);
   Expr^.Cls := Cls;
-  Expr^.IsConstant := false;
   Expr^.IsAssignable := false;
   Expr^.IsFunctionResult := false;
   _NewExpr := Expr
@@ -139,7 +138,6 @@ var
 begin
   Copy := _NewExpr(Expr^.Cls);
   Copy^.TypePtr := Expr^.TypePtr;
-  Copy^.IsConstant := Expr^.IsConstant;
   Copy^.IsAssignable := Expr^.IsAssignable;
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
@@ -408,7 +406,6 @@ function _ExImmediate(Cls : TExImmediateClass) : TExpression;
 var Expr : TExpression;
 begin
   Expr := _NewExpr(XcImmediate);
-  Expr^.IsConstant := true;
   Expr^.Immediate.Cls := Cls;
   _ExImmediate := Expr
 end;
@@ -537,8 +534,7 @@ begin
   Result := _NewExpr(XcVariable);
   Result^.VarPtr := VarPtr;
   Result^.TypePtr := VarPtr^.TypePtr;
-  Result^.IsConstant := VarPtr^.IsConstant;
-  Result^.IsAssignable := true
+  Result^.IsAssignable := not VarPtr^.IsConstant
 end;
 
 function ExFieldAccess(Parent : TExpression; FieldNum : integer)
@@ -555,7 +551,6 @@ begin
   Result^.RecFieldNum := FieldNum;
   Result^.TypePtr := Parent^.TypePtr^.RecPtr^
                      .Fields[FieldNum].TypePtr;
-  Result^.IsConstant := Parent^.IsConstant;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -570,7 +565,6 @@ begin
   Result^.ArrayIndex := ExCoerce(Subscript,
                         Parent^.TypePtr^.ArrayPtr^.IndexTypePtr);
   Result^.TypePtr := Parent^.TypePtr^.ArrayPtr^.ValueTypePtr;
-  Result^.IsConstant := Parent^.IsConstant;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -583,7 +577,6 @@ begin
   Result := _NewExpr(XcPointer);
   Result^.PointerExpr := Parent;
   Result^.TypePtr := Parent^.TypePtr^.PointedTypePtr;
-  Result^.IsConstant := false;
   Result^.IsAssignable := true;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -601,7 +594,6 @@ begin
   Result^.ArrayExpr := ExToString(Parent);
   Result^.ArrayIndex := Subscript;
   Result^.TypePtr := PrimitiveTypes.PtChar;
-  Result^.IsConstant := Parent^.IsConstant;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -610,8 +602,7 @@ function ExFnRef(FnPtr : TPsFnPtr) : TExpression;
 begin
   Result := _NewExpr(XcFnRef);
   Result^.FnPtr := FnPtr;
-  Result^.TypePtr := nil;
-  Result^.IsConstant := true
+  Result^.TypePtr := nil
 end;
 
 function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
@@ -632,15 +623,13 @@ begin
                                     FnExpr^.FnPtr^.Args[Pos].TypePtr);
     if FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      if (Result^.CallArgs.Values[Pos]^.IsConstant
-         or not Result^.CallArgs.Values[Pos]^.IsAssignable) then
+      if not Result^.CallArgs.Values[Pos]^.IsAssignable then
         CompileError('Pass-by-reference argument must be assignable: ' +
                      DescribeExpr(Result^.CallArgs.Values[Pos], 10));
       ExMarkInitialized(Result^.CallArgs.Values[Pos])
     end
   end;
   Result^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
-  Result^.IsConstant := false;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := true
 end;
@@ -717,7 +706,6 @@ begin
   Result^.Unary.Parent := Parent;
   Result^.Unary.Op := Op;
   Result^.TypePtr := Parent^.TypePtr;
-  Result^.IsConstant := true;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -816,6 +804,7 @@ begin
   end;
   Left^.Immediate.BooleanVal := Lt;
   Left^.TypePtr := PrimitiveTypes.PtBoolean;
+  Left^.IsAssignable := false;
   Result := Left
 end;
 
@@ -859,6 +848,7 @@ begin
     Left^.Immediate.BooleanVal := Bo;
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
+  Left^.IsAssignable := false;
   Result := Left
 end;
 
@@ -901,6 +891,7 @@ begin
     Left^.Immediate.BooleanVal := Bo;
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
+  Left^.IsAssignable := false;
   Result := Left
 end;
 
@@ -942,6 +933,7 @@ begin
     Left^.Immediate.BooleanVal := Bo;
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
+  Left^.IsAssignable := false;
   Result := Left
 end;
 
@@ -965,6 +957,7 @@ begin
   Left^.Immediate.Cls := XicBoolean;
   Left^.Immediate.BooleanVal := Bo;
   Left^.TypePtr := PrimitiveTypes.PtBoolean;
+  Left^.IsAssignable := false;
   Result := Left
 end;
 
@@ -979,7 +972,7 @@ begin
     Result^.Binary.Right := Right;
     Result^.Binary.Op := Op;
     Result^.TypePtr := PrimitiveTypes.PtBoolean;
-    Result^.IsConstant := true;
+    Result^.IsAssignable := false;
     Result^.IsFunctionResult := Left^.IsFunctionResult
                                 or Right^.IsFunctionResult
   end
@@ -992,7 +985,7 @@ begin
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
-  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkDiv)
      or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) then
@@ -1010,7 +1003,7 @@ begin
   Result^.Binary.Left := ExCoerce(Left, PrimitiveTypes.PtReal);
   Result^.Binary.Right := ExCoerce(Right, PrimitiveTypes.PtReal);
   Result^.Binary.Op := Op;
-  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkSlash) then
     Result^.TypePtr := PrimitiveTypes.PtReal
@@ -1027,7 +1020,7 @@ begin
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
-  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if Op = TkPlus then
     Result^.TypePtr := PrimitiveTypes.PtString
@@ -1044,7 +1037,7 @@ begin
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
-  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals)
      or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
@@ -1059,7 +1052,7 @@ begin
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
-  Result^.IsConstant := true;
+  Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkEquals) or (Op = TkNotEquals) then
     Result^.TypePtr := PrimitiveTypes.PtBoolean

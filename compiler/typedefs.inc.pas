@@ -81,7 +81,6 @@ type
                       XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
-    IsConstant : boolean;
     IsAssignable : boolean;
     IsFunctionResult : boolean;
     case Cls : TExpressionClass of 

@@ -235,7 +235,7 @@ begin
   WantTokenAndRead(TkRparen);
   if not Src^.IsAssignable or not IsStringType(Src^.TypePtr) then
     CompileError('First argument for VAL is not a string variable');
-  if not Dest^.IsAssignable or Dest^.IsConstant then
+  if not Dest^.IsAssignable then
     CompileError('Second argument for VAL is not a variable');
   if not IsBooleanType(Dest^.TypePtr) and not IsIntegerType(Dest^.TypePtr)
      and not IsRealType(Dest^.TypePtr) and not IsEnumType(Dest^.TypePtr) then

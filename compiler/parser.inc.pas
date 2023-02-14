@@ -142,8 +142,8 @@ begin
     Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
     repeat
       CaseLabel := ExCoerce(PsExpression, TagType);
-      if not CaseLabel^.IsConstant then
-        CompileError('The label of the case statement is not constant');
+      if CaseLabel^.Cls <> XcImmediate then
+        CompileError('The label of the case statement is not immediate');
       DisposeExpr(CaseLabel);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
@@ -926,7 +926,7 @@ begin
   end;
 
   Rhs := ExCoerce(Rhs, Lhs^.TypePtr);
-  if not Lhs^.IsAssignable or Lhs^.IsConstant then
+  if not Lhs^.IsAssignable then
   begin
     if Lhs^.IsFunctionResult then
       CompileError('Cannot assign to the result of a function')
@@ -1023,8 +1023,8 @@ begin
   WantTokenAndRead(TkOf);
   repeat
     CaseLabel := ExCoerce(PsExpression, CaseTypePtr);
-    if not CaseLabel^.IsConstant then
-      CompileError('The label of the case statement is not constant');
+    if CaseLabel^.Cls <> XcImmediate then
+      CompileError('The label of the case statement is not immediate');
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
     DisposeExpr(CaseLabel);
@@ -1083,8 +1083,6 @@ begin
   Iter := PsExpression;
   if not Iter^.IsAssignable then
     CompileError('Iterator variable must be assignable');
-  if Iter^.IsConstant then
-    CompileError('Iterator must not be a constant');
   if Iter^.IsFunctionResult then
     CompileError('Iterator must not be the result of a function');
   if not IsOrdinalType(Iter^.TypePtr) then

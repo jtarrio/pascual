@@ -699,11 +699,12 @@ begin
 end;
 
 procedure OutNameAndArray(Name : string; TypePtr : TPsTypePtr);
-var
+var 
   TheType : TPsTypePtr;
 begin
   TheType := TypePtr;
-  while IsArrayType(TheType) do TheType := TheType^.ArrayPtr^.ValueTypePtr;
+  while IsArrayType(TheType) do
+    TheType := TheType^.ArrayPtr^.ValueTypePtr;
   OutNameAndType(Name, TheType);
   TheType := TypePtr;
   while IsArrayType(TheType) do
@@ -879,7 +880,8 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'
@@ -1150,8 +1152,16 @@ procedure OutAssignToReference;
 begin
   _OutIndent;
   OutVariableDeclaration(VarPtr^);
-  write(Codegen.Output, ' = &');
-  _OutExpressionParensPrec(Rhs, 2);
+  if (VarPtr^.IsReference) then
+  begin
+    write(Codegen.Output, ' = &');
+    _OutExpressionParensPrec(Rhs, 2)
+  end
+  else
+  begin
+    write(Codegen.Output, ' = ');
+    OutExpression(Rhs)
+  end;
   write(Codegen.Output, ';');
   _OutNewline
 end;
