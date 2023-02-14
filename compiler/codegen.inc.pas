@@ -273,6 +273,18 @@ begin
   DisposeExpr(SizeExpr)
 end;
 
+procedure _OutAddress(Expr : TExpression);
+begin
+  if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
+  else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
+         write(Codegen.Output, Expr^.VarPtr^.Name)
+  else
+  begin
+    write(Codegen.Output, '&');
+    _OutExpressionParensPrec(Expr, 2)
+  end
+end;
+
 procedure _OutExSubrange(Expr : TExpression);
 begin
   if not Codegen.CheckBounds then OutExpression(Expr^.SubrangeParent)
@@ -327,8 +339,7 @@ begin
     begin
       if not Expr^.CallArgs.Values[Pos]^.IsAssignable then
         CompileError('Pass-by-reference argument must be assignable');
-      write(Codegen.Output, '&');
-      _OutExpressionParensPrec(Expr^.CallArgs.Values[Pos], 2)
+      _OutAddress(Expr^.CallArgs.Values[Pos])
     end
     else
       OutExpression(Expr^.CallArgs.Values[Pos])
@@ -925,10 +936,10 @@ begin
   while ReadArg <> nil do
   begin
     _OutIndent;
-    write(Codegen.Output, 'READ_', ShortTypeName(ReadArg^.Arg^.TypePtr), '(&');
-    _OutExpressionParensPrec(Src, 2);
-    write(Codegen.Output,', &');
-    _OutExpressionParensPrec(ReadArg^.Arg, 2);
+    write(Codegen.Output, 'READ_', ShortTypeName(ReadArg^.Arg^.TypePtr), '(');
+    _OutAddress(Src);
+    write(Codegen.Output,', ');
+    _OutAddress(ReadArg^.Arg);
     write(Codegen.Output, ');');
     _OutNewline;
     ReadArg := ReadArg^.Next
@@ -936,8 +947,8 @@ begin
   if Linefeed then
   begin
     _OutIndent;
-    write(Codegen.Output, 'READLN(&');
-    _OutExpressionParensPrec(Src, 2);
+    write(Codegen.Output, 'READLN(');
+    _OutAddress(Src);
     write(Codegen.Output, ');');
     _OutNewline
   end;
@@ -966,8 +977,8 @@ begin
     if IsEnumType(TypePtr) then
     begin
       _OutIndent;
-      write(Codegen.Output, 'WRITE_e(&');
-      _OutExpressionParensPrec(Dst, 2);
+      write(Codegen.Output, 'WRITE_e(');
+      _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
       write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ');');
@@ -976,8 +987,8 @@ begin
     else
     begin
       _OutIndent;
-      write(Codegen.Output, 'WRITE_', ShortTypeName(TypePtr), '(&');
-      _OutExpressionParensPrec(Dst, 2);
+      write(Codegen.Output, 'WRITE_', ShortTypeName(TypePtr), '(');
+      _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
       write(Codegen.output, ');');
@@ -988,8 +999,8 @@ begin
   if Linefeed then
   begin
     _OutIndent;
-    write(Codegen.Output, 'WRITELN(&');
-    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, 'WRITELN(');
+    _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
   end;
@@ -1006,8 +1017,8 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_e(');
     OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', &');
-    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', ');
+    _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
   end
@@ -1016,8 +1027,8 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
     OutExpression(Src);
-    write(Codegen.Output, ', &');
-    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, ', ');
+    _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
   end
@@ -1032,28 +1043,28 @@ begin
   if IsEnumType(Dst^.TypePtr) then
   begin
     _OutIndent;
-    write(Codegen.Output, 'VAL_e(&');
-    _OutExpressionParensPrec(Src, 2);
-    write(Codegen.Output, ', &');
-    _OutExpressionParensPrec(Dst, 2);
+    write(Codegen.Output, 'VAL_e(');
+    _OutAddress(Src);
+    write(Codegen.Output, ', ');
+    _OutAddress(Dst);
     write(Codegen.Output, ', ');
     TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
     OutExpression(TmpExpr);
     DisposeExpr(TmpExpr);
-    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id, ', &');
-    _OutExpressionParensPrec(Code, 2);
+    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id, ', ');
+    _OutAddress(Code);
     write(Codegen.Output, ');');
     _OutNewline
   end
   else
   begin
     _OutIndent;
-    write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(&');
-    _OutExpressionParensPrec(Src, 2);
-    write(Codegen.Output, ', &');
-    _OutExpressionParensPrec(Dst, 2);
-    write(Codegen.Output, ', &');
-    _OutExpressionParensPrec(Code, 2);
+    write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(');
+    _OutAddress(Src);
+    write(Codegen.Output, ', ');
+    _OutAddress(Dst);
+    write(Codegen.Output, ', ');
+    _OutAddress(Code);
     write(Codegen.Output, ');');
     _OutNewline
   end
@@ -1171,16 +1182,9 @@ procedure OutDeclareAndAssign;
 begin
   _OutIndent;
   OutVariableDeclaration(VarPtr^);
-  if (VarPtr^.IsReference) then
-  begin
-    write(Codegen.Output, ' = &');
-    _OutExpressionParensPrec(Rhs, 2)
-  end
-  else
-  begin
-    write(Codegen.Output, ' = ');
-    OutExpression(Rhs)
-  end;
+  write(Codegen.Output, ' = ');
+  if (VarPtr^.IsReference) then _OutAddress(Rhs)
+  else OutExpression(Rhs);
   write(Codegen.Output, ';');
   _OutNewline
 end;
