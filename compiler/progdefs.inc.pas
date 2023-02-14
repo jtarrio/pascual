@@ -806,6 +806,7 @@ begin
   VarDef.TypePtr := TypePtr;
   VarDef.IsReference := false;
   VarDef.IsConstant := true;
+  VarDef.WasInitialized := true;
   MakeTypedConstant := VarDef
 end;
 
