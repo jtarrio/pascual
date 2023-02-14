@@ -1488,7 +1488,7 @@ int FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
   int RET;
   if (TYPEPTR->CLS != TTCRECORD) COMPILEERROR(cat_ss(str_make(14, "Not a record: "), TYPENAME(TYPEPTR)));
   {
-    TPSRECORDDEF *with1 = &*TYPEPTR->RECPTR;
+    TPSRECORDDEF *with1 = TYPEPTR->RECPTR;
     {
       RET = 0;
       POS = with1->SIZE;
@@ -3370,7 +3370,7 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
     } while (!(LEXER.TOKEN.ID == TKCOLON));
     WANTTOKENANDREAD(TKCOLON);
     WANTTOKENANDREAD(TKLPAREN);
-    while (LEXER.TOKEN.ID != TKRPAREN) PSRECORDFIELD(&*REC, TKRPAREN);
+    while (LEXER.TOKEN.ID != TKRPAREN) PSRECORDFIELD(REC, TKRPAREN);
     WANTTOKENANDREAD(TKRPAREN);
     WANTTOKEN2(TKSEMICOLON, TKEND);
     SKIPTOKEN(TKSEMICOLON);
@@ -4456,7 +4456,7 @@ void _OUTCSTRING(PString *STR) {
   WRITE_c(&CODEGEN.OUTPUT, '"');
   do {
     int first = 1;
-    int last = LENGTH(&*STR);
+    int last = LENGTH(STR);
     if (first <= last) {
       POS = first;
       while (1) {
@@ -4464,7 +4464,7 @@ void _OUTCSTRING(PString *STR) {
           CH = (*STR).chr[POS];
           if (CH < ' ' || CH > '~') {
             _OUTESCAPEDCHAR(CH);
-            if (POS < LENGTH(&*STR) && LXISHEXDIGIT((*STR).chr[POS + 1])) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\"\""));
+            if (POS < LENGTH(STR) && LXISHEXDIGIT((*STR).chr[POS + 1])) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\"\""));
           }
           else {
             if (CH == '"') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\""));
@@ -4481,16 +4481,16 @@ void _OUTCSTRING(PString *STR) {
 }
 
 void _OUTSTRING(PString *STR) {
-  if (LENGTH(&*STR) == 1) {
+  if (LENGTH(STR) == 1) {
     WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("));
     _OUTCHAR((*STR).chr[1]);
     WRITE_c(&CODEGEN.OUTPUT, ')');
   }
   else {
     WRITE_s(&CODEGEN.OUTPUT, str_make(9, "str_make("));
-    WRITE_i(&CODEGEN.OUTPUT, LENGTH(&*STR));
+    WRITE_i(&CODEGEN.OUTPUT, LENGTH(STR));
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-    _OUTCSTRING(&*STR);
+    _OUTCSTRING(STR);
     WRITE_c(&CODEGEN.OUTPUT, ')');
   }
 }
@@ -4738,7 +4738,7 @@ void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   {
-    TEXPRESSIONOBJ *with1 = &*EXPR->RECEXPR;
+    TEXPRESSIONOBJ *with1 = EXPR->RECEXPR;
     {
       if (with1->CLS == XCPOINTER) {
         _OUTEXPRESSIONPARENS(with1->POINTEREXPR, EXPR);
