@@ -38,49 +38,49 @@ begin
   AddPseudoFn('WRITE', TpfWrite);
   AddPseudoFn('WRITELN', TpfWriteln);
   AddFunction(MakeProcedure2('ASSIGN',
-              MakeArg('F', PrimitiveTypes.PtText, true),
-              MakeArg('NAME', PrimitiveTypes.PtString, false)));
+              MakeVarArg('F', PrimitiveTypes.PtText),
+              MakeArg('NAME', PrimitiveTypes.PtString)));
   AddFunction(MakeProcedure1('CLOSE',
-              MakeArg('F', PrimitiveTypes.PtText, true)));
+              MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeFunction1('EOF', PrimitiveTypes.PtBoolean,
-              MakeArg('F', PrimitiveTypes.PtText, true)));
+              MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeProcedure1('RESET',
-              MakeArg('F', PrimitiveTypes.PtText, true)));
+              MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeProcedure1('REWRITE',
-              MakeArg('F', PrimitiveTypes.PtText, true)));
+              MakeVarArg('F', PrimitiveTypes.PtText)));
 
   { Character and String subroutines }
   AddPseudoFn('CONCAT', TpfConcat);
   AddPseudoFn('STR', TpfStr);
   AddPseudoFn('VAL', TpfVal);
   AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
-              MakeArg('POS', PrimitiveTypes.PtInteger, false)));
+              MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
-              MakeArg('STR', PrimitiveTypes.PtString, false),
-              MakeArg('POS', PrimitiveTypes.PtInteger, false),
-              MakeArg('NUM', PrimitiveTypes.PtInteger, false)));
+              MakeArg('STR', PrimitiveTypes.PtString),
+              MakeArg('POS', PrimitiveTypes.PtInteger),
+              MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeProcedure3('DELETE',
-              MakeArg('STR', PrimitiveTypes.PtString, true),
-              MakeArg('POS', PrimitiveTypes.PtInteger, false),
-              MakeArg('NUM', PrimitiveTypes.PtInteger, false)));
+              MakeVarArg('STR', PrimitiveTypes.PtString),
+              MakeArg('POS', PrimitiveTypes.PtInteger),
+              MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeProcedure3('INSERT',
-              MakeArg('INS', PrimitiveTypes.PtString, false),
-              MakeArg('TARGET', PrimitiveTypes.PtString, true),
-              MakeArg('POS', PrimitiveTypes.PtInteger, false)));
+              MakeArg('INS', PrimitiveTypes.PtString),
+              MakeVarArg('TARGET', PrimitiveTypes.PtString),
+              MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction1('LENGTH', PrimitiveTypes.PtInteger,
-              MakeArg('STR', PrimitiveTypes.PtString, false)));
+              MakeArg('STR', PrimitiveTypes.PtString)));
   AddFunction(MakeFunction2('POS', PrimitiveTypes.PtInteger,
-              MakeArg('NEEDLE', PrimitiveTypes.PtString, false),
-              MakeArg('HAYSTACK', PrimitiveTypes.PtString, false)));
+              MakeArg('NEEDLE', PrimitiveTypes.PtString),
+              MakeArg('HAYSTACK', PrimitiveTypes.PtString)));
   AddFunction(MakeFunction1('UPCASE', PrimitiveTypes.PtChar,
-              MakeArg('CHR', PrimitiveTypes.PtChar, false)));
+              MakeArg('CHR', PrimitiveTypes.PtChar)));
 
   { Misc subroutines }
   AddFunction(MakeProcedure1('HALT',
-              MakeArg('CODE', PrimitiveTypes.PtInteger, false)));
+              MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
   AddFunction(MakeFunction1('PARAMSTR', PrimitiveTypes.PtString,
-              MakeArg('I', PrimitiveTypes.PtInteger, false)));
+              MakeArg('I', PrimitiveTypes.PtInteger)));
 
   { Mark everything as initialized and used }
   Def := Defs.Latest;

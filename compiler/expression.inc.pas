@@ -696,7 +696,7 @@ begin
           Str(DefCounter(TctTmpVar), TmpVarNum);
           Result := ExSetTmpVar(ExVariable(AddVariable(MakeVariable(
                     'tmp' + TmpVarNum,
-                    FnCall^.CallArgs.Values[Pos]^.TypePtr))),
+                    FnExpr^.FnPtr^.Args[Pos].TypePtr))),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := CopyExpr(Result^.TmpVar)
         end

@@ -18,10 +18,10 @@ begin
                  Result := Defs.Counters.RecordCtr
                end;
     TctTmpVar:
-                begin
-                  Defs.Counters.TmpVarCtr := Defs.Counters.TmpVarCtr + 1;
-                  Result := Defs.Counters.TmpVarCtr
-                end;
+               begin
+                 Defs.Counters.TmpVarCtr := Defs.Counters.TmpVarCtr + 1;
+                 Result := Defs.Counters.TmpVarCtr
+               end;
   end
 end;
 
@@ -826,15 +826,30 @@ begin
   Result.WasUsed := false
 end;
 
-function MakeArg(Name : string; TypePtr : TPsTypePtr; IsRef : boolean)
-: TPsVariable;
+function _MakeArg(Name : string; TypePtr : TPsTypePtr;
+                  IsRef, IsConst : boolean) : TPsVariable;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
-  Result.IsReference := IsRef;
-  Result.IsConstant := false;
+  Result.IsReference := IsRef or IsConst;
+  Result.IsConstant := IsConst;
   Result.WasInitialized := false;
   Result.WasUsed := false
+end;
+
+function MakeArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+begin
+  MakeArg := _MakeArg(Name, TypePtr, false, false)
+end;
+
+function MakeVarArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+begin
+  MakeVarArg := _MakeArg(Name, TypePtr, true, false)
+end;
+
+function MakeConstArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+begin
+  MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
 
 function MakeProcedure1(Name : string; Arg : TPsVariable) : TPsFunction;
