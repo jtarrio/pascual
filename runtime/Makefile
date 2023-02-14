@@ -1,7 +1,7 @@
 all: libpascual.a
 
 error.o: error.h error.c
-file.o: file.h file.c types.h
+file.o: file.h file.c types.h string.h
 os.o: os.h os.c string.h types.h
 string.o: string.h string.c error.h types.h
 types.o: types.h types.c

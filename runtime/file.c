@@ -107,27 +107,21 @@ void WRITELN(PFile* file) {
 }
 
 void WRITE_b(PFile* file, int val) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  fputs(val ? "TRUE" : "FALSE", file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+  PString str;
+  STR_b(val, &str);
+  WRITE_s(file, str);
 }
 
 void WRITE_i(PFile* file, int num) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  fprintf(file->file, "%d", num);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+  PString str;
+  STR_i(num, &str);
+  WRITE_s(file, str);
 }
 
 void WRITE_r(PFile* file, double num) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  fprintf(file->file, "%g", num);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+  PString str;
+  STR_r(num, &str);
+  WRITE_s(file, str);
 }
 
 void WRITE_c(PFile* file, unsigned char chr) {
@@ -147,11 +141,9 @@ void WRITE_s(PFile* file, PString str) {
 }
 
 void WRITE_e(PFile* file, int value, const char** names) {
-  check_ioresult();
-  clearerr(file->file);
-  if (!is_open(file)) return;
-  fputs(names[value], file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+  PString str;
+  STR_e(value, names, &str);
+  WRITE_s(file, str);
 }
 
 PFile INPUT = {};
