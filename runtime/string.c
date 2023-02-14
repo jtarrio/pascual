@@ -4,7 +4,7 @@
 
 #include "error.h"
 
-void ClampStringBounds(PString* src, int* pos, int* len) {
+void ClampStringBounds(const PString* src, int* pos, int* len) {
   if (*pos < 1 || *pos > 255) rt_error(reOutOfBounds);
   if (*pos > src->len) *pos = src->len + 1;
   if (*len < 1) *len = 0;
@@ -12,12 +12,12 @@ void ClampStringBounds(PString* src, int* pos, int* len) {
   if (*len > max_len) *len = max_len;
 }
 
-PString COPY(PString src, int pos, int num) {
-  ClampStringBounds(&src, &pos, &num);
+PString COPY(const PString* src, int pos, int num) {
+  ClampStringBounds(src, &pos, &num);
   PString ret;
-  if ((pos <= src.len) && (num > 0)) {
+  if ((pos <= src->len) && (num > 0)) {
     ret.len = num;
-    memcpy(ret.value, src.value + pos - 1, num);
+    memcpy(ret.value, src->value + pos - 1, num);
   } else
     ret.len = 0;
   return ret;
@@ -31,30 +31,30 @@ void DELETE(PString* str, int pos, int num) {
   str->len = str->len - num;
 }
 
-void INSERT(PString ins, PString* target, int pos) {
+void INSERT(const PString* ins, PString* target, int pos) {
   if (pos < 1 || pos > 255) rt_error(reOutOfBounds);
   if (pos > target->len) pos = target->len + 1;
 
-  int target_off = pos + ins.len - 1;
+  int target_off = pos + ins->len - 1;
   int src_off = pos - 1;
   int copy_len = 255 - target_off;
   if (copy_len > 0)
     memmove(target->value + target_off, target->value + src_off, copy_len);
-  copy_len = ins.len;
+  copy_len = ins->len;
   if (copy_len + src_off > 255) copy_len = 255 - src_off;
-  memmove(target->value + src_off, ins.value, ins.len);
-  int new_len = target->len + ins.len;
+  memmove(target->value + src_off, ins->value, ins->len);
+  int new_len = target->len + ins->len;
   if (new_len > 255) new_len = 255;
   target->len = new_len;
 }
 
-int POS(PString needle, PString haystack) {
-  if (needle.len == 0 || haystack.len == 0 || needle.len > haystack.len)
+int POS(const PString* needle, const PString* haystack) {
+  if (needle->len == 0 || haystack->len == 0 || needle->len > haystack->len)
     return 0;
-  for (int i = 0; i < haystack.len - needle.len; ++i) {
+  for (int i = 0; i < haystack->len - needle->len; ++i) {
     int matches = 1;
-    for (int j = 0; j < needle.len && matches; ++j) {
-      if (needle.value[j] != haystack.value[i + j]) matches = 0;
+    for (int j = 0; j < needle->len && matches; ++j) {
+      if (needle->value[j] != haystack->value[i + j]) matches = 0;
     }
     if (matches) return i + 1;
   }

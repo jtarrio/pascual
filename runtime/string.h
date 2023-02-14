@@ -3,11 +3,11 @@
 
 #include "types.h"
 
-#define LENGTH(s) (s).len
-PString COPY(PString src, int pos, int num);
+#define LENGTH(s) (s)->len
+PString COPY(const PString* src, int pos, int num);
 void DELETE(PString* src, int pos, int num);
-void INSERT(PString ins, PString* target, int pos);
-int POS(PString needle, PString haystack);
+void INSERT(const PString* ins, PString* target, int pos);
+int POS(const PString* needle, const PString* haystack);
 unsigned char UPCASE(unsigned char src);
 unsigned char CHR(int pos);
 int ORD(unsigned char chr);

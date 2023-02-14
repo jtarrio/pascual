@@ -39,7 +39,7 @@ begin
   AddPseudoFn('WRITELN', TpfWriteln);
   AddFunction(MakeProcedure2('ASSIGN',
               MakeVarArg('F', PrimitiveTypes.PtText),
-              MakeArg('NAME', PrimitiveTypes.PtString)));
+              MakeConstArg('NAME', PrimitiveTypes.PtString)));
   AddFunction(MakeProcedure1('CLOSE',
               MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeFunction1('EOF', PrimitiveTypes.PtBoolean,
@@ -56,7 +56,7 @@ begin
   AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
-              MakeArg('STR', PrimitiveTypes.PtString),
+              MakeConstArg('STR', PrimitiveTypes.PtString),
               MakeArg('POS', PrimitiveTypes.PtInteger),
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeProcedure3('DELETE',
@@ -64,14 +64,14 @@ begin
               MakeArg('POS', PrimitiveTypes.PtInteger),
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeProcedure3('INSERT',
-              MakeArg('INS', PrimitiveTypes.PtString),
+              MakeConstArg('INS', PrimitiveTypes.PtString),
               MakeVarArg('TARGET', PrimitiveTypes.PtString),
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction1('LENGTH', PrimitiveTypes.PtInteger,
-              MakeArg('STR', PrimitiveTypes.PtString)));
+              MakeConstArg('STR', PrimitiveTypes.PtString)));
   AddFunction(MakeFunction2('POS', PrimitiveTypes.PtInteger,
-              MakeArg('NEEDLE', PrimitiveTypes.PtString),
-              MakeArg('HAYSTACK', PrimitiveTypes.PtString)));
+              MakeConstArg('NEEDLE', PrimitiveTypes.PtString),
+              MakeConstArg('HAYSTACK', PrimitiveTypes.PtString)));
   AddFunction(MakeFunction1('UPCASE', PrimitiveTypes.PtChar,
               MakeArg('CHR', PrimitiveTypes.PtChar)));
 

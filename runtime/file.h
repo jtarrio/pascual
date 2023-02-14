@@ -13,7 +13,7 @@ extern PFile STDERR;
 
 int IORESULT();
 
-void ASSIGN(PFile* file, PString name);
+void ASSIGN(PFile* file, const PString* name);
 void CLOSE(PFile* file);
 void RESET(PFile* file);
 void REWRITE(PFile* file);

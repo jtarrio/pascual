@@ -32,9 +32,9 @@ static inline int is_open(PFile* file) {
   return 0;
 }
 
-void ASSIGN(PFile* file, PString name) {
+void ASSIGN(PFile* file, const PString* name) {
   check_ioresult();
-  file->name = name;
+  file->name = *name;
 }
 
 void CLOSE(PFile* file) {
