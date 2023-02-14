@@ -96,6 +96,14 @@ echo "program foo;
       begin
         write(Fun(1))
       end." | outputs '6'
+echo "program foo;
+      function Fun(const a, b : string) : string;
+      begin
+        Fun := a + ' ' + b
+      end;
+      begin
+        write(Fun('foo', 'bar'))
+      end." | outputs 'foo bar'
 # Variables and types can be defined inside the function
 echo "program foo;
       function Fun(a : integer) : integer;

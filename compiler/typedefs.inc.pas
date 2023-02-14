@@ -75,9 +75,9 @@ type
     Op : TLxTokenId
   end;
 
-  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcSubrange,
-                      XcVariable, XcField, XcArray, XcPointer, XcStringChar,
-                      XcFnRef, XcFnCall, XcPseudoFnRef,
+  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcSetTmpVar,
+                      XcSubrange, XcVariable, XcField, XcArray, XcPointer,
+                      XcStringChar, XcFnRef, XcFnCall, XcPseudoFnRef,
                       XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
@@ -103,6 +103,9 @@ type
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
+      XcSetTmpVar : (TmpVar : TExpression;
+                     TmpVarValue : TExpression;
+                     TmpVarChild : TExpression);
   end;
 
   TPsIdentifier = record
@@ -194,11 +197,11 @@ type
       TncPseudoFn : (PseudoFn : TPsPseudoFn)
   end;
 
-  TPsCounterType = (TctEnum, TctRecord, TctWithVar);
+  TPsCounterType = (TctEnum, TctRecord, TctTmpVar);
   TPsCounters = record
     EnumCtr : integer;
     RecordCtr : integer;
-    WithVarCtr : integer;
+    TmpVarCtr : integer;
   end;
 
   TPsDefPtr = ^TPsDefEntry;

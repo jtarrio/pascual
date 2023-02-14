@@ -30,7 +30,7 @@ procedure OutExpression(Expr : TExpression);
 forward;
 procedure OutAssign(Lhs, Rhs : TExpression);
 forward;
-procedure OutAssignToReference(VarPtr : TPsVarPtr; Rhs : TExpression);
+procedure OutDeclareAndAssign(VarPtr : TPsVarPtr; Rhs : TExpression);
 forward;
 procedure OutSequenceBegin;
 forward;

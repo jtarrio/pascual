@@ -90,6 +90,14 @@ echo "program foo;
       begin
         Proc(1)
       end." | outputs 'proc 1'
+echo "program foo;
+      procedure Proc(const a, b : string);
+      begin
+        write('proc ', a, ' ', b)
+      end;
+      begin
+        Proc('foo', 'bar')
+      end." | outputs 'proc foo bar'
 # Variables and types can be defined inside the procedure
 echo "program foo;
       procedure Proc(a : integer);

@@ -155,6 +155,7 @@ begin
     XcImmediate : Result := 0;
     XcToString : Result := 0;
     XcToReal : Result := 2;
+    XcSetTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
                  else Result := 0;
@@ -315,9 +316,7 @@ begin
 end;
 
 procedure _OutExFunctionCall(Expr : TExpression);
-var 
-  Pos : integer;
-  TmpVar : TPsVariable;
+var Pos : integer;
 begin
   _OutExpressionParens(Expr^.FnExpr, Expr);
   write(Codegen.Output, '(');
@@ -326,22 +325,10 @@ begin
     if Pos <> 1 then write(Codegen.Output, ', ');
     if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      if Expr^.CallArgs.Values[Pos]^.IsAssignable then
-      begin
-        write(Codegen.Output, '&');
-        _OutExpressionParensPrec(Expr^.CallArgs.Values[Pos], 2)
-      end
-      else if Expr^.FnExpr^.FnPtr^.Args[Pos].IsConstant then
-      begin
-        TmpVar := MakeVariable('tmp', Expr^.CallArgs.Values[Pos]^.TypePtr);
-        write(Codegen.Output, '({ ');
-        OutVariableDeclaration(TmpVar);
-        write(Codegen.Output, ' = ');
-        OutExpression(Expr^.CallArgs.Values[Pos]);
-        write(Codegen.Output, '; &tmp; })')
-      end
-      else
-        CompileError('Pass-by-reference argument must be assignable')
+      if not Expr^.CallArgs.Values[Pos]^.IsAssignable then
+        CompileError('Pass-by-reference argument must be assignable');
+      write(Codegen.Output, '&');
+      _OutExpressionParensPrec(Expr^.CallArgs.Values[Pos], 2)
     end
     else
       OutExpression(Expr^.CallArgs.Values[Pos])
@@ -521,6 +508,21 @@ begin
   end
 end;
 
+procedure _OutExSetTmpVar(Expr : TExpression);
+begin
+  write(Codegen.Output, '({ ');
+  while Expr^.Cls = XcSetTmpVar do
+  begin
+    OutVariableDeclaration(Expr^.TmpVar^.VarPtr^);
+    write(Codegen.Output, ' = ');
+    OutExpression(Expr^.TmpVarValue);
+    write(Codegen.Output, '; ');
+    Expr := Expr^.TmpVarChild
+  end;
+  OutExpression(Expr);
+  write(Codegen.Output, '; })')
+end;
+
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -536,6 +538,7 @@ begin
                 write(Codegen.Output, '(double)');
                 OutExpression(Expr^.ToRealParent)
               end;
+    XcSetTmpVar: _OutExSetTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcVariable : _OutExVariable(Expr);
     XcField: _OutExFieldAccess(Expr);
@@ -1164,7 +1167,7 @@ begin
   _OutNewline
 end;
 
-procedure OutAssignToReference;
+procedure OutDeclareAndAssign;
 begin
   _OutIndent;
   OutVariableDeclaration(VarPtr^);

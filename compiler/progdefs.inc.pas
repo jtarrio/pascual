@@ -17,10 +17,10 @@ begin
                  Defs.Counters.RecordCtr := Defs.Counters.RecordCtr + 1;
                  Result := Defs.Counters.RecordCtr
                end;
-    TctWithVar:
+    TctTmpVar:
                 begin
-                  Defs.Counters.WithVarCtr := Defs.Counters.WithVarCtr + 1;
-                  Result := Defs.Counters.WithVarCtr
+                  Defs.Counters.TmpVarCtr := Defs.Counters.TmpVarCtr + 1;
+                  Result := Defs.Counters.TmpVarCtr
                 end;
   end
 end;
@@ -30,7 +30,7 @@ begin
   Defs.Latest := nil;
   Defs.Counters.EnumCtr := 0;
   Defs.Counters.RecordCtr := 0;
-  Defs.Counters.WithVarCtr := 0;
+  Defs.Counters.TmpVarCtr := 0;
   Defs.CurrentFn := nil;
 end;
 
@@ -772,7 +772,7 @@ begin
   if not IsRecordType(Base^.TypePtr) then
     CompileError('''With'' variable is not a record');
 
-  Str(DefCounter(TctWithVar), TmpVarNum);
+  Str(DefCounter(TctTmpVar), TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;

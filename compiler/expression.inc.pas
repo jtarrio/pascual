@@ -46,6 +46,12 @@ begin
   case Expr^.Cls of 
     XcToString : DisposeExpr(Expr^.ToStrParent);
     XcToReal : DisposeExpr(Expr^.ToRealParent);
+    XcSetTmpVar :
+                  begin
+                    DisposeExpr(Expr^.TmpVar);
+                    DisposeExpr(Expr^.TmpVarValue);
+                    DisposeExpr(Expr^.TmpVarChild);
+                  end;
     XcSubrange : DisposeExpr(Expr^.SubrangeParent);
     XcField : DisposeExpr(Expr^.RecExpr);
     XcArray :
@@ -71,7 +77,7 @@ begin
                  begin
                    DisposeExpr(Expr^.Binary.Left);
                    DisposeExpr(Expr^.Binary.Right);
-                 end
+                 end;
   end;
   dispose(Expr);
 end;
@@ -144,6 +150,12 @@ begin
     XcImmediate: Copy^.Immediate := Expr^.Immediate;
     XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := CopyExpr(Expr^.ToRealParent);
+    XcSetTmpVar :
+                  begin
+                    Copy^.TmpVar := CopyExpr(Expr^.TmpVar);
+                    Copy^.TmpVarValue := CopyExpr(Expr^.TmpVarValue);
+                    Copy^.TmpVarChild := CopyExpr(Expr^.TmpVarChild);
+                  end;
     XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
@@ -254,6 +266,24 @@ begin
     end
 end;
 
+function _DescribePseudoFnExpr(Expr : TExpression) : string;
+begin
+  case Expr^.PseudoFn of 
+    TpfConcat: Result := 'CONCAT';
+    TpfDispose: Result := 'DISPOSE';
+    TpfNew: Result := 'NEW';
+    TpfPred: Result := 'PRED';
+    TpfRead: Result := 'READ';
+    TpfReadln: Result := 'READLN';
+    TpfStr: Result := 'STR';
+    TpfSucc: Result := 'SUCC';
+    TpfVal: Result := 'VAL';
+    TpfWrite: Result := 'WRITE';
+    TpfWriteln: Result := 'WRITELN';
+    else CompileError('Internal error: cannot describe pseudofun')
+  end
+end;
+
 function _DescribePseudoCallExpr(Expr : TExpression; Levels : integer) : string;
 begin
   with Expr^.PseudoFnCall do
@@ -281,6 +311,7 @@ begin
     XcImmediate: Result := 0;
     XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
     XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
+    XcSetTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
     XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
     XcVariable: Result := 0;
     XcField: Result := 1;
@@ -356,6 +387,19 @@ begin
   if UseParens then Result := Result + ')';
 end;
 
+function _DescribeSetTmpVar(Expr : TExpression; Levels : integer) : string;
+begin
+  Result := '{with ';
+  while Expr^.Cls = XcSetTmpVar do
+  begin
+    Result := Result + DescribeExpr(Expr^.TmpVar, Levels) + ':=' +
+              DescribeExpr(Expr^.TmpVarValue, Levels - 1);
+    Expr := Expr^.TmpVarChild;
+    if Expr^.Cls = XcSetTmpVar then Result := Result + ', '
+  end;
+  Result := Result + '} ' + DescribeExpr(Expr, Levels - 1)
+end;
+
 function DescribeExpr;
 var 
   Pos : integer;
@@ -366,6 +410,7 @@ begin
       XcImmediate: Result := _DescribeImmediatepr(Expr);
       XcToString: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcToReal: Result := DescribeExpr(Expr^.ToRealParent, Levels);
+      XcSetTmpVar: Result := _DescribeSetTmpVar(Expr, Levels);
       XcSubrange: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcVariable: Result := Expr^.VarPtr^.Name;
       XcField: Result := DescribeExpr(Expr^.RecExpr, Levels) + '.' +
@@ -392,6 +437,7 @@ begin
                   end;
                   Result := Result + ')'
                 end;
+      XcPseudoFnRef: Result := _DescribePseudoFnExpr(Expr);
       XcPseudoFnCall: Result := _DescribePseudoCallExpr(Expr, Levels);
       XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr, Levels);
       XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr, Levels);
@@ -511,6 +557,19 @@ begin
   end;
 end;
 
+function ExSetTmpVar(TmpVar, Value, Child : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcSetTmpVar);
+  Result^.TmpVar := TmpVar;
+  Result^.TmpVarValue := Value;
+  Result^.TmpVarChild := Child;
+  Result^.TypePtr := Child^.TypePtr;
+  Result^.IsAssignable := true;
+  Result^.IsFunctionResult := false;
+  TmpVar^.VarPtr^.WasInitialized := true;
+  TmpVar^.VarPtr^.WasUsed := true
+end;
+
 function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
 : TExpression;
 forward;
@@ -607,32 +666,48 @@ end;
 
 function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
 : TExpression;
-var Pos : integer;
+var 
+  Pos : integer;
+  FnCall : TExpression;
+  TmpVarNum : string;
 begin
   if FnExpr^.Cls <> XcFnRef then
     CompileError('Cannot call non-function');
   if Args.Size <> FnExpr^.FnPtr^.ArgCount then
     CompileError('Wrong number of arguments in call to ' + FnExpr^.FnPtr^.Name);
   FnExpr^.FnPtr^.WasUsed := true;
-  Result := _NewExpr(XcFnCall);
-  Result^.FnExpr := FnExpr;
-  Result^.CallArgs.Size := Args.Size;
+  FnCall := _NewExpr(XcFnCall);
+  FnCall^.FnExpr := FnExpr;
+  FnCall^.CallArgs.Size := Args.Size;
+  FnCall^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
+  FnCall^.IsAssignable := false;
+  FnCall^.IsFunctionResult := true;
+  Result := FnCall;
   for Pos := 1 to Args.Size do
   begin
-    Result^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
+    FnCall^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
                                     FnExpr^.FnPtr^.Args[Pos].TypePtr);
-    if FnExpr^.FnPtr^.Args[Pos].IsReference
-       and not FnExpr^.FnPtr^.Args[Pos].IsConstant then
+    if FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      if not Result^.CallArgs.Values[Pos]^.IsAssignable then
-        CompileError('Pass-by-reference argument must be assignable: ' +
-                     DescribeExpr(Result^.CallArgs.Values[Pos], 10));
-      ExMarkInitialized(Result^.CallArgs.Values[Pos])
+      if not FnCall^.CallArgs.Values[Pos]^.IsAssignable then
+      begin
+        if FnExpr^.FnPtr^.Args[Pos].IsConstant then
+        begin
+          Str(DefCounter(TctTmpVar), TmpVarNum);
+          Result := ExSetTmpVar(ExVariable(AddVariable(MakeVariable(
+                    'tmp' + TmpVarNum,
+                    FnCall^.CallArgs.Values[Pos]^.TypePtr))),
+                    FnCall^.CallArgs.Values[Pos], Result);
+          FnCall^.CallArgs.Values[Pos] := CopyExpr(Result^.TmpVar)
+        end
+        else
+          CompileError('Pass-by-reference argument must be assignable: ' +
+                       DescribeExpr(FnCall^.CallArgs.Values[Pos], 10))
+      end
+      else if not FnExpr^.FnPtr^.Args[Pos].IsConstant then
+             ExMarkInitialized(FnCall^.CallArgs.Values[Pos])
     end
-  end;
-  Result^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
-  Result^.IsAssignable := false;
-  Result^.IsFunctionResult := true
+  end
 end;
 
 function ExPseudoFn(SpecialFn : TPsPseudoFn) : TExpression;

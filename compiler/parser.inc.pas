@@ -960,6 +960,8 @@ end;
 procedure PsIdentifierStatement;
 var 
   Lhs : TExpression;
+  OrigLhs : TExpression;
+  UsesTmpVars : boolean;
 begin
   Lhs := PsVariable;
   if (Lhs^.Cls <> XcFnRef)
@@ -974,21 +976,31 @@ begin
   end
   else
   begin
-    if Lhs^.Cls = XcFnCall then
+    OrigLhs := Lhs;
+    UsesTmpVars := false;
+    while Lhs^.Cls = XcSetTmpVar do
     begin
-      OutProcedureCall(Lhs);
-      DisposeExpr(Lhs)
-    end
-    else if Lhs^.Cls = XcPseudoFnCall then
-    begin
-      OutPseudoProcCall(Lhs);
-      DisposeExpr(Lhs)
-    end
+      if not UsesTmpVars then
+      begin
+        UsesTmpVars := true;
+        StartTemporaryScope;
+        OutSequenceBegin
+      end;
+      OutDeclareAndAssign(Lhs^.TmpVar^.VarPtr, Lhs^.TmpVarValue);
+      Lhs := Lhs^.TmpVarChild
+    end;
+    if Lhs^.Cls = XcFnCall then OutProcedureCall(Lhs)
+    else if Lhs^.Cls = XcPseudoFnCall then OutPseudoProcCall(Lhs)
     else if Lhs^.Cls = XcBinaryOp then
            CompileError('Invalid statement' +
                         ' (maybe you wrote ''='' instead of '':=''?)')
-    else
-      CompileError('Invalid statement')
+    else CompileError('Invalid statement');
+    DisposeExpr(OrigLhs);
+    if UsesTmpVars then
+    begin
+      OutSequenceEnd;
+      CloseTemporaryScope
+    end
   end
 end;
 
@@ -1123,7 +1135,7 @@ begin
     ReadToken;
     Base := PsExpression;
     VarPtr := AddWithVar(Base);
-    OutAssignToReference(VarPtr, Base);
+    OutDeclareAndAssign(VarPtr, Base);
     DisposeExpr(Base);
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
