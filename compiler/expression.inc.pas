@@ -621,7 +621,8 @@ begin
   begin
     Result^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
                                     FnExpr^.FnPtr^.Args[Pos].TypePtr);
-    if FnExpr^.FnPtr^.Args[Pos].IsReference then
+    if FnExpr^.FnPtr^.Args[Pos].IsReference
+       and not FnExpr^.FnPtr^.Args[Pos].IsConstant then
     begin
       if not Result^.CallArgs.Values[Pos]^.IsAssignable then
         CompileError('Pass-by-reference argument must be assignable: ' +

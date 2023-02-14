@@ -466,23 +466,26 @@ end;
 
 procedure PsArguments(var Def : TPsFunction);
 var 
-  IsReference : boolean;
+  IsConst : boolean;
+  IsVar : boolean;
   LastArg, Arg : integer;
   TypePtr : TPsTypePtr;
 begin
   WantTokenAndRead(TkLparen);
   Def.ArgCount := 0;
   repeat
-    IsReference := Lexer.Token.Id = TkVar;
-    SkipToken(TkVar);
+    IsConst := Lexer.Token.Id = TkConst;
+    IsVar := Lexer.Token.Id = TkVar;
+    if IsConst then WantTokenAndRead(TkConst);
+    if IsVar then WantTokenAndRead(TkVar);
     LastArg := Def.ArgCount;
     repeat
       Def.ArgCount := Def.ArgCount + 1;
       if Def.ArgCount > MaxFnArgs then
         CompileError('Too many arguments declared for function ' + Def.Name);
       Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
-      Def.Args[Def.ArgCount].IsReference := IsReference;
-      Def.Args[Def.ArgCount].IsConstant := false;
+      Def.Args[Def.ArgCount].IsConstant := IsConst;
+      Def.Args[Def.ArgCount].IsReference := IsVar or IsConst;
       Def.Args[Def.ArgCount].WasInitialized := true;
       WantToken2(TkColon, TkComma);
       SkipToken(TkComma)
@@ -929,9 +932,10 @@ begin
   if not Lhs^.IsAssignable then
   begin
     if Lhs^.IsFunctionResult then
-      CompileError('Cannot assign to the result of a function')
+      CompileError('Cannot assign to the result of a function: ' +
+                   DescribeExpr(Lhs, 5))
     else
-      CompileError('Cannot assign to a constant value');
+      CompileError('Cannot assign to a constant:' + DescribeExpr(Lhs, 5));
   end;
   ExMarkInitialized(Lhs);
   OutAssign(Lhs, Rhs);

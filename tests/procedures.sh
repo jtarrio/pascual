@@ -58,6 +58,38 @@ echo "program foo;
         Swap(i, j);
         write(i, ' ', j)
       end." | outputs '2 1'
+# Arguments can be passed by const reference
+echo "program foo;
+      var i : integer;
+      procedure Proc(const a : integer);
+      begin
+        write('proc ', a)
+      end;
+      begin
+        i := 1;
+        Proc(i);
+        write(' ', i)
+      end." | outputs 'proc 1 1'
+echo "program foo;
+      var i : integer;
+      procedure Proc(const a : integer);
+      begin
+        a := 10;
+        write('proc ', a)
+      end;
+      begin
+        i := 1;
+        Proc(i);
+        write(' ', i)
+      end." | is_not_valid
+echo "program foo;
+      procedure Proc(const a : integer);
+      begin
+        write('proc ', a)
+      end;
+      begin
+        Proc(1)
+      end." | outputs 'proc 1'
 # Variables and types can be defined inside the procedure
 echo "program foo;
       procedure Proc(a : integer);

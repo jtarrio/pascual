@@ -233,7 +233,7 @@ begin
   WantTokenAndRead(TkComma);
   Code := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not Src^.IsAssignable or not IsStringType(Src^.TypePtr) then
+  if not IsStringType(Src^.TypePtr) then
     CompileError('First argument for VAL is not a string variable');
   if not Dest^.IsAssignable then
     CompileError('Second argument for VAL is not a variable');

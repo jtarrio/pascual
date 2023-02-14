@@ -100,8 +100,14 @@ begin
   case Def^.Cls of 
     TdcVariable:
                  if not Def^.VarPtr^.WasUsed then
-                   CompileWarning('Variable ' + Def^.VarPtr^.Name +
-                                  ' was not used' + Where)
+                 begin
+                   if Def^.VarPtr^.IsConstant then
+                     CompileWarning('Constant ' + Def^.VarPtr^.Name +
+                                    ' was not used' + Where)
+                   else
+                     CompileWarning('Variable ' + Def^.VarPtr^.Name +
+                                    ' was not used' + Where)
+                 end
                  else if not Def^.VarPtr^.WasInitialized then
                         CompileWarning('Variable ' + Def^.VarPtr^.Name +
                                        ' was not initialized' + Where);

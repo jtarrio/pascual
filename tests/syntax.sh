@@ -382,6 +382,18 @@ echo 'program foo;
       begin writeln(maxint) end;
       begin end.' | is_valid
 echo 'program foo;
+      procedure Proc(const A : integer);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(const A : integer; B : boolean);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(const A, B : integer);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
       type T = procedure;
       procedure Proc(P : T);
       begin P end;

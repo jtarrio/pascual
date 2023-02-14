@@ -66,6 +66,36 @@ echo "program foo;
         i := 1; j := 2;
         write(Swap(i, j), ' ', i, ' ', j)
       end." | outputs 'FALSE 2 1'
+# Arguments can be passed by const reference
+echo "program foo;
+      var i : integer;
+      function Fun(const a : integer) : integer;
+      begin
+        Fun := a + 5
+      end;
+      begin
+        i := 1;
+        write(Fun(i))
+      end." | outputs '6'
+echo "program foo;
+      var i : integer;
+      function Fun(const a : integer) : integer;
+      begin
+        a := 10;
+        Fun := a + 5
+      end;
+      begin
+        i := 1;
+        write(Fun(i))
+      end." | is_not_valid
+echo "program foo;
+      function Fun(const a : integer) : integer;
+      begin
+        Fun := a + 5
+      end;
+      begin
+        write(Fun(1))
+      end." | outputs '6'
 # Variables and types can be defined inside the function
 echo "program foo;
       function Fun(a : integer) : integer;

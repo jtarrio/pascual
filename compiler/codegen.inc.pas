@@ -11,6 +11,9 @@ var
     CheckBounds : boolean;
   end;
 
+procedure OutVariableDeclaration(VarDef : TPsVariable);
+forward;
+
 procedure _OutNewline;
 begin
   writeln(Codegen.Output);
@@ -312,7 +315,9 @@ begin
 end;
 
 procedure _OutExFunctionCall(Expr : TExpression);
-var Pos : integer;
+var 
+  Pos : integer;
+  TmpVar : TPsVariable;
 begin
   _OutExpressionParens(Expr^.FnExpr, Expr);
   write(Codegen.Output, '(');
@@ -321,10 +326,22 @@ begin
     if Pos <> 1 then write(Codegen.Output, ', ');
     if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      if not Expr^.CallArgs.Values[Pos]^.IsAssignable then
-        CompileError('Pass-by-reference argument must be assignable');
-      write(Codegen.Output, '&');
-      _OutExpressionParensPrec(Expr^.CallArgs.Values[Pos], 2)
+      if Expr^.CallArgs.Values[Pos]^.IsAssignable then
+      begin
+        write(Codegen.Output, '&');
+        _OutExpressionParensPrec(Expr^.CallArgs.Values[Pos], 2)
+      end
+      else if Expr^.FnExpr^.FnPtr^.Args[Pos].IsConstant then
+      begin
+        TmpVar := MakeVariable('tmp', Expr^.CallArgs.Values[Pos]^.TypePtr);
+        write(Codegen.Output, '({ ');
+        OutVariableDeclaration(TmpVar);
+        write(Codegen.Output, ' = ');
+        OutExpression(Expr^.CallArgs.Values[Pos]);
+        write(Codegen.Output, '; &tmp; })')
+      end
+      else
+        CompileError('Pass-by-reference argument must be assignable')
     end
     else
       OutExpression(Expr^.CallArgs.Values[Pos])
@@ -798,6 +815,7 @@ end;
 
 procedure OutVariableDeclaration(VarDef : TPsVariable);
 begin
+  if VarDef.IsConstant then write(Codegen.Output, 'const ');
   OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
   VarDef.TypePtr)
 end;
@@ -806,7 +824,6 @@ procedure OutVariableDefinition;
 begin
   _OutBlankline(TotVar);
   _OutIndent;
-  if VarPtr^.IsConstant then write(Codegen.Output, 'const ');
   OutVariableDeclaration(VarPtr^);
   write(Codegen.Output, ';');
   _OutNewline
@@ -816,7 +833,6 @@ procedure OutConstantDefinitionBegin;
 begin
   _OutBlankline(TotVar);
   _OutIndent;
-  write(Codegen.Output, 'const ');
   OutVariableDeclaration(VarPtr^);
   write(Codegen.Output, ' = ')
 end;
