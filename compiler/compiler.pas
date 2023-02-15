@@ -4,6 +4,11 @@ var Options : record
   SuppressWarnings : boolean;
 end;
 
+procedure CompileError(Msg : string);
+forward;
+procedure CompileWarning(Msg : string);
+forward;
+
 {$I typedefs.inc.pas}
 {$I expression.forward.inc.pas}
 {$I pseudofuns.forward.inc.pas}
@@ -15,6 +20,18 @@ end;
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
 {$I pseudofuns.inc.pas}
+
+procedure CompileError(Msg : string);
+begin
+  writeln(StdErr, Msg, LxWhereStr);
+  halt(1)
+end;
+
+procedure CompileWarning(Msg : string);
+begin
+  if not Options.SuppressWarnings then
+    writeln(StdErr, 'Warning: ', Msg, LxWhereStr)
+end;
 
 procedure Usage(Msg : string);
 begin

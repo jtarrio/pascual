@@ -42,18 +42,6 @@ begin
   LxTokenStr := LxTokenName(Lexer.Token.Id) + ' [' + Lexer.Token.Value + ']'
 end;
 
-procedure CompileError(Msg : string);
-begin
-  writeln(StdErr, Msg, LxWhereStr);
-  halt(1)
-end;
-
-procedure CompileWarning(Msg : string);
-begin
-  if not Options.SuppressWarnings then
-    writeln(StdErr, 'Warning: ', Msg, LxWhereStr)
-end;
-
 function LxIsAlpha(Chr : char) : boolean;
 begin
   LxIsAlpha := ((Chr >= 'a') and (Chr <= 'z'))
