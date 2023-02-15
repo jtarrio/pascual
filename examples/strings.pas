@@ -89,10 +89,6 @@ begin
   writeln(s);
   Str(True, s);
   writeln(s);
-  Str('a', s);
-  writeln(s);
-  Str('abc', s);
-  writeln(s)
 end;
 
 begin
