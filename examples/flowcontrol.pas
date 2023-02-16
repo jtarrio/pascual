@@ -1,139 +1,163 @@
-(* Tests for flow control *)
+{ Some flow control structures. }
 program flowcontrol;
 
-procedure TestIf;
+{ if-then-else }
+procedure ShowIf;
 begin
-  writeln('if');
+  { A straightforward if-then-else }
+  if true then writeln('true')
+  else writeln('false');
 
-  if true then writeln('1 ok');
-  if false then writeln('1 no');
+  { Quite often, we omit the 'else' }
+  if true then writeln('true');
 
-  if true then writeln('2 ok')
-  else writeln('2 no');
-  if false then writeln('3 no')
-  else writeln('3 ok');
-
+  { You can also omit the 'then' if you need to }
   if true then
-    if true then writeln('4 ok')
-    else writeln('4 no');
-
-  if true then
-    if false then writeln('5 no')
-    else writeln('5 ok');
-
+  else writeln('false');
+  { You may be surprised to learn you can do this too }
   if true then;
-  if true then else writeln('6 no');
-  if false then else writeln('6 ok');
+
+  { Use begin-end if you need to execute several statements }
+  if true then
+  begin
+    writeln('true');
+    writeln('true dat')
+  end
+  else
+  begin
+    writeln('false');
+    writeln('no really')
+  end;
+
+  { You can chain if-then-else. This is very common. }
+  if true then writeln('true')
+  else if true then writeln('true2')
+  else writeln('false');
+
+  { You can also nest if-then-else. }
+  { You can use begin-end to make it clear which else goes with each then. }
+  if true then
+  begin
+    if true then writeln('true')
+    else writeln('false')
+  end;
+
+  { Otherwise, the rule is that an 'else' goes with the latest 'then'. }
+  if true then
+    if true then writeln('true')
+  else writeln('false');
 end;
 
-procedure TestRepeat;
-var
-  i : integer;
-
+{ repeat-until }
+procedure ShowRepeatUntil;
+var i : integer;
 begin
-  writeln('repeat');
-
-  i := 1;
+  { Repeats the statements inside until the condition is true. }
+  i := 0;
   repeat
-    writeln('1 ', i);
     i := i + 1
-  until i > 5;
-  writeln('1 expect 6: ', i);
+  until i = 5;
 
-  i := 5;
+  { You don't need to use begin-end, as they are implicit. }
+  i := 0;
   repeat
-    writeln('2 ', i);
-    i := i + 1
-  until i > 5;
-  writeln('2 expect 6: ', i);
+    i := i + 1;
+    writeln(i)
+  until i = 5;
 
-  i := 6;
+  { If you are not careful writing the condition, }
+  { you may end up with an infinite loop. }
+  i := 10;
   repeat
-    writeln('3 ', i);
     i := i + 1
-  until i > 5;
-  writeln('3 expect 7: ', i);
+  until i = 5;
 
-  i := 7;
+  { Of course you can do an empty block for whatever reason. }
   repeat
-    writeln('4 ', i);
-    i := i + 1
-  until i > 5;
-  writeln('3 expect 8: ', i);
-
-  repeat until true;
-  repeat ; until true;
+  until false;
 end;
 
-procedure TestWhile;
-var
-  i : integer;
+{ while }
+procedure ShowWhile;
+var i : integer;
 begin
-  writeln('while');
+  { Repeats the following statement while the condition is true }
+  i := 0;
+  while i <> 5 do
+    i := i + 1;
 
-  i := 1;
-  while i <= 5 do
+  { Use begin-end to execute a block of statements }
+  i := 0;
+  while i <> 5 do
   begin
-    writeln('1 ', i);
-    i := i + 1
+    i := i + 1;
+    writeln(i)
   end;
-  writeln('1 expect 6: ', i);
 
-  i := 5;
-  while i <= 5 do
-  begin
-    writeln('2 ', i);
-    i := i + 1
-  end;
-  writeln('2 expect 6: ', i);
-
-  i := 6;
-  while i <= 5 do
-  begin
-    writeln('3 ', i, ' no');
-    i := i + 1
-  end;
-  writeln('3 expect 6: ', i);
-
-  i := 7;
-  while i <= 5 do
-  begin
-    writeln('4 ', i, ' no');
-    i := i + 1
-  end;
-  writeln('4 expect 7: ', i);
-
+  { Can you have an empty while? You can have an empty while }
   while false do;
 end;
 
-procedure TestFor;
-var
-  i : integer;
+{ for }
+procedure ShowFor;
+var i : integer;
 begin
-  writeln('for');
+  { You can count up }
+  for i := 1 to 10 do
+    writeln(i);
 
-  for i := 1 to 5 do
-    writeln('1 ', i);
-  writeln('1 expect 5: ', i);
+  { And you can count down }
+  for i := 10 downto 1 do
+    writeln(i);
 
-  for i := 6 to 5 do
-    writeln('2 ', i, ' no');
-  writeln('2 expect 5: ', i);
+  { You can use a block }
+  for i := 1 to 10 do
+  begin
+    write('The number is ');
+    writeln(i)
+  end;
 
-  for i := 5 downto 1 do
-    writeln('3 ', i);
-  writeln('3 expect 1: ', i);
+  { The ends of the 'for' loop are evaluated only once, so you can do this: }
+  i := 10;
+  for i := 1 to i do
+    writeln(i);
+  { It will loop up to 10, which was the value of i before the loop. }
 
-  for i := 0 downto 1 do
-    writeln('4 ', i, ' no');
-  writeln('4 expect 1: ', i);
+  { If the initial value for the 'for' is already past the final value, }
+  { the loop is not executed and the variable doesn't get the initial value. }
+  i := 0;
+  for i := 20 to 10 do
+    writeln(i);
+  writeln('The value of i is 0, not 20: ', i)
+end;
 
-  for i := 1 to 5 do;
+{ case }
+procedure ShowCase;
+var i : char;
+begin
+  i := 'b';
+
+  { Jumps to the statement associated with the label for the value of i }
+  { and only executes that statement (no fallthrough). }
+  case i of 
+    'a': writeln('a');
+    'b': writeln('b');
+    'c': writeln('c');
+  end;
+
+  { If there isn't a label for the current value, no block will be executed. }
+  { You can use an 'else' clause to specify one. }
+  case i of 
+    'd' : writeln('d');
+    'e' : writeln('e');
+    else writeln('other')
+  end
 end;
 
 begin
-  TestIf;
-  TestRepeat;
-  TestWhile;
-  TestFor;
+  ShowIf;
+  ShowRepeatUntil;
+  ShowWhile;
+  ShowFor;
+  ShowCase
 end.

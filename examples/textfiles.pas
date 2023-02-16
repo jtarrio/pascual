@@ -1,9 +1,9 @@
+{ Example of reading and writing text files. }
 program textfiles;
 
-var
-  infile, outfile : text;
+var infile, outfile : text;
 
-procedure copyfile(var filein : text; var fileout : text);
+procedure copyfile(var filein, fileout : text);
 var
   line : string;
 begin

@@ -1,173 +1,110 @@
 /* Program: FLOWCONTROL */
 #include "pascual.h"
 
-void TESTIF() {
-  WRITE_s(&OUTPUT, str_make(2, "if"));
-  WRITELN(&OUTPUT);
+void SHOWIF() {
   if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "1 ok"));
-    WRITELN(&OUTPUT);
-  }
-  if (0) {
-    WRITE_s(&OUTPUT, str_make(4, "1 no"));
-    WRITELN(&OUTPUT);
-  }
-  if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "2 ok"));
+    WRITE_s(&OUTPUT, str_make(4, "true"));
     WRITELN(&OUTPUT);
   }
   else {
-    WRITE_s(&OUTPUT, str_make(4, "2 no"));
+    WRITE_s(&OUTPUT, str_make(5, "false"));
     WRITELN(&OUTPUT);
   }
-  if (0) {
-    WRITE_s(&OUTPUT, str_make(4, "3 no"));
+  if (1) {
+    WRITE_s(&OUTPUT, str_make(4, "true"));
+    WRITELN(&OUTPUT);
+  }
+  if (1) ;
+  else {
+    WRITE_s(&OUTPUT, str_make(5, "false"));
+    WRITELN(&OUTPUT);
+  }
+  if (1) ;
+  if (1) {
+    WRITE_s(&OUTPUT, str_make(4, "true"));
+    WRITELN(&OUTPUT);
+    WRITE_s(&OUTPUT, str_make(8, "true dat"));
     WRITELN(&OUTPUT);
   }
   else {
-    WRITE_s(&OUTPUT, str_make(4, "3 ok"));
+    WRITE_s(&OUTPUT, str_make(5, "false"));
     WRITELN(&OUTPUT);
+    WRITE_s(&OUTPUT, str_make(9, "no really"));
+    WRITELN(&OUTPUT);
+  }
+  if (1) {
+    WRITE_s(&OUTPUT, str_make(4, "true"));
+    WRITELN(&OUTPUT);
+  }
+  else if (1) {
+    WRITE_s(&OUTPUT, str_make(5, "true2"));
+    WRITELN(&OUTPUT);
+  }
+  else {
+    WRITE_s(&OUTPUT, str_make(5, "false"));
+    WRITELN(&OUTPUT);
+  }
+  if (1) {
+    if (1) {
+      WRITE_s(&OUTPUT, str_make(4, "true"));
+      WRITELN(&OUTPUT);
+    }
+    else {
+      WRITE_s(&OUTPUT, str_make(5, "false"));
+      WRITELN(&OUTPUT);
+    }
   }
   if (1) if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "4 ok"));
+    WRITE_s(&OUTPUT, str_make(4, "true"));
     WRITELN(&OUTPUT);
   }
   else {
-    WRITE_s(&OUTPUT, str_make(4, "4 no"));
-    WRITELN(&OUTPUT);
-  }
-  if (1) if (0) {
-    WRITE_s(&OUTPUT, str_make(4, "5 no"));
-    WRITELN(&OUTPUT);
-  }
-  else {
-    WRITE_s(&OUTPUT, str_make(4, "5 ok"));
-    WRITELN(&OUTPUT);
-  }
-  if (1) ;
-  if (1) ;
-  else {
-    WRITE_s(&OUTPUT, str_make(4, "6 no"));
-    WRITELN(&OUTPUT);
-  }
-  if (0) ;
-  else {
-    WRITE_s(&OUTPUT, str_make(4, "6 ok"));
+    WRITE_s(&OUTPUT, str_make(5, "false"));
     WRITELN(&OUTPUT);
   }
 }
 
-void TESTREPEAT() {
+void SHOWREPEATUNTIL() {
   int I;
-  WRITE_s(&OUTPUT, str_make(6, "repeat"));
-  WRITELN(&OUTPUT);
-  I = 1;
+  I = 0;
   do {
-    WRITE_s(&OUTPUT, str_make(2, "1 "));
+    I = I + 1;
+  } while (!(I == 5));
+  I = 0;
+  do {
+    I = I + 1;
     WRITE_i(&OUTPUT, I);
     WRITELN(&OUTPUT);
+  } while (!(I == 5));
+  I = 10;
+  do {
     I = I + 1;
-  } while (!(I > 5));
-  WRITE_s(&OUTPUT, str_make(12, "1 expect 6: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 5;
+  } while (!(I == 5));
   do {
-    WRITE_s(&OUTPUT, str_make(2, "2 "));
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  } while (!(I > 5));
-  WRITE_s(&OUTPUT, str_make(12, "2 expect 6: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 6;
-  do {
-    WRITE_s(&OUTPUT, str_make(2, "3 "));
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  } while (!(I > 5));
-  WRITE_s(&OUTPUT, str_make(12, "3 expect 7: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 7;
-  do {
-    WRITE_s(&OUTPUT, str_make(2, "4 "));
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  } while (!(I > 5));
-  WRITE_s(&OUTPUT, str_make(12, "3 expect 8: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  do {
-  } while (0);
-  do {
-    ;
-  } while (0);
+  } while (1);
 }
 
-void TESTWHILE() {
+void SHOWWHILE() {
   int I;
-  WRITE_s(&OUTPUT, str_make(5, "while"));
-  WRITELN(&OUTPUT);
-  I = 1;
-  while (I <= 5) {
-    WRITE_s(&OUTPUT, str_make(2, "1 "));
+  I = 0;
+  while (I != 5) I = I + 1;
+  I = 0;
+  while (I != 5) {
+    I = I + 1;
     WRITE_i(&OUTPUT, I);
     WRITELN(&OUTPUT);
-    I = I + 1;
   }
-  WRITE_s(&OUTPUT, str_make(12, "1 expect 6: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 5;
-  while (I <= 5) {
-    WRITE_s(&OUTPUT, str_make(2, "2 "));
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  }
-  WRITE_s(&OUTPUT, str_make(12, "2 expect 6: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 6;
-  while (I <= 5) {
-    WRITE_s(&OUTPUT, str_make(2, "3 "));
-    WRITE_i(&OUTPUT, I);
-    WRITE_s(&OUTPUT, str_make(3, " no"));
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  }
-  WRITE_s(&OUTPUT, str_make(12, "3 expect 6: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  I = 7;
-  while (I <= 5) {
-    WRITE_s(&OUTPUT, str_make(2, "4 "));
-    WRITE_i(&OUTPUT, I);
-    WRITE_s(&OUTPUT, str_make(3, " no"));
-    WRITELN(&OUTPUT);
-    I = I + 1;
-  }
-  WRITE_s(&OUTPUT, str_make(12, "4 expect 7: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
   while (0) ;
 }
 
-void TESTFOR() {
+void SHOWFOR() {
   int I;
-  WRITE_s(&OUTPUT, str_make(3, "for"));
-  WRITELN(&OUTPUT);
   do {
     int first = 1;
-    int last = 5;
+    int last = 10;
     if (first <= last) {
       I = first;
       while (1) {
-        WRITE_s(&OUTPUT, str_make(2, "1 "));
         WRITE_i(&OUTPUT, I);
         WRITELN(&OUTPUT);
         if (I == last) break;
@@ -175,34 +112,12 @@ void TESTFOR() {
       }
     }
   } while(0);
-  WRITE_s(&OUTPUT, str_make(12, "1 expect 5: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
   do {
-    int first = 6;
-    int last = 5;
-    if (first <= last) {
-      I = first;
-      while (1) {
-        WRITE_s(&OUTPUT, str_make(2, "2 "));
-        WRITE_i(&OUTPUT, I);
-        WRITE_s(&OUTPUT, str_make(3, " no"));
-        WRITELN(&OUTPUT);
-        if (I == last) break;
-        ++I;
-      }
-    }
-  } while(0);
-  WRITE_s(&OUTPUT, str_make(12, "2 expect 5: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  do {
-    int first = 5;
+    int first = 10;
     int last = 1;
     if (first >= last) {
       I = first;
       while (1) {
-        WRITE_s(&OUTPUT, str_make(2, "3 "));
         WRITE_i(&OUTPUT, I);
         WRITELN(&OUTPUT);
         if (I == last) break;
@@ -210,44 +125,94 @@ void TESTFOR() {
       }
     }
   } while(0);
-  WRITE_s(&OUTPUT, str_make(12, "3 expect 1: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
-  do {
-    int first = 0;
-    int last = 1;
-    if (first >= last) {
-      I = first;
-      while (1) {
-        WRITE_s(&OUTPUT, str_make(2, "4 "));
-        WRITE_i(&OUTPUT, I);
-        WRITE_s(&OUTPUT, str_make(3, " no"));
-        WRITELN(&OUTPUT);
-        if (I == last) break;
-        --I;
-      }
-    }
-  } while(0);
-  WRITE_s(&OUTPUT, str_make(12, "4 expect 1: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
   do {
     int first = 1;
-    int last = 5;
+    int last = 10;
     if (first <= last) {
       I = first;
       while (1) {
-        ;
+        {
+          WRITE_s(&OUTPUT, str_make(14, "The number is "));
+          WRITE_i(&OUTPUT, I);
+          WRITELN(&OUTPUT);
+        }
         if (I == last) break;
         ++I;
       }
     }
   } while(0);
+  I = 10;
+  do {
+    int first = 1;
+    int last = I;
+    if (first <= last) {
+      I = first;
+      while (1) {
+        WRITE_i(&OUTPUT, I);
+        WRITELN(&OUTPUT);
+        if (I == last) break;
+        ++I;
+      }
+    }
+  } while(0);
+  I = 0;
+  do {
+    int first = 20;
+    int last = 10;
+    if (first <= last) {
+      I = first;
+      while (1) {
+        WRITE_i(&OUTPUT, I);
+        WRITELN(&OUTPUT);
+        if (I == last) break;
+        ++I;
+      }
+    }
+  } while(0);
+  WRITE_s(&OUTPUT, str_make(29, "The value of i is 0, not 20: "));
+  WRITE_i(&OUTPUT, I);
+  WRITELN(&OUTPUT);
+}
+
+void SHOWCASE() {
+  unsigned char I;
+  I = 'b';
+  switch (I) {
+    case 'a':
+      WRITE_c(&OUTPUT, 'a');
+      WRITELN(&OUTPUT);
+      break;
+    case 'b':
+      WRITE_c(&OUTPUT, 'b');
+      WRITELN(&OUTPUT);
+      break;
+    case 'c':
+      WRITE_c(&OUTPUT, 'c');
+      WRITELN(&OUTPUT);
+      break;
+    default:
+      break;
+  }
+  switch (I) {
+    case 'd':
+      WRITE_c(&OUTPUT, 'd');
+      WRITELN(&OUTPUT);
+      break;
+    case 'e':
+      WRITE_c(&OUTPUT, 'e');
+      WRITELN(&OUTPUT);
+      break;
+    default:
+      WRITE_s(&OUTPUT, str_make(5, "other"));
+      WRITELN(&OUTPUT);
+      break;
+  }
 }
 
 void pascual_main() {
-  TESTIF();
-  TESTREPEAT();
-  TESTWHILE();
-  TESTFOR();
+  SHOWIF();
+  SHOWREPEATUNTIL();
+  SHOWWHILE();
+  SHOWFOR();
+  SHOWCASE();
 }

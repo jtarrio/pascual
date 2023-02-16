@@ -1,33 +1,98 @@
+{ Some examples of pointers. }
 program pointers;
 
+{ Defining some pointer types for existing types. }
 type
-  StrP = ^string;
-  RecType = record
-    foo : string;
-    bar : integer
+  StringP = ^string;
+  MyRecord = record
+    a : integer;
+    b : boolean
   end;
-  RecP = ^RecType;
+  MyRecordP = ^MyRecord;
+
+{ But you can also declare a pointer for a type that hasn't been defined yet, }
+{ as long as you define it in the same 'type' block. }
+{ You pretty much need to do this to implement linked lists and the like. }
+type
+  NodeP = ^Node;
+  Node = record
+    Value: integer;
+    Prev, Next: NodeP;
+  end;
 
 var
-  foo : string;
-  str : StrP;
-  rec : RecP;
+  MyStr : StringP;
+  MyRec : MyRecordP;
+  RootNode : NodeP;
+  { Of course, you can just declare and use pointer types }
+  MyInt : ^integer;
+
+{ Some linked list subroutines. }
+procedure AddNode(Value : integer);
+var PrevRoot : NodeP;
+begin
+  PrevRoot := RootNode;
+  New(RootNode);
+  RootNode^.Value := Value;
+  RootNode^.Next := PrevRoot;
+  { The null pointer is named 'nil' and is compatible with all pointer types }
+  if PrevRoot = nil then
+    RootNode^.Prev := nil
+  else
+  begin
+    RootNode^.Prev := PrevRoot^.Prev;
+    PrevRoot^.Prev := RootNode
+  end
+end;
+
+function FindNode(Count : integer) : NodeP;
+var Node : NodeP;
+begin
+  Node := RootNode;
+  while (Count > 1) and (Node <> nil) do
+  begin
+    if Node <> nil then Node := Node^.Next;
+    Count := Count - 1
+  end;
+  FindNode := Node
+end;
+
+procedure DisposeList;
+var Next : NodeP;
+begin
+  while RootNode <> nil do
+  begin
+    Next := RootNode^.Next;
+    Dispose(RootNode);
+    RootNode := Next
+  end
+end;    
 
 begin
-  foo := 'foo';
+  { Using a pointer to a string }
+  New(MyStr);
+  MyStr^ := 'foo';
+  writeln(MyStr^);
+  Dispose(MyStr);
 
-  New(str);
-  str^ := foo;
-  writeln(str^);
-  str^ := 'bar';
-  foo := str^;
-  writeln(foo);
-  Dispose(str);
+  { Using a pointer to a record }
+  New(MyRec);
+  MyRec^.a := 123;
+  MyRec^.b := true;
+  writeln(MyRec^.a, ' ', MyRec^.b);
+  Dispose(MyRec);
 
-  New(rec);
-  rec^.foo := 'foo';
-  rec^.bar := 1;
-  writeln(rec^.foo);
-  writeln(rec^.bar);
-  Dispose(rec)
+  { Using a pointer to an integer }
+  New(MyInt);
+  MyInt^ := 42;
+  writeln(MyInt^);
+  Dispose(MyInt);
+
+  { Using a doubly linked list }
+  RootNode := nil;
+  AddNode(123);
+  AddNode(456);
+  AddNode(789);
+  writeln(FindNode(2)^.Value);
+  DisposeList
 end.

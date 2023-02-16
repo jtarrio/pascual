@@ -1,3 +1,4 @@
+{ Several of the many ways in which you can include comments in your program. }
 program comments;
 
 { This is a
