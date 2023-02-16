@@ -86,6 +86,8 @@ I've seen so many programs that convert a language to some other language, and t
 
 I'm going to write it and it's going to be awesome.
 
+In the meantime, you can look at the `examples` subdirectory to see what kinds of features are supported and how they are used.
+
 # License
 
 Pascual, its runtime library, examples, and tests are made available under the terms of the Apache License 2.0.
