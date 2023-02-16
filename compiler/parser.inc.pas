@@ -231,8 +231,11 @@ begin
   WantToken(TkIdentifier);
   NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
   if NamePtr = nil then Typ := PointerUnknownType(Lexer.Token.Value)
-  else Typ := PointerType(NamePtr^.TypePtr);
-  Typ.WasUsed := true;
+  else
+  begin
+    Typ := PointerType(NamePtr^.TypePtr);
+    NamePtr^.TypePtr^.WasUsed := true
+  end;
   ReadToken;
   PsPointerType := AddType(Typ)
 end;
