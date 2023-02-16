@@ -6,8 +6,8 @@
 
 void HALT(int code) { exit(code); }
 
-int param_count;
-const char** param_str;
+static int param_count;
+static const char** param_str;
 
 int PARAMCOUNT() { return param_count; }
 
