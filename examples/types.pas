@@ -15,6 +15,8 @@ begin
   { Integers are 32-bit signed }
   i := 12345678;
   i := -12345678;
+  { Hexadecimal integers are also supported with a $ syntax. }
+  i := $CAFE;
   { Reals are double precision floating point }
   r := 6.02e23;
   r := 1e-10;
