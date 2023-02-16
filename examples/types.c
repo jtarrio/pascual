@@ -1,168 +1,144 @@
 /* Program: TYPES */
 #include "pascual.h"
 
-typedef int BOO;
-typedef enum enum1 { ONE, TWO, THREE } NUMBERS;
-typedef NUMBERS NUMS;
-typedef struct record1 {
-  int NUM;
-  PString STR;
-} REC;
-typedef struct record2 {
-  int BOL;
-  REC REC;
-} REC2;
-typedef int ARR1[10];
-typedef REC ARR2[5];
+void BASICTYPES() {
+  int B;
+  int I;
+  double R;
+  unsigned char C;
+  PString S;
+  B = 1;
+  B = 0;
+  I = 12345678;
+  I = -12345678;
+  R = 6.02e+23;
+  R = 1e-10;
+  R = -42;
+  C = 'a';
+  C = 'Z';
+  S = str_make(12, "Hello, world");
+  S = str_make(0, "");
+  S = str_make(63, "En un lugar de La Mancha, de cuyo nombre no quiero acordarme...");
+}
 
-const char* enumvalues1[] = { "ONE", "TWO", "THREE" };
-
-BOO SCARED;
-NUMBERS ANUMBER;
-NUMS ANUM;
-REC AREC;
-REC2 AREC2;
-enum enum2 { LETTERA, LETTERB, LETTERC, LETTERD } ALETTER;
-struct record3 {
-  PString FIRST;
-  PString LAST;
-} ANAME;
-ARR1 AARR1;
-PString AARR3[20];
-
-const char* enumvalues2[] = { "LETTERA", "LETTERB", "LETTERC", "LETTERD" };
-
-void PROC() {
-  enum enum3 { UN, DEUX, TROIS } FR;
-  const char* enumvalues3[] = { "UN", "DEUX", "TROIS" };
-  WRITE_e(&OUTPUT, DEUX, enumvalues3);
+void ENUMERATEDTYPES() {
+  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum enum2 { NORTH, EAST, SOUTH, WEST } DIRECTIONS;
+  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
+  const char* enumvalues2[] = { "NORTH", "EAST", "SOUTH", "WEST" };
+  SUITS SUIT;
+  DIRECTIONS DIRECTION;
+  enum enum3 { PARK, REVERSE, NEUTRAL, LOW, DIRECT } GEAR;
+  const char* enumvalues3[] = { "PARK", "REVERSE", "NEUTRAL", "LOW", "DIRECT" };
+  SUIT = DIAMONDS;
+  DIRECTION = WEST;
+  GEAR = NEUTRAL;
+  WRITE_e(&OUTPUT, SUIT, enumvalues1);
+  WRITE_c(&OUTPUT, ' ');
+  WRITE_e(&OUTPUT, DIRECTION, enumvalues2);
+  WRITE_c(&OUTPUT, ' ');
+  WRITE_e(&OUTPUT, GEAR, enumvalues3);
+  WRITELN(&OUTPUT);
+  WRITE_s(&OUTPUT, str_make(18, "Suit > Hearts  -> "));
+  WRITE_b(&OUTPUT, SUIT > HEARTS);
+  WRITELN(&OUTPUT);
+  WRITE_s(&OUTPUT, str_make(21, "Direction = West  -> "));
+  WRITE_b(&OUTPUT, DIRECTION == WEST);
   WRITELN(&OUTPUT);
 }
 
-int FUN() {
-  int RESULT;
-  enum enum3 { EINS, ZWEI, DREI } DE;
-  const char* enumvalues3[] = { "EINS", "ZWEI", "DREI" };
-  WRITE_e(&OUTPUT, DREI, enumvalues3);
-  WRITELN(&OUTPUT);
-  RESULT = 0;
-  return RESULT;
+void SUBRANGES() {
+  typedef int FIRSTHUNDRED;
+  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum enum1 REDS;
+  typedef enum enum1 BLACKS;
+  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
+  FIRSTHUNDRED NUM;
+  REDS REDSUIT;
+  BLACKS BLACKSUIT;
+  unsigned char LETTER;
+  NUM = 27;
+  REDSUIT = HEARTS;
+  BLACKSUIT = SPADES;
+  LETTER = 'X';
 }
 
 void ARRAYS() {
-  int POS;
-  ARR2 BARR2;
-  int BARR4[10];
-  do {
-    int first = 1;
-    int last = 10;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        AARR1[(int)subrange(POS, 1, 10) - 1] = POS;
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  do {
-    int first = 1;
-    int last = 10;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          STR_i(AARR1[(int)subrange(POS, 1, 10) - 1], &AARR3[(int)subrange(POS, 1, 20) - 1]);
-          STR_i(10 + AARR1[(int)subrange(POS, 1, 10) - 1] * 2, &AARR3[(int)subrange(POS + 10, 1, 20) - 1]);
-        }
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  BARR2[0].STR = str_make(11, "In an array");
-  do {
-    int first = 1;
-    int last = 10;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        BARR4[(int)subrange(POS, 1, 10) - 1] = AARR1[(int)subrange(POS, 1, 10) - 1] % 2 == 0;
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  do {
-    int first = 1;
-    int last = 10;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        WRITE_s(&OUTPUT, AARR3[(int)subrange(POS, 1, 20) - 1]);
-        WRITE_c(&OUTPUT, ' ');
-        WRITE_i(&OUTPUT, AARR1[(int)subrange(POS, 1, 10) - 1]);
-        WRITE_c(&OUTPUT, ' ');
-        WRITE_b(&OUTPUT, BARR4[(int)subrange(POS, 1, 10) - 1]);
-        WRITELN(&OUTPUT);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  do {
-    int first = 11;
-    int last = 20;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        WRITE_s(&OUTPUT, AARR3[(int)subrange(POS, 1, 20) - 1]);
-        WRITELN(&OUTPUT);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  WRITE_s(&OUTPUT, BARR2[0].STR);
-  WRITELN(&OUTPUT);
+  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum enum2 { KING, QUEEN, BISHOP, KNIGHT, ROOK, PAWN } PIECE;
+  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
+  const char* enumvalues2[] = { "KING", "QUEEN", "BISHOP", "KNIGHT", "ROOK", "PAWN" };
+  PString NAMES[12];
+  int TEMPERATURECOUNTS[201];
+  int CHARACTERCOUNTS[256];
+  int LETTERCOUNTS[26];
+  int SUITCOUNTS[4];
+  int BOOLEANCOUNTS[2];
+  PIECE CHESSBOARD[8][8];
+  PIECE OTHERCHESSBOARD[8][8];
+  double MASHUP[13][26][2];
+  NAMES[0] = str_make(4, "Mark");
+  SUITCOUNTS[DIAMONDS] = 3;
+  CHESSBOARD[2][1] = PAWN;
+  CHESSBOARD[2][1] = PAWN;
+  MASHUP[1][9][1] = 3.1416;
+  MASHUP[1][9][1] = 3.1416;
+}
+
+void RECORDS() {
+  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
+  typedef struct record1 {
+    int A;
+    double B;
+    double C;
+    PString D;
+  } R;
+  R ONE;
+  R TWO;
+  struct record2 {
+    int A;
+    double B;
+    SUITS C;
+    union {
+      struct {
+        PString D;
+      };
+      struct {
+        PString E;
+        int F;
+      };
+      struct {
+        int G;
+      };
+    };
+  } THREE;
+  struct record3 {
+    int A;
+    double B;
+    union {
+      struct {
+        PString D;
+      };
+      struct {
+        PString E;
+        int F;
+      };
+      struct {
+        int G;
+      };
+    };
+  } FOUR;
+  ONE.A = 123;
+  ONE.B = 12.34;
+  TWO = ONE;
+  THREE.D = str_make(16, "These are hearts");
 }
 
 void pascual_main() {
-  SCARED = 1;
-  ANUMBER = TWO;
-  ANUM = THREE;
-  AREC.NUM = 123;
-  AREC.STR = str_make(13, "four five six");
-  AREC2.BOL = 1;
-  AREC2.REC.NUM = 456;
-  AREC2.REC.STR = str_make(16, "seven eight nine");
-  ALETTER = LETTERD;
-  ANAME.FIRST = str_make(8, "Sherlock");
-  ANAME.LAST = str_make(6, "Holmes");
-  WRITE_b(&OUTPUT, SCARED);
-  WRITELN(&OUTPUT);
-  WRITE_e(&OUTPUT, ANUMBER, enumvalues1);
-  WRITELN(&OUTPUT);
-  WRITE_e(&OUTPUT, ANUM, enumvalues1);
-  WRITELN(&OUTPUT);
-  WRITE_i(&OUTPUT, AREC.NUM);
-  WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, AREC.STR);
-  WRITELN(&OUTPUT);
-  WRITE_b(&OUTPUT, AREC2.BOL);
-  WRITELN(&OUTPUT);
-  WRITE_i(&OUTPUT, AREC2.REC.NUM);
-  WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, AREC2.REC.STR);
-  WRITELN(&OUTPUT);
-  WRITE_e(&OUTPUT, ALETTER, enumvalues2);
-  WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, ANAME.FIRST);
-  WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, ANAME.LAST);
-  WRITELN(&OUTPUT);
-  PROC();
-  WRITE_i(&OUTPUT, FUN());
-  WRITELN(&OUTPUT);
+  BASICTYPES();
+  ENUMERATEDTYPES();
+  SUBRANGES();
   ARRAYS();
+  RECORDS();
 }
