@@ -82,6 +82,8 @@ begin
   Typ := EmptyType;
   Typ.Cls := TtcEnum;
   Typ.EnumPtr := AddEnum(Enum);
+  { It's hard to detect when an enumerated type was used, so we give up. }
+  Typ.WasUsed := true;
   PsEnumeratedType := AddType(Typ);
   SkipToken(TkRparen)
 end;
@@ -205,6 +207,7 @@ begin
   WantTokenAndRead(TkLbracket);
   repeat
     ArrPtr^.IndexTypePtr := PsTypeDenoter;
+    ArrPtr^.IndexTypePtr^.WasUsed := true;
     if not IsBoundedType(ArrPtr^.IndexTypePtr) then
       CompileError('Array indices must belong to a bounded ordinal type');
     WantToken2(TkComma, TkRbracket);
@@ -212,6 +215,7 @@ begin
     begin
       TypePtr := AddType(Typ);
       ArrPtr^.ValueTypePtr := TypePtr;
+      ArrPtr^.ValuetypePtr^.WasUsed := true;
       ArrPtr := AddArray(Arr);
       TypePtr^.ArrayPtr := ArrPtr
     end;
