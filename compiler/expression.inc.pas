@@ -1131,7 +1131,7 @@ begin
     end
   end
   { Subtract 0 }
-  if (Op = TkMinus) and _ExIsZero(Right) then
+  else if (Op = TkMinus) and _ExIsZero(Right) then
   begin
     DisposeExpr(Right);
     Result := true
