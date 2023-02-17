@@ -33,8 +33,9 @@ type
   TPsFnPtr = ^TPsFunction;
 
   TExpression = ^TExpressionObj;
+  TExSetBounds = ^TExSetBoundsObj;
   TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicReal, XicChar,
-                       XicString, XicEnum);
+                       XicString, XicEnum, XicSet);
   TExImmediate = record
     case Cls : TExImmediateClass of 
       XicBoolean : (BooleanVal : boolean);
@@ -43,7 +44,13 @@ type
       XicChar : (CharVal : char);
       XicString : (StringVal : string);
       XicEnum : (EnumOrdinal : integer;
-                 EnumPtr : TPsEnumPtr)
+                 EnumPtr : TPsEnumPtr);
+      XicSet : (SetBounds : TExSetBounds;
+                SetOfTypePtr : TPsTypePtr)
+  end;
+  TExSetBoundsObj = record
+    First, Last : integer;
+    Next : TExSetBounds;
   end;
   TExFunctionArgs = record
     Size : integer;
@@ -113,6 +120,7 @@ type
   end;
 
   TPsRangePtr = ^TPsRangeDef;
+  TPsSetPtr = ^TPsSetDef;
   TPsRecPtr = ^TPsRecordDef;
   TPsArrayPtr = ^TPsArrayDef;
   TPsConstPtr = ^TPsConstant;
@@ -120,8 +128,8 @@ type
   TPsNamePtr = ^TPsName;
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
-                  TtcEnum, TtcRange, TtcRecord, TtcArray, TtcPointer, TtcNil,
-                  TtcPointerUnknown);
+                  TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
+                  TtcPointer, TtcNil, TtcPointerUnknown);
   TPsType = record
     Name : string;
     AliasFor : TPsTypePtr;
@@ -129,6 +137,7 @@ type
     case Cls : TPsTypeClass of 
       TtcEnum : (EnumPtr : TPsEnumPtr);
       TtcRange : (RangePtr : TPsRangePtr);
+      TtcSet : (SetPtr : TPsSetPtr);
       TtcRecord : (RecPtr : TPsRecPtr);
       TtcArray : (ArrayPtr : TPsArrayPtr);
       TtcPointer : (PointedTypePtr : TPsTypePtr);
@@ -143,6 +152,9 @@ type
   TPsRangeDef = record
     First, Last : integer;
     BaseTypePtr : TPsTypePtr
+  end;
+  TPsSetDef = record
+    ElementTypePtr : TPsTypePtr
   end;
   TPsRecordField = record
     Name : string;
@@ -205,8 +217,8 @@ type
   end;
 
   TPsDefPtr = ^TPsDefEntry;
-  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRange, TdcRecord, TdcArray,
-                 TdcConstant, TdcVariable, TdcFunction, TdcWithVar,
+  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRange, TdcSet, TdcRecord,
+                 TdcArray, TdcConstant, TdcVariable, TdcFunction, TdcWithVar,
                  TdcScopeBoundary);
   TPsDefEntry = record
     Prev : TPsDefPtr;
@@ -216,6 +228,7 @@ type
       TdcType : (TypePtr : TPsTypePtr);
       TdcEnum : (EnumPtr : TPsEnumPtr);
       TdcRange : (RangePtr : TPsRangePtr);
+      TdcSet : (SetPtr : TPsSetPtr);
       TdcRecord : (RecPtr : TPsRecPtr);
       TdcArray : (ArrayPtr : TPsArrayPtr);
       TdcConstant : (ConstPtr : TPsConstPtr);

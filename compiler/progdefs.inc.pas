@@ -47,6 +47,7 @@ begin
     TdcType : new(Def^.TypePtr);
     TdcEnum : new(Def^.EnumPtr);
     TdcRange : new(Def^.RangePtr);
+    TdcSet : new(Def^.SetPtr);
     TdcRecord : new(Def^.RecPtr);
     TdcArray : new(Def^.ArrayPtr);
     TdcConstant : new(Def^.ConstPtr);
@@ -69,6 +70,7 @@ begin
     TdcType : dispose(Def^.TypePtr);
     TdcEnum : dispose(Def^.EnumPtr);
     TdcRange: dispose(Def^.RangePtr);
+    TdcSet : dispose(Def^.SetPtr);
     TdcRecord : dispose(Def^.RecPtr);
     TdcArray : dispose(Def^.ArrayPtr);
     TdcConstant : dispose(Def^.ConstPtr);
@@ -315,67 +317,6 @@ begin
   AddPseudoFn := Def
 end;
 
-function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
-var 
-  Typ : TPsType;
-  Ret : string;
-  NumStr : string;
-  Pos : integer;
-begin
-  repeat
-    Typ := TypePtr^;
-    TypePtr := Typ.AliasFor
-  until not UseOriginal or (TypePtr = nil);
-  if Typ.Name <> '' then DeepTypeName := Typ.Name
-  else if Typ.Cls = TtcEnum then
-  begin
-    Ret := '(';
-    for Pos := 0 to Typ.EnumPtr^.Size - 1 do
-    begin
-      if Pos <> 0 then
-        Ret := Ret + ',';
-      Ret := Ret + Typ.EnumPtr^.Values[Pos]
-    end;
-    DeepTypeName := Ret + ')'
-  end
-  else if Typ.Cls = TtcRange then
-  begin
-    Str(Typ.RangePtr^.First, Result);
-    Str(Typ.RangePtr^.Last, NumStr);
-    Result := Result + '..' + NumStr
-  end
-  else if Typ.Cls = TtcRecord then
-  begin
-    Ret := 'record ';
-    for Pos := 1 to Typ.RecPtr^.Size do
-    begin
-      if Pos <> 1 then Ret := Ret + ',';
-      Ret := Ret + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
-      Ret := Ret + ':' + Typ.RecPtr^.Fields[Pos].Name
-    end;
-    DeepTypeName := Ret + ' end'
-  end
-  else if Typ.Cls = TtcArray then
-  begin
-    Ret := 'array [' + DeepTypeName(Typ.ArrayPtr^.IndexTypePtr, false) +
-           '] of ' + DeepTypeName(Typ.ArrayPtr^.ValueTypePtr, false);
-    DeepTypeName := Ret
-  end
-  else if Typ.Cls = TtcPointer then
-         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypePtr, true)
-  else
-  begin
-    Str(Typ.Cls, Ret);
-    CompileError('Could not get name for type of class ' + Ret)
-  end
-end;
-
-function TypeName(TypePtr : TPsTypePtr) : string;
-begin
-  if TypePtr = nil then TypeName := '(none)'
-  else TypeName := DeepTypeName(TypePtr, false)
-end;
-
 function EmptyType : TPsType;
 var 
   Ret : TPsType;
@@ -526,6 +467,149 @@ begin
             or IsRangeType(TypePtr)
 end;
 
+function IsSameType(A, B : TPsTypePtr) : boolean;
+begin
+  if (A = nil) or (B = nil) then IsSameType := A = B
+  else
+  begin
+    while A^.AliasFor <> nil do
+      A := A^.AliasFor;
+    while B^.AliasFor <> nil do
+      B := B^.AliasFor;
+    IsSameType := (A = B)
+                  or (IsPointerType(A) and IsPointerType(B)
+                  and IsSameType(A^.PointedTypePtr, B^.PointedTypePtr))
+  end
+end;
+
+function ArePointersCompatible(A, B : TPsTypePtr) : boolean;
+begin
+  ArePointersCompatible := IsPointeryType(A) and IsPointeryType(B) and
+                           (IsNilType(A) or IsNilType(B)
+                           or IsSameType(A, B))
+end;
+
+function UnparseChar(Chr : char) : string;
+var 
+  ChNum : string;
+begin
+  if Chr = '''' then Result := ''''''''''
+  else if Chr < ' ' then
+  begin
+    Str(Ord(Chr), ChNum);
+    Result := '#' + ChNum
+  end
+  else Result := '''' + Chr + ''''
+end;
+
+function UnparseString(St : string) : string;
+var 
+  Pos : integer;
+  ChNum : string;
+  Quoted : boolean;
+begin
+  Quoted := false;
+  Result := '';
+  for Pos := 1 to Length(St) do
+  begin
+    if St[Pos] < ' ' then
+    begin
+      if Quoted then
+      begin
+        Quoted := false;
+        Result := Result + ''''
+      end;
+      Str(Ord(St[Pos]), ChNum);
+      Result := Result + '#' + ChNum
+    end
+    else
+    begin
+      if not Quoted then
+      begin
+        Quoted := true;
+        Result := Result + ''''
+      end;
+      if St[Pos] = '''' then Result := Result + ''''''
+      else Result := Result + St[Pos]
+    end
+  end;
+  if Quoted then Result := Result + '''';
+  if Result = '' then Result := ''''''
+end;
+
+function AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
+begin
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  case TypePtr^.Cls of 
+    TtcBoolean: if Ordinal = 0 then Result := 'FALSE'
+                else Result := 'TRUE';
+    TtcInteger: Str(Ordinal, Result);
+    TtcChar: Result := UnparseChar(Chr(Ordinal));
+    TtcEnum: Result := TypePtr^.EnumPtr^.Values[Ordinal];
+    else InternalError('Cannot compute anti-ordinal for ' + TypeName(TypePtr))
+  end
+end;
+
+function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
+var 
+  Typ : TPsType;
+  Ret : string;
+  Pos : integer;
+begin
+  repeat
+    Typ := TypePtr^;
+    TypePtr := Typ.AliasFor
+  until not UseOriginal or (TypePtr = nil);
+  if Typ.Name <> '' then DeepTypeName := Typ.Name
+  else if Typ.Cls = TtcEnum then
+  begin
+    Ret := '(';
+    for Pos := 0 to Typ.EnumPtr^.Size - 1 do
+    begin
+      if Pos <> 0 then
+        Ret := Ret + ',';
+      Ret := Ret + Typ.EnumPtr^.Values[Pos]
+    end;
+    DeepTypeName := Ret + ')'
+  end
+  else if Typ.Cls = TtcRange then
+  begin
+    Result := AntiOrdinal(Typ.RangePtr^.First, Typ.RangePtr^.BaseTypePtr) +
+              '..' + AntiOrdinal(Typ.RangePtr^.Last, Typ.RangePtr^.BaseTypePtr)
+  end
+  else if Typ.Cls = TtcRecord then
+  begin
+    Ret := 'record ';
+    for Pos := 1 to Typ.RecPtr^.Size do
+    begin
+      if Pos <> 1 then Ret := Ret + ',';
+      Ret := Ret + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
+      Ret := Ret + ':' + Typ.RecPtr^.Fields[Pos].Name
+    end;
+    DeepTypeName := Ret + ' end'
+  end
+  else if Typ.Cls = TtcArray then
+  begin
+    Ret := 'array [' + DeepTypeName(Typ.ArrayPtr^.IndexTypePtr, false) +
+           '] of ' + DeepTypeName(Typ.ArrayPtr^.ValueTypePtr, false);
+    DeepTypeName := Ret
+  end
+  else if Typ.Cls = TtcPointer then
+         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypePtr, true)
+  else
+  begin
+    Str(Typ.Cls, Ret);
+    CompileError('Could not get name for type of class ' + Ret)
+  end
+end;
+
+function TypeName(TypePtr : TPsTypePtr) : string;
+begin
+  if TypePtr = nil then TypeName := '(none)'
+  else TypeName := DeepTypeName(TypePtr, false)
+end;
+
 function GetTypeLowBound(TypePtr : TPsTypePtr) : integer;
 begin
   case TypePtr^.Cls of 
@@ -551,28 +635,6 @@ end;
 function GetBoundedTypeSize(TypePtr : TPsTypePtr) : integer;
 begin
   Result := GetTypeHighBound(TypePtr) - GetTypeLowBound(TypePtr) + 1
-end;
-
-function IsSameType(A, B : TPsTypePtr) : boolean;
-begin
-  if (A = nil) or (B = nil) then IsSameType := A = B
-  else
-  begin
-    while A^.AliasFor <> nil do
-      A := A^.AliasFor;
-    while B^.AliasFor <> nil do
-      B := B^.AliasFor;
-    IsSameType := (A = B)
-                  or (IsPointerType(A) and IsPointerType(B)
-                  and IsSameType(A^.PointedTypePtr, B^.PointedTypePtr))
-  end
-end;
-
-function ArePointersCompatible(A, B : TPsTypePtr) : boolean;
-begin
-  ArePointersCompatible := IsPointeryType(A) and IsPointeryType(B) and
-                           (IsNilType(A) or IsNilType(B)
-                           or IsSameType(A, B))
 end;
 
 function AddType(Typ : TPsType) : TPsTypePtr;
@@ -610,6 +672,12 @@ function AddRange(Range : TPsRangeDef) : TPsRangePtr;
 begin
   Result := _AddDef(TdcRange)^.RangePtr;
   Result^ := Range
+end;
+
+function AddSet(Def : TPsSetDef) : TPsSetPtr;
+begin
+  Result := _AddDef(TdcSet)^.SetPtr;
+  Result^ := Def
 end;
 
 function AddRecord(Rec : TPsRecordDef) : TPsRecPtr;

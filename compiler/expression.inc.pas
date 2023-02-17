@@ -40,10 +40,25 @@ begin
   end
 end;
 
+procedure _DisposeImmediate(var Imm : TExImmediate);
+var Bounds : TExSetBounds;
+begin
+  if Imm.Cls = XicSet then
+  begin
+    while Imm.SetBounds <> nil do
+    begin
+      Bounds := Imm.SetBounds^.Next;
+      Dispose(Imm.SetBounds);
+      Imm.SetBounds := Bounds
+    end
+  end
+end;
+
 procedure DisposeExpr;
 var Pos : integer;
 begin
   case Expr^.Cls of 
+    XcImmediate : _DisposeImmediate(Expr^.Immediate);
     XcToString : DisposeExpr(Expr^.ToStrParent);
     XcToReal : DisposeExpr(Expr^.ToRealParent);
     XcSetTmpVar :
@@ -137,6 +152,28 @@ begin
   end
 end;
 
+function _CopyImmediate(const Imm : TExImmediate) : TExImmediate;
+var Src, Dst : TExSetBounds;
+begin
+  Result := Imm;
+  if Imm.Cls = XicSet then
+  begin
+    Src := Imm.SetBounds;
+    New(Result.SetBounds);
+    Dst := Result.SetBounds;
+    while Src <> nil do
+    begin
+      Dst^ := Src^;
+      Src := Src^.Next;
+      if Src <> nil then
+      begin
+        New(Dst^.Next);
+        Dst := Dst^.Next
+      end
+    end
+  end
+end;
+
 function CopyExpr;
 var 
   Copy : TExpression;
@@ -147,7 +184,7 @@ begin
   Copy^.IsAssignable := Expr^.IsAssignable;
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
-    XcImmediate: Copy^.Immediate := Expr^.Immediate;
+    XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := CopyExpr(Expr^.ToRealParent);
     XcSetTmpVar :
@@ -202,55 +239,22 @@ begin
   CopyExpr := Copy
 end;
 
-function _UnparseChar(Chr : char) : string;
-var 
-  ChNum : string;
+function _DescribeSet(Bounds : TExSetBounds;
+                      SetOfTypePtr : TPsTypePtr) : string;
 begin
-  if Chr = '''' then Result := ''''''''''
-  else if Chr < ' ' then
+  Result := '[';
+  while Bounds <> nil do
   begin
-    Str(Ord(Chr), ChNum);
-    Result := '#' + ChNum
-  end
-  else Result := '''' + Chr + ''''
-end;
-
-function _UnparseString(St : string) : string;
-var 
-  Pos : integer;
-  ChNum : string;
-  Quoted : boolean;
-begin
-  Quoted := false;
-  Result := '';
-  for Pos := 1 to Length(St) do
-  begin
-    if St[Pos] < ' ' then
-    begin
-      if Quoted then
-      begin
-        Quoted := false;
-        Result := Result + ''''
-      end;
-      Str(Ord(St[Pos]), ChNum);
-      Result := Result + '#' + ChNum
-    end
-    else
-    begin
-      if not Quoted then
-      begin
-        Quoted := true;
-        Result := Result + ''''
-      end;
-      if St[Pos] = '''' then Result := Result + ''''''
-      else Result := Result + St[Pos]
-    end
+    Result := Result + AntiOrdinal(Bounds^.First, SetOfTypePtr);
+    if Bounds^.First <> Bounds^.Last then
+      Result := Result + '..' + AntiOrdinal(Bounds^.Last, SetOfTypePtr);
+    Bounds := Bounds^.Next;
+    if Bounds <> nil then Result := Result + ', '
   end;
-  if Quoted then Result := Result + '''';
-  if Result = '' then Result := ''''''
+  Result := Result + ']'
 end;
 
-function _DescribeImmediatepr(Expr : TExpression) : string;
+function _DescribeImmediate(Expr : TExpression) : string;
 begin
   with Expr^.Immediate do
     case Cls of 
@@ -258,9 +262,10 @@ begin
       XicBoolean: Str(BooleanVal, Result);
       XicInteger: Str(IntegerVal, Result);
       XicReal: Str(RealVal, Result);
-      XicChar: Result := _UnparseChar(CharVal);
-      XicString: Result := _UnparseString(StringVal);
+      XicChar: Result := UnparseChar(CharVal);
+      XicString: Result := UnparseString(StringVal);
       XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
+      XicSet: Result := _DescribeSet(SetBounds, SetOfTypePtr);
       else InternalError('Cannot describe immediate value')
     end
 end;
@@ -406,7 +411,7 @@ begin
   if Levels < 1 then Result := '(...)'
   else
     case Expr^.Cls of 
-      XcImmediate: Result := _DescribeImmediatepr(Expr);
+      XcImmediate: Result := _DescribeImmediate(Expr);
       XcToString: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcToReal: Result := DescribeExpr(Expr^.ToRealParent, Levels);
       XcSetTmpVar: Result := _DescribeSetTmpVar(Expr, Levels);
@@ -506,6 +511,88 @@ begin
   Result^.Immediate.EnumOrdinal := Ordinal;
   Result^.Immediate.EnumPtr := TypePtr^.EnumPtr;
   Result^.TypePtr := TypePtr
+end;
+
+function ExSetConstant(Bounds : TExSetBounds;
+                       TypePtr : TPsTypePtr) : TExpression;
+begin
+  if not IsOrdinalType(TypePtr) then
+    CompileError('Not an ordinal type: ' + TypeName(TypePtr));
+  Result := _ExImmediate(XicSet);
+  Result^.Immediate.SetBounds := Bounds;
+  Result^.Immediate.SetOfTypePtr := TypePtr^.SetPtr^.ElementTypePtr;
+  Result^.TypePtr := TypePtr
+end;
+
+function ExSetAddBounds(Bounds : TExSetBounds;
+                        First, Last : integer) : TExSetBounds;
+var 
+  Prev, This, NewBounds : TExSetBounds;
+  Done : boolean;
+begin
+  if First > Last then
+    CompileError('Set bounds must appear in ascending order');
+  Result := Bounds;
+  Done := false;
+  Prev := nil;
+  This := Bounds;
+  repeat
+    {         nil  or         pppppp }
+    { nnnnnnn          nnnnnn        }
+    if (This = nil) or (Last + 1 < This^.First) then
+    begin
+      new(NewBounds);
+      NewBounds^.First := First;
+      NewBounds^.Last := Last;
+      NewBounds^.Next := This;
+      if Prev = nil then Result := NewBounds
+      else Prev^.Next := NewBounds;
+      Done := true
+    end
+    {      ppppp  or      ppppp  or     ppppp }
+    {  nnnn           nnnnnn         nnnnnnnn }
+    else if (First < This^.First) and (Last <= This^.Last) then
+    begin
+      This^.First := First;
+      Done := true
+    end
+    { pppppppp  or  pppppppp  or  pppppppp  or  pppppppp }
+    { nnnn              nnnn        nnnn        nnnnnnnn }
+    else if (First >= This^.First) and (Last <= This^.Last) then
+    begin
+      Done := true
+    end
+    {    ppppppp   or   pppppp   }
+    {  nnnnnnnnnn       nnnnnnnn }
+    else if (First <= This^.First) and (Last > This^.Last) then
+    begin
+      NewBounds := This^.Next;
+      Dispose(This);
+      This := NewBounds;
+      if Prev = nil then Result := NewBounds else Prev^.Next := NewBounds;
+      Done := false
+    end
+    { pppppp     or  ppppp       }
+    {   nnnnnnn           nnnnnn }
+    else if (First > This^.First) and (First <= This^.Last + 1)
+            and (Last > This^.Last) then
+    begin
+      First := This^.First;
+      NewBounds := This^.Next;
+      Dispose(This);
+      This := NewBounds;
+      if Prev = nil then Result := NewBounds else Prev^.Next := NewBounds;
+      Done := false
+    end
+    { ppppppp       }
+    {         nnnnn }
+    else
+    begin
+      Prev := This;
+      This := This^.Next;
+      Done := false
+    end
+  until Done;
 end;
 
 function ExIsImmediate(Expr : TExpression) : boolean;
