@@ -1113,100 +1113,44 @@ end;
 { and frees the Right expression. }
 function _ExBinOpShortcut(var Left, Right : TExpression;
                           Op : TLxTokenId) : boolean;
+var Use : (UseLeft, UseRight, Keep);
 begin
-  Result := false;
-  { Add 0 }
-  if Op = TkPlus then
-  begin
-    if _ExIsZero(Left) then
-    begin
-      DisposeExpr(Left);
-      Left := Right;
-      Result := true
-    end
-    else if _ExIsZero(Right) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
-  end
-  { Subtract 0 }
-  else if (Op = TkMinus) and _ExIsZero(Right) then
-  begin
-    DisposeExpr(Right);
-    Result := true
-  end
-  else if Op = TkAsterisk then
-  begin
-    { Multiply by 0 }
-    if _ExIsZero(Left) or _ExIsZero(Right) then
-    begin
-      DisposeExpr(Left);
-      DisposeExpr(Right);
-      Left := ExIntegerConstant(0);
-      Result := true
-    end
-    { Multiply by 1 }
-    else if _ExIsOne(Left) then
-    begin
-      DisposeExpr(Left);
-      Left := Right;
-      Result := true
-    end
-    else if _ExIsOne(Right) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
-  end
-  { Divide 0 by anything, or divide by 1 }
-  else if ((Op = TkDiv) or (Op = TkSlash))
-          and (_ExIsZero(Left) or _ExIsOne(Right)) then
-  begin
-    DisposeExpr(Right);
-    Result := true
-  end
-  else if Op = TkAnd then
-  begin
-    { False AND anything is false }
-    if _ExIsFalse(Left) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
-    { Anything AND true is the anything }
-    else if _ExIsTrue(Left) then
-    begin
-      DisposeExpr(Left);
-      Left := Right;
-      Result := true
-    end
-    else if _ExIsTrue(Right) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
-  end
-  else if Op = TkOr then
-  begin
-    { True OR anything is true }
-    if _ExIsTrue(Left) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
-    { Anything OR false is the anything }
-    else if _ExIsFalse(Left) then
-    begin
-      DisposeExpr(Left);
-      Left := Right;
-      Result := true
-    end
-    else if _ExIsFalse(Right) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
+  Use := Keep;
+  case Op of 
+    { X + 0 -> X ; 0 + X -> X }
+    TkPlus : if _ExIsZero(Left) then Use := UseRight
+             else if _ExIsZero(Right) then Use := UseLeft;
+    { X - 0 -> X }
+    TkMinus : if _ExIsZero(Right) then Use := UseLeft;
+    { X * 0 -> 0 ; 0 * X -> 0 ; X * 1 -> X ; 1 * X -> X}
+    TkAsterisk : if _ExIsZero(Left) then Use := UseLeft
+                 else if _ExIsZero(Right) then Use := UseRight
+                 else if _ExIsOne(Left) then Use := UseRight
+                 else if _ExIsOne(Right) then Use := UseLeft;
+    { 0 / X -> 0 ; X / 1 -> X }
+    TkSlash : if _ExIsZero(Left) or _ExIsOne(Right) then Use := UseLeft;
+    { 0 div X -> 0 ; X div 1 -> X }
+    TkDiv : if _ExIsZero(Left) or _ExIsOne(Right) then Use := UseLeft;
+    { false AND X -> false ; X AND true -> X ; true AND X -> X }
+    TkAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
+            else if _ExIsTrue(Left) then Use := UseRight;
+    { true OR X -> true ; X OR false -> X ; false OR X -> X }
+    TkOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
+           else if _ExIsFalse(Left) then Use := UseRight;
+  end;
+  case Use of 
+    UseLeft :
+              begin
+                DisposeExpr(Right);
+                Result := true
+              end;
+    UseRight :
+               begin
+                 DisposeExpr(Left);
+                 Left := Right;
+                 Result := true
+               end;
+    Keep : Result := false
   end
 end;
 
