@@ -221,7 +221,7 @@ begin
                                  NamePtr^.Name);
       TncPseudoFn : CompileError('Not a procedure or function: ' +
                                  NamePtr^.Name);
-      else CompileError('Internal error: name class mismatch')
+      else InternalError('Name class mismatch for ' + NamePtr^.Name)
     end;
   _CheckNameClass := NamePtr
 end;

@@ -143,8 +143,8 @@ begin
     TkMorethan : Result := 6;
     TkLessOrEquals : Result := 6;
     TkMoreOrEquals : Result := 6;
-    else CompileError('Internal error: unknown precedence for operator ' +
-                      LxTokenName(Expr^.Binary.Op))
+    else InternalError('Unknown precedence for operator in ' +
+                       DescribeExpr(Expr, 5))
   end
 end;
 
@@ -168,7 +168,7 @@ begin
     XcPseudoFnCall : Result := 1;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
-    else CompileError('Internal error: unknown precedence')
+    else InternalError('Unknown precedence for ' + DescribeExpr(Expr, 5))
   end
 end;
 
@@ -331,7 +331,8 @@ begin
     TpfVal : _OutVal(Expr);
     TpfWrite : _OutWrite(Expr);
     TpfWriteln : _OutWrite(Expr);
-    else CompileError('Internal error: unimplemented special function')
+    else InternalError('Unimplemented special function ' +
+                       DescribeExpr(Expr, 5))
   end
 end;
 

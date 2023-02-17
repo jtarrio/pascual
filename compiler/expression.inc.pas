@@ -197,8 +197,7 @@ begin
                   Copy^.Binary.Right := CopyExpr(Expr^.Binary.Right);
                   Copy^.Binary.Op := Expr^.Binary.Op
                 end;
-    else CompileError('Internal error: cannot copy expression: ' +
-                      DescribeExpr(Expr, 2))
+    else InternalError('Cannot copy expression: ' + DescribeExpr(Expr, 2))
   end;
   CopyExpr := Copy
 end;
@@ -262,7 +261,7 @@ begin
       XicChar: Result := _UnparseChar(CharVal);
       XicString: Result := _UnparseString(StringVal);
       XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
-      else CompileError('Internal error: cannot describe immediate value')
+      else InternalError('Cannot describe immediate value')
     end
 end;
 
@@ -280,7 +279,7 @@ begin
     TpfVal: Result := 'VAL';
     TpfWrite: Result := 'WRITE';
     TpfWriteln: Result := 'WRITELN';
-    else CompileError('Internal error: cannot describe pseudofun')
+    else InternalError('Cannot describe pseudofun')
   end
 end;
 
@@ -301,7 +300,7 @@ begin
                         DescribeExpr(Arg3, Levels - 1) + ')';
       TpfWrite: Result := 'WRITE(...)';
       TpfWriteln: Result := 'WRITELN(...)';
-      else CompileError('Internal error: cannot describe pseudofun')
+      else InternalError('Cannot describe pseudofun')
     end
 end;
 
@@ -349,7 +348,7 @@ begin
   case Expr^.Unary.Op of 
     TkMinus: Result := '-';
     TkNot: Result := 'not ';
-    else CompileError('Internal error: cannot describe unary operation')
+    else InternalError('Cannot describe unary operation')
   end;
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
   if UseParens then Result := Result + '(';
@@ -379,7 +378,7 @@ begin
     TkMorethan: Result := Result + ' > ';
     TkLessOrEquals: Result := Result + ' <= ';
     TkMoreOrEquals: Result := Result + ' >= ';
-    else CompileError('Internal error: cannot describe binary operation')
+    else InternalError('Cannot describe binary operation')
   end;
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Right);
   if UseParens then Result := Result + '(';
@@ -441,7 +440,7 @@ begin
       XcPseudoFnCall: Result := _DescribePseudoCallExpr(Expr, Levels);
       XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr, Levels);
       XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr, Levels);
-      else CompileError('Internal error: cannot describe expression')
+      else InternalError('Cannot describe expression')
     end
 end;
 
@@ -731,8 +730,7 @@ function ExPseudoFnCall(Expr : TExpression) : TExpression;
 var Fn : TPsPseudoFn;
 begin
   if Expr^.Cls <> XcPseudoFnRef then
-    CompileError('Internal error: Expected a pseudofunction, got ' +
-                 DescribeExpr(Expr, 10));
+    InternalError('Expected a pseudofunction, got ' + DescribeExpr(Expr, 10));
   Fn := Expr^.PseudoFn;
   Expr^.Cls := XcPseudoFnCall;
   Expr^.PseudoFnCall.PseudoFn := Fn;
@@ -783,7 +781,7 @@ begin
          Parent^.Immediate.BooleanVal := not Parent^.Immediate.BooleanVal
   else if (Op = TkNot) and ExIsImmediateOfClass(Parent, XicInteger) then
          Parent^.Immediate.IntegerVal := not Parent^.Immediate.IntegerVal
-  else CompileError('Internal error: invalid immediate unary operation');
+  else InternalError('Invalid immediate unary operation');
   _ExUnOpImm := Parent
 end;
 

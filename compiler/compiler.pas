@@ -7,6 +7,8 @@ end;
 
 procedure CompileError(Msg : string);
 forward;
+procedure InternalError(Msg : string);
+forward;
 procedure CompileWarning(Msg : string);
 forward;
 
@@ -25,6 +27,12 @@ forward;
 procedure CompileError(Msg : string);
 begin
   writeln(StdErr, Msg, LxWhereStr);
+  halt(1)
+end;
+
+procedure InternalError(Msg : string);
+begin
+  writeln(StdErr, 'Internal error : ', Msg, LxWhereStr);
   halt(1)
 end;
 

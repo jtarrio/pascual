@@ -312,6 +312,6 @@ begin
     TpfVal : Result := PfVal_Parse(Fn);
     TpfWrite : Result := PfWrite_Parse(Fn);
     TpfWriteln : Result := PfWrite_Parse(Fn);
-    else CompileError('Internal error: unimplemented special function')
+    else InternalError('Unimplemented special function ' + DescribeExpr(Fn, 5))
   end
 end;
