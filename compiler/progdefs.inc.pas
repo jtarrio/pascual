@@ -578,6 +578,8 @@ begin
     Result := AntiOrdinal(Typ.RangePtr^.First, Typ.RangePtr^.BaseTypePtr) +
               '..' + AntiOrdinal(Typ.RangePtr^.Last, Typ.RangePtr^.BaseTypePtr)
   end
+  else if Typ.Cls = TtcSet then
+    Result := 'set of ' + DeepTypeName(Typ.SetPtr^.ElementTypePtr, false)
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';

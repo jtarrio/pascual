@@ -566,6 +566,12 @@ begin
   else OutVariableName := Name
 end;
 
+procedure _OutSetTypeName(TypePtr : TPsTypePtr);
+begin
+  write(Codegen.Output, 'PSet',
+        1 + (GetBoundedTypeSize(TypePtr^.SetPtr^.ElementTypePtr) - 1) div 32)
+end;
+
 procedure OutTypeReference(TypePtr : TPsTypePtr);
 begin
   if TypePtr = nil then write(Codegen.Output, 'void')
@@ -589,6 +595,8 @@ begin
   end
   else if TypePtr^.Cls = TtcRange then
          OutTypeReference(TypePtr^.RangePtr^.BaseTypePtr)
+  else if TypePtr^.Cls = TtcSet then
+         _OutSetTypeName(TypePtr)
   else if TypePtr^.Cls = TtcRecord then
   begin
     if TypePtr^.RecPtr^.HasBeenDefined and (TypePtr^.Name <> '') then
@@ -724,6 +732,11 @@ begin
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
          OutNameAndType(Name, TypePtr^.RangePtr^.BaseTypePtr)
+  else if TypePtr^.Cls = TtcSet then
+  begin
+    _OutSetTypeName(TypePtr);
+    write(Codegen.Output, ' ', Name)
+  end
   else if TypePtr^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
   else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)

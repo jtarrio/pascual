@@ -269,11 +269,32 @@ begin
   Result := AddType(Typ)
 end;
 
+function PsSetType : TPsTypePtr;
+var 
+  Typ : TPsType;
+  Def : TPsSetDef;
+  TypePtr : TPsTypePtr;
+  ArrPtr : TPsArrayPtr;
+begin
+  WantTokenAndRead(TkSet);
+  WantTokenAndRead(TkOf);
+  Def.ElementTypePtr := PsTypeIdentifier;
+
+  if not IsBoundedType(Def.ElementTypePtr) then
+    CompileError('Set element types must be bounded ordinal types');
+  if GetBoundedTypeSize(Def.ElementTypePtr) > 256 then
+    CompileError('Set element types may not contain more than 256 values');
+  Typ := TypeOfClass(TtcSet);
+  Typ.SetPtr := AddSet(Def);
+  Result := AddType(Typ)
+end;
+
 function PsTypeDenoter;
 var Idx : TPsNamePtr;
 begin
   Result := nil;
   if Lexer.Token.Id = TkLparen then Result := PsEnumeratedType
+  else if Lexer.Token.Id = TkSet then Result := PsSetType
   else if Lexer.Token.Id = TkRecord then Result := PsRecordType
   else if Lexer.Token.Id = TkArray then Result := PsArrayType
   else if Lexer.Token.Id = TkCaret then Result := PsPointerType
