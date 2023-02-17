@@ -8,7 +8,6 @@ var
     Indent : integer;
     Newline : boolean;
     LastOut : TOutputType;
-    CheckBounds : boolean;
   end;
 
 procedure OutVariableDeclaration(VarDef : TPsVariable);
@@ -239,7 +238,7 @@ end;
 
 procedure _OutExSubrange(Expr : TExpression);
 begin
-  if not Codegen.CheckBounds then OutExpression(Expr^.SubrangeParent)
+  if not Options.CheckBounds then OutExpression(Expr^.SubrangeParent)
   else
   begin
     write(Codegen.Output, 'subrange(');
@@ -1069,7 +1068,7 @@ begin
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    if not CodeGen.CheckBounds then
+    if not Options.CheckBounds then
     begin
       TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkMinus);
@@ -1101,7 +1100,7 @@ begin
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    if not CodeGen.CheckBounds then
+    if not Options.CheckBounds then
     begin
       TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkPlus);
@@ -1359,16 +1358,10 @@ begin
   Codegen.Indent := 0;
   Codegen.Newline := true;
   Codegen.LastOut := TotNone;
-  Codegen.CheckBounds := true
 end;
 
 procedure CodegenSetOutput;
 begin
   Assign(Codegen.Output, Filename);
   Rewrite(Codegen.Output)
-end;
-
-procedure CodegenSetCheckBounds;
-begin
-  Codegen.CheckBounds := CheckBounds
 end;
