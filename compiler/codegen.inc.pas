@@ -207,70 +207,26 @@ begin
     end
 end;
 
-function _GetLowBound(TypePtr : TPsTypePtr) : TExpression;
-begin
-  if IsRangeType(TypePtr) then
-    Result := PfOrd(CopyExpr(TypePtr^.RangePtr^.First))
-  else if IsBoundedType(TypePtr) then
-         Result := ExIntegerConstant(0)
-  else CompileError('Internal error: unknown low bound for ' +
-                    TypeName(TypePtr))
-end;
-
-function _GetHighBound(TypePtr : TPsTypePtr) : TExpression;
-begin
-  if IsBooleanType(TypePtr) then Result := ExIntegerConstant(1)
-  else if IsCharType(TypePtr) then Result := ExIntegerConstant(255)
-  else if IsEnumType(TypePtr) then
-         Result := ExIntegerConstant(TypePtr^.EnumPtr^.Size - 1)
-  else if IsRangeType(TypePtr) then
-         Result := PfOrd(CopyExpr(TypePtr^.RangePtr^.Last))
-  else CompileError('Internal error: unknown high bound for ' +
-                    TypeName(TypePtr))
-end;
-
 procedure _OutBounds(TypePtr : TPsTypePtr);
-var TmpExpr : TExpression;
 begin
-  TmpExpr := _GetLowBound(TypePtr);
-  OutExpression(TmpExpr);
-  DisposeExpr(TmpExpr);
-  write(Codegen.Output, ', ');
-  TmpExpr := _GetHighBound(TypePtr);
-  OutExpression(TmpExpr);
-  DisposeExpr(TmpExpr);
+  write(Codegen.Output, GetTypeLowBound(TypePtr), ', ',
+  GetTypeHighBound(TypePtr))
 end;
 
 procedure _OutArrayIndex(Index : TExpression; TypePtr : TPsTypePtr);
-var LowBound, SizeExpr : TExpression;
+var LowBound : integer;
+  Size : TExpression;
 begin
-  LowBound := _GetLowBound(TypePtr^.ArrayPtr^.IndexTypePtr);
-  if (LowBound^.Cls = XcImmediate)
-     and (LowBound^.Immediate.Cls = XicInteger)
-     and (LowBound^.Immediate.IntegerVal = 0) then
-  begin
-    OutExpression(Index);
-    DisposeExpr(LowBound)
-  end
+  LowBound := GetTypeLowBound(TypePtr^.ArrayPtr^.IndexTypePtr);
+  if LowBound = 0 then OutExpression(Index)
   else
   begin
-    SizeExpr := ExBinaryOp(PfOrd(CopyExpr(Index)), LowBound, TkMinus);
-    OutExpression(SizeExpr);
-    DisposeExpr(SizeExpr)
+    Size := ExBinaryOp(PfOrd(CopyExpr(Index)),
+            ExIntegerConstant(LowBound),
+            TkMinus);
+    OutExpression(Size);
+    DisposeExpr(Size)
   end
-end;
-
-procedure _OutSize(TypePtr : TPsTypePtr);
-var SizeExpr : TExpression;
-begin
-  SizeExpr := ExBinaryOp(
-              ExBinaryOp(_GetHighBound(TypePtr),
-              _GetLowBound(TypePtr),
-              TkMinus),
-              ExIntegerConstant(1),
-              TkPlus);
-  OutExpression(SizeExpr);
-  DisposeExpr(SizeExpr)
 end;
 
 procedure _OutAddress(Expr : TExpression);
@@ -636,7 +592,7 @@ begin
       write(Codegen.Output, 'enum enum', TypePtr^.EnumPtr^.Id)
   end
   else if TypePtr^.Cls = TtcRange then
-         OutTypeReference(TypePtr^.RangePtr^.First^.TypePtr)
+         OutTypeReference(TypePtr^.RangePtr^.BaseTypePtr)
   else if TypePtr^.Cls = TtcRecord then
   begin
     if TypePtr^.RecPtr^.HasBeenDefined and (TypePtr^.Name <> '') then
@@ -740,9 +696,8 @@ begin
   TheType := TypePtr;
   while IsArrayType(TheType) do
   begin
-    write(Codegen.Output, '[');
-    _OutSize(TheType^.ArrayPtr^.IndexTypePtr);
-    write(Codegen.Output, ']');
+    write(Codegen.Output, '[',
+          GetBoundedTypeSize(TypePtr^.ArrayPtr^.IndexTypePtr), ']');
     TheType := TheType^.ArrayPtr^.ValueTypePtr
   end
 end;
@@ -772,7 +727,7 @@ begin
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
-         OutNameAndType(Name, TypePtr^.RangePtr^.First^.TypePtr)
+         OutNameAndType(Name, TypePtr^.RangePtr^.BaseTypePtr)
   else if TypePtr^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
   else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)

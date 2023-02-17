@@ -244,30 +244,25 @@ begin
   PsPointerType := AddType(Typ)
 end;
 
-function PsCompareExprs(A, B : TExpression; Op : TLxTokenId) : boolean;
-var CmpExpr : TExpression;
-begin
-  CmpExpr := ExBinaryOp(CopyExpr(A), CopyExpr(B), Op);
-  if CmpExpr^.Cls <> XcImmediate then
-    CompileError('Internal error: the compared expressions are not immediate');
-  Result := CmpExpr^.Immediate.BooleanVal;
-  DisposeExpr(CmpExpr)
-end;
-
 function PsRangeType : TPsTypePtr;
 var 
+  First, Last : TExpression;
   Typ : TPsType;
   Range : TPsRangeDef;
 begin
-  Range.First := PsImmediate;
+  First := PsImmediate;
   WantTokenAndRead(TkRange);
-  Range.Last := PsImmediate;
-  Range.BaseTypePtr := Range.First^.TypePtr;
-  if not IsSameType(Range.First^.TypePtr, Range.Last^.TypePtr) then
+  Last := PsImmediate;
+  if not IsSameType(First^.TypePtr, Last^.TypePtr) then
     CompileError('The bounds of a subrange must belong to the same type');
-  if not IsOrdinalType(Range.BaseTypePtr) then
+  if not IsOrdinalType(First^.TypePtr) then
     CompileError('The bounds of a subrange must belong to an ordinal type');
-  if not PsCompareExprs(Range.First, Range.Last, TkLessOrEquals) then
+  Range.First := ExGetOrdinal(First);
+  Range.Last := ExGetOrdinal(Last);
+  Range.BaseTypePtr := First^.TypePtr;
+  DisposeExpr(First);
+  DisposeExpr(Last);
+  if Range.First > Range.Last then
     CompileError('The bounds of a subrange must be in ascending order');
   Typ := TypeOfClass(TtcRange);
   Typ.RangePtr := AddRange(Range);

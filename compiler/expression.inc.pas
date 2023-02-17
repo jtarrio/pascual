@@ -1135,18 +1135,26 @@ begin
   else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;
 
-function _ExBelongsToRange(Expr, First, Last : TExpression) : boolean;
-var CmpExpr : TExpression;
+function ExGetOrdinal(Expr : TExpression) : integer;
 begin
-  CmpExpr := ExBinaryOp(
-             ExBinaryOp(CopyExpr(First), CopyExpr(Expr), TkLessOrEquals),
-             ExBinaryOp(CopyExpr(Expr), CopyExpr(Last), TkLessOrEquals),
-             TkAnd);
-  if CmpExpr^.Cls <> XcImmediate then
-    CompileError('Internal error: could not calculate if an immediate value ' +
-                 'belongs to a range');
-  Result := CmpExpr^.Immediate.BooleanVal;
-  DisposeExpr(CmpExpr)
+  if Expr^.Cls <> XcImmediate then
+    CompileError('Expression is not immediate: ' + DescribeExpr(Expr, 5));
+  with Expr^.Immediate do
+    case Cls of 
+      XicBoolean : Result := Ord(BooleanVal);
+      XicInteger : Result := IntegerVal;
+      XicChar : Result := Ord(CharVal);
+      XicEnum : Result := EnumOrdinal;
+      else CompileError('Expression does not belong to an ordinal type: ' +
+                        DescribeExpr(Expr, 5))
+    end
+end;
+
+function _ExBelongsToRange(Expr : TExpression; First, Last : integer) : boolean;
+var Ordinal : integer;
+begin
+  Ordinal := ExGetOrdinal(Expr);
+  Result := (First <= Ordinal) and (Ordinal <= Last)
 end;
 
 function ExSubrange;
@@ -1170,12 +1178,8 @@ end;
 
 function ExRerange(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
 begin
-  if _ExBelongsToRange(Expr^.TypePtr^.RangePtr^.First,
-     TypePtr^.RangePtr^.First,
-     TypePtr^.RangePtr^.Last)
-     and _ExBelongsToRange(Expr^.TypePtr^.RangePtr^.Last,
-     TypePtr^.RangePtr^.First,
-     TypePtr^.RangePtr^.Last) then
+  if (TypePtr^.RangePtr^.First <= Expr^.TypePtr^.RangePtr^.First)
+     and (Expr^.TypePtr^.RangePtr^.Last <= TypePtr^.RangePtr^.Last) then
   begin
     Expr^.TypePtr := TypePtr;
     Result := Expr

@@ -68,12 +68,7 @@ begin
     TdcName : dispose(Def^.NamePtr);
     TdcType : dispose(Def^.TypePtr);
     TdcEnum : dispose(Def^.EnumPtr);
-    TdcRange:
-              begin
-                DisposeExpr(Def^.RangePtr^.First);
-                DisposeExpr(Def^.RangePtr^.Last);
-                dispose(Def^.RangePtr)
-              end;
+    TdcRange: dispose(Def^.RangePtr);
     TdcRecord : dispose(Def^.RecPtr);
     TdcArray : dispose(Def^.ArrayPtr);
     TdcConstant : dispose(Def^.ConstPtr);
@@ -324,6 +319,7 @@ function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
 var 
   Typ : TPsType;
   Ret : string;
+  NumStr : string;
   Pos : integer;
 begin
   repeat
@@ -343,8 +339,11 @@ begin
     DeepTypeName := Ret + ')'
   end
   else if Typ.Cls = TtcRange then
-         DeepTypeName := DescribeExpr(Typ.RangePtr^.First, 1) +
-                         '..' + DescribeExpr(Typ.RangePtr^.Last, 1)
+  begin
+    Str(Typ.RangePtr^.First, Result);
+    Str(Typ.RangePtr^.Last, NumStr);
+    Result := Result + '..' + NumStr
+  end
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
@@ -525,6 +524,33 @@ begin
             or IsCharType(TypePtr)
             or IsEnumType(TypePtr)
             or IsRangeType(TypePtr)
+end;
+
+function GetTypeLowBound(TypePtr : TPsTypePtr) : integer;
+begin
+  case TypePtr^.Cls of 
+    TtcBoolean : Result := 0;
+    TtcChar : Result := 0;
+    TtcEnum : Result := 0;
+    TtcRange : Result := TypePtr^.RangePtr^.First;
+    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+  end
+end;
+
+function GetTypeHighBound(TypePtr : TPsTypePtr) : integer;
+begin
+  case TypePtr^.Cls of 
+    TtcBoolean : Result := 1;
+    TtcChar : Result := 255;
+    TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
+    TtcRange : Result := TypePtr^.RangePtr^.Last;
+    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+  end
+end;
+
+function GetBoundedTypeSize(TypePtr : TPsTypePtr) : integer;
+begin
+  Result := GetTypeHighBound(TypePtr) - GetTypeLowBound(TypePtr) + 1
 end;
 
 function IsSameType(A, B : TPsTypePtr) : boolean;

@@ -141,7 +141,7 @@ type
     HasBeenDefined : boolean
   end;
   TPsRangeDef = record
-    First, Last : TExpression;
+    First, Last : integer;
     BaseTypePtr : TPsTypePtr
   end;
   TPsRecordField = record
