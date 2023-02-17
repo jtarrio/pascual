@@ -1115,8 +1115,8 @@ function _ExBinOpShortcut(var Left, Right : TExpression;
                           Op : TLxTokenId) : boolean;
 begin
   Result := false;
-  { Add or subtract 0 }
-  if (Op = TkPlus) or (Op = TkMinus) then
+  { Add 0 }
+  if Op = TkPlus then
   begin
     if _ExIsZero(Left) then
     begin
@@ -1129,6 +1129,12 @@ begin
       DisposeExpr(Right);
       Result := true
     end
+  end
+  { Subtract 0 }
+  if (Op = TkMinus) and _ExIsZero(Right) then
+  begin
+    DisposeExpr(Right);
+    Result := true
   end
   else if Op = TkAsterisk then
   begin
@@ -1153,23 +1159,19 @@ begin
       Result := true
     end
   end
-  else if (Op = TkDiv) or (Op = TkSlash) then
+  { Divide 0 by anything, or divide by 1 }
+  else if ((Op = TkDiv) or (Op = TkSlash))
+          and (_ExIsZero(Left) or _ExIsOne(Right)) then
   begin
-    { Divide 0 by anything, or divide by 1 }
-    if _ExIsZero(Left) or _ExIsOne(Right) then
-    begin
-      DisposeExpr(Right);
-      Result := true
-    end
+    DisposeExpr(Right);
+    Result := true
   end
   else if Op = TkAnd then
   begin
     { False AND anything is false }
     if _ExIsFalse(Left) then
     begin
-      DisposeExpr(Left);
       DisposeExpr(Right);
-      Left := ExBooleanConstant(false);
       Result := true
     end
     { Anything AND true is the anything }
@@ -1190,9 +1192,7 @@ begin
     { True OR anything is true }
     if _ExIsTrue(Left) then
     begin
-      DisposeExpr(Left);
       DisposeExpr(Right);
-      Left := ExBooleanConstant(true);
       Result := true
     end
     { Anything OR false is the anything }
