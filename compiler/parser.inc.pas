@@ -144,7 +144,7 @@ begin
     Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
     repeat
       CaseLabel := ExCoerce(PsExpression, TagType);
-      if CaseLabel^.Cls <> XcImmediate then
+      if not ExIsImmediate(CaseLabel) then
         CompileError('The label of the case statement is not immediate');
       DisposeExpr(CaseLabel);
       WantToken2(TkComma, TkColon);
@@ -183,7 +183,7 @@ function PsImmediate : TExpression;
 var Expr : TExpression;
 begin
   Expr := PsExpression;
-  if Expr^.cls <> XcImmediate then
+  if not ExIsImmediate(Expr) then
     CompileError('Expected an immediate expression');
   PsImmediate := Expr
 end;
@@ -1041,7 +1041,7 @@ begin
   WantTokenAndRead(TkOf);
   repeat
     CaseLabel := ExCoerce(PsExpression, CaseTypePtr);
-    if CaseLabel^.Cls <> XcImmediate then
+    if not ExIsImmediate(CaseLabel) then
       CompileError('The label of the case statement is not immediate');
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);

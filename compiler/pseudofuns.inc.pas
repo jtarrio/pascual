@@ -55,7 +55,7 @@ var Imm : TExImmediate;
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
     CompileError('Argument for ORD does not have an ordinal type');
-  if Arg^.Cls = XcImmediate then
+  if ExIsImmediate(Arg) then
   begin
     Imm := Arg^.Immediate;
     DisposeExpr(Arg);
@@ -89,7 +89,7 @@ var
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
     CompileError('Argument for PRED does not have an ordinal type');
-  if Arg^.Cls = XcImmediate then
+  if ExIsImmediate(Arg) then
   begin
     Imm := Arg^.Immediate;
     OutOfBounds := false;
@@ -197,7 +197,7 @@ var
 begin
   if not IsOrdinalType(Arg^.TypePtr) then
     CompileError('Argument for SUCC does not have an ordinal type');
-  if Arg^.Cls = XcImmediate then
+  if ExIsImmediate(Arg) then
   begin
     Imm := Arg^.Immediate;
     OutOfBounds := false;

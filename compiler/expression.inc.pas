@@ -509,12 +509,23 @@ begin
   Result^.TypePtr := TypePtr
 end;
 
+function ExIsImmediate(Expr : TExpression) : boolean;
+begin
+  Result := Expr^.Cls = XcImmediate
+end;
+
+function ExIsImmediateOfClass(Expr : TExpression;
+                              Cls : TExImmediateClass) : boolean;
+begin
+  Result := (Expr^.Cls = XcImmediate) and (Expr^.Immediate.Cls = Cls)
+end;
+
 function ExToString(Parent : TExpression) : TExpression;
 var Str : string;
 begin
   if IsCharType(Parent^.TypePtr) then
   begin
-    if Parent^.Cls = XcImmediate then
+    if ExIsImmediate(Parent) then
     begin
       Str := Parent^.Immediate.CharVal;
       Parent^.Immediate.Cls := XicString;
@@ -539,7 +550,7 @@ end;
 function ExToReal(Parent : TExpression) : TExpression;
 var Value : real;
 begin
-  if Parent^.Cls = XcImmediate then
+  if ExIsImmediate(Parent) then
   begin
     Value := Parent^.Immediate.IntegerVal;
     Parent^.Immediate.Cls := XicReal;
@@ -754,23 +765,23 @@ begin
   end
   else CompileError('Invalid unary operator: ' + LxTokenName(Op));
 
-  if Parent^.Cls = XcImmediate then ExUnaryOp := _ExUnOpImm(Parent, Op)
+  if ExIsImmediate(Parent) then ExUnaryOp := _ExUnOpImm(Parent, Op)
   else ExUnaryOp := _ExUnOpCmp(Parent, Op)
 end;
 
 function _ExUnOpImm;
 begin
-  if (Op = TkMinus) and (Parent^.Immediate.Cls = XicInteger) then
+  if (Op = TkMinus) and ExIsImmediateOfClass(Parent, XicInteger) then
     Parent^.Immediate.IntegerVal := -Parent^.Immediate.IntegerVal
-  else if (Op = TkPlus) and (Parent^.Immediate.Cls = XicInteger) then
+  else if (Op = TkPlus) and ExIsImmediateOfClass(Parent, XicInteger) then
     { do nothing }
-  else if (Op = TkMinus) and (Parent^.Immediate.Cls = XicReal) then
+  else if (Op = TkMinus) and ExIsImmediateOfClass(Parent, XicReal) then
          Parent^.Immediate.RealVal := -Parent^.Immediate.RealVal
-  else if (Op = TkPlus) and (Parent^.Immediate.Cls = XicReal) then
+  else if (Op = TkPlus) and ExIsImmediateOfClass(Parent, XicReal) then
     { do nothing }
-  else if (Op = TkNot) and (Parent^.Immediate.Cls = XicBoolean) then
+  else if (Op = TkNot) and ExIsImmediateOfClass(Parent, XicBoolean) then
          Parent^.Immediate.BooleanVal := not Parent^.Immediate.BooleanVal
-  else if (Op = TkNot) and (Parent^.Immediate.Cls = XicInteger) then
+  else if (Op = TkNot) and ExIsImmediateOfClass(Parent, XicInteger) then
          Parent^.Immediate.IntegerVal := not Parent^.Immediate.IntegerVal
   else CompileError('Internal error: invalid immediate unary operation');
   _ExUnOpImm := Parent
@@ -819,6 +830,9 @@ forward;
 function _ExBinOpPtrCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
+function _ExBinOpShortcut(var Left, Right : TExpression;
+                          Op : TLxTokenId) : boolean;
+forward;
 function ExBinaryOp(Left, Right : TExpression;
                     Op : TLxTokenId) : TExpression;
 var 
@@ -826,9 +840,13 @@ var
 begin
   Left := ExOutrange(Left);
   Right := ExOutrange(Right);
+  Immediate := ExIsImmediate(Left) and ExIsImmediate(Right);
 
-  Immediate := (Left^.Cls = XcImmediate) and (Right^.Cls = XcImmediate);
-  if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
+  if _ExBinOpShortcut(Left, Right, Op) then
+  begin
+    Result := Left
+  end
+  else if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
   begin
     if Immediate then Result := _ExBinOpBoolImm(Left, Right, Op)
     else Result := _ExBinOpBoolCmp(Left, Right, Op)
@@ -914,7 +932,7 @@ begin
       end
     end
   end;
-  if Left^.Immediate.Cls = XicInteger then
+  if ExIsImmediateOfClass(Left, XicInteger) then
   begin
     Left^.Immediate.IntegerVal := Lt;
     Left^.TypePtr := PrimitiveTypes.PtInteger
@@ -957,7 +975,7 @@ begin
       end
     end
   end;
-  if Left^.Immediate.Cls = XicReal then
+  if ExIsImmediateOfClass(Left, XicReal) then
   begin
     Left^.Immediate.RealVal := Lt;
     Left^.TypePtr := PrimitiveTypes.PtReal
@@ -976,9 +994,9 @@ var
   Lt, Rt : string;
   Bo : boolean;
 begin
-  if Left^.Immediate.Cls = XicChar then Lt := Left^.Immediate.CharVal
+  if ExIsImmediateOfClass(Left, XicChar) then Lt := Left^.Immediate.CharVal
   else Lt := Left^.Immediate.StringVal;
-  if Right^.Immediate.Cls = XicChar then Rt := Right^.Immediate.CharVal
+  if ExIsImmediateOfClass(Right, XicChar) then Rt := Right^.Immediate.CharVal
   else Rt := Right^.Immediate.StringVal;
   DisposeExpr(Right);
   if Op = TkPlus then
@@ -999,7 +1017,7 @@ begin
       else CompileError('Invalid string operator: ' + LxTokenName(Op))
     end;
   end;
-  if Left^.Immediate.Cls = XicString then
+  if ExIsImmediateOfClass(Left, XicString) then
   begin
     Left^.Immediate.StringVal := Lt;
     Left^.TypePtr := PrimitiveTypes.PtString
@@ -1053,6 +1071,143 @@ begin
                                 or Right^.IsFunctionResult
   end
   else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
+end;
+
+{ Returns whether an expression evaluates to 0 integer or real. }
+function _ExIsZero(Expr : TExpression) : boolean;
+begin
+  Result := (ExIsImmediateOfClass(Expr, XicInteger)
+            and (Expr^.Immediate.IntegerVal = 0))
+            or (ExIsImmediateOfClass(Expr, XicReal)
+            and (Expr^.Immediate.
+            IntegerVal = 0.0))
+end;
+
+{ Returns whether an expression evaluates to 1 integer or real. }
+function _ExIsOne(Expr : TExpression) : boolean;
+begin
+  Result := (ExIsImmediateOfClass(Expr, XicInteger)
+            and (Expr^.Immediate.IntegerVal = 1))
+            or (ExIsImmediateOfClass(Expr, XicReal)
+            and (Expr^.Immediate.
+            IntegerVal = 1.0))
+end;
+
+{ Returns whether an expression evaluates to true. }
+function _ExIsTrue(Expr : TExpression) : boolean;
+begin
+  Result := ExIsImmediateOfClass(Expr, XicBoolean)
+            and Expr^.Immediate.BooleanVal
+end;
+
+{ Returns whether an expression evaluates to false. }
+function _ExIsFalse(Expr : TExpression) : boolean;
+begin
+  Result := ExIsImmediateOfClass(Expr, XicBoolean)
+            and not Expr^.Immediate.BooleanVal
+end;
+
+{ Computes a shortcut operation, if appropriate. }
+{ Returns true if the shortcut was taken. }
+{ Also, if the shortcut was taken, returns the result in the Left expression }
+{ and frees the Right expression. }
+function _ExBinOpShortcut(var Left, Right : TExpression;
+                          Op : TLxTokenId) : boolean;
+begin
+  Result := false;
+  { Add or subtract 0 }
+  if (Op = TkPlus) or (Op = TkMinus) then
+  begin
+    if _ExIsZero(Left) then
+    begin
+      DisposeExpr(Left);
+      Left := Right;
+      Result := true
+    end
+    else if _ExIsZero(Right) then
+    begin
+      DisposeExpr(Right);
+      Result := true
+    end
+  end
+  else if Op = TkAsterisk then
+  begin
+    { Multiply by 0 }
+    if _ExIsZero(Left) or _ExIsZero(Right) then
+    begin
+      DisposeExpr(Left);
+      DisposeExpr(Right);
+      Left := ExIntegerConstant(0);
+      Result := true
+    end
+    { Multiply by 1 }
+    else if _ExIsOne(Left) then
+    begin
+      DisposeExpr(Left);
+      Left := Right;
+      Result := true
+    end
+    else if _ExIsOne(Right) then
+    begin
+      DisposeExpr(Right);
+      Result := true
+    end
+  end
+  else if (Op = TkDiv) or (Op = TkSlash) then
+  begin
+    { Divide 0 by anything, or divide by 1 }
+    if _ExIsZero(Left) or _ExIsOne(Right) then
+    begin
+      DisposeExpr(Right);
+      Result := true
+    end
+  end
+  else if Op = TkAnd then
+  begin
+    { False AND anything is false }
+    if _ExIsFalse(Left) then
+    begin
+      DisposeExpr(Left);
+      DisposeExpr(Right);
+      Left := ExBooleanConstant(false);
+      Result := true
+    end
+    { Anything AND true is the anything }
+    else if _ExIsTrue(Left) then
+    begin
+      DisposeExpr(Left);
+      Left := Right;
+      Result := true
+    end
+    else if _ExIsTrue(Right) then
+    begin
+      DisposeExpr(Right);
+      Result := true
+    end
+  end
+  else if Op = TkOr then
+  begin
+    { True OR anything is true }
+    if _ExIsTrue(Left) then
+    begin
+      DisposeExpr(Left);
+      DisposeExpr(Right);
+      Left := ExBooleanConstant(true);
+      Result := true
+    end
+    { Anything OR false is the anything }
+    else if _ExIsFalse(Left) then
+    begin
+      DisposeExpr(Left);
+      Left := Right;
+      Result := true
+    end
+    else if _ExIsFalse(Right) then
+    begin
+      DisposeExpr(Right);
+      Result := true
+    end
+  end
 end;
 
 function _ExBinOpIntCmp;
@@ -1137,7 +1292,7 @@ end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;
 begin
-  if Expr^.Cls <> XcImmediate then
+  if not ExIsImmediate(Expr) then
     CompileError('Expression is not immediate: ' + DescribeExpr(Expr, 5));
   with Expr^.Immediate do
     case Cls of 
@@ -1150,19 +1305,14 @@ begin
     end
 end;
 
-function _ExBelongsToRange(Expr : TExpression; First, Last : integer) : boolean;
+function ExSubrange;
 var Ordinal : integer;
 begin
-  Ordinal := ExGetOrdinal(Expr);
-  Result := (First <= Ordinal) and (Ordinal <= Last)
-end;
-
-function ExSubrange;
-begin
-  if Parent^.Cls = XcImmediate then
+  if ExIsImmediate(Parent) then
   begin
-    if not _ExBelongsToRange(Parent, TypePtr^.RangePtr^.First,
-       TypePtr^.RangePtr^.Last) then
+    Ordinal := ExGetOrdinal(Parent);
+    if (Ordinal < TypePtr^.RangePtr^.First)
+       or (Ordinal > TypePtr^.RangePtr^.Last) then
       CompileError('Value ' + DescribeExpr(Parent, 2) +
       ' out of bounds for ' + TypeName(TypePtr));
     Parent^.TypePtr := TypePtr;

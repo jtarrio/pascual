@@ -218,15 +218,11 @@ var LowBound : integer;
   Size : TExpression;
 begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayPtr^.IndexTypePtr);
-  if LowBound = 0 then OutExpression(Index)
-  else
-  begin
-    Size := ExBinaryOp(PfOrd(CopyExpr(Index)),
-            ExIntegerConstant(LowBound),
-            TkMinus);
-    OutExpression(Size);
-    DisposeExpr(Size)
-  end
+  Size := ExBinaryOp(PfOrd(CopyExpr(Index)),
+          ExIntegerConstant(LowBound),
+          TkMinus);
+  OutExpression(Size);
+  DisposeExpr(Size)
 end;
 
 procedure _OutAddress(Expr : TExpression);
@@ -1050,11 +1046,13 @@ end;
 
 procedure _OutOrd(Expr : TExpression);
 begin
-  if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  if IsCharType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     write(Codegen.Output, '(int)');
     _OutExpressionParensPrec(Expr^.PseudoFnCall.Arg1, 2)
   end
+  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+         OutExpression(Expr^.PseudoFnCall.Arg1)
   else CompileError('Expected an ordinal type, got ' +
                     TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
 end;
