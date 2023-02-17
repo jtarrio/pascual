@@ -1122,15 +1122,13 @@ begin
              else if _ExIsZero(Right) then Use := UseLeft;
     { X - 0 -> X }
     TkMinus : if _ExIsZero(Right) then Use := UseLeft;
-    { X * 0 -> 0 ; 0 * X -> 0 ; X * 1 -> X ; 1 * X -> X}
-    TkAsterisk : if _ExIsZero(Left) then Use := UseLeft
-                 else if _ExIsZero(Right) then Use := UseRight
-                 else if _ExIsOne(Left) then Use := UseRight
+    { X * 1 -> X ; 1 * X -> X}
+    TkAsterisk : if _ExIsOne(Left) then Use := UseRight
                  else if _ExIsOne(Right) then Use := UseLeft;
-    { 0 / X -> 0 ; X / 1 -> X }
-    TkSlash : if _ExIsZero(Left) or _ExIsOne(Right) then Use := UseLeft;
-    { 0 div X -> 0 ; X div 1 -> X }
-    TkDiv : if _ExIsZero(Left) or _ExIsOne(Right) then Use := UseLeft;
+    { X / 1 -> X }
+    TkSlash : if _ExIsOne(Right) then Use := UseLeft;
+    { X div 1 -> X }
+    TkDiv : if _ExIsOne(Right) then Use := UseLeft;
     { false AND X -> false ; X AND true -> X ; true AND X -> X }
     TkAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
             else if _ExIsTrue(Left) then Use := UseRight;
