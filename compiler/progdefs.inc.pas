@@ -34,6 +34,34 @@ begin
   Defs.CurrentFn := nil;
 end;
 
+function NewEnum(Enum : TPsEnumDef) : TPsEnumPtr;
+begin
+  new(Result);
+  Result^ := Enum;
+  Result^.Id := DefCounter(TctEnum);
+  Result^.RefCount := 1
+end;
+
+procedure DisposeEnum(Ptr : TPsEnumPtr);
+begin
+  Ptr^.RefCount := Ptr^.RefCount - 1;
+  if Ptr^.RefCount = 0 then dispose(Ptr)
+end;
+
+function NewRecord(Rec : TPsRecordDef) : TPsRecPtr;
+begin
+  new(Result);
+  Result^ := Rec;
+  Result^.Id := DefCounter(TctRecord);
+  Result^.RefCount := 1
+end;
+
+procedure DisposeRecord(Ptr : TPsRecPtr);
+begin
+  Ptr^.RefCount := Ptr^.RefCount - 1;
+  if Ptr^.RefCount = 0 then dispose(Ptr)
+end;
+
 function _NewDef(Cls : TPsDefClass) : TPsDefPtr;
 var 
   Def : TPsDefPtr;
@@ -45,8 +73,6 @@ begin
   case Cls of 
     TdcName : new(Def^.NamePtr);
     TdcType : new(Def^.TypePtr);
-    TdcEnum : new(Def^.EnumPtr);
-    TdcRecord : new(Def^.RecPtr);
     TdcConstant : new(Def^.ConstPtr);
     TdcVariable : new(Def^.VarPtr);
     TdcFunction : new(Def^.FnPtr);
@@ -60,13 +86,18 @@ begin
   _NewDef := Def
 end;
 
+procedure _DisposeType(var TypePtr : TPsTypePtr);
+begin
+  if TypePtr^.Cls = TtcEnum then DisposeEnum(TypePtr^.EnumPtr)
+  else if TypePtr^.Cls = TtcRecord then DisposeRecord(TypePtr^.RecPtr);
+  dispose(TypePtr);
+end;
+
 procedure _DisposeDef(Def : TPsDefPtr);
 begin
   case Def^.Cls of 
     TdcName : dispose(Def^.NamePtr);
-    TdcType : dispose(Def^.TypePtr);
-    TdcEnum : dispose(Def^.EnumPtr);
-    TdcRecord : dispose(Def^.RecPtr);
+    TdcType : _DisposeType(Def^.TypePtr);
     TdcConstant : dispose(Def^.ConstPtr);
     TdcVariable : dispose(Def^.VarPtr);
     TdcFunction : dispose(Def^.FnPtr);
@@ -323,16 +354,17 @@ begin
 end;
 
 function CopyType(TypePtr : TPsTypePtr) : TPsType;
-var 
-  NewTyp : TPsType;
 begin
-  NewTyp := TypePtr^;
-  if NewTyp.Cls = TtcPointerUnknown then
+  Result := TypePtr^;
+  if Result.Cls = TtcPointerUnknown then
   begin
-    new(NewTyp.TargetName);
-    NewTyp.TargetName^ := TypePtr^.TargetName^
-  end;
-  CopyType := NewTyp
+    new(Result.TargetName);
+    Result.TargetName^ := TypePtr^.TargetName^
+  end
+  else if Result.Cls = TtcEnum then
+         Result.EnumPtr^.RefCount := Result.EnumPtr^.RefCount + 1
+  else if Result.Cls = TtcRecord then
+         Result.RecPtr^.RefCount := Result.RecPtr^.RefCount + 1
 end;
 
 function TypeOfClass(Cls : TPsTypeClass) : TPsType;
@@ -533,7 +565,8 @@ end;
 
 function AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
 begin
-  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
   case TypePtr^.Cls of 
     TtcBoolean: if Ordinal = 0 then Result := 'FALSE'
                 else Result := 'TRUE';
@@ -572,7 +605,7 @@ begin
               '..' + AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
   end
   else if Typ.Cls = TtcSet then
-    Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
+         Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
@@ -651,26 +684,6 @@ begin
   if (Typ.Cls = TtcEnum) and (Typ.AliasFor = nil) then
     for EnumPos := 0 to Typ.EnumPtr^.Size - 1 do
       AddEnumValName(EnumPos, TypePtr)
-end;
-
-function AddEnum(Enum : TPsEnumDef) : TPsEnumPtr;
-var 
-  EnumPtr : TPsEnumPtr;
-begin
-  EnumPtr := _AddDef(TdcEnum)^.EnumPtr;
-  EnumPtr^ := Enum;
-  EnumPtr^.Id := DefCounter(TctEnum);
-  AddEnum := EnumPtr
-end;
-
-function AddRecord(Rec : TPsRecordDef) : TPsRecPtr;
-var 
-  RecPtr : TPsRecPtr;
-begin
-  RecPtr := _AddDef(TdcRecord)^.RecPtr;
-  RecPtr^ := Rec;
-  RecPtr^.Id := DefCounter(TctRecord);
-  AddRecord := RecPtr
 end;
 
 function AddConstant(Constant : TPsConstant) : TPsConstPtr;

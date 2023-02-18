@@ -152,7 +152,9 @@ type
     Size : integer;
     Values : array[0..MaxEnumVals - 1] of string;
     Id : integer;
-    HasBeenDefined : boolean
+    HasBeenDefined : boolean;
+    ValuesHaveBeenOutput : boolean;
+    RefCount : integer
   end;
   TPsRecordField = record
     Name : string;
@@ -164,7 +166,8 @@ type
     NumVariants : integer;
     VariantBounds : array[1..MaxRecordFields] of integer;
     Id : integer;
-    HasBeenDefined : boolean
+    HasBeenDefined : boolean;
+    RefCount : integer
   end;
   TPsConstant = record
     Name : string;
@@ -211,7 +214,7 @@ type
   end;
 
   TPsDefPtr = ^TPsDefEntry;
-  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRecord, TdcConstant, TdcVariable,
+  TPsDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
                  TdcFunction, TdcWithVar, TdcScopeBoundary);
   TPsDefEntry = record
     Prev : TPsDefPtr;
@@ -219,8 +222,6 @@ type
     case Cls : TPsDefClass of 
       TdcName : (NamePtr : TPsNamePtr);
       TdcType : (TypePtr : TPsTypePtr);
-      TdcEnum : (EnumPtr : TPsEnumPtr);
-      TdcRecord : (RecPtr : TPsRecPtr);
       TdcConstant : (ConstPtr : TPsConstPtr);
       TdcVariable : (VarPtr : TPsVarPtr);
       TdcFunction : (FnPtr : TPsFnPtr);

@@ -71,6 +71,7 @@ begin
   WantTokenAndRead(TkLparen);
   Enum.Size := 0;
   Enum.HasBeenDefined := false;
+  Enum.ValuesHaveBeenOutput := false;
   repeat
     Enum.Size := Enum.Size + 1;
     if Enum.Size > MaxEnumVals then
@@ -81,7 +82,7 @@ begin
   until Lexer.Token.Id = TkRparen;
   Typ := EmptyType;
   Typ.Cls := TtcEnum;
-  Typ.EnumPtr := AddEnum(Enum);
+  Typ.EnumPtr := NewEnum(Enum);
   { It's hard to detect when an enumerated type was used, so we give up. }
   Typ.WasUsed := true;
   PsEnumeratedType := AddType(Typ);
@@ -175,7 +176,7 @@ begin
     PsRecordVariants(Rec);
   WantTokenAndRead(TkEnd);
   Typ := TypeOfClass(TtcRecord);
-  Typ.RecPtr := AddRecord(Rec);
+  Typ.RecPtr := NewRecord(Rec);
   PsRecordType := AddType(Typ);
 end;
 

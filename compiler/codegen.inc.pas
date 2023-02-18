@@ -555,7 +555,12 @@ begin
   Def := Checkpoint^.Next;
   while Def <> nil do
   begin
-    if Def^.Cls = TdcEnum then OutEnumValues(Def^.EnumPtr);
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcEnum) then
+    begin
+      if not Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput then
+        OutEnumValues(Def^.TypePtr^.EnumPtr);
+      Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput := true
+    end;
     Def := Def^.Next
   end
 end;
@@ -874,7 +879,8 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'
@@ -935,7 +941,8 @@ begin
   while WriteArg <> nil do
   begin
     TypePtr := WriteArg^.Arg^.TypePtr;
-    while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+    while IsRangeType(TypePtr) do
+      TypePtr := TypePtr^.RangeDef.BaseTypePtr;
     if IsEnumType(TypePtr) then
     begin
       _OutIndent;
