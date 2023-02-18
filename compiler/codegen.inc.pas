@@ -572,9 +572,11 @@ begin
 end;
 
 procedure _OutSetTypeName(TypePtr : TPsTypePtr);
+var TypeSize, NumBytes : integer;
 begin
-  write(Codegen.Output, 'PSet',
-        1 + (GetBoundedTypeSize(TypePtr^.SetDef.ElementTypePtr) - 1) div 32)
+  TypeSize := GetBoundedTypeSize(TypePtr^.SetDef.ElementTypePtr);
+  NumBytes := 1 + (TypeSize - 1) div 8;
+  write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 
 procedure OutTypeReference(TypePtr : TPsTypePtr);
