@@ -515,12 +515,14 @@ end;
 
 function ExSetConstant(Bounds : TExSetBounds;
                        TypePtr : TPsTypePtr) : TExpression;
+var ElementType : TPsTypePtr;
 begin
-  if not IsOrdinalType(TypePtr) then
-    CompileError('Not an ordinal type: ' + TypeName(TypePtr));
+  ElementType := TypePtr^.SetDef.ElementTypePtr;
+  if (ElementType <> nil) and not IsOrdinalType(ElementType) then
+    CompileError('Not an ordinal type: ' + TypeName(ElementType));
   Result := _ExImmediate(XicSet);
   Result^.Immediate.SetBounds := Bounds;
-  Result^.Immediate.SetOfTypePtr := TypePtr^.SetDef.ElementTypePtr;
+  Result^.Immediate.SetOfTypePtr := ElementType;
   Result^.TypePtr := TypePtr
 end;
 
@@ -569,7 +571,8 @@ begin
       NewBounds := This^.Next;
       Dispose(This);
       This := NewBounds;
-      if Prev = nil then Result := NewBounds else Prev^.Next := NewBounds;
+      if Prev = nil then Result := NewBounds
+      else Prev^.Next := NewBounds;
       Done := false
     end
     { pppppp     or  ppppp       }
@@ -581,7 +584,8 @@ begin
       NewBounds := This^.Next;
       Dispose(This);
       This := NewBounds;
-      if Prev = nil then Result := NewBounds else Prev^.Next := NewBounds;
+      if Prev = nil then Result := NewBounds
+      else Prev^.Next := NewBounds;
       Done := false
     end
     { ppppppp       }
@@ -680,8 +684,7 @@ begin
     DisposeExpr(Expr);
     Expr := TmpExpr;
   end;
-  while IsRangeType(Expr^.TypePtr) do
-    Expr^.TypePtr := Expr^.TypePtr^.RangeDef.BaseTypePtr;
+  Expr^.TypePtr := GetFundamentalType(Expr^.TypePtr);
   Result := Expr
 end;
 
@@ -1365,17 +1368,47 @@ begin
     Result := ExSubrange(ExOutrange(Expr), TypePtr)
 end;
 
+function _ExCoerceSet(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
+var 
+  Outcome : (Pass, Reject, Replace);
+  ExprElemType, DestElemType : TPsTypePtr;
+begin
+  ExprElemType := Expr^.TypePtr^.SetDef.ElementTypePtr;
+  DestElemType := TypePtr^.SetDef.ElementTypePtr;
+  Outcome := Reject;
+  if ExprElemType = nil then Outcome := Replace
+  else if ExIsImmediate(Expr)
+          and IsSameType(GetFundamentalType(ExprElemType),
+          GetFundamentalType(DestElemType)) then Outcome := Replace
+  else if (GetTypeLowBound(ExprElemType) >= GetTypeLowBound(DestElemType))
+          and
+          (GetTypeHighBound(ExprElemType) <= GetTypeHighBound(DestElemType))
+         then Outcome := Pass;
+  case Outcome of 
+    Reject : CompileError('Set of type ' + TypeName(Expr^.TypePtr) +
+             ' cannot be assigned to set of type ' + TypeName(TypePtr));
+    Replace :
+              begin
+                Expr^.TypePtr := TypePtr;
+                if ExIsImmediate(Expr) then
+                  Expr^.Immediate.SetOfTypePtr := DestElemType;
+              end;
+    Pass : ;
+  end;
+  Result := Expr
+end;
+
 function ExCoerce;
 begin
   if IsRangeType(Expr^.TypePtr)
-     and IsSameType(TypePtr, Expr^.TypePtr^.RangeDef.BaseTypePtr) then
+     and IsSameType(TypePtr, GetFundamentalType(Expr^.TypePtr)) then
     ExCoerce := ExOutrange(Expr)
   else if IsRangeType(TypePtr)
-          and IsSameType(TypePtr^.RangeDef.BaseTypePtr, Expr^.TypePtr) then
+          and IsSameType(GetFundamentalType(TypePtr), Expr^.TypePtr) then
          ExCoerce := ExSubrange(Expr, TypePtr)
   else if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr)
-          and IsSameType(Expr^.TypePtr^.RangeDef.BaseTypePtr,
-          TypePtr^.RangeDef.BaseTypePtr) then
+          and IsSameType(GetFundamentalType(Expr^.TypePtr),
+          GetFundamentalType(TypePtr)) then
          ExCoerce := ExRerange(Expr, TypePtr)
   else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)
@@ -1385,6 +1418,10 @@ begin
          ExCoerce := Expr
   else if IsNilType(Expr^.TypePtr) and IsPointeryType(TypePtr) then
          ExCoerce := Expr
+  else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
+  begin
+    ExCoerce := _ExCoerceSet(Expr, TypePtr)
+  end
   else
     CompileError('Type mismatch: expected ' + TypeName(TypePtr) +
     ', got ' + TypeName(Expr^.TypePtr))

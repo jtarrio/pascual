@@ -191,6 +191,52 @@ begin
   _OutExpressionParensPrec(Expr, _Precedence(Ref) - 1)
 end;
 
+procedure _OutSetImmediate(Expr : TExpression);
+var 
+  LowBound, HighBound, LowBoundByte : integer;
+  Bounds : TExSetBounds;
+  ElemTypePtr : TPsTypePtr;
+  SetSize : integer;
+  SetElems : array[1..32] of integer;
+  Pos, ByteNum, BitNum, Bit : integer;
+begin
+  Bounds := Expr^.Immediate.SetBounds;
+  ElemTypePtr := Expr^.Immediate.SetOfTypePtr;
+  LowBound := GetTypeLowBound(ElemTypePtr);
+  HighBound := GetTypeHighBound(ElemTypePtr);
+  LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
+  SetSize := HighBound div 8 - LowBound div 8 + 1;
+  for Pos := 1 to SetSize do
+    SetElems[Pos] := 0;
+  while Bounds <> nil do
+  begin
+    if (Bounds^.First < LowBound) or (Bounds^.Last > HighBound) then`
+      CompileError('Set ' + DescribeExpr(Expr, 1) + ' contains elements ' +
+      'that are out of bounds for ' + TypeName(Expr^.TypePtr));
+    for Pos := Bounds^.First to Bounds^.Last do
+    begin
+      ByteNum := 1 + Pos div 8 - LowBoundByte;
+      BitNum := Pos mod 8;
+      { TODO implement shl and shr and replace }
+      Bit := 1;
+      while BitNum > 0 do
+      begin
+        Bit := Bit * 2;
+        BitNum := BitNum - 1
+      end;
+      SetElems[ByteNum] := SetElems[ByteNum] or Bit;
+    end;
+    Bounds := Bounds^.Next
+  end;
+  write(Codegen.Output, '(PSet', SetSize * 8, '){');
+  for Pos := 1 to SetSize do
+  begin
+    if Pos <> 1 then write(Codegen.Output, ', ');
+    write(Codegen.Output, SetElems[Pos]);
+  end;
+  write(Codegen.Output, '}');
+end;
+
 procedure _OutExImmediate(Expr : TExpression);
 begin
   with Expr^.Immediate do
@@ -202,7 +248,8 @@ begin
       XicReal : write(Codegen.Output, RealVal);
       XicChar : _OutChar(CharVal);
       XicString : _OutString(StringVal);
-      XicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal])
+      XicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal]);
+      XicSet : _OutSetImmediate(Expr);
     end
 end;
 
@@ -572,10 +619,10 @@ begin
 end;
 
 procedure _OutSetTypeName(TypePtr : TPsTypePtr);
-var TypeSize, NumBytes : integer;
+var NumBytes : integer;
 begin
-  TypeSize := GetBoundedTypeSize(TypePtr^.SetDef.ElementTypePtr);
-  NumBytes := 1 + (TypeSize - 1) div 8;
+  NumBytes := GetTypeHighBound(TypePtr^.SetDef.ElementTypePtr) div 8 -
+              GetTypeLowBound(TypePtr^.SetDef.ElementTypePtr) div 8 + 1;
   write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 
@@ -601,7 +648,7 @@ begin
       write(Codegen.Output, 'enum enum', TypePtr^.EnumPtr^.Id)
   end
   else if TypePtr^.Cls = TtcRange then
-         OutTypeReference(TypePtr^.RangeDef.BaseTypePtr)
+         OutTypeReference(GetFundamentalType(TypePtr))
   else if TypePtr^.Cls = TtcSet then
          _OutSetTypeName(TypePtr)
   else if TypePtr^.Cls = TtcRecord then
@@ -738,7 +785,7 @@ begin
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
-         OutNameAndType(Name, TypePtr^.RangeDef.BaseTypePtr)
+         OutNameAndType(Name, GetFundamentalType(TypePtr))
   else if TypePtr^.Cls = TtcSet then
   begin
     _OutSetTypeName(TypePtr);
@@ -881,14 +928,14 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+  TypePtr := GetFundamentalType(TypePtr);
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'
   else if IsCharType(TypePtr) then ShortTypeName := 'c'
   else if IsStringType(TypePtr) then ShortTypeName := 's'
-  else CompileError('No short type name exists for ' + TypeName(TypePtr))
+  else CompileError('Type ' + TypeName(TypePtr) + ' is not representable for ' +
+    'READ, WRITE, STR, or VAL')
 end;
 
 procedure _OutRead(Expr : TExpression);
@@ -942,9 +989,7 @@ begin
   if Braces then OutBegin;
   while WriteArg <> nil do
   begin
-    TypePtr := WriteArg^.Arg^.TypePtr;
-    while IsRangeType(TypePtr) do
-      TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+    TypePtr := GetFundamentalType(WriteArg^.Arg^.TypePtr);
     if IsEnumType(TypePtr) then
     begin
       _OutIndent;

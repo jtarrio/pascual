@@ -839,6 +839,45 @@ begin
   if Code <> 0 then CompileError('Could not parse real number: ' + Pstr)
 end;
 
+function PsSetConstructor : TExpression;
+var 
+  First, Last : TExpression;
+  Bounds : TExSetBounds;
+  ElementType : TPsTypePtr;
+  SetType : TPsType;
+begin
+  Bounds := nil;
+  ElementType := nil;
+  WantTokenAndRead(TkLbracket);
+  while Lexer.Token.Id <> TkRbracket do
+  begin
+    First := PsImmediate;
+    if not IsOrdinalType(First^.TypePtr) then
+      CompileError('Set elements must belong to ordinal types, got ' +
+                   TypeName(First^.TypePtr));
+    if Lexer.Token.Id = TkRange then
+    begin
+      WantTokenAndRead(TkRange);
+      Last := PsImmediate;
+      if not IsSameType(First^.TypePtr, Last^.TypePtr) then
+        CompileError('Set element range boundaries must belong to the same ' +
+                     'type, got ' + TypeName(First^.TypePtr) + ' and ' +
+        TypeName(Last^.TypePtr))
+    end
+    else
+      Last := CopyExpr(First);
+    if ElementType = nil then ElementType := First^.TypePtr;
+    Bounds := ExSetAddBounds(Bounds, ExGetOrdinal(First), ExGetOrdinal(Last));
+    WantToken2(TkComma, TkRbracket);
+    SkipToken(TkComma)
+  end;
+  WantTokenAndRead(TkRbracket);
+  SetType := EmptyType;
+  SetType.Cls := TtcSet;
+  SetType.SetDef.ElementTypePtr := ElementType;
+  Result := ExSetConstant(Bounds, AddType(SetType))
+end;
+
 function PsFactor : TExpression;
 var 
   Expr : TExpression;
@@ -865,6 +904,8 @@ begin
     if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
     Expr := PsVariableOrFunctionExtension(Expr)
   end
+  else if Lexer.Token.Id = TkLbracket then
+         Expr := PsSetConstructor
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);

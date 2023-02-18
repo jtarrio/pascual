@@ -426,6 +426,18 @@ begin
   Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcRange)
 end;
 
+function GetFundamentalType(TypePtr : TPsTypePtr) : TPsTypePtr;
+begin
+  while IsRangeType(TypePtr) do
+    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+  Result := TypePtr
+end;
+
+function IsSetType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcSet)
+end;
+
 function IsRecordType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsRecordType := (TypePtr <> nil) and (TypePtr^.Cls = TtcRecord)
@@ -565,8 +577,7 @@ end;
 
 function AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
 begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
+  TypePtr := GetFundamentalType(TypePtr);
   case TypePtr^.Cls of 
     TtcBoolean: if Ordinal = 0 then Result := 'FALSE'
                 else Result := 'TRUE';
@@ -605,7 +616,10 @@ begin
               '..' + AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
   end
   else if Typ.Cls = TtcSet then
-         Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
+  begin
+    if Typ.SetDef.ElementTypePtr = nil then Result := 'empty set'
+    else Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
+  end
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
