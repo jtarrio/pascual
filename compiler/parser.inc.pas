@@ -272,7 +272,7 @@ begin
   WantTokenAndRead(TkOf);
 
   Typ := TypeOfClass(TtcSet);
-  Typ.SetDef.ElementTypePtr := PsTypeIdentifier;
+  Typ.SetDef.ElementTypePtr := PsTypeDenoter;
   Result := AddType(Typ);
 
   if not IsBoundedType(Typ.SetDef.ElementTypePtr) then
