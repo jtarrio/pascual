@@ -191,39 +191,35 @@ end;
 function PsArrayType : TPsTypePtr;
 var 
   Typ : TPsType;
-  Arr : TPsArrayDef;
   TypePtr : TPsTypePtr;
-  ArrPtr : TPsArrayPtr;
+  NewTypePtr : TPsTypePtr;
 begin
-  Arr.IndexTypePtr := nil;
-  Arr.ValueTypePtr := nil;
-  ArrPtr := AddArray(Arr);
   Typ := TypeOfClass(TtcArray);
-  Typ.ArrayPtr := ArrPtr;
+  Typ.ArrayDef.IndexTypePtr := nil;
+  Typ.ArrayDef.ValueTypePtr := nil;
   TypePtr := AddType(Typ);
   Result := TypePtr;
 
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
   repeat
-    ArrPtr^.IndexTypePtr := PsTypeDenoter;
-    ArrPtr^.IndexTypePtr^.WasUsed := true;
-    if not IsBoundedType(ArrPtr^.IndexTypePtr) then
+    TypePtr^.ArrayDef.IndexTypePtr := PsTypeDenoter;
+    TypePtr^.ArrayDef.IndexTypePtr^.WasUsed := true;
+    if not IsBoundedType(TypePtr^.ArrayDef.IndexTypePtr) then
       CompileError('Array indices must belong to a bounded ordinal type');
     WantToken2(TkComma, TkRbracket);
     if Lexer.Token.Id = TkComma then
     begin
-      TypePtr := AddType(Typ);
-      ArrPtr^.ValueTypePtr := TypePtr;
-      ArrPtr^.ValuetypePtr^.WasUsed := true;
-      ArrPtr := AddArray(Arr);
-      TypePtr^.ArrayPtr := ArrPtr
+      NewTypePtr := AddType(Typ);
+      TypePtr^.ArrayDef.ValueTypePtr := NewTypePtr;
+      TypePtr^.ArrayDef.ValuetypePtr^.WasUsed := true;
+      TypePtr := NewTypePtr
     end;
     SkipToken(TkComma)
   until Lexer.Token.Id = TkRbracket;
   WantTokenAndRead(TkRbracket);
   WantTokenAndRead(TkOf);
-  ArrPtr^.ValueTypePtr := PsTypeDenoter
+  TypePtr^.ArrayDef.ValueTypePtr := PsTypeDenoter
 end;
 
 function PsPointerType : TPsTypePtr;
@@ -248,7 +244,6 @@ function PsRangeType : TPsTypePtr;
 var 
   First, Last : TExpression;
   Typ : TPsType;
-  Range : TPsRangeDef;
 begin
   First := PsImmediate;
   WantTokenAndRead(TkRange);
@@ -257,36 +252,33 @@ begin
     CompileError('The bounds of a subrange must belong to the same type');
   if not IsOrdinalType(First^.TypePtr) then
     CompileError('The bounds of a subrange must belong to an ordinal type');
-  Range.First := ExGetOrdinal(First);
-  Range.Last := ExGetOrdinal(Last);
-  Range.BaseTypePtr := First^.TypePtr;
-  DisposeExpr(First);
-  DisposeExpr(Last);
-  if Range.First > Range.Last then
-    CompileError('The bounds of a subrange must be in ascending order');
+
   Typ := TypeOfClass(TtcRange);
-  Typ.RangePtr := AddRange(Range);
-  Result := AddType(Typ)
+  Typ.RangeDef.First := ExGetOrdinal(First);
+  Typ.RangeDef.Last := ExGetOrdinal(Last);
+  Typ.RangeDef.BaseTypePtr := First^.TypePtr;
+  Result := AddType(Typ);
+
+  if Typ.RangeDef.First > Typ.RangeDef.Last then
+    CompileError('The bounds of a subrange must be in ascending order');
+  DisposeExpr(First);
+  DisposeExpr(Last)
 end;
 
 function PsSetType : TPsTypePtr;
-var 
-  Typ : TPsType;
-  Def : TPsSetDef;
-  TypePtr : TPsTypePtr;
-  ArrPtr : TPsArrayPtr;
+var Typ : TPsType;
 begin
   WantTokenAndRead(TkSet);
   WantTokenAndRead(TkOf);
-  Def.ElementTypePtr := PsTypeIdentifier;
 
-  if not IsBoundedType(Def.ElementTypePtr) then
-    CompileError('Set element types must be bounded ordinal types');
-  if GetBoundedTypeSize(Def.ElementTypePtr) > 256 then
-    CompileError('Set element types may not contain more than 256 values');
   Typ := TypeOfClass(TtcSet);
-  Typ.SetPtr := AddSet(Def);
-  Result := AddType(Typ)
+  Typ.SetDef.ElementTypePtr := PsTypeIdentifier;
+  Result := AddType(Typ);
+
+  if not IsBoundedType(Typ.SetDef.ElementTypePtr) then
+    CompileError('Set element types must be bounded ordinal types');
+  if GetBoundedTypeSize(Typ.SetDef.ElementTypePtr) > 256 then
+    CompileError('Set element types may not contain more than 256 values')
 end;
 
 function PsTypeDenoter;
@@ -367,7 +359,7 @@ begin
   if IsArrayType(TypePtr) then
   begin
     WantTokenAndRead(TkLparen);
-    TypePtr := TypePtr^.ArrayPtr^.ValueTypePtr;
+    TypePtr := TypePtr^.ArrayDef.ValueTypePtr;
     OutConstantArrayBegin;
     while Lexer.Token.Id <> TkRparen do
     begin

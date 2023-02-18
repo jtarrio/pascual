@@ -119,10 +119,7 @@ type
     Name : string;
   end;
 
-  TPsRangePtr = ^TPsRangeDef;
-  TPsSetPtr = ^TPsSetDef;
   TPsRecPtr = ^TPsRecordDef;
-  TPsArrayPtr = ^TPsArrayDef;
   TPsConstPtr = ^TPsConstant;
   TPsWithVarPtr = ^TPsWithVar;
   TPsNamePtr = ^TPsName;
@@ -136,10 +133,18 @@ type
     WasUsed : boolean;
     case Cls : TPsTypeClass of 
       TtcEnum : (EnumPtr : TPsEnumPtr);
-      TtcRange : (RangePtr : TPsRangePtr);
-      TtcSet : (SetPtr : TPsSetPtr);
+      TtcRange : (RangeDef : record
+                  First, Last : integer;
+                  BaseTypePtr : TPsTypePtr
+                  end);
+      TtcSet : (SetDef : record
+                ElementTypePtr : TPsTypePtr
+                end);
       TtcRecord : (RecPtr : TPsRecPtr);
-      TtcArray : (ArrayPtr : TPsArrayPtr);
+      TtcArray : (ArrayDef : record
+                  IndexTypePtr : TPsTypePtr;
+                  ValueTypePtr : TPsTypePtr;
+                  end);
       TtcPointer : (PointedTypePtr : TPsTypePtr);
       TtcPointerUnknown : (TargetName : ^string);
   end;
@@ -148,13 +153,6 @@ type
     Values : array[0..MaxEnumVals - 1] of string;
     Id : integer;
     HasBeenDefined : boolean
-  end;
-  TPsRangeDef = record
-    First, Last : integer;
-    BaseTypePtr : TPsTypePtr
-  end;
-  TPsSetDef = record
-    ElementTypePtr : TPsTypePtr
   end;
   TPsRecordField = record
     Name : string;
@@ -167,10 +165,6 @@ type
     VariantBounds : array[1..MaxRecordFields] of integer;
     Id : integer;
     HasBeenDefined : boolean
-  end;
-  TPsArrayDef = record
-    IndexTypePtr : TPsTypePtr;
-    ValueTypePtr : TPsTypePtr;
   end;
   TPsConstant = record
     Name : string;
@@ -217,9 +211,8 @@ type
   end;
 
   TPsDefPtr = ^TPsDefEntry;
-  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRange, TdcSet, TdcRecord,
-                 TdcArray, TdcConstant, TdcVariable, TdcFunction, TdcWithVar,
-                 TdcScopeBoundary);
+  TPsDefClass = (TdcName, TdcType, TdcEnum, TdcRecord, TdcConstant, TdcVariable,
+                 TdcFunction, TdcWithVar, TdcScopeBoundary);
   TPsDefEntry = record
     Prev : TPsDefPtr;
     Next : TPsDefPtr;
@@ -227,10 +220,7 @@ type
       TdcName : (NamePtr : TPsNamePtr);
       TdcType : (TypePtr : TPsTypePtr);
       TdcEnum : (EnumPtr : TPsEnumPtr);
-      TdcRange : (RangePtr : TPsRangePtr);
-      TdcSet : (SetPtr : TPsSetPtr);
       TdcRecord : (RecPtr : TPsRecPtr);
-      TdcArray : (ArrayPtr : TPsArrayPtr);
       TdcConstant : (ConstPtr : TPsConstPtr);
       TdcVariable : (VarPtr : TPsVarPtr);
       TdcFunction : (FnPtr : TPsFnPtr);

@@ -520,7 +520,7 @@ begin
     CompileError('Not an ordinal type: ' + TypeName(TypePtr));
   Result := _ExImmediate(XicSet);
   Result^.Immediate.SetBounds := Bounds;
-  Result^.Immediate.SetOfTypePtr := TypePtr^.SetPtr^.ElementTypePtr;
+  Result^.Immediate.SetOfTypePtr := TypePtr^.SetDef.ElementTypePtr;
   Result^.TypePtr := TypePtr
 end;
 
@@ -681,7 +681,7 @@ begin
     Expr := TmpExpr;
   end;
   while IsRangeType(Expr^.TypePtr) do
-    Expr^.TypePtr := Expr^.TypePtr^.RangePtr^.BaseTypePtr;
+    Expr^.TypePtr := Expr^.TypePtr^.RangeDef.BaseTypePtr;
   Result := Expr
 end;
 
@@ -719,8 +719,8 @@ begin
   Result := _NewExpr(XcArray);
   Result^.ArrayExpr := Parent;
   Result^.ArrayIndex := ExCoerce(Subscript,
-                        Parent^.TypePtr^.ArrayPtr^.IndexTypePtr);
-  Result^.TypePtr := Parent^.TypePtr^.ArrayPtr^.ValueTypePtr;
+                        Parent^.TypePtr^.ArrayDef.IndexTypePtr);
+  Result^.TypePtr := Parent^.TypePtr^.ArrayDef.ValueTypePtr;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
@@ -1338,8 +1338,8 @@ begin
   if ExIsImmediate(Parent) then
   begin
     Ordinal := ExGetOrdinal(Parent);
-    if (Ordinal < TypePtr^.RangePtr^.First)
-       or (Ordinal > TypePtr^.RangePtr^.Last) then
+    if (Ordinal < TypePtr^.RangeDef.First)
+       or (Ordinal > TypePtr^.RangeDef.Last) then
       CompileError('Value ' + DescribeExpr(Parent, 2) +
       ' out of bounds for ' + TypeName(TypePtr));
     Parent^.TypePtr := TypePtr;
@@ -1355,8 +1355,8 @@ end;
 
 function ExRerange(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
 begin
-  if (TypePtr^.RangePtr^.First <= Expr^.TypePtr^.RangePtr^.First)
-     and (Expr^.TypePtr^.RangePtr^.Last <= TypePtr^.RangePtr^.Last) then
+  if (TypePtr^.RangeDef.First <= Expr^.TypePtr^.RangeDef.First)
+     and (Expr^.TypePtr^.RangeDef.Last <= TypePtr^.RangeDef.Last) then
   begin
     Expr^.TypePtr := TypePtr;
     Result := Expr
@@ -1368,14 +1368,14 @@ end;
 function ExCoerce;
 begin
   if IsRangeType(Expr^.TypePtr)
-     and IsSameType(TypePtr, Expr^.TypePtr^.RangePtr^.BaseTypePtr) then
+     and IsSameType(TypePtr, Expr^.TypePtr^.RangeDef.BaseTypePtr) then
     ExCoerce := ExOutrange(Expr)
   else if IsRangeType(TypePtr)
-          and IsSameType(TypePtr^.RangePtr^.BaseTypePtr, Expr^.TypePtr) then
+          and IsSameType(TypePtr^.RangeDef.BaseTypePtr, Expr^.TypePtr) then
          ExCoerce := ExSubrange(Expr, TypePtr)
   else if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr)
-          and IsSameType(Expr^.TypePtr^.RangePtr^.BaseTypePtr,
-          TypePtr^.RangePtr^.BaseTypePtr) then
+          and IsSameType(Expr^.TypePtr^.RangeDef.BaseTypePtr,
+          TypePtr^.RangeDef.BaseTypePtr) then
          ExCoerce := ExRerange(Expr, TypePtr)
   else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)

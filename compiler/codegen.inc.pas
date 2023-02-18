@@ -216,7 +216,7 @@ procedure _OutArrayIndex(Index : TExpression; TypePtr : TPsTypePtr);
 var LowBound : integer;
   Size : TExpression;
 begin
-  LowBound := GetTypeLowBound(TypePtr^.ArrayPtr^.IndexTypePtr);
+  LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
   Size := ExBinaryOp(PfOrd(CopyExpr(Index)),
           ExIntegerConstant(LowBound),
           TkMinus);
@@ -569,7 +569,7 @@ end;
 procedure _OutSetTypeName(TypePtr : TPsTypePtr);
 begin
   write(Codegen.Output, 'PSet',
-        1 + (GetBoundedTypeSize(TypePtr^.SetPtr^.ElementTypePtr) - 1) div 32)
+        1 + (GetBoundedTypeSize(TypePtr^.SetDef.ElementTypePtr) - 1) div 32)
 end;
 
 procedure OutTypeReference(TypePtr : TPsTypePtr);
@@ -594,7 +594,7 @@ begin
       write(Codegen.Output, 'enum enum', TypePtr^.EnumPtr^.Id)
   end
   else if TypePtr^.Cls = TtcRange then
-         OutTypeReference(TypePtr^.RangePtr^.BaseTypePtr)
+         OutTypeReference(TypePtr^.RangeDef.BaseTypePtr)
   else if TypePtr^.Cls = TtcSet then
          _OutSetTypeName(TypePtr)
   else if TypePtr^.Cls = TtcRecord then
@@ -606,7 +606,7 @@ begin
   end
   else if TypePtr^.Cls = TtcArray then
   begin
-    OutTypeReference(TypePtr^.ArrayPtr^.ValueTypePtr);
+    OutTypeReference(TypePtr^.ArrayDef.ValueTypePtr);
     write(Codegen.Output, '*')
   end
   else
@@ -695,14 +695,14 @@ var
 begin
   TheType := TypePtr;
   while IsArrayType(TheType) do
-    TheType := TheType^.ArrayPtr^.ValueTypePtr;
+    TheType := TheType^.ArrayDef.ValueTypePtr;
   OutNameAndType(Name, TheType);
   TheType := TypePtr;
   while IsArrayType(TheType) do
   begin
     write(Codegen.Output, '[',
-          GetBoundedTypeSize(TypePtr^.ArrayPtr^.IndexTypePtr), ']');
-    TheType := TheType^.ArrayPtr^.ValueTypePtr
+          GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr), ']');
+    TheType := TheType^.ArrayDef.ValueTypePtr
   end
 end;
 
@@ -731,7 +731,7 @@ begin
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
-         OutNameAndType(Name, TypePtr^.RangePtr^.BaseTypePtr)
+         OutNameAndType(Name, TypePtr^.RangeDef.BaseTypePtr)
   else if TypePtr^.Cls = TtcSet then
   begin
     _OutSetTypeName(TypePtr);
@@ -874,8 +874,7 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'
@@ -936,8 +935,7 @@ begin
   while WriteArg <> nil do
   begin
     TypePtr := WriteArg^.Arg^.TypePtr;
-    while IsRangeType(TypePtr) do
-      TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+    while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
     if IsEnumType(TypePtr) then
     begin
       _OutIndent;

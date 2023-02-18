@@ -46,10 +46,7 @@ begin
     TdcName : new(Def^.NamePtr);
     TdcType : new(Def^.TypePtr);
     TdcEnum : new(Def^.EnumPtr);
-    TdcRange : new(Def^.RangePtr);
-    TdcSet : new(Def^.SetPtr);
     TdcRecord : new(Def^.RecPtr);
-    TdcArray : new(Def^.ArrayPtr);
     TdcConstant : new(Def^.ConstPtr);
     TdcVariable : new(Def^.VarPtr);
     TdcFunction : new(Def^.FnPtr);
@@ -69,10 +66,7 @@ begin
     TdcName : dispose(Def^.NamePtr);
     TdcType : dispose(Def^.TypePtr);
     TdcEnum : dispose(Def^.EnumPtr);
-    TdcRange: dispose(Def^.RangePtr);
-    TdcSet : dispose(Def^.SetPtr);
     TdcRecord : dispose(Def^.RecPtr);
-    TdcArray : dispose(Def^.ArrayPtr);
     TdcConstant : dispose(Def^.ConstPtr);
     TdcVariable : dispose(Def^.VarPtr);
     TdcFunction : dispose(Def^.FnPtr);
@@ -539,8 +533,7 @@ end;
 
 function AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
 begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangePtr^.BaseTypePtr;
+  while IsRangeType(TypePtr) do TypePtr := TypePtr^.RangeDef.BaseTypePtr;
   case TypePtr^.Cls of 
     TtcBoolean: if Ordinal = 0 then Result := 'FALSE'
                 else Result := 'TRUE';
@@ -575,11 +568,11 @@ begin
   end
   else if Typ.Cls = TtcRange then
   begin
-    Result := AntiOrdinal(Typ.RangePtr^.First, Typ.RangePtr^.BaseTypePtr) +
-              '..' + AntiOrdinal(Typ.RangePtr^.Last, Typ.RangePtr^.BaseTypePtr)
+    Result := AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
+              '..' + AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
   end
   else if Typ.Cls = TtcSet then
-    Result := 'set of ' + DeepTypeName(Typ.SetPtr^.ElementTypePtr, false)
+    Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
   else if Typ.Cls = TtcRecord then
   begin
     Ret := 'record ';
@@ -593,8 +586,8 @@ begin
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [' + DeepTypeName(Typ.ArrayPtr^.IndexTypePtr, false) +
-           '] of ' + DeepTypeName(Typ.ArrayPtr^.ValueTypePtr, false);
+    Ret := 'array [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
+           '] of ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
@@ -618,7 +611,7 @@ begin
     TtcBoolean : Result := 0;
     TtcChar : Result := 0;
     TtcEnum : Result := 0;
-    TtcRange : Result := TypePtr^.RangePtr^.First;
+    TtcRange : Result := TypePtr^.RangeDef.First;
     else CompileError('Type is not bounded: ' + TypeName(TypePtr))
   end
 end;
@@ -629,7 +622,7 @@ begin
     TtcBoolean : Result := 1;
     TtcChar : Result := 255;
     TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
-    TtcRange : Result := TypePtr^.RangePtr^.Last;
+    TtcRange : Result := TypePtr^.RangeDef.Last;
     else CompileError('Type is not bounded: ' + TypeName(TypePtr))
   end
 end;
@@ -670,18 +663,6 @@ begin
   AddEnum := EnumPtr
 end;
 
-function AddRange(Range : TPsRangeDef) : TPsRangePtr;
-begin
-  Result := _AddDef(TdcRange)^.RangePtr;
-  Result^ := Range
-end;
-
-function AddSet(Def : TPsSetDef) : TPsSetPtr;
-begin
-  Result := _AddDef(TdcSet)^.SetPtr;
-  Result^ := Def
-end;
-
 function AddRecord(Rec : TPsRecordDef) : TPsRecPtr;
 var 
   RecPtr : TPsRecPtr;
@@ -690,15 +671,6 @@ begin
   RecPtr^ := Rec;
   RecPtr^.Id := DefCounter(TctRecord);
   AddRecord := RecPtr
-end;
-
-function AddArray(Arr : TPsArrayDef) : TPsArrayPtr;
-var 
-  ArrayPtr : TPsArrayPtr;
-begin
-  ArrayPtr := _AddDef(TdcArray)^.ArrayPtr;
-  ArrayPtr^ := Arr;
-  AddArray := ArrayPtr
 end;
 
 function AddConstant(Constant : TPsConstant) : TPsConstPtr;
