@@ -210,7 +210,7 @@ begin
     SetElems[Pos] := 0;
   while Bounds <> nil do
   begin
-    if (Bounds^.First < LowBound) or (Bounds^.Last > HighBound) then`
+    if (Bounds^.First < LowBound) or (Bounds^.Last > HighBound) then
       CompileError('Set ' + DescribeExpr(Expr, 1) + ' contains elements ' +
       'that are out of bounds for ' + TypeName(Expr^.TypePtr));
     for Pos := Bounds^.First to Bounds^.Last do
