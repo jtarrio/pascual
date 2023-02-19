@@ -245,9 +245,11 @@ begin
   Result := '[';
   while Bounds <> nil do
   begin
-    Result := Result + AntiOrdinal(Bounds^.First, SetOfTypePtr);
+    Result := Result +
+              DescribeExpr(ExGetAntiOrdinal(Bounds^.First, SetOfTypePtr), 100);
     if Bounds^.First <> Bounds^.Last then
-      Result := Result + '..' + AntiOrdinal(Bounds^.Last, SetOfTypePtr);
+      Result := Result + '..' +
+                DescribeExpr(ExGetAntiOrdinal(Bounds^.Last, SetOfTypePtr), 100);
     Bounds := Bounds^.Next;
     if Bounds <> nil then Result := Result + ', '
   end;
@@ -276,6 +278,7 @@ begin
     TpfConcat: Result := 'CONCAT';
     TpfDispose: Result := 'DISPOSE';
     TpfNew: Result := 'NEW';
+    TpfOrd: Result := 'ORD';
     TpfPred: Result := 'PRED';
     TpfRead: Result := 'READ';
     TpfReadln: Result := 'READLN';
@@ -294,6 +297,7 @@ begin
     case PseudoFn of 
       TpfDispose: Result := 'DISPOSE(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfOrd: Result := 'ORD(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
       TpfRead: Result := 'READ(...)';
       TpfReadln: Result := 'READLN(...)';
@@ -832,6 +836,253 @@ begin
   Result := Expr
 end;
 
+procedure _ExSetUnifyTypes(Left, Right : TPsTypePtr);
+var LeftType, RightType : TPsTypePtr;
+begin
+  if Left^.SetDef.ElementTypePtr = nil then
+    Left^.SetDef.ElementTypePtr := Right^.SetDef.ElementTypePtr
+  else if Right^.SetDef.ElementTypePtr = nil then
+         Right^.SetDef.ElementTypePtr := Left^.SetDef.ElementTypePtr
+  else
+  begin
+    LeftType := GetFundamentalType(Left^.SetDef.ElementTypePtr);
+    RightType := GetFundamentalType(Right^.SetDef.ElementTypePtr);
+    if not IsSameType(LeftType, RightType) then
+      CompileError('Type mismatch: ' + TypeName(Left) +
+      ' is not compatible with ' + TypeName(Right));
+    Left^.SetDef.ElementTypePtr := LeftType;
+    Right^.SetDef.ElementTypePtr := RightType
+  end
+end;
+
+function _ExSetUnion(Left, Right : TExpression) : TExpression;
+var NewBds, OldBds : TExSetBounds;
+begin
+  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  NewBds := nil;
+  OldBds := Left^.Immediate.SetBounds;
+  while OldBds <> nil do
+  begin
+    NewBds := ExSetAddBounds(NewBds, OldBds^.First, OldBds^.Last);
+    OldBds := OldBds^.Next
+  end;
+  OldBds := Right^.Immediate.SetBounds;
+  while OldBds <> nil do
+  begin
+    NewBds := ExSetAddBounds(NewBds, OldBds^.First, OldBds^.Last);
+    OldBds := OldBds^.Next
+  end;
+  Result := ExSetConstant(NewBds, Left^.TypePtr);
+  DisposeExpr(Left);
+  DisposeExpr(Right)
+end;
+
+function _ExSetDifference(Left, Right : TExpression) : TExpression;
+var 
+  LtBds, RtBds, NewBds : TExSetBounds;
+begin
+  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  LtBds := Left^.Immediate.SetBounds;
+  RtBds := Right^.Immediate.SetBounds;
+  NewBds := nil;
+  while (LtBds <> nil) and (RtBds <> nil) do
+  begin
+    {      llllll  or      llllll }
+    { rrrr             rrrr       }
+    { Go to next right }
+    if RtBds^.Last < LtBds^.First then RtBds := RtBds^.Next
+    {     lllll  or  lllll }
+    {  rrrrr     or  rrr   }
+    { Trim left to end of right }
+    else if (RtBds^.First <= LtBds^.First) and (RtBds^.Last < LtBds^.Last) then
+           LtBds^.First := RtBds^.Last + 1
+    {     llll  or    ll  }
+    {   rrrrrr      rrrrr }
+    { Go to next left }
+    else if (RtBds^.First <= LtBds^.First) and (RtBds^.Last >= LtBds^.Last) then
+           LtBds := LtBds^.Next
+    { llllll }
+    {  rrr   }
+    { Add part of left before right, trim left to end of right }
+    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last < LtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, LtBds^.First, RtBds^.First - 1);
+      LtBds^.First := RtBds^.Last + 1
+    end
+    { llllll  or  lllllll    }
+    {   rrrr        rrrrrrrr }
+    { Add part of left before right, go to next left }
+    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last = RtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, LtBds^.First, RtBds^.First - 1);
+      LtBds := LtBds^.Next
+    end
+    { lllll      or  lllll       }
+    {      rrrr            rrrrr }
+    { Add left, go to next left }
+    else if RtBds^.First > LtBds^.Last then
+    begin
+      NewBds := ExSetAddBounds(NewBds, LtBds^.First, LtBds^.Last);
+      LtBds := LtBds^.Next
+    end
+  end;
+  while LtBds <> nil do
+  begin
+    NewBds := ExSetAddBounds(NewBds, LtBds^.First, LtBds^.Last);
+    LtBds := LtBds^.Next
+  end;
+  Result := ExSetConstant(NewBds, Left^.TypePtr);
+  DisposeExpr(Left);
+  DisposeExpr(Right)
+end;
+
+function _ExSetIntersection(Left, Right : TExpression) : TExpression;
+var 
+  LtBds, RtBds, NewBds : TExSetBounds;
+begin
+  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  LtBds := Left^.Immediate.SetBounds;
+  RtBds := Right^.Immediate.SetBounds;
+  NewBds := nil;
+  while (LtBds <> nil) and (RtBds <> nil) do
+  begin
+    {      llllll  or      llllll }
+    { rrrr             rrrr       }
+    { Go to next right }
+    if RtBds^.Last < LtBds^.First then RtBds := RtBds^.Next
+    {     lllll  or  lllll }
+    {  rrrrr     or  rrr   }
+    { Add first left to last right, go to next right }
+    else if (RtBds^.First <= LtBds^.First) and (RtBds^.Last < LtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, LtBds^.First, RtBds^.Last);
+      RtBds := RtBds^.Next
+    end
+    {     llll  or    ll  }
+    {   rrrrrr      rrrrr }
+    { Add left, go to next left }
+    else if (RtBds^.First <= LtBds^.First) and (RtBds^.Last >= LtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, LtBds^.First, LtBds^.Last);
+      LtBds := LtBds^.Next
+    end
+    { llllll }
+    {  rrr   }
+    { Add right, go to next right }
+    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last < LtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, RtBds^.First, RtBds^.Last);
+      RtBds := RtBds^.Next
+    end
+    { llllll  or  lllllll    }
+    {   rrrr        rrrrrrrr }
+    { Add first right to last left, go to next left }
+    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last = RtBds^.Last) then
+    begin
+      NewBds := ExSetAddBounds(NewBds, RtBds^.First, LtBds^.Last);
+      LtBds := LtBds^.Next
+    end
+    { lllll      or  lllll       }
+    {      rrrr            rrrrr }
+    { Go to next left }
+    else if RtBds^.First > LtBds^.Last then
+           LtBds := LtBds^.Next
+  end;
+  Result := ExSetConstant(NewBds, Left^.TypePtr);
+  DisposeExpr(Left);
+  DisposeExpr(Right)
+end;
+
+function _ExSetEquals(Left, Right : TExpression;
+                      Negate : boolean) : TExpression;
+var 
+  LtBds, RtBds : TExSetBounds;
+  Equals : boolean;
+begin
+  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  LtBds := Left^.Immediate.SetBounds;
+  RtBds := Right^.Immediate.SetBounds;
+  Equals := true;
+  while (LtBds <> nil) and (RtBds <> nil) and Equals do
+  begin
+    Equals := (RtBds^.First = LtBds^.First) and (RtBds^.Last = LtBds^.Last);
+    LtBds := LtBds^.Next;
+    RtBds := RtBds^.Next
+  end;
+  Equals := Equals and (LtBds = nil) and (RtBds = nil);
+  if Negate then Equals := not Equals;
+  Result := ExBooleanConstant(Equals);
+  DisposeExpr(Left);
+  DisposeExpr(Right)
+end;
+
+function _ExSetSubset(Left, Right : TExpression) : TExpression;
+var 
+  LtBds, RtBds : TExSetBounds;
+  Subset : boolean;
+begin
+  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  LtBds := Left^.Immediate.SetBounds;
+  RtBds := Right^.Immediate.SetBounds;
+  Subset := true;
+  while (LtBds <> nil) and (RtBds <> nil) and Subset do
+  begin
+    { llllll       or   lllll      }
+    {       rrrrr             rrrr }
+    { Go to next left }
+    if (LtBds^.Last < RtBds^.First) then
+      LtBds := LtBds^.Next
+    { lllllll }
+    {  rrrr   }
+    { Go to next right }
+    else if (LtBds^.First <= RtBds^.First) and (LtBds^.Last >= RtBds^.Last) then
+           RtBds := RtBds^.Next
+    else
+      Subset := false
+  end;
+  Subset := Subset and (RtBds = nil);
+  Result := ExBooleanConstant(Subset);
+  DisposeExpr(Left);
+  DisposeExpr(Right)
+end;
+
+function _ExSetIn(Needle, Haystack : TExpression) : TExpression;
+var 
+  ElemType : TPsTypePtr;
+  Bounds : TExSetBounds;
+  Cond : TExpression;
+begin
+  ElemType := Haystack^.TypePtr^.SetDef.ElementTypePtr;
+  if ElemType <> nil then ElemType := GetFundamentalType(ElemType);
+  if (ElemType <> nil)
+     and not IsSameType(GetFundamentalType(Needle^.TypePtr), ElemType) then
+    CompileError('Types of ' + DescribeExpr(Needle, 10) + ' and ' +
+    DescribeExpr(Haystack, 10) + ' are incompatible: ' +
+    TypeName(Needle^.TypePtr) + ' and ' + TypeName(Haystack^.TypePtr));
+  Result := ExBooleanConstant(false);
+  Bounds := Haystack^.Immediate.SetBounds;
+  while Bounds <> nil do
+  begin
+    if Bounds^.First = Bounds^.Last then
+      Cond := ExBinaryOp(ExGetAntiOrdinal(Bounds^.First, ElemType),
+              CopyExpr(Needle),
+              TkEquals)
+    else
+      Cond := ExBinaryOp(
+              ExBinaryOp(ExGetAntiOrdinal(Bounds^.First, ElemType),
+              CopyExpr(Needle),
+              TkLessOrEquals),
+              ExBinaryOp(CopyExpr(Needle),
+              ExGetAntiOrdinal(Bounds^.Last, ElemType),
+              TkLessOrEquals),
+              TkAnd);
+    Result := ExBinaryOp(Result, Cond, TkOr);
+    Bounds := Bounds^.Next
+  end;
+  DisposeExpr(Needle);
+  DisposeExpr(Haystack)
+end;
+
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
 forward;
 function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -900,6 +1151,9 @@ forward;
 function _ExBinOpEnumImm(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
+function _ExBinOpSetImm(Left, Right : TExpression;
+                        Op : TLxTokenId) : TExpression;
+forward;
 function _ExBinOpBoolCmp(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
@@ -916,6 +1170,9 @@ function _ExBinOpEnumCmp(Left, Right : TExpression;
                          Op : TLxTokenId) : TExpression;
 forward;
 function _ExBinOpPtrCmp(Left, Right : TExpression;
+                        Op : TLxTokenId) : TExpression;
+forward;
+function _ExBinOpSetCmp(Left, Right : TExpression;
                         Op : TLxTokenId) : TExpression;
 forward;
 function _ExBinOpShortcut(var Left, Right : TExpression;
@@ -962,6 +1219,11 @@ begin
   end
   else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
          Result := _ExBinOpPtrCmp(Left, Right, Op)
+  else if IsSetType(Right^.TypePtr) then
+  begin
+    if ExIsImmediate(Right) then Result := _ExBinOpSetImm(Left, Right, Op)
+    else Result := _ExBinOpSetCmp(Left, Right, Op)
+  end
   else
     CompileError('Type mismatch for operator ' + LxTokenName(Op) + ': ' +
     TypeName(Left^.TypePtr) + ' and ' + TypeName(Right^.TypePtr))
@@ -1143,6 +1405,23 @@ begin
   Result := Left
 end;
 
+function _ExBinOpSetImm;
+begin
+  if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
+    case Op of 
+      TkPlus: Result := _ExSetUnion(Left, Right);
+      TkMinus: Result := _ExSetDifference(Left, Right);
+      TkAsterisk: Result := _ExSetIntersection(Left, Right);
+      TkEquals: Result := _ExSetEquals(Left, Right, false);
+      TkNotEquals: Result := _ExSetEquals(Left, Right, true);
+      TkMoreOrEquals: Result := _ExSetSubset(Left, Right);
+      TkLessOrEquals: Result := _ExSetSubset(Right, Left);
+      else CompileError('Invalid set operator: ' + LxTokenName(Op))
+    end
+  else if Op = TkIn then Result := _ExSetIn(Left, Right)
+  else CompileError('Invalid set operator: ' + LxTokenName(Op))
+end;
+
 function _ExBinOpBoolCmp;
 begin
   if (Op = TkAnd) or (Op = TkOr) or (Op = TkEquals) or (Op = TkNotEquals)
@@ -1159,85 +1438,6 @@ begin
                                 or Right^.IsFunctionResult
   end
   else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
-end;
-
-{ Returns whether an expression evaluates to 0 integer or real. }
-function _ExIsZero(Expr : TExpression) : boolean;
-begin
-  Result := (ExIsImmediateOfClass(Expr, XicInteger)
-            and (Expr^.Immediate.IntegerVal = 0))
-            or (ExIsImmediateOfClass(Expr, XicReal)
-            and (Expr^.Immediate.
-            IntegerVal = 0.0))
-end;
-
-{ Returns whether an expression evaluates to 1 integer or real. }
-function _ExIsOne(Expr : TExpression) : boolean;
-begin
-  Result := (ExIsImmediateOfClass(Expr, XicInteger)
-            and (Expr^.Immediate.IntegerVal = 1))
-            or (ExIsImmediateOfClass(Expr, XicReal)
-            and (Expr^.Immediate.
-            IntegerVal = 1.0))
-end;
-
-{ Returns whether an expression evaluates to true. }
-function _ExIsTrue(Expr : TExpression) : boolean;
-begin
-  Result := ExIsImmediateOfClass(Expr, XicBoolean)
-            and Expr^.Immediate.BooleanVal
-end;
-
-{ Returns whether an expression evaluates to false. }
-function _ExIsFalse(Expr : TExpression) : boolean;
-begin
-  Result := ExIsImmediateOfClass(Expr, XicBoolean)
-            and not Expr^.Immediate.BooleanVal
-end;
-
-{ Computes a shortcut operation, if appropriate. }
-{ Returns true if the shortcut was taken. }
-{ Also, if the shortcut was taken, returns the result in the Left expression }
-{ and frees the Right expression. }
-function _ExBinOpShortcut(var Left, Right : TExpression;
-                          Op : TLxTokenId) : boolean;
-var Use : (UseLeft, UseRight, Keep);
-begin
-  Use := Keep;
-  case Op of 
-    { X + 0 -> X ; 0 + X -> X }
-    TkPlus : if _ExIsZero(Left) then Use := UseRight
-             else if _ExIsZero(Right) then Use := UseLeft;
-    { X - 0 -> X }
-    TkMinus : if _ExIsZero(Right) then Use := UseLeft;
-    { X * 1 -> X ; 1 * X -> X}
-    TkAsterisk : if _ExIsOne(Left) then Use := UseRight
-                 else if _ExIsOne(Right) then Use := UseLeft;
-    { X / 1 -> X }
-    TkSlash : if _ExIsOne(Right) then Use := UseLeft;
-    { X div 1 -> X }
-    TkDiv : if _ExIsOne(Right) then Use := UseLeft;
-    { false AND X -> false ; X AND true -> X ; true AND X -> X }
-    TkAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
-            else if _ExIsTrue(Left) then Use := UseRight;
-    { true OR X -> true ; X OR false -> X ; false OR X -> X }
-    TkOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
-           else if _ExIsFalse(Left) then Use := UseRight;
-  end;
-  case Use of 
-    UseLeft :
-              begin
-                DisposeExpr(Right);
-                Result := true
-              end;
-    UseRight :
-               begin
-                 DisposeExpr(Left);
-                 Left := Right;
-                 Result := true
-               end;
-    Keep : Result := false
-  end
 end;
 
 function _ExBinOpIntCmp;
@@ -1320,6 +1520,90 @@ begin
   else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;
 
+function _ExBinOpSetCmp;
+begin
+  CompileError('Invalid set operator: ' + LxTokenName(Op))
+end;
+
+{ Returns whether an expression evaluates to 0 integer or real. }
+function _ExIsZero(Expr : TExpression) : boolean;
+begin
+  Result := (ExIsImmediateOfClass(Expr, XicInteger)
+            and (Expr^.Immediate.IntegerVal = 0))
+            or (ExIsImmediateOfClass(Expr, XicReal)
+            and (Expr^.Immediate.
+            IntegerVal = 0.0))
+end;
+
+{ Returns whether an expression evaluates to 1 integer or real. }
+function _ExIsOne(Expr : TExpression) : boolean;
+begin
+  Result := (ExIsImmediateOfClass(Expr, XicInteger)
+            and (Expr^.Immediate.IntegerVal = 1))
+            or (ExIsImmediateOfClass(Expr, XicReal)
+            and (Expr^.Immediate.
+            IntegerVal = 1.0))
+end;
+
+{ Returns whether an expression evaluates to true. }
+function _ExIsTrue(Expr : TExpression) : boolean;
+begin
+  Result := ExIsImmediateOfClass(Expr, XicBoolean)
+            and Expr^.Immediate.BooleanVal
+end;
+
+{ Returns whether an expression evaluates to false. }
+function _ExIsFalse(Expr : TExpression) : boolean;
+begin
+  Result := ExIsImmediateOfClass(Expr, XicBoolean)
+            and not Expr^.Immediate.BooleanVal
+end;
+
+{ Computes a shortcut operation, if appropriate. }
+{ Returns true if the shortcut was taken. }
+{ Also, if the shortcut was taken, returns the result in the Left expression }
+{ and frees the Right expression. }
+function _ExBinOpShortcut(var Left, Right : TExpression;
+                          Op : TLxTokenId) : boolean;
+var Use : (UseLeft, UseRight, Keep);
+begin
+  Use := Keep;
+  case Op of 
+    { X + 0 -> X ; 0 + X -> X }
+    TkPlus : if _ExIsZero(Left) then Use := UseRight
+             else if _ExIsZero(Right) then Use := UseLeft;
+    { X - 0 -> X }
+    TkMinus : if _ExIsZero(Right) then Use := UseLeft;
+    { X * 1 -> X ; 1 * X -> X}
+    TkAsterisk : if _ExIsOne(Left) then Use := UseRight
+                 else if _ExIsOne(Right) then Use := UseLeft;
+    { X / 1 -> X }
+    TkSlash : if _ExIsOne(Right) then Use := UseLeft;
+    { X div 1 -> X }
+    TkDiv : if _ExIsOne(Right) then Use := UseLeft;
+    { false AND X -> false ; X AND true -> X ; true AND X -> X }
+    TkAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
+            else if _ExIsTrue(Left) then Use := UseRight;
+    { true OR X -> true ; X OR false -> X ; false OR X -> X }
+    TkOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
+           else if _ExIsFalse(Left) then Use := UseRight;
+  end;
+  case Use of 
+    UseLeft :
+              begin
+                DisposeExpr(Right);
+                Result := true
+              end;
+    UseRight :
+               begin
+                 DisposeExpr(Left);
+                 Left := Right;
+                 Result := true
+               end;
+    Keep : Result := false
+  end
+end;
+
 function ExGetOrdinal(Expr : TExpression) : integer;
 begin
   if not ExIsImmediate(Expr) then
@@ -1333,6 +1617,20 @@ begin
       else CompileError('Expression does not belong to an ordinal type: ' +
                         DescribeExpr(Expr, 5))
     end
+end;
+
+function ExGetAntiOrdinal(Ordinal : integer;
+                          TypePtr : TPsTypePtr) : TExpression;
+begin
+  TypePtr := GetFundamentalType(TypePtr);
+  case TypePtr^.Cls of 
+    TtcBoolean: if Ordinal = 0 then Result := ExBooleanConstant(false)
+                else Result := ExBooleanConstant(true);
+    TtcInteger: Result := ExIntegerConstant(Ordinal);
+    TtcChar: Result := ExCharConstant(Chr(Ordinal));
+    TtcEnum: Result := ExEnumConstant(Ordinal, TypePtr);
+    else InternalError('Cannot compute anti-ordinal for ' + TypeName(TypePtr))
+  end
 end;
 
 function ExSubrange;
@@ -1380,13 +1678,13 @@ begin
   else if ExIsImmediate(Expr)
           and IsSameType(GetFundamentalType(ExprElemType),
           GetFundamentalType(DestElemType)) then Outcome := Replace
-  else if (GetTypeLowBound(ExprElemType) >= GetTypeLowBound(DestElemType))
-          and
-          (GetTypeHighBound(ExprElemType) <= GetTypeHighBound(DestElemType))
+  else if IsBoundedType(ExprElemType) and IsBoundedType(DestElemType)
+          and (GetTypeLowBound(ExprElemType) >= GetTypeLowBound(DestElemType))
+          and (GetTypeHighBound(ExprElemType) <= GetTypeHighBound(DestElemType))
          then Outcome := Pass;
   case Outcome of 
-    Reject : CompileError('Set of type ' + TypeName(Expr^.TypePtr) +
-             ' cannot be assigned to set of type ' + TypeName(TypePtr));
+    Reject : CompileError('Type mismatch: ' + TypeName(Expr^.TypePtr) +
+             ' cannot be assigned to ' + TypeName(TypePtr));
     Replace :
               begin
                 Expr^.TypePtr := TypePtr;

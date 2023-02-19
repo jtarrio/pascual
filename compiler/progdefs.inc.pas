@@ -575,17 +575,9 @@ begin
   if Result = '' then Result := ''''''
 end;
 
-function AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
+function _AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
 begin
-  TypePtr := GetFundamentalType(TypePtr);
-  case TypePtr^.Cls of 
-    TtcBoolean: if Ordinal = 0 then Result := 'FALSE'
-                else Result := 'TRUE';
-    TtcInteger: Str(Ordinal, Result);
-    TtcChar: Result := UnparseChar(Chr(Ordinal));
-    TtcEnum: Result := TypePtr^.EnumPtr^.Values[Ordinal];
-    else InternalError('Cannot compute anti-ordinal for ' + TypeName(TypePtr))
-  end
+  Result := DescribeExpr(ExGetAntiOrdinal(Ordinal, TypePtr), 100);
 end;
 
 function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
@@ -612,29 +604,29 @@ begin
   end
   else if Typ.Cls = TtcRange then
   begin
-    Result := AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
-              '..' + AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
+    Result := _AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
+              '..' + _AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
   end
   else if Typ.Cls = TtcSet then
   begin
-    if Typ.SetDef.ElementTypePtr = nil then Result := 'empty set'
-    else Result := 'set of ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
+    if Typ.SetDef.ElementTypePtr = nil then Result := 'SET OF []'
+    else Result := 'SET OF ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
   end
   else if Typ.Cls = TtcRecord then
   begin
-    Ret := 'record ';
+    Ret := 'RECORD ';
     for Pos := 1 to Typ.RecPtr^.Size do
     begin
       if Pos <> 1 then Ret := Ret + ',';
       Ret := Ret + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
       Ret := Ret + ':' + Typ.RecPtr^.Fields[Pos].Name
     end;
-    DeepTypeName := Ret + ' end'
+    DeepTypeName := Ret + ' END'
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'array [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
-           '] of ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
+    Ret := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
+           '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
     DeepTypeName := Ret
   end
   else if Typ.Cls = TtcPointer then
