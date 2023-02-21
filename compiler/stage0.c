@@ -3,12 +3,14 @@
 
 struct record1 {
   int SUPPRESSWARNINGS;
+  int CHECKBOUNDS;
 } OPTIONS;
 
 void COMPILEERROR(PString MSG);
+void INTERNALERROR(PString MSG);
 void COMPILEWARNING(PString MSG);
 
-typedef enum enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH } TLXTOKENID;
+typedef enum enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
 typedef struct record2 {
   int ROW;
   int COL;
@@ -19,12 +21,13 @@ typedef struct record3 {
   TLXPOS POS;
 } TLXTOKEN;
 typedef enum enum2 { TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFREAD, TPFREADLN, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
-typedef struct record13 *TPSTYPEPTR;
-typedef struct record14 *TPSENUMPTR;
-typedef struct record20 *TPSVARPTR;
-typedef struct record21 *TPSFNPTR;
-typedef struct record11 *TEXPRESSION;
-typedef enum enum3 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM } TEXIMMEDIATECLASS;
+typedef struct record16 *TPSTYPEPTR;
+typedef struct record17 *TPSENUMPTR;
+typedef struct record21 *TPSVARPTR;
+typedef struct record22 *TPSFNPTR;
+typedef struct record12 *TEXPRESSION;
+typedef struct record5 *TEXSETBOUNDS;
+typedef enum enum3 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
 typedef struct record4 {
   TEXIMMEDIATECLASS CLS;
   union {
@@ -45,26 +48,35 @@ typedef struct record4 {
     };
     struct {
       int ENUMORDINAL;
-      struct record14 *ENUMPTR;
+      struct record17 *ENUMPTR;
+    };
+    struct {
+      struct record5 *SETBOUNDS;
+      struct record16 *SETOFTYPEPTR;
     };
   };
 } TEXIMMEDIATE;
 typedef struct record5 {
-  int SIZE;
-  struct record11 *VALUES[8];
-} TEXFUNCTIONARGS;
+  int FIRST;
+  int LAST;
+  struct record5 *NEXT;
+} TEXSETBOUNDSOBJ;
 typedef struct record6 {
-  struct record11 *ARG;
-  struct record6 *NEXT;
-} TEXREADARGS;
+  int SIZE;
+  struct record12 *VALUES[8];
+} TEXFUNCTIONARGS;
 typedef struct record7 {
-  struct record11 *ARG;
+  struct record12 *ARG;
   struct record7 *NEXT;
-} TEXWRITEARGS;
+} TEXREADARGS;
 typedef struct record8 {
-  struct record11 *ARG1;
-  struct record11 *ARG2;
-  struct record11 *ARG3;
+  struct record12 *ARG;
+  struct record8 *NEXT;
+} TEXWRITEARGS;
+typedef struct record9 {
+  struct record12 *ARG1;
+  struct record12 *ARG2;
+  struct record12 *ARG3;
   TPSPSEUDOFN PSEUDOFN;
   union {
     struct {
@@ -75,18 +87,18 @@ typedef struct record8 {
     };
   };
 } TEXPSEUDOFNCALL;
-typedef struct record9 {
-  struct record11 *PARENT;
+typedef struct record10 {
+  struct record12 *PARENT;
   TLXTOKENID OP;
 } TEXUNARYOP;
-typedef struct record10 {
-  struct record11 *LEFT;
-  struct record11 *RIGHT;
+typedef struct record11 {
+  struct record12 *LEFT;
+  struct record12 *RIGHT;
   TLXTOKENID OP;
 } TEXBINARYOP;
 typedef enum enum4 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCSETTMPVAR, XCSUBRANGE, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
-typedef struct record11 {
-  struct record13 *TYPEPTR;
+typedef struct record12 {
+  struct record16 *TYPEPTR;
   int ISASSIGNABLE;
   int ISFUNCTIONRESULT;
   TEXPRESSIONCLASS CLS;
@@ -95,37 +107,37 @@ typedef struct record11 {
       TEXIMMEDIATE IMMEDIATE;
     };
     struct {
-      struct record11 *TOSTRPARENT;
+      struct record12 *TOSTRPARENT;
     };
     struct {
-      struct record11 *TOREALPARENT;
+      struct record12 *TOREALPARENT;
     };
     struct {
-      struct record11 *SUBRANGEPARENT;
+      struct record12 *SUBRANGEPARENT;
     };
     struct {
-      struct record20 *VARPTR;
+      struct record21 *VARPTR;
     };
     struct {
-      struct record11 *RECEXPR;
+      struct record12 *RECEXPR;
       int RECFIELDNUM;
     };
     struct {
-      struct record11 *ARRAYEXPR;
-      struct record11 *ARRAYINDEX;
+      struct record12 *ARRAYEXPR;
+      struct record12 *ARRAYINDEX;
     };
     struct {
-      struct record11 *POINTEREXPR;
+      struct record12 *POINTEREXPR;
     };
     struct {
-      struct record11 *STRINGEXPR;
-      struct record11 *STRINGINDEX;
+      struct record12 *STRINGEXPR;
+      struct record12 *STRINGINDEX;
     };
     struct {
-      struct record21 *FNPTR;
+      struct record22 *FNPTR;
     };
     struct {
-      struct record11 *FNEXPR;
+      struct record12 *FNEXPR;
       TEXFUNCTIONARGS CALLARGS;
     };
     struct {
@@ -141,80 +153,82 @@ typedef struct record11 {
       TEXBINARYOP BINARY;
     };
     struct {
-      struct record11 *TMPVAR;
-      struct record11 *TMPVARVALUE;
-      struct record11 *TMPVARCHILD;
+      struct record12 *TMPVAR;
+      struct record12 *TMPVARVALUE;
+      struct record12 *TMPVARCHILD;
     };
   };
 } TEXPRESSIONOBJ;
-typedef struct record12 {
-  PString NAME;
-} TPSIDENTIFIER;
-typedef struct record15 *TPSRANGEPTR;
-typedef struct record17 *TPSRECPTR;
-typedef struct record18 *TPSARRAYPTR;
-typedef struct record19 *TPSCONSTPTR;
-typedef struct record22 *TPSWITHVARPTR;
-typedef struct record23 *TPSNAMEPTR;
-typedef enum enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
 typedef struct record13 {
   PString NAME;
-  struct record13 *ALIASFOR;
+} TPSIDENTIFIER;
+typedef struct record19 *TPSRECPTR;
+typedef struct record20 *TPSCONSTPTR;
+typedef struct record23 *TPSWITHVARPTR;
+typedef struct record24 *TPSNAMEPTR;
+typedef enum enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
+typedef struct record16 {
+  PString NAME;
+  struct record16 *ALIASFOR;
   int WASUSED;
   TPSTYPECLASS CLS;
   union {
     struct {
-      struct record14 *ENUMPTR;
+      struct record17 *ENUMPTR;
     };
     struct {
-      struct record15 *RANGEPTR;
+      struct record14 {
+        int FIRST;
+        int LAST;
+        struct record16 *BASETYPEPTR;
+      } RANGEDEF;
     };
     struct {
-      struct record17 *RECPTR;
+      struct record16 *ELEMENTTYPEPTR;
     };
     struct {
-      struct record18 *ARRAYPTR;
+      struct record19 *RECPTR;
     };
     struct {
-      struct record13 *POINTEDTYPEPTR;
+      struct record15 {
+        struct record16 *INDEXTYPEPTR;
+        struct record16 *VALUETYPEPTR;
+      } ARRAYDEF;
+    };
+    struct {
+      struct record16 *POINTEDTYPEPTR;
     };
     struct {
       PString *TARGETNAME;
     };
   };
 } TPSTYPE;
-typedef struct record14 {
+typedef struct record17 {
   int SIZE;
   PString VALUES[128];
   int ID;
   int HASBEENDEFINED;
+  int VALUESHAVEBEENOUTPUT;
+  int REFCOUNT;
 } TPSENUMDEF;
-typedef struct record15 {
-  int FIRST;
-  int LAST;
-  TPSTYPE *BASETYPEPTR;
-} TPSRANGEDEF;
-typedef struct record16 {
+typedef struct record18 {
   PString NAME;
   TPSTYPE *TYPEPTR;
 } TPSRECORDFIELD;
-typedef struct record17 {
+typedef struct record19 {
   int SIZE;
   TPSRECORDFIELD FIELDS[32];
   int NUMVARIANTS;
   int VARIANTBOUNDS[32];
   int ID;
   int HASBEENDEFINED;
+  int REFCOUNT;
 } TPSRECORDDEF;
-typedef struct record18 {
-  TPSTYPE *INDEXTYPEPTR;
-  TPSTYPE *VALUETYPEPTR;
-} TPSARRAYDEF;
-typedef struct record19 {
+typedef struct record20 {
   PString NAME;
   TEXPRESSIONOBJ *VALUE;
 } TPSCONSTANT;
-typedef struct record20 {
+typedef struct record21 {
   PString NAME;
   TPSTYPE *TYPEPTR;
   int ISREFERENCE;
@@ -222,7 +236,7 @@ typedef struct record20 {
   int WASINITIALIZED;
   int WASUSED;
 } TPSVARIABLE;
-typedef struct record21 {
+typedef struct record22 {
   PString NAME;
   int ARGCOUNT;
   TPSVARIABLE ARGS[8];
@@ -230,11 +244,11 @@ typedef struct record21 {
   int ISDECLARATION;
   int WASUSED;
 } TPSFUNCTION;
-typedef struct record22 {
+typedef struct record23 {
   TPSVARIABLE *VARPTR;
 } TPSWITHVAR;
 typedef enum enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
-typedef struct record23 {
+typedef struct record24 {
   PString NAME;
   TPSNAMECLASS CLS;
   union {
@@ -260,16 +274,16 @@ typedef struct record23 {
   };
 } TPSNAME;
 typedef enum enum7 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
-typedef struct record24 {
+typedef struct record25 {
   int ENUMCTR;
   int RECORDCTR;
   int TMPVARCTR;
 } TPSCOUNTERS;
-typedef struct record25 *TPSDEFPTR;
-typedef enum enum8 { TDCNAME, TDCTYPE, TDCENUM, TDCRANGE, TDCRECORD, TDCARRAY, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
-typedef struct record25 {
-  struct record25 *PREV;
-  struct record25 *NEXT;
+typedef struct record26 *TPSDEFPTR;
+typedef enum enum8 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
+typedef struct record26 {
+  struct record26 *PREV;
+  struct record26 *NEXT;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -277,18 +291,6 @@ typedef struct record25 {
     };
     struct {
       TPSTYPE *TYPEPTR;
-    };
-    struct {
-      TPSENUMDEF *ENUMPTR;
-    };
-    struct {
-      TPSRANGEDEF *RANGEPTR;
-    };
-    struct {
-      TPSRECORDDEF *RECPTR;
-    };
-    struct {
-      TPSARRAYDEF *ARRAYPTR;
     };
     struct {
       TPSCONSTANT *CONSTPTR;
@@ -309,41 +311,45 @@ typedef struct record25 {
     };
   };
 } TPSDEFENTRY;
-typedef struct record26 {
+typedef struct record27 {
   TPSDEFENTRY *LATEST;
   TPSFUNCTION *CURRENTFN;
   TPSCOUNTERS COUNTERS;
 } TPSDEFS;
 
-const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH" };
+const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKSHL", "TKSHR", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH", "TKXOR" };
 const char* enumvalues2[] = { "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFREAD", "TPFREADLN", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
-const char* enumvalues3[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM" };
+const char* enumvalues3[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
 const char* enumvalues4[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCSETTMPVAR", "XCSUBRANGE", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
-const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
+const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
 const char* enumvalues6[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
 const char* enumvalues7[] = { "TCTENUM", "TCTRECORD", "TCTTMPVAR" };
-const char* enumvalues8[] = { "TDCNAME", "TDCTYPE", "TDCENUM", "TDCRANGE", "TDCRECORD", "TDCARRAY", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
+const char* enumvalues8[] = { "TDCNAME", "TDCTYPE", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
 
 void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR);
 TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR);
 PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS);
 void EXMARKINITIALIZED(TEXPRESSIONOBJ *LHS);
+TEXPRESSIONOBJ *EXUNARYOP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP);
+TEXPRESSIONOBJ *EXBINARYOP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+int EXGETORDINAL(TEXPRESSIONOBJ *EXPR);
+TEXPRESSIONOBJ *EXGETANTIORDINAL(int ORDINAL, TPSTYPE *TYPEPTR);
 TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN);
 TEXPRESSIONOBJ *PFORD(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFPRED(TEXPRESSIONOBJ *ARG);
 TEXPRESSIONOBJ *PFSUCC(TEXPRESSIONOBJ *ARG);
 
-typedef struct record27 {
+typedef struct record28 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
 
-struct record29 {
+struct record30 {
   PString LINE;
   TLXTOKEN TOKEN;
   TLXINPUTFILE INPUT;
-  struct record28 {
+  struct record29 {
     int EXISTS;
     TLXINPUTFILE INPUT;
   } PREV;
@@ -494,6 +500,8 @@ void LXGETIDENTIFIER() {
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "RECORD")) == 0) LEXER.TOKEN.ID = TKRECORD;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(6, "REPEAT")) == 0) LEXER.TOKEN.ID = TKREPEAT;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "SET")) == 0) LEXER.TOKEN.ID = TKSET;
+  else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "SHL")) == 0) LEXER.TOKEN.ID = TKSHL;
+  else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "SHR")) == 0) LEXER.TOKEN.ID = TKSHR;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "THEN")) == 0) LEXER.TOKEN.ID = TKTHEN;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(2, "TO")) == 0) LEXER.TOKEN.ID = TKTO;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "TYPE")) == 0) LEXER.TOKEN.ID = TKTYPE;
@@ -501,6 +509,7 @@ void LXGETIDENTIFIER() {
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "VAR")) == 0) LEXER.TOKEN.ID = TKVAR;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(5, "WHILE")) == 0) LEXER.TOKEN.ID = TKWHILE;
   else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(4, "WITH")) == 0) LEXER.TOKEN.ID = TKWITH;
+  else if (cmp_ss(LEXER.TOKEN.VALUE, str_make(3, "XOR")) == 0) LEXER.TOKEN.ID = TKXOR;
 }
 
 void LXGETNUMBER() {
@@ -711,7 +720,7 @@ void LXINCLUDE(PString FILENAME) {
 }
 
 TPSDEFS DEFS;
-struct record30 {
+struct record31 {
   TPSTYPE *PTNIL;
   TPSTYPE *PTBOOLEAN;
   TPSTYPE *PTINTEGER;
@@ -756,6 +765,34 @@ void INITDEFS() {
   DEFS.CURRENTFN = (void*)0;
 }
 
+TPSENUMDEF *NEWENUM(TPSENUMDEF ENUM) {
+  TPSENUMDEF *RESULT;
+  RESULT = malloc(sizeof(TPSENUMDEF));
+  *RESULT = ENUM;
+  RESULT->ID = DEFCOUNTER(TCTENUM);
+  RESULT->REFCOUNT = 1;
+  return RESULT;
+}
+
+void DISPOSEENUM(TPSENUMDEF *PTR) {
+  PTR->REFCOUNT = PTR->REFCOUNT - 1;
+  if (PTR->REFCOUNT == 0) free(PTR);
+}
+
+TPSRECORDDEF *NEWRECORD(TPSRECORDDEF REC) {
+  TPSRECORDDEF *RESULT;
+  RESULT = malloc(sizeof(TPSRECORDDEF));
+  *RESULT = REC;
+  RESULT->ID = DEFCOUNTER(TCTRECORD);
+  RESULT->REFCOUNT = 1;
+  return RESULT;
+}
+
+void DISPOSERECORD(TPSRECORDDEF *PTR) {
+  PTR->REFCOUNT = PTR->REFCOUNT - 1;
+  if (PTR->REFCOUNT == 0) free(PTR);
+}
+
 TPSDEFENTRY *_NEWDEF(TPSDEFCLASS CLS) {
   TPSDEFENTRY *RESULT;
   TPSDEFENTRY *DEF;
@@ -769,18 +806,6 @@ TPSDEFENTRY *_NEWDEF(TPSDEFCLASS CLS) {
       break;
     case TDCTYPE:
       DEF->TYPEPTR = malloc(sizeof(TPSTYPE));
-      break;
-    case TDCENUM:
-      DEF->ENUMPTR = malloc(sizeof(TPSENUMDEF));
-      break;
-    case TDCRANGE:
-      DEF->RANGEPTR = malloc(sizeof(TPSRANGEDEF));
-      break;
-    case TDCRECORD:
-      DEF->RECPTR = malloc(sizeof(TPSRECORDDEF));
-      break;
-    case TDCARRAY:
-      DEF->ARRAYPTR = malloc(sizeof(TPSARRAYDEF));
       break;
     case TDCCONSTANT:
       DEF->CONSTPTR = malloc(sizeof(TPSCONSTANT));
@@ -807,25 +832,19 @@ TPSDEFENTRY *_NEWDEF(TPSDEFCLASS CLS) {
   return RESULT;
 }
 
+void _DISPOSETYPE(TPSTYPE **TYPEPTR) {
+  if ((*TYPEPTR)->CLS == TTCENUM) DISPOSEENUM((*TYPEPTR)->ENUMPTR);
+  else if ((*TYPEPTR)->CLS == TTCRECORD) DISPOSERECORD((*TYPEPTR)->RECPTR);
+  free(*TYPEPTR);
+}
+
 void _DISPOSEDEF(TPSDEFENTRY *DEF) {
   switch (DEF->CLS) {
     case TDCNAME:
       free(DEF->NAMEPTR);
       break;
     case TDCTYPE:
-      free(DEF->TYPEPTR);
-      break;
-    case TDCENUM:
-      free(DEF->ENUMPTR);
-      break;
-    case TDCRANGE:
-      free(DEF->RANGEPTR);
-      break;
-    case TDCRECORD:
-      free(DEF->RECPTR);
-      break;
-    case TDCARRAY:
-      free(DEF->ARRAYPTR);
+      _DISPOSETYPE(&DEF->TYPEPTR);
       break;
     case TDCCONSTANT:
       free(DEF->CONSTPTR);
@@ -967,7 +986,7 @@ TPSNAME *_CHECKNAMECLASS(TPSNAME *NAMEPTR, TPSNAMECLASS CLS) {
       COMPILEERROR(cat_ss(str_make(29, "Not a procedure or function: "), NAMEPTR->NAME));
       break;
     default:
-      COMPILEERROR(str_make(35, "Internal error: name class mismatch"));
+      INTERNALERROR(cat_ss(str_make(24, "Name class mismatch for "), NAMEPTR->NAME));
       break;
   }
   RESULT = NAMEPTR;
@@ -1064,80 +1083,6 @@ TPSNAME *ADDPSEUDOFN(PString NAME, TPSPSEUDOFN FN) {
   return RESULT;
 }
 
-PString DEEPTYPENAME(TPSTYPE *TYPEPTR, int USEORIGINAL) {
-  PString RESULT;
-  TPSTYPE TYP;
-  PString RET;
-  PString NUMSTR;
-  int POS;
-  do {
-    TYP = *TYPEPTR;
-    TYPEPTR = TYP.ALIASFOR;
-  } while (!(!USEORIGINAL || TYPEPTR == (void*)0));
-  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) RESULT = TYP.NAME;
-  else if (TYP.CLS == TTCENUM) {
-    RET = str_of('(');
-    do {
-      int first = 0;
-      int last = TYP.ENUMPTR->SIZE - 1;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (POS != 0) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
-          }
-          if (POS == last) break;
-          ++POS;
-        }
-      }
-    } while(0);
-    RESULT = cat_sc(RET, ')');
-  }
-  else if (TYP.CLS == TTCRANGE) {
-    STR_i(TYP.RANGEPTR->FIRST, &RESULT);
-    STR_i(TYP.RANGEPTR->LAST, &NUMSTR);
-    RESULT = cat_ss(cat_ss(RESULT, str_make(2, "..")), NUMSTR);
-  }
-  else if (TYP.CLS == TTCRECORD) {
-    RET = str_make(7, "record ");
-    do {
-      int first = 1;
-      int last = TYP.RECPTR->SIZE;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (POS != 1) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, DEEPTYPENAME(TYP.RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR, 1));
-            RET = cat_ss(cat_sc(RET, ':'), TYP.RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME);
-          }
-          if (POS == last) break;
-          ++POS;
-        }
-      }
-    } while(0);
-    RESULT = cat_ss(RET, str_make(4, " end"));
-  }
-  else if (TYP.CLS == TTCARRAY) {
-    RET = cat_ss(cat_ss(cat_ss(str_make(7, "array ["), DEEPTYPENAME(TYP.ARRAYPTR->INDEXTYPEPTR, 0)), str_make(5, "] of ")), DEEPTYPENAME(TYP.ARRAYPTR->VALUETYPEPTR, 0));
-    RESULT = RET;
-  }
-  else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
-  else {
-    STR_e(TYP.CLS, enumvalues5, &RET);
-    COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
-  }
-  return RESULT;
-}
-
-PString TYPENAME(TPSTYPE *TYPEPTR) {
-  PString RESULT;
-  if (TYPEPTR == (void*)0) RESULT = str_make(6, "(none)");
-  else RESULT = DEEPTYPENAME(TYPEPTR, 0);
-  return RESULT;
-}
-
 TPSTYPE EMPTYTYPE() {
   TPSTYPE RESULT;
   TPSTYPE RET;
@@ -1151,13 +1096,13 @@ TPSTYPE EMPTYTYPE() {
 
 TPSTYPE COPYTYPE(TPSTYPE *TYPEPTR) {
   TPSTYPE RESULT;
-  TPSTYPE NEWTYP;
-  NEWTYP = *TYPEPTR;
-  if (NEWTYP.CLS == TTCPOINTERUNKNOWN) {
-    NEWTYP.TARGETNAME = malloc(sizeof(PString));
-    *NEWTYP.TARGETNAME = *TYPEPTR->TARGETNAME;
+  RESULT = *TYPEPTR;
+  if (RESULT.CLS == TTCPOINTERUNKNOWN) {
+    RESULT.TARGETNAME = malloc(sizeof(PString));
+    *RESULT.TARGETNAME = *TYPEPTR->TARGETNAME;
   }
-  RESULT = NEWTYP;
+  else if (RESULT.CLS == TTCENUM) RESULT.ENUMPTR->REFCOUNT = RESULT.ENUMPTR->REFCOUNT + 1;
+  else if (RESULT.CLS == TTCRECORD) RESULT.RECPTR->REFCOUNT = RESULT.RECPTR->REFCOUNT + 1;
   return RESULT;
 }
 
@@ -1227,6 +1172,19 @@ int ISENUMTYPE(TPSTYPE *TYPEPTR) {
 int ISRANGETYPE(TPSTYPE *TYPEPTR) {
   int RESULT;
   RESULT = TYPEPTR != (void*)0 && TYPEPTR->CLS == TTCRANGE;
+  return RESULT;
+}
+
+TPSTYPE *GETFUNDAMENTALTYPE(TPSTYPE *TYPEPTR) {
+  TPSTYPE *RESULT;
+  while (ISRANGETYPE(TYPEPTR)) TYPEPTR = TYPEPTR->RANGEDEF.BASETYPEPTR;
+  RESULT = TYPEPTR;
+  return RESULT;
+}
+
+int ISSETTYPE(TPSTYPE *TYPEPTR) {
+  int RESULT;
+  RESULT = TYPEPTR != (void*)0 && TYPEPTR->CLS == TTCSET;
   return RESULT;
 }
 
@@ -1310,7 +1268,7 @@ int GETTYPELOWBOUND(TPSTYPE *TYPEPTR) {
       RESULT = 0;
       break;
     case TTCRANGE:
-      RESULT = TYPEPTR->RANGEPTR->FIRST;
+      RESULT = TYPEPTR->RANGEDEF.FIRST;
       break;
     default:
       COMPILEERROR(cat_ss(str_make(21, "Type is not bounded: "), TYPENAME(TYPEPTR)));
@@ -1332,7 +1290,7 @@ int GETTYPEHIGHBOUND(TPSTYPE *TYPEPTR) {
       RESULT = TYPEPTR->ENUMPTR->SIZE - 1;
       break;
     case TTCRANGE:
-      RESULT = TYPEPTR->RANGEPTR->LAST;
+      RESULT = TYPEPTR->RANGEDEF.LAST;
       break;
     default:
       COMPILEERROR(cat_ss(str_make(21, "Type is not bounded: "), TYPENAME(TYPEPTR)));
@@ -1353,7 +1311,7 @@ int ISSAMETYPE(TPSTYPE *A, TPSTYPE *B) {
   else {
     while (A->ALIASFOR != (void*)0) A = A->ALIASFOR;
     while (B->ALIASFOR != (void*)0) B = B->ALIASFOR;
-    RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEPTR, B->POINTEDTYPEPTR);
+    RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEPTR, B->POINTEDTYPEPTR) || (ISRANGETYPE(A) && ISRANGETYPE(B) && ISSAMETYPE(GETFUNDAMENTALTYPE(A), GETFUNDAMENTALTYPE(B)) && GETTYPELOWBOUND(A) == GETTYPELOWBOUND(B) && GETTYPEHIGHBOUND(A) == GETTYPEHIGHBOUND(B) || ISSETTYPE(A) && ISSETTYPE(B) && ISSAMETYPE(A->ELEMENTTYPEPTR, B->ELEMENTTYPEPTR));
   }
   return RESULT;
 }
@@ -1361,6 +1319,140 @@ int ISSAMETYPE(TPSTYPE *A, TPSTYPE *B) {
 int AREPOINTERSCOMPATIBLE(TPSTYPE *A, TPSTYPE *B) {
   int RESULT;
   RESULT = ISPOINTERYTYPE(A) && ISPOINTERYTYPE(B) && (ISNILTYPE(A) || ISNILTYPE(B) || ISSAMETYPE(A, B));
+  return RESULT;
+}
+
+PString UNPARSECHAR(unsigned char CHR) {
+  PString RESULT;
+  PString CHNUM;
+  if (CHR == '\'') RESULT = str_make(4, "''''");
+  else if (CHR < ' ') {
+    STR_i((int)CHR, &CHNUM);
+    RESULT = cat_cs('#', CHNUM);
+  }
+  else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
+  return RESULT;
+}
+
+PString UNPARSESTRING(PString ST) {
+  PString RESULT;
+  int POS;
+  PString CHNUM;
+  int QUOTED;
+  QUOTED = 0;
+  RESULT = str_make(0, "");
+  do {
+    int first = 1;
+    int last = LENGTH(&ST);
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        {
+          if (ST.chr[POS] < ' ') {
+            if (QUOTED) {
+              QUOTED = 0;
+              RESULT = cat_sc(RESULT, '\'');
+            }
+            STR_i((int)ST.chr[POS], &CHNUM);
+            RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
+          }
+          else {
+            if (!QUOTED) {
+              QUOTED = 1;
+              RESULT = cat_sc(RESULT, '\'');
+            }
+            if (ST.chr[POS] == '\'') RESULT = cat_ss(RESULT, str_make(2, "''"));
+            else RESULT = cat_sc(RESULT, ST.chr[POS]);
+          }
+        }
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  if (QUOTED) RESULT = cat_sc(RESULT, '\'');
+  if (cmp_ss(RESULT, str_make(0, "")) == 0) RESULT = str_make(2, "''");
+  return RESULT;
+}
+
+PString _ANTIORDINAL(int ORDINAL, TPSTYPE *TYPEPTR) {
+  PString RESULT;
+  RESULT = DESCRIBEEXPR(EXGETANTIORDINAL(ORDINAL, TYPEPTR), 100);
+  return RESULT;
+}
+
+PString DEEPTYPENAME(TPSTYPE *TYPEPTR, int USEORIGINAL) {
+  PString RESULT;
+  TPSTYPE TYP;
+  PString RET;
+  int POS;
+  do {
+    TYP = *TYPEPTR;
+    TYPEPTR = TYP.ALIASFOR;
+  } while (!(!USEORIGINAL || TYPEPTR == (void*)0));
+  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) RESULT = TYP.NAME;
+  else if (TYP.CLS == TTCENUM) {
+    RET = str_of('(');
+    do {
+      int first = 0;
+      int last = TYP.ENUMPTR->SIZE - 1;
+      if (first <= last) {
+        POS = first;
+        while (1) {
+          {
+            if (POS != 0) RET = cat_sc(RET, ',');
+            RET = cat_ss(RET, TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
+          }
+          if (POS == last) break;
+          ++POS;
+        }
+      }
+    } while(0);
+    RESULT = cat_sc(RET, ')');
+  }
+  else if (TYP.CLS == TTCRANGE) {
+    RESULT = cat_ss(cat_ss(_ANTIORDINAL(TYP.RANGEDEF.FIRST, TYP.RANGEDEF.BASETYPEPTR), str_make(2, "..")), _ANTIORDINAL(TYP.RANGEDEF.LAST, TYP.RANGEDEF.BASETYPEPTR));
+  }
+  else if (TYP.CLS == TTCSET) {
+    if (TYP.ELEMENTTYPEPTR == (void*)0) RESULT = str_make(9, "SET OF []");
+    else RESULT = cat_ss(str_make(7, "SET OF "), DEEPTYPENAME(TYP.ELEMENTTYPEPTR, 0));
+  }
+  else if (TYP.CLS == TTCRECORD) {
+    RET = str_make(7, "RECORD ");
+    do {
+      int first = 1;
+      int last = TYP.RECPTR->SIZE;
+      if (first <= last) {
+        POS = first;
+        while (1) {
+          {
+            if (POS != 1) RET = cat_sc(RET, ',');
+            RET = cat_ss(RET, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
+            RET = cat_ss(cat_sc(RET, ':'), TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
+          }
+          if (POS == last) break;
+          ++POS;
+        }
+      }
+    } while(0);
+    RESULT = cat_ss(RET, str_make(4, " END"));
+  }
+  else if (TYP.CLS == TTCARRAY) {
+    RET = cat_ss(cat_ss(cat_ss(str_make(7, "ARRAY ["), DEEPTYPENAME(TYP.ARRAYDEF.INDEXTYPEPTR, 0)), str_make(5, "] OF ")), DEEPTYPENAME(TYP.ARRAYDEF.VALUETYPEPTR, 0));
+    RESULT = RET;
+  }
+  else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
+  else {
+    STR_e(TYP.CLS, enumvalues5, &RET);
+    COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
+  }
+  return RESULT;
+}
+
+PString TYPENAME(TPSTYPE *TYPEPTR) {
+  PString RESULT;
+  if (TYPEPTR == (void*)0) RESULT = str_make(6, "(none)");
+  else RESULT = DEEPTYPENAME(TYPEPTR, 0);
   return RESULT;
 }
 
@@ -1387,42 +1479,6 @@ TPSTYPE *ADDTYPE(TPSTYPE TYP) {
       }
     }
   } while(0);
-  return RESULT;
-}
-
-TPSENUMDEF *ADDENUM(TPSENUMDEF ENUM) {
-  TPSENUMDEF *RESULT;
-  TPSENUMDEF *ENUMPTR;
-  ENUMPTR = _ADDDEF(TDCENUM)->ENUMPTR;
-  *ENUMPTR = ENUM;
-  ENUMPTR->ID = DEFCOUNTER(TCTENUM);
-  RESULT = ENUMPTR;
-  return RESULT;
-}
-
-TPSRANGEDEF *ADDRANGE(TPSRANGEDEF RANGE) {
-  TPSRANGEDEF *RESULT;
-  RESULT = _ADDDEF(TDCRANGE)->RANGEPTR;
-  *RESULT = RANGE;
-  return RESULT;
-}
-
-TPSRECORDDEF *ADDRECORD(TPSRECORDDEF REC) {
-  TPSRECORDDEF *RESULT;
-  TPSRECORDDEF *RECPTR;
-  RECPTR = _ADDDEF(TDCRECORD)->RECPTR;
-  *RECPTR = REC;
-  RECPTR->ID = DEFCOUNTER(TCTRECORD);
-  RESULT = RECPTR;
-  return RESULT;
-}
-
-TPSARRAYDEF *ADDARRAY(TPSARRAYDEF ARR) {
-  TPSARRAYDEF *RESULT;
-  TPSARRAYDEF *ARRAYPTR;
-  ARRAYPTR = _ADDDEF(TDCARRAY)->ARRAYPTR;
-  *ARRAYPTR = ARR;
-  RESULT = ARRAYPTR;
   return RESULT;
 }
 
@@ -1471,7 +1527,7 @@ int ISSAMEFUNCTIONDEFINITION(TPSFUNCTION *DECLPTR, TPSFUNCTION FUN) {
     if (first <= last) {
       POS = first;
       while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE;
+        SAME = SAME && ISSAMETYPE(DECL.ARGS[subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS[subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE;
         if (POS == last) break;
         ++POS;
       }
@@ -1531,7 +1587,7 @@ int FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
       RET = 0;
       POS = with1->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_ss(NAME, with1->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
+        if (cmp_ss(NAME, with1->FIELDS[subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
         POS = POS - 1;
       }
     }
@@ -1546,7 +1602,7 @@ TPSTYPE *FINDFIELDTYPE(TPSTYPE *TYPEPTR, PString NAME, int REQUIRED) {
   int POS;
   POS = FINDFIELD(TYPEPTR, NAME, REQUIRED);
   if (POS == 0) RESULT = (void*)0;
-  else RESULT = TYPEPTR->RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR;
+  else RESULT = TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR;
   return RESULT;
 }
 
@@ -1626,6 +1682,14 @@ TPSVARIABLE MAKEVARIABLE(PString NAME, TPSTYPE *TYPEPTR) {
   RESULT.ISCONSTANT = 0;
   RESULT.WASINITIALIZED = 0;
   RESULT.WASUSED = 0;
+  return RESULT;
+}
+
+TPSVARIABLE *ADDTMPVARIABLE(PString PREFIX, TPSTYPE *TYPEPTR) {
+  TPSVARIABLE *RESULT;
+  PString VARNUM;
+  STR_i(DEFCOUNTER(TCTTMPVAR), &VARNUM);
+  RESULT = ADDVARIABLE(MAKEVARIABLE(cat_ss(PREFIX, VARNUM), TYPEPTR));
   return RESULT;
 }
 
@@ -1731,7 +1795,6 @@ TPSFUNCTION MAKEFUNCTION3(PString NAME, TPSTYPE *RETTYPEPTR, TPSVARIABLE ARG1, T
 
 void CODEGENRESET();
 void CODEGENSETOUTPUT(PString FILENAME);
-void CODEGENSETCHECKBOUNDS(int CHECKBOUNDS);
 void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT);
 void OUTTYPEDEFINITIONSFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT);
 void OUTCONSTANTARRAYBEGIN();
@@ -1809,9 +1872,23 @@ void _DISPOSEPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL) {
   }
 }
 
+void _DISPOSEIMMEDIATE(TEXIMMEDIATE *IMM) {
+  TEXSETBOUNDSOBJ *BOUNDS;
+  if (IMM->CLS == XICSET) {
+    while (IMM->SETBOUNDS != (void*)0) {
+      BOUNDS = IMM->SETBOUNDS->NEXT;
+      free(IMM->SETBOUNDS);
+      IMM->SETBOUNDS = BOUNDS;
+    }
+  }
+}
+
 void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR) {
   int POS;
   switch ((*EXPR)->CLS) {
+    case XCIMMEDIATE:
+      _DISPOSEIMMEDIATE(&(*EXPR)->IMMEDIATE);
+      break;
     case XCTOSTRING:
       DISPOSEEXPR(&(*EXPR)->TOSTRPARENT);
       break;
@@ -1855,7 +1932,7 @@ void DISPOSEEXPR(TEXPRESSIONOBJ **EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
+              DISPOSEEXPR(&(*EXPR)->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -1930,6 +2007,27 @@ void _COPYPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL, TEXPSEUDOFNCALL *COPY) {
   }
 }
 
+TEXIMMEDIATE _COPYIMMEDIATE(const TEXIMMEDIATE *IMM) {
+  TEXIMMEDIATE RESULT;
+  TEXSETBOUNDSOBJ *SRC;
+  TEXSETBOUNDSOBJ *DST;
+  RESULT = *IMM;
+  if (IMM->CLS == XICSET) {
+    SRC = IMM->SETBOUNDS;
+    RESULT.SETBOUNDS = malloc(sizeof(TEXSETBOUNDSOBJ));
+    DST = RESULT.SETBOUNDS;
+    while (SRC != (void*)0) {
+      *DST = *SRC;
+      SRC = SRC->NEXT;
+      if (SRC != (void*)0) {
+        DST->NEXT = malloc(sizeof(TEXSETBOUNDSOBJ));
+        DST = DST->NEXT;
+      }
+    }
+  }
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *RESULT;
   TEXPRESSIONOBJ *COPY;
@@ -1940,7 +2038,7 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
   COPY->ISFUNCTIONRESULT = EXPR->ISFUNCTIONRESULT;
   switch (EXPR->CLS) {
     case XCIMMEDIATE:
-      COPY->IMMEDIATE = EXPR->IMMEDIATE;
+      COPY->IMMEDIATE = _COPYIMMEDIATE(&EXPR->IMMEDIATE);
       break;
     case XCTOSTRING:
       COPY->TOSTRPARENT = COPYEXPR(EXPR->TOSTRPARENT);
@@ -1995,7 +2093,7 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              COPY->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
+              COPY->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = COPYEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -2023,67 +2121,27 @@ TEXPRESSIONOBJ *COPYEXPR(TEXPRESSIONOBJ *EXPR) {
       }
       break;
     default:
-      COMPILEERROR(cat_ss(str_make(40, "Internal error: cannot copy expression: "), DESCRIBEEXPR(EXPR, 2)));
+      INTERNALERROR(cat_ss(str_make(24, "Cannot copy expression: "), DESCRIBEEXPR(EXPR, 2)));
       break;
   }
   RESULT = COPY;
   return RESULT;
 }
 
-PString _UNPARSECHAR(unsigned char CHR) {
+PString _DESCRIBESET(TEXSETBOUNDSOBJ *BOUNDS, TPSTYPE *SETOFTYPEPTR) {
   PString RESULT;
-  PString CHNUM;
-  if (CHR == '\'') RESULT = str_make(4, "''''");
-  else if (CHR < ' ') {
-    STR_i((int)CHR, &CHNUM);
-    RESULT = cat_cs('#', CHNUM);
+  RESULT = str_of('[');
+  while (BOUNDS != (void*)0) {
+    RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXGETANTIORDINAL(BOUNDS->FIRST, SETOFTYPEPTR), 100));
+    if (BOUNDS->FIRST != BOUNDS->LAST) RESULT = cat_ss(cat_ss(RESULT, str_make(2, "..")), DESCRIBEEXPR(EXGETANTIORDINAL(BOUNDS->LAST, SETOFTYPEPTR), 100));
+    BOUNDS = BOUNDS->NEXT;
+    if (BOUNDS != (void*)0) RESULT = cat_ss(RESULT, str_make(2, ", "));
   }
-  else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
+  RESULT = cat_sc(RESULT, ']');
   return RESULT;
 }
 
-PString _UNPARSESTRING(PString ST) {
-  PString RESULT;
-  int POS;
-  PString CHNUM;
-  int QUOTED;
-  QUOTED = 0;
-  RESULT = str_make(0, "");
-  do {
-    int first = 1;
-    int last = LENGTH(&ST);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (ST.chr[POS] < ' ') {
-            if (QUOTED) {
-              QUOTED = 0;
-              RESULT = cat_sc(RESULT, '\'');
-            }
-            STR_i((int)ST.chr[POS], &CHNUM);
-            RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
-          }
-          else {
-            if (!QUOTED) {
-              QUOTED = 1;
-              RESULT = cat_sc(RESULT, '\'');
-            }
-            if (ST.chr[POS] == '\'') RESULT = cat_ss(RESULT, str_make(2, "''"));
-            else RESULT = cat_sc(RESULT, ST.chr[POS]);
-          }
-        }
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
-  if (QUOTED) RESULT = cat_sc(RESULT, '\'');
-  if (cmp_ss(RESULT, str_make(0, "")) == 0) RESULT = str_make(2, "''");
-  return RESULT;
-}
-
-PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
+PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
   {
     TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
@@ -2101,16 +2159,19 @@ PString _DESCRIBEIMMEDIATEPR(TEXPRESSIONOBJ *EXPR) {
         STR_r(with1->REALVAL, &RESULT);
         break;
       case XICCHAR:
-        RESULT = _UNPARSECHAR(with1->CHARVAL);
+        RESULT = UNPARSECHAR(with1->CHARVAL);
         break;
       case XICSTRING:
-        RESULT = _UNPARSESTRING(with1->STRINGVAL);
+        RESULT = UNPARSESTRING(with1->STRINGVAL);
         break;
       case XICENUM:
         RESULT = with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)];
         break;
+      case XICSET:
+        RESULT = _DESCRIBESET(with1->SETBOUNDS, with1->SETOFTYPEPTR);
+        break;
       default:
-        COMPILEERROR(str_make(47, "Internal error: cannot describe immediate value"));
+        INTERNALERROR(str_make(31, "Cannot describe immediate value"));
         break;
     }
   }
@@ -2128,6 +2189,9 @@ PString _DESCRIBEPSEUDOFNEXPR(TEXPRESSIONOBJ *EXPR) {
       break;
     case TPFNEW:
       RESULT = str_make(3, "NEW");
+      break;
+    case TPFORD:
+      RESULT = str_make(3, "ORD");
       break;
     case TPFPRED:
       RESULT = str_make(4, "PRED");
@@ -2154,7 +2218,7 @@ PString _DESCRIBEPSEUDOFNEXPR(TEXPRESSIONOBJ *EXPR) {
       RESULT = str_make(7, "WRITELN");
       break;
     default:
-      COMPILEERROR(str_make(41, "Internal error: cannot describe pseudofun"));
+      INTERNALERROR(str_make(25, "Cannot describe pseudofun"));
       break;
   }
   return RESULT;
@@ -2170,6 +2234,9 @@ PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
         break;
       case TPFNEW:
         RESULT = cat_sc(cat_ss(str_make(4, "NEW("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
+        break;
+      case TPFORD:
+        RESULT = cat_sc(cat_ss(str_make(4, "ORD("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
         break;
       case TPFPRED:
         RESULT = cat_sc(cat_ss(str_make(5, "PRED("), DESCRIBEEXPR(with1->ARG1, LEVELS - 1)), ')');
@@ -2196,7 +2263,7 @@ PString _DESCRIBEPSEUDOCALLEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
         RESULT = str_make(12, "WRITELN(...)");
         break;
       default:
-        COMPILEERROR(str_make(41, "Internal error: cannot describe pseudofun"));
+        INTERNALERROR(str_make(25, "Cannot describe pseudofun"));
         break;
     }
   }
@@ -2280,6 +2347,15 @@ int _EXPRPRECEDENCE(TEXPRESSIONOBJ *EXPR) {
         case TKOR:
           RESULT = 4;
           break;
+        case TKXOR:
+          RESULT = 4;
+          break;
+        case TKSHL:
+          RESULT = 3;
+          break;
+        case TKSHR:
+          RESULT = 3;
+          break;
         case TKEQUALS:
           RESULT = 5;
           break;
@@ -2319,7 +2395,7 @@ PString _DESCRIBEUNARYOPEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = str_make(4, "not ");
       break;
     default:
-      COMPILEERROR(str_make(47, "Internal error: cannot describe unary operation"));
+      INTERNALERROR(str_make(31, "Cannot describe unary operation"));
       break;
   }
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->UNARY.PARENT);
@@ -2359,6 +2435,15 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
     case TKOR:
       RESULT = cat_ss(RESULT, str_make(4, " or "));
       break;
+    case TKXOR:
+      RESULT = cat_ss(RESULT, str_make(5, " xor "));
+      break;
+    case TKSHL:
+      RESULT = cat_ss(RESULT, str_make(5, " shl "));
+      break;
+    case TKSHR:
+      RESULT = cat_ss(RESULT, str_make(5, " shr "));
+      break;
     case TKEQUALS:
       RESULT = cat_ss(RESULT, str_make(3, " = "));
       break;
@@ -2378,7 +2463,7 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = cat_ss(RESULT, str_make(4, " >= "));
       break;
     default:
-      COMPILEERROR(str_make(48, "Internal error: cannot describe binary operation"));
+      INTERNALERROR(str_make(32, "Cannot describe binary operation"));
       break;
   }
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->BINARY.RIGHT);
@@ -2406,7 +2491,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
   if (LEVELS < 1) RESULT = str_make(5, "(...)");
   else switch (EXPR->CLS) {
     case XCIMMEDIATE:
-      RESULT = _DESCRIBEIMMEDIATEPR(EXPR);
+      RESULT = _DESCRIBEIMMEDIATE(EXPR);
       break;
     case XCTOSTRING:
       RESULT = DESCRIBEEXPR(EXPR->TOSTRPARENT, LEVELS);
@@ -2424,7 +2509,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = EXPR->VARPTR->NAME;
       break;
     case XCFIELD:
-      RESULT = cat_ss(cat_sc(DESCRIBEEXPR(EXPR->RECEXPR, LEVELS), '.'), EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[(int)subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      RESULT = cat_ss(cat_sc(DESCRIBEEXPR(EXPR->RECEXPR, LEVELS), '.'), EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
       break;
     case XCARRAY:
       RESULT = cat_sc(cat_ss(cat_sc(DESCRIBEEXPR(EXPR->ARRAYEXPR, LEVELS), '['), DESCRIBEEXPR(EXPR->ARRAYINDEX, LEVELS - 1)), ']');
@@ -2450,7 +2535,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
             while (1) {
               {
                 if (POS != 1) RESULT = cat_ss(RESULT, str_make(2, ", "));
-                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], LEVELS - 1));
+                RESULT = cat_ss(RESULT, DESCRIBEEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], LEVELS - 1));
               }
               if (POS == last) break;
               ++POS;
@@ -2473,7 +2558,7 @@ PString DESCRIBEEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = _DESCRIBEBINARYOPEXPR(EXPR, LEVELS);
       break;
     default:
-      COMPILEERROR(str_make(42, "Internal error: cannot describe expression"));
+      INTERNALERROR(str_make(26, "Cannot describe expression"));
       break;
   }
   return RESULT;
@@ -2545,6 +2630,72 @@ TEXPRESSIONOBJ *EXENUMCONSTANT(int ORDINAL, TPSTYPE *TYPEPTR) {
   RESULT->IMMEDIATE.ENUMORDINAL = ORDINAL;
   RESULT->IMMEDIATE.ENUMPTR = TYPEPTR->ENUMPTR;
   RESULT->TYPEPTR = TYPEPTR;
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *EXSETCONSTANT(TEXSETBOUNDSOBJ *BOUNDS, TPSTYPE *TYPEPTR) {
+  TEXPRESSIONOBJ *RESULT;
+  TPSTYPE *ELEMENTTYPE;
+  ELEMENTTYPE = TYPEPTR->ELEMENTTYPEPTR;
+  if (ELEMENTTYPE != (void*)0 && !ISORDINALTYPE(ELEMENTTYPE)) COMPILEERROR(cat_ss(str_make(21, "Not an ordinal type: "), TYPENAME(ELEMENTTYPE)));
+  RESULT = _EXIMMEDIATE(XICSET);
+  RESULT->IMMEDIATE.SETBOUNDS = BOUNDS;
+  RESULT->IMMEDIATE.SETOFTYPEPTR = ELEMENTTYPE;
+  RESULT->TYPEPTR = TYPEPTR;
+  return RESULT;
+}
+
+TEXSETBOUNDSOBJ *EXSETADDBOUNDS(TEXSETBOUNDSOBJ *BOUNDS, int FIRST, int LAST) {
+  TEXSETBOUNDSOBJ *RESULT;
+  TEXSETBOUNDSOBJ *PREV;
+  TEXSETBOUNDSOBJ *THIS;
+  TEXSETBOUNDSOBJ *NEWBOUNDS;
+  int DONE;
+  if (FIRST > LAST) COMPILEERROR(str_make(41, "Set bounds must appear in ascending order"));
+  RESULT = BOUNDS;
+  DONE = 0;
+  PREV = (void*)0;
+  THIS = BOUNDS;
+  do {
+    if (THIS == (void*)0 || LAST + 1 < THIS->FIRST) {
+      NEWBOUNDS = malloc(sizeof(TEXSETBOUNDSOBJ));
+      NEWBOUNDS->FIRST = FIRST;
+      NEWBOUNDS->LAST = LAST;
+      NEWBOUNDS->NEXT = THIS;
+      if (PREV == (void*)0) RESULT = NEWBOUNDS;
+      else PREV->NEXT = NEWBOUNDS;
+      DONE = 1;
+    }
+    else if (FIRST < THIS->FIRST && LAST <= THIS->LAST) {
+      THIS->FIRST = FIRST;
+      DONE = 1;
+    }
+    else if (FIRST >= THIS->FIRST && LAST <= THIS->LAST) {
+      DONE = 1;
+    }
+    else if (FIRST <= THIS->FIRST && LAST > THIS->LAST) {
+      NEWBOUNDS = THIS->NEXT;
+      free(THIS);
+      THIS = NEWBOUNDS;
+      if (PREV == (void*)0) RESULT = NEWBOUNDS;
+      else PREV->NEXT = NEWBOUNDS;
+      DONE = 0;
+    }
+    else if (FIRST > THIS->FIRST && FIRST <= THIS->LAST + 1 && LAST > THIS->LAST) {
+      FIRST = THIS->FIRST;
+      NEWBOUNDS = THIS->NEXT;
+      free(THIS);
+      THIS = NEWBOUNDS;
+      if (PREV == (void*)0) RESULT = NEWBOUNDS;
+      else PREV->NEXT = NEWBOUNDS;
+      DONE = 0;
+    }
+    else {
+      PREV = THIS;
+      THIS = THIS->NEXT;
+      DONE = 0;
+    }
+  } while (!DONE);
   return RESULT;
 }
 
@@ -2627,7 +2778,7 @@ TEXPRESSIONOBJ *EXOUTRANGE(TEXPRESSIONOBJ *EXPR) {
     DISPOSEEXPR(&EXPR);
     EXPR = TMPEXPR;
   }
-  while (ISRANGETYPE(EXPR->TYPEPTR)) EXPR->TYPEPTR = EXPR->TYPEPTR->RANGEPTR->BASETYPEPTR;
+  EXPR->TYPEPTR = GETFUNDAMENTALTYPE(EXPR->TYPEPTR);
   RESULT = EXPR;
   return RESULT;
 }
@@ -2648,7 +2799,7 @@ TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, int FIELDNUM) {
   RESULT = _NEWEXPR(XCFIELD);
   RESULT->RECEXPR = PARENT;
   RESULT->RECFIELDNUM = FIELDNUM;
-  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[(int)subrange(FIELDNUM, 1, 32) - 1].TYPEPTR;
+  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[subrange(FIELDNUM, 1, 32) - 1].TYPEPTR;
   RESULT->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   RESULT->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
   return RESULT;
@@ -2659,8 +2810,8 @@ TEXPRESSIONOBJ *EXARRAYACCESS(TEXPRESSIONOBJ *PARENT, TEXPRESSIONOBJ *SUBSCRIPT)
   if (!ISARRAYTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(51, "Cannot access subscript of non-array value of type "), TYPENAME(PARENT->TYPEPTR)), str_make(2, ": ")), DESCRIBEEXPR(PARENT, 10)));
   RESULT = _NEWEXPR(XCARRAY);
   RESULT->ARRAYEXPR = PARENT;
-  RESULT->ARRAYINDEX = EXCOERCE(SUBSCRIPT, PARENT->TYPEPTR->ARRAYPTR->INDEXTYPEPTR);
-  RESULT->TYPEPTR = PARENT->TYPEPTR->ARRAYPTR->VALUETYPEPTR;
+  RESULT->ARRAYINDEX = EXCOERCE(SUBSCRIPT, PARENT->TYPEPTR->ARRAYDEF.INDEXTYPEPTR);
+  RESULT->TYPEPTR = PARENT->TYPEPTR->ARRAYDEF.VALUETYPEPTR;
   RESULT->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   RESULT->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
   return RESULT;
@@ -2702,7 +2853,6 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
   TEXPRESSIONOBJ *RESULT;
   int POS;
   TEXPRESSIONOBJ *FNCALL;
-  PString TMPVARNUM;
   if (FNEXPR->CLS != XCFNREF) COMPILEERROR(str_make(24, "Cannot call non-function"));
   if (ARGS->SIZE != FNEXPR->FNPTR->ARGCOUNT) COMPILEERROR(cat_ss(str_make(37, "Wrong number of arguments in call to "), FNEXPR->FNPTR->NAME));
   FNEXPR->FNPTR->WASUSED = 1;
@@ -2720,17 +2870,16 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
       POS = first;
       while (1) {
         {
-          FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[(int)subrange(POS, 1, 8) - 1], FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR);
-          if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE) {
-            if (!FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) {
-              if (FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISCONSTANT) {
-                STR_i(DEFCOUNTER(TCTTMPVAR), &TMPVARNUM);
-                RESULT = EXSETTMPVAR(EXVARIABLE(ADDVARIABLE(MAKEVARIABLE(cat_ss(str_make(3, "tmp"), TMPVARNUM), FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].TYPEPTR))), FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], RESULT);
-                FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1] = COPYEXPR(RESULT->TMPVAR);
+          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 8) - 1], FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].TYPEPTR);
+          if (FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
+            if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]->ISASSIGNABLE) {
+              if (FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
+                RESULT = EXSETTMPVAR(EXVARIABLE(ADDTMPVARIABLE(str_make(3, "tmp"), FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].TYPEPTR)), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], RESULT);
+                FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = COPYEXPR(RESULT->TMPVAR);
               }
-              else COMPILEERROR(cat_ss(str_make(47, "Pass-by-reference argument must be assignable: "), DESCRIBEEXPR(FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1], 10)));
+              else COMPILEERROR(cat_ss(str_make(47, "Pass-by-reference argument must be assignable: "), DESCRIBEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], 10)));
             }
-            else if (!FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISCONSTANT) EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
+            else if (!FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISCONSTANT) EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
           }
         }
         if (POS == last) break;
@@ -2751,7 +2900,7 @@ TEXPRESSIONOBJ *EXPSEUDOFN(TPSPSEUDOFN SPECIALFN) {
 TEXPRESSIONOBJ *EXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *RESULT;
   TPSPSEUDOFN FN;
-  if (EXPR->CLS != XCPSEUDOFNREF) COMPILEERROR(cat_ss(str_make(47, "Internal error: Expected a pseudofunction, got "), DESCRIBEEXPR(EXPR, 10)));
+  if (EXPR->CLS != XCPSEUDOFNREF) INTERNALERROR(cat_ss(str_make(31, "Expected a pseudofunction, got "), DESCRIBEEXPR(EXPR, 10)));
   FN = EXPR->PSEUDOFN;
   EXPR->CLS = XCPSEUDOFNCALL;
   EXPR->PSEUDOFNCALL.PSEUDOFN = FN;
@@ -2761,6 +2910,186 @@ TEXPRESSIONOBJ *EXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
   EXPR->PSEUDOFNCALL.READARGS = (void*)0;
   EXPR->PSEUDOFNCALL.WRITEARGS = (void*)0;
   RESULT = EXPR;
+  return RESULT;
+}
+
+void _EXSETCOERCETOCOMMON(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
+  TPSTYPE *LEFTTYPE;
+  TPSTYPE *RIGHTTYPE;
+  LEFTTYPE = LEFT->TYPEPTR;
+  RIGHTTYPE = RIGHT->TYPEPTR;
+  if (LEFTTYPE->ELEMENTTYPEPTR == (void*)0) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
+  else if (RIGHTTYPE->ELEMENTTYPEPTR == (void*)0) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
+  else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(30, "Type mismatch: cannot combine "), TYPENAME(LEFT->TYPEPTR)), str_make(6, " with ")), TYPENAME(RIGHT->TYPEPTR)));
+}
+
+TEXPRESSIONOBJ *_EXSETUNION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXSETBOUNDSOBJ *NEWBDS;
+  TEXSETBOUNDSOBJ *OLDBDS;
+  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  NEWBDS = (void*)0;
+  OLDBDS = LEFT->IMMEDIATE.SETBOUNDS;
+  while (OLDBDS != (void*)0) {
+    NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
+    OLDBDS = OLDBDS->NEXT;
+  }
+  OLDBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+  while (OLDBDS != (void*)0) {
+    NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
+    OLDBDS = OLDBDS->NEXT;
+  }
+  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+  DISPOSEEXPR(&LEFT);
+  DISPOSEEXPR(&RIGHT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *_EXSETDIFFERENCE(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXSETBOUNDSOBJ *LTBDS;
+  TEXSETBOUNDSOBJ *RTBDS;
+  TEXSETBOUNDSOBJ *NEWBDS;
+  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+  NEWBDS = (void*)0;
+  while (LTBDS != (void*)0 && RTBDS != (void*)0) {
+    if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
+    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) LTBDS->FIRST = RTBDS->LAST + 1;
+    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) LTBDS = LTBDS->NEXT;
+    else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
+      LTBDS->FIRST = RTBDS->LAST + 1;
+    }
+    else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
+      LTBDS = LTBDS->NEXT;
+    }
+    else {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+      LTBDS = LTBDS->NEXT;
+    }
+  }
+  while (LTBDS != (void*)0) {
+    NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+    LTBDS = LTBDS->NEXT;
+  }
+  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+  DISPOSEEXPR(&LEFT);
+  DISPOSEEXPR(&RIGHT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *_EXSETINTERSECTION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXSETBOUNDSOBJ *LTBDS;
+  TEXSETBOUNDSOBJ *RTBDS;
+  TEXSETBOUNDSOBJ *NEWBDS;
+  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+  NEWBDS = (void*)0;
+  while (LTBDS != (void*)0 && RTBDS != (void*)0) {
+    if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
+    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->LAST);
+      RTBDS = RTBDS->NEXT;
+    }
+    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+      LTBDS = LTBDS->NEXT;
+    }
+    else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, RTBDS->LAST);
+      RTBDS = RTBDS->NEXT;
+    }
+    else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, LTBDS->LAST);
+      LTBDS = LTBDS->NEXT;
+    }
+    else LTBDS = LTBDS->NEXT;
+  }
+  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+  DISPOSEEXPR(&LEFT);
+  DISPOSEEXPR(&RIGHT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *_EXSETEQUALS(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, int NEGATE) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXSETBOUNDSOBJ *LTBDS;
+  TEXSETBOUNDSOBJ *RTBDS;
+  int EQUALS;
+  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+  EQUALS = 1;
+  while (LTBDS != (void*)0 && RTBDS != (void*)0 && EQUALS) {
+    EQUALS = RTBDS->FIRST == LTBDS->FIRST && RTBDS->LAST == LTBDS->LAST;
+    LTBDS = LTBDS->NEXT;
+    RTBDS = RTBDS->NEXT;
+  }
+  EQUALS = EQUALS && LTBDS == (void*)0 && RTBDS == (void*)0;
+  if (NEGATE) EQUALS = !EQUALS;
+  RESULT = EXBOOLEANCONSTANT(EQUALS);
+  DISPOSEEXPR(&LEFT);
+  DISPOSEEXPR(&RIGHT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *_EXSETSUBSET(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
+  TEXPRESSIONOBJ *RESULT;
+  TEXSETBOUNDSOBJ *LTBDS;
+  TEXSETBOUNDSOBJ *RTBDS;
+  int SUBSET;
+  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+  SUBSET = 1;
+  while (LTBDS != (void*)0 && RTBDS != (void*)0 && SUBSET) {
+    if (LTBDS->LAST < RTBDS->FIRST) LTBDS = LTBDS->NEXT;
+    else if (LTBDS->FIRST <= RTBDS->FIRST && LTBDS->LAST >= RTBDS->LAST) RTBDS = RTBDS->NEXT;
+    else SUBSET = 0;
+  }
+  SUBSET = SUBSET && RTBDS == (void*)0;
+  RESULT = EXBOOLEANCONSTANT(SUBSET);
+  DISPOSEEXPR(&LEFT);
+  DISPOSEEXPR(&RIGHT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ *_EXSETIN(TEXPRESSIONOBJ *NEEDLE, TEXPRESSIONOBJ *HAYSTACK) {
+  TEXPRESSIONOBJ *RESULT;
+  TPSTYPE *ELEMTYPE;
+  TEXSETBOUNDSOBJ *BOUNDS;
+  TEXPRESSIONOBJ *COND;
+  TPSVARIABLE *TMPVAR;
+  TEXPRESSIONOBJ *WANTED;
+  ELEMTYPE = HAYSTACK->TYPEPTR->ELEMENTTYPEPTR;
+  if (ELEMTYPE == (void*)0) ELEMTYPE = NEEDLE->TYPEPTR;
+  else NEEDLE = EXCOERCE(NEEDLE, ELEMTYPE);
+  if (NEEDLE->CLS != XCVARIABLE) {
+    TMPVAR = ADDTMPVARIABLE(str_make(4, "elem"), ELEMTYPE);
+    WANTED = EXVARIABLE(TMPVAR);
+  }
+  else {
+    TMPVAR = (void*)0;
+    WANTED = NEEDLE;
+  }
+  RESULT = EXBOOLEANCONSTANT(0);
+  BOUNDS = HAYSTACK->IMMEDIATE.SETBOUNDS;
+  while (BOUNDS != (void*)0) {
+    if (BOUNDS->FIRST == BOUNDS->LAST) COND = EXBINARYOP(COPYEXPR(WANTED), EXGETANTIORDINAL(BOUNDS->FIRST, ELEMTYPE), TKEQUALS);
+    else COND = EXBINARYOP(EXBINARYOP(EXGETANTIORDINAL(BOUNDS->FIRST, ELEMTYPE), COPYEXPR(WANTED), TKLESSOREQUALS), EXBINARYOP(COPYEXPR(WANTED), EXGETANTIORDINAL(BOUNDS->LAST, ELEMTYPE), TKLESSOREQUALS), TKAND);
+    RESULT = EXBINARYOP(RESULT, COND, TKOR);
+    BOUNDS = BOUNDS->NEXT;
+  }
+  if (TMPVAR != (void*)0) {
+    RESULT = EXSETTMPVAR(WANTED, NEEDLE, RESULT);
+  }
+  else DISPOSEEXPR(&NEEDLE);
+  DISPOSEEXPR(&HAYSTACK);
   return RESULT;
 }
 
@@ -2789,7 +3118,7 @@ TEXPRESSIONOBJ *_EXUNOPIMM(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP) {
   else if (OP == TKPLUS && EXISIMMEDIATEOFCLASS(PARENT, XICREAL)) ;
   else if (OP == TKNOT && EXISIMMEDIATEOFCLASS(PARENT, XICBOOLEAN)) PARENT->IMMEDIATE.BOOLEANVAL = !PARENT->IMMEDIATE.BOOLEANVAL;
   else if (OP == TKNOT && EXISIMMEDIATEOFCLASS(PARENT, XICINTEGER)) PARENT->IMMEDIATE.INTEGERVAL = ~PARENT->IMMEDIATE.INTEGERVAL;
-  else COMPILEERROR(str_make(49, "Internal error: invalid immediate unary operation"));
+  else INTERNALERROR(str_make(33, "Invalid immediate unary operation"));
   RESULT = PARENT;
   return RESULT;
 }
@@ -2810,12 +3139,14 @@ TEXPRESSIONOBJ *_EXBINOPINTIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
 TEXPRESSIONOBJ *_EXBINOPNUMIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPSTRIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPENUMIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPSETIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPNUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPSTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPENUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 TEXPRESSIONOBJ *_EXBINOPPTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
+TEXPRESSIONOBJ *_EXBINOPSETCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP);
 int _EXBINOPSHORTCUT(TEXPRESSIONOBJ **LEFT, TEXPRESSIONOBJ **RIGHT, TLXTOKENID OP);
 
 TEXPRESSIONOBJ *EXBINARYOP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
@@ -2848,6 +3179,10 @@ TEXPRESSIONOBJ *EXBINARYOP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKEN
     else RESULT = _EXBINOPENUMCMP(LEFT, RIGHT, OP);
   }
   else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXBINOPPTRCMP(LEFT, RIGHT, OP);
+  else if (ISSETTYPE(RIGHT->TYPEPTR)) {
+    if (EXISIMMEDIATE(RIGHT) && (EXISIMMEDIATE(LEFT) || !ISSETTYPE(LEFT->TYPEPTR))) RESULT = _EXBINOPSETIMM(LEFT, RIGHT, OP);
+    else RESULT = _EXBINOPSETCMP(LEFT, RIGHT, OP);
+  }
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(27, "Type mismatch for operator "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(LEFT->TYPEPTR)), str_make(5, " and ")), TYPENAME(RIGHT->TYPEPTR)));
   return RESULT;
 }
@@ -3124,9 +3459,42 @@ TEXPRESSIONOBJ *_EXBINOPENUMIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLX
   return RESULT;
 }
 
+TEXPRESSIONOBJ *_EXBINOPSETIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) switch (OP) {
+    case TKPLUS:
+      RESULT = _EXSETUNION(LEFT, RIGHT);
+      break;
+    case TKMINUS:
+      RESULT = _EXSETDIFFERENCE(LEFT, RIGHT);
+      break;
+    case TKASTERISK:
+      RESULT = _EXSETINTERSECTION(LEFT, RIGHT);
+      break;
+    case TKEQUALS:
+      RESULT = _EXSETEQUALS(LEFT, RIGHT, 0);
+      break;
+    case TKNOTEQUALS:
+      RESULT = _EXSETEQUALS(LEFT, RIGHT, 1);
+      break;
+    case TKMOREOREQUALS:
+      RESULT = _EXSETSUBSET(LEFT, RIGHT);
+      break;
+    case TKLESSOREQUALS:
+      RESULT = _EXSETSUBSET(RIGHT, LEFT);
+      break;
+    default:
+      COMPILEERROR(cat_ss(str_make(22, "Invalid set operator: "), LXTOKENNAME(OP)));
+      break;
+  }
+  else if (OP == TKIN) RESULT = _EXSETIN(LEFT, RIGHT);
+  else COMPILEERROR(cat_ss(str_make(22, "Invalid set operator: "), LXTOKENNAME(OP)));
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
   TEXPRESSIONOBJ *RESULT;
-  if (OP == TKAND || OP == TKOR || OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) {
+  if (OP == TKAND || OP == TKOR || OP == TKXOR || OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) {
     RESULT = _NEWEXPR(XCBINARYOP);
     RESULT->BINARY.LEFT = LEFT;
     RESULT->BINARY.RIGHT = RIGHT;
@@ -3139,104 +3507,6 @@ TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLX
   return RESULT;
 }
 
-int _EXISZERO(TEXPRESSIONOBJ *EXPR) {
-  int RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 0 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL == 0;
-  return RESULT;
-}
-
-int _EXISONE(TEXPRESSIONOBJ *EXPR) {
-  int RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 1 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL == 1;
-  return RESULT;
-}
-
-int _EXISTRUE(TEXPRESSIONOBJ *EXPR) {
-  int RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && EXPR->IMMEDIATE.BOOLEANVAL;
-  return RESULT;
-}
-
-int _EXISFALSE(TEXPRESSIONOBJ *EXPR) {
-  int RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && !EXPR->IMMEDIATE.BOOLEANVAL;
-  return RESULT;
-}
-
-int _EXBINOPSHORTCUT(TEXPRESSIONOBJ **LEFT, TEXPRESSIONOBJ **RIGHT, TLXTOKENID OP) {
-  int RESULT;
-  RESULT = 0;
-  if (OP == TKPLUS || OP == TKMINUS) {
-    if (_EXISZERO(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      *LEFT = *RIGHT;
-      RESULT = 1;
-    }
-    else if (_EXISZERO(*RIGHT)) {
-      DISPOSEEXPR(RIGHT);
-      RESULT = 1;
-    }
-  }
-  else if (OP == TKASTERISK) {
-    if (_EXISZERO(*LEFT) || _EXISZERO(*RIGHT)) {
-      DISPOSEEXPR(LEFT);
-      DISPOSEEXPR(RIGHT);
-      *LEFT = EXINTEGERCONSTANT(0);
-      RESULT = 1;
-    }
-    else if (_EXISONE(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      *LEFT = *RIGHT;
-      RESULT = 1;
-    }
-    else if (_EXISONE(*RIGHT)) {
-      DISPOSEEXPR(RIGHT);
-      RESULT = 1;
-    }
-  }
-  else if (OP == TKDIV || OP == TKSLASH) {
-    if (_EXISZERO(*LEFT) || _EXISONE(*RIGHT)) {
-      DISPOSEEXPR(RIGHT);
-      RESULT = 1;
-    }
-  }
-  else if (OP == TKAND) {
-    if (_EXISFALSE(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      DISPOSEEXPR(RIGHT);
-      *LEFT = EXBOOLEANCONSTANT(0);
-      RESULT = 1;
-    }
-    else if (_EXISTRUE(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      *LEFT = *RIGHT;
-      RESULT = 1;
-    }
-    else if (_EXISTRUE(*RIGHT)) {
-      DISPOSEEXPR(RIGHT);
-      RESULT = 1;
-    }
-  }
-  else if (OP == TKOR) {
-    if (_EXISTRUE(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      DISPOSEEXPR(RIGHT);
-      *LEFT = EXBOOLEANCONSTANT(1);
-      RESULT = 1;
-    }
-    else if (_EXISFALSE(*LEFT)) {
-      DISPOSEEXPR(LEFT);
-      *LEFT = *RIGHT;
-      RESULT = 1;
-    }
-    else if (_EXISFALSE(*RIGHT)) {
-      DISPOSEEXPR(RIGHT);
-      RESULT = 1;
-    }
-  }
-  return RESULT;
-}
-
 TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
   TEXPRESSIONOBJ *RESULT;
   RESULT = _NEWEXPR(XCBINARYOP);
@@ -3245,7 +3515,7 @@ TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   RESULT->BINARY.OP = OP;
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKDIV || OP == TKMOD || OP == TKAND || OP == TKOR) RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
+  if (OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKDIV || OP == TKMOD || OP == TKAND || OP == TKOR || OP == TKXOR || OP == TKSHL || OP == TKSHR) RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
   else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(26, "Invalid integer operator: "), LXTOKENNAME(OP)));
   return RESULT;
@@ -3305,6 +3575,106 @@ TEXPRESSIONOBJ *_EXBINOPPTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   return RESULT;
 }
 
+TEXPRESSIONOBJ *_EXBINOPSETCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ *RESULT;
+  RESULT = _NEWEXPR(XCBINARYOP);
+  if (OP == TKIN) {
+    LEFT = EXCOERCE(LEFT, RIGHT->TYPEPTR->ELEMENTTYPEPTR);
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  }
+  else {
+    _EXSETCOERCETOCOMMON(LEFT, RIGHT);
+    RESULT->TYPEPTR = LEFT->TYPEPTR;
+  }
+  RESULT->BINARY.LEFT = LEFT;
+  RESULT->BINARY.RIGHT = RIGHT;
+  RESULT->BINARY.OP = OP;
+  RESULT->ISASSIGNABLE = 0;
+  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
+  return RESULT;
+}
+
+int _EXISZERO(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
+  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 0 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL == 0;
+  return RESULT;
+}
+
+int _EXISONE(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
+  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 1 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL == 1;
+  return RESULT;
+}
+
+int _EXISTRUE(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
+  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && EXPR->IMMEDIATE.BOOLEANVAL;
+  return RESULT;
+}
+
+int _EXISFALSE(TEXPRESSIONOBJ *EXPR) {
+  int RESULT;
+  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && !EXPR->IMMEDIATE.BOOLEANVAL;
+  return RESULT;
+}
+
+int _EXBINOPSHORTCUT(TEXPRESSIONOBJ **LEFT, TEXPRESSIONOBJ **RIGHT, TLXTOKENID OP) {
+  int RESULT;
+  enum enum9 { USELEFT, USERIGHT, KEEP } USE;
+  const char* enumvalues9[] = { "USELEFT", "USERIGHT", "KEEP" };
+  USE = KEEP;
+  switch (OP) {
+    case TKPLUS:
+      if (_EXISZERO(*LEFT)) USE = USERIGHT;
+      else if (_EXISZERO(*RIGHT)) USE = USELEFT;
+      break;
+    case TKMINUS:
+      if (_EXISZERO(*RIGHT)) USE = USELEFT;
+      break;
+    case TKASTERISK:
+      if (_EXISONE(*LEFT)) USE = USERIGHT;
+      else if (_EXISONE(*RIGHT)) USE = USELEFT;
+      break;
+    case TKSLASH:
+      if (_EXISONE(*RIGHT)) USE = USELEFT;
+      break;
+    case TKDIV:
+      if (_EXISONE(*RIGHT)) USE = USELEFT;
+      break;
+    case TKAND:
+      if (_EXISFALSE(*LEFT) || _EXISTRUE(*RIGHT)) USE = USELEFT;
+      else if (_EXISTRUE(*LEFT)) USE = USERIGHT;
+      break;
+    case TKOR:
+      if (_EXISTRUE(*LEFT) || _EXISFALSE(*RIGHT)) USE = USELEFT;
+      else if (_EXISFALSE(*LEFT)) USE = USERIGHT;
+      break;
+    default:
+      break;
+  }
+  switch (USE) {
+    case USELEFT:
+      {
+        DISPOSEEXPR(RIGHT);
+        RESULT = 1;
+      }
+      break;
+    case USERIGHT:
+      {
+        DISPOSEEXPR(LEFT);
+        *LEFT = *RIGHT;
+        RESULT = 1;
+      }
+      break;
+    case KEEP:
+      RESULT = 0;
+      break;
+    default:
+      break;
+  }
+  return RESULT;
+}
+
 int EXGETORDINAL(TEXPRESSIONOBJ *EXPR) {
   int RESULT;
   if (!EXISIMMEDIATE(EXPR)) COMPILEERROR(cat_ss(str_make(29, "Expression is not immediate: "), DESCRIBEEXPR(EXPR, 5)));
@@ -3312,7 +3682,7 @@ int EXGETORDINAL(TEXPRESSIONOBJ *EXPR) {
     TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
     switch (with1->CLS) {
       case XICBOOLEAN:
-        RESULT = (int)with1->BOOLEANVAL;
+        RESULT = with1->BOOLEANVAL;
         break;
       case XICINTEGER:
         RESULT = with1->INTEGERVAL;
@@ -3331,12 +3701,36 @@ int EXGETORDINAL(TEXPRESSIONOBJ *EXPR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ *EXGETANTIORDINAL(int ORDINAL, TPSTYPE *TYPEPTR) {
+  TEXPRESSIONOBJ *RESULT;
+  TYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
+  switch (TYPEPTR->CLS) {
+    case TTCBOOLEAN:
+      if (ORDINAL == 0) RESULT = EXBOOLEANCONSTANT(0);
+      else RESULT = EXBOOLEANCONSTANT(1);
+      break;
+    case TTCINTEGER:
+      RESULT = EXINTEGERCONSTANT(ORDINAL);
+      break;
+    case TTCCHAR:
+      RESULT = EXCHARCONSTANT(CHR(ORDINAL));
+      break;
+    case TTCENUM:
+      RESULT = EXENUMCONSTANT(ORDINAL, TYPEPTR);
+      break;
+    default:
+      INTERNALERROR(cat_ss(str_make(32, "Cannot compute anti-ordinal for "), TYPENAME(TYPEPTR)));
+      break;
+  }
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *EXSUBRANGE(TEXPRESSIONOBJ *PARENT, TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *RESULT;
   int ORDINAL;
   if (EXISIMMEDIATE(PARENT)) {
     ORDINAL = EXGETORDINAL(PARENT);
-    if (ORDINAL < TYPEPTR->RANGEPTR->FIRST || ORDINAL > TYPEPTR->RANGEPTR->LAST) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(6, "Value "), DESCRIBEEXPR(PARENT, 2)), str_make(19, " out of bounds for ")), TYPENAME(TYPEPTR)));
+    if (ORDINAL < TYPEPTR->RANGEDEF.FIRST || ORDINAL > TYPEPTR->RANGEDEF.LAST) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(6, "Value "), DESCRIBEEXPR(PARENT, 2)), str_make(19, " out of bounds for ")), TYPENAME(TYPEPTR)));
     PARENT->TYPEPTR = TYPEPTR;
     RESULT = PARENT;
   }
@@ -3350,7 +3744,7 @@ TEXPRESSIONOBJ *EXSUBRANGE(TEXPRESSIONOBJ *PARENT, TPSTYPE *TYPEPTR) {
 
 TEXPRESSIONOBJ *EXRERANGE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *RESULT;
-  if (TYPEPTR->RANGEPTR->FIRST <= EXPR->TYPEPTR->RANGEPTR->FIRST && EXPR->TYPEPTR->RANGEPTR->LAST <= TYPEPTR->RANGEPTR->LAST) {
+  if (TYPEPTR->RANGEDEF.FIRST <= EXPR->TYPEPTR->RANGEDEF.FIRST && EXPR->TYPEPTR->RANGEDEF.LAST <= TYPEPTR->RANGEDEF.LAST) {
     EXPR->TYPEPTR = TYPEPTR;
     RESULT = EXPR;
   }
@@ -3358,16 +3752,49 @@ TEXPRESSIONOBJ *EXRERANGE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ *_EXCOERCESET(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
+  TEXPRESSIONOBJ *RESULT;
+  enum enum9 { PASS, REJECT, REPLACE } OUTCOME;
+  TPSTYPE *EXPRELEMTYPE;
+  TPSTYPE *DESTELEMTYPE;
+  const char* enumvalues9[] = { "PASS", "REJECT", "REPLACE" };
+  EXPRELEMTYPE = EXPR->TYPEPTR->ELEMENTTYPEPTR;
+  DESTELEMTYPE = TYPEPTR->ELEMENTTYPEPTR;
+  if (EXPRELEMTYPE == (void*)0) OUTCOME = REPLACE;
+  else if (!ISSAMETYPE(GETFUNDAMENTALTYPE(EXPRELEMTYPE), GETFUNDAMENTALTYPE(DESTELEMTYPE))) OUTCOME = REJECT;
+  else if (EXISIMMEDIATE(EXPR)) OUTCOME = REPLACE;
+  else if (GETTYPELOWBOUND(EXPRELEMTYPE) == GETTYPELOWBOUND(DESTELEMTYPE) && GETTYPEHIGHBOUND(EXPRELEMTYPE) == GETTYPEHIGHBOUND(DESTELEMTYPE)) OUTCOME = PASS;
+  else OUTCOME = REJECT;
+  switch (OUTCOME) {
+    case REJECT:
+      COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(15, "Type mismatch: "), TYPENAME(EXPR->TYPEPTR)), str_make(23, " cannot be assigned to ")), TYPENAME(TYPEPTR)));
+      break;
+    case REPLACE:
+      EXPR->TYPEPTR = TYPEPTR;
+      break;
+    case PASS:
+      ;
+      break;
+    default:
+      break;
+  }
+  RESULT = EXPR;
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *EXCOERCE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *RESULT;
-  if (ISRANGETYPE(EXPR->TYPEPTR) && ISSAMETYPE(TYPEPTR, EXPR->TYPEPTR->RANGEPTR->BASETYPEPTR)) RESULT = EXOUTRANGE(EXPR);
-  else if (ISRANGETYPE(TYPEPTR) && ISSAMETYPE(TYPEPTR->RANGEPTR->BASETYPEPTR, EXPR->TYPEPTR)) RESULT = EXSUBRANGE(EXPR, TYPEPTR);
-  else if (ISRANGETYPE(EXPR->TYPEPTR) && ISRANGETYPE(TYPEPTR) && ISSAMETYPE(EXPR->TYPEPTR->RANGEPTR->BASETYPEPTR, TYPEPTR->RANGEPTR->BASETYPEPTR)) RESULT = EXRERANGE(EXPR, TYPEPTR);
+  if (ISRANGETYPE(EXPR->TYPEPTR) && ISSAMETYPE(TYPEPTR, GETFUNDAMENTALTYPE(EXPR->TYPEPTR))) RESULT = EXOUTRANGE(EXPR);
+  else if (ISRANGETYPE(TYPEPTR) && ISSAMETYPE(GETFUNDAMENTALTYPE(TYPEPTR), EXPR->TYPEPTR)) RESULT = EXSUBRANGE(EXPR, TYPEPTR);
+  else if (ISRANGETYPE(EXPR->TYPEPTR) && ISRANGETYPE(TYPEPTR) && ISSAMETYPE(GETFUNDAMENTALTYPE(EXPR->TYPEPTR), GETFUNDAMENTALTYPE(TYPEPTR))) RESULT = EXRERANGE(EXPR, TYPEPTR);
   else if (ISCHARTYPE(EXPR->TYPEPTR) && ISSTRINGTYPE(TYPEPTR)) RESULT = EXTOSTRING(EXPR);
   else if (ISINTEGERTYPE(EXPR->TYPEPTR) && ISREALTYPE(TYPEPTR)) RESULT = EXTOREAL(EXPR);
   else if (ISSAMETYPE(EXPR->TYPEPTR, TYPEPTR)) RESULT = EXPR;
   else if (ISNILTYPE(EXPR->TYPEPTR) && ISPOINTERYTYPE(TYPEPTR)) RESULT = EXPR;
-  else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(24, "Type mismatch: expected "), TYPENAME(TYPEPTR)), str_make(6, ", got ")), TYPENAME(EXPR->TYPEPTR)));
+  else if (ISSETTYPE(EXPR->TYPEPTR) && ISSETTYPE(TYPEPTR)) {
+    RESULT = _EXCOERCESET(EXPR, TYPEPTR);
+  }
+  else COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(24, "Type mismatch: expected "), TYPENAME(TYPEPTR)), str_make(6, ", got ")), TYPENAME(EXPR->TYPEPTR)), str_make(4, " in ")), DESCRIBEEXPR(EXPR, 5)));
   return RESULT;
 }
 
@@ -3450,6 +3877,7 @@ TPSTYPE *PSENUMERATEDTYPE() {
   WANTTOKENANDREAD(TKLPAREN);
   ENUM.SIZE = 0;
   ENUM.HASBEENDEFINED = 0;
+  ENUM.VALUESHAVEBEENOUTPUT = 0;
   do {
     ENUM.SIZE = ENUM.SIZE + 1;
     if (ENUM.SIZE > 128) COMPILEERROR(str_make(23, "Too many values in enum"));
@@ -3459,7 +3887,7 @@ TPSTYPE *PSENUMERATEDTYPE() {
   } while (!(LEXER.TOKEN.ID == TKRPAREN));
   TYP = EMPTYTYPE();
   TYP.CLS = TTCENUM;
-  TYP.ENUMPTR = ADDENUM(ENUM);
+  TYP.ENUMPTR = NEWENUM(ENUM);
   TYP.WASUSED = 1;
   RESULT = ADDTYPE(TYP);
   SKIPTOKEN(TKRPAREN);
@@ -3481,7 +3909,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
         FIELD = first;
         while (1) {
           {
-            if (cmp_ss(REC->FIELDS[(int)subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
+            if (cmp_ss(REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
           }
           if (FIELD == last) break;
           ++FIELD;
@@ -3490,7 +3918,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     } while(0);
     REC->SIZE = REC->SIZE + 1;
     if (REC->SIZE > 32) COMPILEERROR(str_make(25, "Too many fields in record"));
-    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].NAME = NAME;
+    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].NAME = NAME;
     WANTTOKEN2(TKCOMMA, TKCOLON);
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3502,7 +3930,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     if (first <= last) {
       FIELD = first;
       while (1) {
-        REC->FIELDS[(int)subrange(FIELD, 1, 32) - 1].TYPEPTR = TYPEPTR;
+        REC->FIELDS[subrange(FIELD, 1, 32) - 1].TYPEPTR = TYPEPTR;
         if (FIELD == last) break;
         ++FIELD;
       }
@@ -3523,15 +3951,15 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
     READTOKEN();
     TAGTYPE = PSTYPEIDENTIFIER();
     REC->SIZE = REC->SIZE + 1;
-    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].NAME = TAG.NAME;
-    REC->FIELDS[(int)subrange(REC->SIZE, 1, 32) - 1].TYPEPTR = TAGTYPE;
+    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].NAME = TAG.NAME;
+    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].TYPEPTR = TAGTYPE;
   }
   else TAGTYPE = FINDNAMEOFCLASS(TAG.NAME, TNCTYPE, 1)->TYPEPTR;
   if (!ISORDINALTYPE(TAGTYPE)) COMPILEERROR(str_make(46, "The index of the case statement is not ordinal"));
   WANTTOKENANDREAD(TKOF);
   do {
     REC->NUMVARIANTS = REC->NUMVARIANTS + 1;
-    REC->VARIANTBOUNDS[(int)subrange(REC->NUMVARIANTS, 1, 32) - 1] = REC->SIZE + 1;
+    REC->VARIANTBOUNDS[subrange(REC->NUMVARIANTS, 1, 32) - 1] = REC->SIZE + 1;
     do {
       CASELABEL = EXCOERCE(PSEXPRESSION(), TAGTYPE);
       if (!EXISIMMEDIATE(CASELABEL)) COMPILEERROR(str_make(48, "The label of the case statement is not immediate"));
@@ -3560,7 +3988,7 @@ TPSTYPE *PSRECORDTYPE() {
   if (LEXER.TOKEN.ID == TKCASE) PSRECORDVARIANTS(&REC);
   WANTTOKENANDREAD(TKEND);
   TYP = TYPEOFCLASS(TTCRECORD);
-  TYP.RECPTR = ADDRECORD(REC);
+  TYP.RECPTR = NEWRECORD(REC);
   RESULT = ADDTYPE(TYP);
   return RESULT;
 }
@@ -3577,35 +4005,31 @@ TEXPRESSIONOBJ *PSIMMEDIATE() {
 TPSTYPE *PSARRAYTYPE() {
   TPSTYPE *RESULT;
   TPSTYPE TYP;
-  TPSARRAYDEF ARR;
   TPSTYPE *TYPEPTR;
-  TPSARRAYDEF *ARRPTR;
-  ARR.INDEXTYPEPTR = (void*)0;
-  ARR.VALUETYPEPTR = (void*)0;
-  ARRPTR = ADDARRAY(ARR);
+  TPSTYPE *NEWTYPEPTR;
   TYP = TYPEOFCLASS(TTCARRAY);
-  TYP.ARRAYPTR = ARRPTR;
+  TYP.ARRAYDEF.INDEXTYPEPTR = (void*)0;
+  TYP.ARRAYDEF.VALUETYPEPTR = (void*)0;
   TYPEPTR = ADDTYPE(TYP);
   RESULT = TYPEPTR;
   WANTTOKENANDREAD(TKARRAY);
   WANTTOKENANDREAD(TKLBRACKET);
   do {
-    ARRPTR->INDEXTYPEPTR = PSTYPEDENOTER();
-    ARRPTR->INDEXTYPEPTR->WASUSED = 1;
-    if (!ISBOUNDEDTYPE(ARRPTR->INDEXTYPEPTR)) COMPILEERROR(str_make(51, "Array indices must belong to a bounded ordinal type"));
+    TYPEPTR->ARRAYDEF.INDEXTYPEPTR = PSTYPEDENOTER();
+    TYPEPTR->ARRAYDEF.INDEXTYPEPTR->WASUSED = 1;
+    if (!ISBOUNDEDTYPE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR)) COMPILEERROR(str_make(51, "Array indices must belong to a bounded ordinal type"));
     WANTTOKEN2(TKCOMMA, TKRBRACKET);
     if (LEXER.TOKEN.ID == TKCOMMA) {
-      TYPEPTR = ADDTYPE(TYP);
-      ARRPTR->VALUETYPEPTR = TYPEPTR;
-      ARRPTR->VALUETYPEPTR->WASUSED = 1;
-      ARRPTR = ADDARRAY(ARR);
-      TYPEPTR->ARRAYPTR = ARRPTR;
+      NEWTYPEPTR = ADDTYPE(TYP);
+      TYPEPTR->ARRAYDEF.VALUETYPEPTR = NEWTYPEPTR;
+      TYPEPTR->ARRAYDEF.VALUETYPEPTR->WASUSED = 1;
+      TYPEPTR = NEWTYPEPTR;
     }
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKRBRACKET));
   WANTTOKENANDREAD(TKRBRACKET);
   WANTTOKENANDREAD(TKOF);
-  ARRPTR->VALUETYPEPTR = PSTYPEDENOTER();
+  TYPEPTR->ARRAYDEF.VALUETYPEPTR = PSTYPEDENOTER();
   return RESULT;
 }
 
@@ -3631,21 +4055,32 @@ TPSTYPE *PSRANGETYPE() {
   TEXPRESSIONOBJ *FIRST;
   TEXPRESSIONOBJ *LAST;
   TPSTYPE TYP;
-  TPSRANGEDEF RANGE;
   FIRST = PSIMMEDIATE();
   WANTTOKENANDREAD(TKRANGE);
   LAST = PSIMMEDIATE();
   if (!ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) COMPILEERROR(str_make(53, "The bounds of a subrange must belong to the same type"));
   if (!ISORDINALTYPE(FIRST->TYPEPTR)) COMPILEERROR(str_make(55, "The bounds of a subrange must belong to an ordinal type"));
-  RANGE.FIRST = EXGETORDINAL(FIRST);
-  RANGE.LAST = EXGETORDINAL(LAST);
-  RANGE.BASETYPEPTR = FIRST->TYPEPTR;
+  TYP = TYPEOFCLASS(TTCRANGE);
+  TYP.RANGEDEF.FIRST = EXGETORDINAL(FIRST);
+  TYP.RANGEDEF.LAST = EXGETORDINAL(LAST);
+  TYP.RANGEDEF.BASETYPEPTR = FIRST->TYPEPTR;
+  RESULT = ADDTYPE(TYP);
+  if (TYP.RANGEDEF.FIRST > TYP.RANGEDEF.LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
   DISPOSEEXPR(&FIRST);
   DISPOSEEXPR(&LAST);
-  if (RANGE.FIRST > RANGE.LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
-  TYP = TYPEOFCLASS(TTCRANGE);
-  TYP.RANGEPTR = ADDRANGE(RANGE);
+  return RESULT;
+}
+
+TPSTYPE *PSSETTYPE() {
+  TPSTYPE *RESULT;
+  TPSTYPE TYP;
+  WANTTOKENANDREAD(TKSET);
+  WANTTOKENANDREAD(TKOF);
+  TYP = TYPEOFCLASS(TTCSET);
+  TYP.ELEMENTTYPEPTR = PSTYPEDENOTER();
   RESULT = ADDTYPE(TYP);
+  if (!ISBOUNDEDTYPE(TYP.ELEMENTTYPEPTR)) COMPILEERROR(str_make(47, "Set element types must be bounded ordinal types"));
+  if (GETBOUNDEDTYPESIZE(TYP.ELEMENTTYPEPTR) > 256) COMPILEERROR(str_make(54, "Set element types may not contain more than 256 values"));
   return RESULT;
 }
 
@@ -3654,6 +4089,7 @@ TPSTYPE *PSTYPEDENOTER() {
   TPSNAME *IDX;
   RESULT = (void*)0;
   if (LEXER.TOKEN.ID == TKLPAREN) RESULT = PSENUMERATEDTYPE();
+  else if (LEXER.TOKEN.ID == TKSET) RESULT = PSSETTYPE();
   else if (LEXER.TOKEN.ID == TKRECORD) RESULT = PSRECORDTYPE();
   else if (LEXER.TOKEN.ID == TKARRAY) RESULT = PSARRAYTYPE();
   else if (LEXER.TOKEN.ID == TKCARET) RESULT = PSPOINTERTYPE();
@@ -3712,7 +4148,7 @@ void PSCONSTANTVALUE(TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *EXPR;
   if (ISARRAYTYPE(TYPEPTR)) {
     WANTTOKENANDREAD(TKLPAREN);
-    TYPEPTR = TYPEPTR->ARRAYPTR->VALUETYPEPTR;
+    TYPEPTR = TYPEPTR->ARRAYDEF.VALUETYPEPTR;
     OUTCONSTANTARRAYBEGIN();
     while (LEXER.TOKEN.ID != TKRPAREN) {
       PSCONSTANTVALUE(TYPEPTR);
@@ -3767,7 +4203,7 @@ void PSVARDEFINITIONS() {
     do {
       NUMNAMES = NUMNAMES + 1;
       if (NUMNAMES > 8) COMPILEERROR(str_make(37, "Too many names in variable definition"));
-      NAMES[(int)subrange(NUMNAMES, 1, 8) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      NAMES[subrange(NUMNAMES, 1, 8) - 1] = GETTOKENVALUEANDREAD(TKIDENTIFIER);
       WANTTOKEN2(TKCOMMA, TKCOLON);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3780,7 +4216,7 @@ void PSVARDEFINITIONS() {
       if (first <= last) {
         NUMNAMES = first;
         while (1) {
-          OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(NAMES[(int)subrange(NUMNAMES, 1, 8) - 1], TYPEPTR)));
+          OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR)));
           if (NUMNAMES == last) break;
           ++NUMNAMES;
         }
@@ -3805,7 +4241,7 @@ void PSFUNCTIONBODY(TPSFUNCTION *FNPTR) {
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1]);
+        ADDVARIABLE(FNPTR->ARGS[subrange(POS, 1, 8) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -3848,10 +4284,10 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
     do {
       DEF->ARGCOUNT = DEF->ARGCOUNT + 1;
       if (DEF->ARGCOUNT > 8) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), DEF->NAME));
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
-      DEF->ARGS[(int)subrange(DEF->ARGCOUNT, 1, 8) - 1].WASINITIALIZED = 1;
+      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
+      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
+      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].WASINITIALIZED = 1;
       WANTTOKEN2(TKCOLON, TKCOMMA);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -3863,7 +4299,7 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
       if (first <= last) {
         ARG = first;
         while (1) {
-          DEF->ARGS[(int)subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
+          DEF->ARGS[subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
           if (ARG == last) break;
           ++ARG;
         }
@@ -3964,7 +4400,7 @@ TEXPRESSIONOBJ *PSFUNCTIONCALL(TEXPRESSIONOBJ *FN) {
       WANTTOKENANDREAD(TKLPAREN);
       while (LEXER.TOKEN.ID != TKRPAREN) {
         ARGS.SIZE = ARGS.SIZE + 1;
-        ARGS.VALUES[(int)subrange(ARGS.SIZE, 1, 8) - 1] = PSEXPRESSION();
+        ARGS.VALUES[subrange(ARGS.SIZE, 1, 8) - 1] = PSEXPRESSION();
         WANTTOKEN2(TKCOMMA, TKRPAREN);
         SKIPTOKEN(TKCOMMA);
       }
@@ -4045,13 +4481,13 @@ TEXPRESSIONOBJ *PSVARIABLEORFUNCTIONEXTENSION(TEXPRESSIONOBJ *EXPR) {
 
 int ISOPADDING(TLXTOKEN TOK) {
   int RESULT;
-  RESULT = TOK.ID == TKPLUS || TOK.ID == TKMINUS || TOK.ID == TKOR;
+  RESULT = TOK.ID == TKPLUS || TOK.ID == TKMINUS || TOK.ID == TKOR || TOK.ID == TKXOR;
   return RESULT;
 }
 
 int ISOPMULTIPLYING(TLXTOKEN TOK) {
   int RESULT;
-  RESULT = TOK.ID == TKASTERISK || TOK.ID == TKSLASH || TOK.ID == TKDIV || TOK.ID == TKMOD || TOK.ID == TKAND;
+  RESULT = TOK.ID == TKASTERISK || TOK.ID == TKSLASH || TOK.ID == TKDIV || TOK.ID == TKMOD || TOK.ID == TKAND || TOK.ID == TKSHL || TOK.ID == TKSHR;
   return RESULT;
 }
 
@@ -4146,6 +4582,38 @@ double PARSEREAL(PString PSTR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ *PSSETCONSTRUCTOR() {
+  TEXPRESSIONOBJ *RESULT;
+  TEXPRESSIONOBJ *FIRST;
+  TEXPRESSIONOBJ *LAST;
+  TEXSETBOUNDSOBJ *BOUNDS;
+  TPSTYPE *ELEMENTTYPE;
+  TPSTYPE SETTYPE;
+  BOUNDS = (void*)0;
+  ELEMENTTYPE = (void*)0;
+  WANTTOKENANDREAD(TKLBRACKET);
+  while (LEXER.TOKEN.ID != TKRBRACKET) {
+    FIRST = PSIMMEDIATE();
+    if (!ISORDINALTYPE(FIRST->TYPEPTR)) COMPILEERROR(cat_ss(str_make(47, "Set elements must belong to ordinal types, got "), TYPENAME(FIRST->TYPEPTR)));
+    if (LEXER.TOKEN.ID == TKRANGE) {
+      WANTTOKENANDREAD(TKRANGE);
+      LAST = PSIMMEDIATE();
+      if (!ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(63, "Set element range boundaries must belong to the same type, got "), TYPENAME(FIRST->TYPEPTR)), str_make(5, " and ")), TYPENAME(LAST->TYPEPTR)));
+    }
+    else LAST = COPYEXPR(FIRST);
+    if (ELEMENTTYPE == (void*)0) ELEMENTTYPE = FIRST->TYPEPTR;
+    BOUNDS = EXSETADDBOUNDS(BOUNDS, EXGETORDINAL(FIRST), EXGETORDINAL(LAST));
+    WANTTOKEN2(TKCOMMA, TKRBRACKET);
+    SKIPTOKEN(TKCOMMA);
+  }
+  WANTTOKENANDREAD(TKRBRACKET);
+  SETTYPE = EMPTYTYPE();
+  SETTYPE.CLS = TTCSET;
+  SETTYPE.ELEMENTTYPEPTR = ELEMENTTYPE;
+  RESULT = EXSETCONSTANT(BOUNDS, ADDTYPE(SETTYPE));
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *PSFACTOR() {
   TEXPRESSIONOBJ *RESULT;
   TEXPRESSIONOBJ *EXPR;
@@ -4166,6 +4634,7 @@ TEXPRESSIONOBJ *PSFACTOR() {
     if (EXPR->CLS == XCVARIABLE) EXPR->VARPTR->WASUSED = 1;
     EXPR = PSVARIABLEORFUNCTIONEXTENSION(EXPR);
   }
+  else if (LEXER.TOKEN.ID == TKLBRACKET) EXPR = PSSETCONSTRUCTOR();
   else if (LEXER.TOKEN.ID == TKLPAREN) {
     WANTTOKENANDREAD(TKLPAREN);
     EXPR = PSEXPRESSION();
@@ -4445,7 +4914,7 @@ void PSPROGRAMBLOCK() {
 
 void EXECUTEDIRECTIVE(PString DIR) {
   if (LENGTH(&DIR) > 3 && DIR.chr[2] == 'I' && DIR.chr[3] == ' ') LXINCLUDE(COPY(&DIR, 4, 255));
-  else if (LENGTH(&DIR) == 3 && DIR.chr[2] == 'R' && (DIR.chr[3] == '-' || DIR.chr[3] == '+')) CODEGENSETCHECKBOUNDS(DIR.chr[3] == '+');
+  else if (LENGTH(&DIR) == 3 && DIR.chr[2] == 'R' && (DIR.chr[3] == '-' || DIR.chr[3] == '+')) OPTIONS.CHECKBOUNDS = DIR.chr[3] == '+';
 }
 
 void READTOKEN() {
@@ -4540,13 +5009,12 @@ typedef enum enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF 
 
 const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record31 {
+struct record32 {
   PFile OUTPUT;
   int ISMULTISTATEMENT;
   int INDENT;
   int NEWLINE;
   TOUTPUTTYPE LASTOUT;
-  int CHECKBOUNDS;
 } CODEGEN;
 
 void OUTVARIABLEDECLARATION(TPSVARIABLE VARDEF);
@@ -4696,6 +5164,16 @@ int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
       if (ISBOOLEANTYPE(EXPR->TYPEPTR)) RESULT = 12;
       else RESULT = 10;
       break;
+    case TKXOR:
+      if (ISBOOLEANTYPE(EXPR->TYPEPTR)) RESULT = 7;
+      else RESULT = 9;
+      break;
+    case TKSHL:
+      RESULT = 5;
+      break;
+    case TKSHR:
+      RESULT = 5;
+      break;
     case TKEQUALS:
       RESULT = 7;
       break;
@@ -4715,7 +5193,7 @@ int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
       RESULT = 6;
       break;
     default:
-      COMPILEERROR(cat_ss(str_make(48, "Internal error: unknown precedence for operator "), LXTOKENNAME(EXPR->BINARY.OP)));
+      INTERNALERROR(cat_ss(str_make(35, "Unknown precedence for operator in "), DESCRIBEEXPR(EXPR, 5)));
       break;
   }
   return RESULT;
@@ -4774,7 +5252,7 @@ int _PRECEDENCE(TEXPRESSIONOBJ *EXPR) {
       RESULT = _BINOPPREC(EXPR);
       break;
     default:
-      COMPILEERROR(str_make(34, "Internal error: unknown precedence"));
+      INTERNALERROR(cat_ss(str_make(23, "Unknown precedence for "), DESCRIBEEXPR(EXPR, 5)));
       break;
   }
   return RESULT;
@@ -4794,6 +5272,82 @@ void _OUTEXPRESSIONPARENS(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 
 void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
   _OUTEXPRESSIONPARENSPREC(EXPR, _PRECEDENCE(REF) - 1);
+}
+
+void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
+  int LOWBOUND;
+  int HIGHBOUND;
+  int LOWBOUNDBYTE;
+  int SETSIZE;
+  TEXSETBOUNDSOBJ *BOUNDS;
+  TPSTYPE *ELEMTYPEPTR;
+  int SETELEMS[32];
+  int POS;
+  int BYTENUM;
+  int BITNUM;
+  int BIT;
+  BOUNDS = EXPR->IMMEDIATE.SETBOUNDS;
+  ELEMTYPEPTR = EXPR->IMMEDIATE.SETOFTYPEPTR;
+  LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
+  HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
+  LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
+  SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
+  do {
+    int first = 1;
+    int last = SETSIZE;
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        SETELEMS[subrange(POS, 1, 32) - 1] = 0;
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  while (BOUNDS != (void*)0) {
+    if (BOUNDS->FIRST < LOWBOUND || BOUNDS->LAST > HIGHBOUND) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "Set "), DESCRIBEEXPR(EXPR, 1)), str_make(19, " contains elements ")), str_make(27, "that are out of bounds for ")), TYPENAME(EXPR->TYPEPTR)));
+    do {
+      int first = BOUNDS->FIRST;
+      int last = BOUNDS->LAST;
+      if (first <= last) {
+        POS = first;
+        while (1) {
+          {
+            BYTENUM = 1 + POS / 8 - LOWBOUNDBYTE;
+            BITNUM = POS % 8;
+            BIT = 1;
+            while (BITNUM > 0) {
+              BIT = BIT * 2;
+              BITNUM = BITNUM - 1;
+            }
+            SETELEMS[subrange(BYTENUM, 1, 32) - 1] = SETELEMS[subrange(BYTENUM, 1, 32) - 1] | BIT;
+          }
+          if (POS == last) break;
+          ++POS;
+        }
+      }
+    } while(0);
+    BOUNDS = BOUNDS->NEXT;
+  }
+  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(PSet"));
+  WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "){"));
+  do {
+    int first = 1;
+    int last = SETSIZE;
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        {
+          if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+          WRITE_i(&CODEGEN.OUTPUT, SETELEMS[subrange(POS, 1, 32) - 1]);
+        }
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  WRITE_c(&CODEGEN.OUTPUT, '}');
 }
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
@@ -4822,6 +5376,9 @@ void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
       case XICENUM:
         WRITE_s(&CODEGEN.OUTPUT, with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)]);
         break;
+      case XICSET:
+        _OUTSETIMMEDIATE(EXPR);
+        break;
       default:
         break;
     }
@@ -4837,7 +5394,7 @@ void _OUTBOUNDS(TPSTYPE *TYPEPTR) {
 void _OUTARRAYINDEX(TEXPRESSIONOBJ *INDEX, TPSTYPE *TYPEPTR) {
   int LOWBOUND;
   TEXPRESSIONOBJ *SIZE;
-  LOWBOUND = GETTYPELOWBOUND(TYPEPTR->ARRAYPTR->INDEXTYPEPTR);
+  LOWBOUND = GETTYPELOWBOUND(TYPEPTR->ARRAYDEF.INDEXTYPEPTR);
   SIZE = EXBINARYOP(PFORD(COPYEXPR(INDEX)), EXINTEGERCONSTANT(LOWBOUND), TKMINUS);
   OUTEXPRESSION(SIZE);
   DISPOSEEXPR(&SIZE);
@@ -4853,7 +5410,7 @@ void _OUTADDRESS(TEXPRESSIONOBJ *EXPR) {
 }
 
 void _OUTEXSUBRANGE(TEXPRESSIONOBJ *EXPR) {
-  if (!CODEGEN.CHECKBOUNDS) OUTEXPRESSION(EXPR->SUBRANGEPARENT);
+  if (!OPTIONS.CHECKBOUNDS) OUTEXPRESSION(EXPR->SUBRANGEPARENT);
   else {
     WRITE_s(&CODEGEN.OUTPUT, str_make(9, "subrange("));
     OUTEXPRESSION(EXPR->SUBRANGEPARENT);
@@ -4887,7 +5444,7 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
         _OUTEXPRESSIONPARENS(EXPR->RECEXPR, EXPR);
         WRITE_c(&CODEGEN.OUTPUT, '.');
       }
-      WRITE_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[(int)subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      WRITE_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
     }
   }
 }
@@ -4904,11 +5461,11 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
       while (1) {
         {
           if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          if (EXPR->FNEXPR->FNPTR->ARGS[(int)subrange(POS, 1, 8) - 1].ISREFERENCE) {
-            if (!EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
-            _OUTADDRESS(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
+          if (EXPR->FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
+            if (!EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
+            _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
           }
-          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[(int)subrange(POS, 1, 8) - 1]);
+          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -4964,7 +5521,7 @@ void _OUTEXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
       _OUTWRITE(EXPR);
       break;
     default:
-      COMPILEERROR(str_make(46, "Internal error: unimplemented special function"));
+      INTERNALERROR(cat_ss(str_make(31, "Unimplemented special function "), DESCRIBEEXPR(EXPR, 5)));
       break;
   }
 }
@@ -5011,21 +5568,33 @@ PString _GETARITHMETICOP(TLXTOKENID OP) {
 
 int _ISLOGICALORBITWISEOP(TLXTOKENID OP) {
   int RESULT;
-  RESULT = OP == TKAND || OP == TKOR;
+  RESULT = OP == TKAND || OP == TKOR || OP == TKXOR;
+  return RESULT;
+}
+
+int _ISBITWISEOP(TLXTOKENID OP) {
+  int RESULT;
+  RESULT = OP == TKSHL || OP == TKSHR;
   return RESULT;
 }
 
 PString _GETLOGICALOP(TLXTOKENID OP) {
   PString RESULT;
   if (OP == TKAND) RESULT = str_make(2, "&&");
-  else RESULT = str_make(2, "||");
+  else if (OP == TKOR) RESULT = str_make(2, "||");
+  else if (OP == TKXOR) RESULT = str_make(2, "!=");
+  else INTERNALERROR(cat_ss(str_make(31, "Unimplemented logical operator "), LXTOKENNAME(OP)));
   return RESULT;
 }
 
 PString _GETBITWISEOP(TLXTOKENID OP) {
   PString RESULT;
   if (OP == TKAND) RESULT = str_of('&');
-  else RESULT = str_of('|');
+  else if (OP == TKOR) RESULT = str_of('|');
+  else if (OP == TKXOR) RESULT = str_of('^');
+  else if (OP == TKSHL) RESULT = str_make(2, "<<");
+  else if (OP == TKSHR) RESULT = str_make(2, ">>");
+  else INTERNALERROR(cat_ss(str_make(31, "Unimplemented bitwise operator "), LXTOKENNAME(OP)));
   return RESULT;
 }
 
@@ -5060,6 +5629,23 @@ PString _GETRELATIONALOP(TLXTOKENID OP) {
       break;
   }
   return RESULT;
+}
+
+void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
+  TPSTYPE *ELEMTYPEPTR;
+  int LOWBOUND;
+  int HIGHBOUND;
+  int LOWBOUNDBYTE;
+  int SETSIZE;
+  int BYTENUM;
+  int BITNUM;
+  int BIT;
+  ELEMTYPEPTR = RIGHT->TYPEPTR->ELEMENTTYPEPTR;
+  LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
+  HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
+  LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
+  SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
+  INTERNALERROR(str_make(43, "Materialized set operations not implemented"));
 }
 
 void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
@@ -5131,7 +5717,7 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
           WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
         }
-        else if (_ISLOGICALORBITWISEOP(with1->OP)) {
+        else if (_ISLOGICALORBITWISEOP(with1->OP) || _ISBITWISEOP(with1->OP)) {
           WRITE_c(&CODEGEN.OUTPUT, ' ');
           WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP));
           WRITE_c(&CODEGEN.OUTPUT, ' ');
@@ -5144,6 +5730,7 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
         else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
+      else if (ISSETTYPE(with1->RIGHT->TYPEPTR)) _OUTEXSETOPERATION(with1->LEFT, with1->RIGHT, with1->OP);
       else {
         _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
         if (_ISRELATIONALOP(with1->OP)) {
@@ -5275,7 +5862,10 @@ void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
   TPSDEFENTRY *DEF;
   DEF = CHECKPOINT->NEXT;
   while (DEF != (void*)0) {
-    if (DEF->CLS == TDCENUM) OUTENUMVALUES(DEF->ENUMPTR);
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCENUM) {
+      if (!DEF->TYPEPTR->ENUMPTR->VALUESHAVEBEENOUTPUT) OUTENUMVALUES(DEF->TYPEPTR->ENUMPTR);
+      DEF->TYPEPTR->ENUMPTR->VALUESHAVEBEENOUTPUT = 1;
+    }
     DEF = DEF->NEXT;
   }
 }
@@ -5285,6 +5875,13 @@ PString OUTVARIABLENAME(PString NAME, int ISREFERENCE) {
   if (ISREFERENCE) RESULT = cat_cs('*', NAME);
   else RESULT = NAME;
   return RESULT;
+}
+
+void _OUTSETTYPENAME(TPSTYPE *TYPEPTR) {
+  int NUMBYTES;
+  NUMBYTES = GETTYPEHIGHBOUND(TYPEPTR->ELEMENTTYPEPTR) / 8 - GETTYPELOWBOUND(TYPEPTR->ELEMENTTYPEPTR) / 8 + 1;
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "PSet"));
+  WRITE_i(&CODEGEN.OUTPUT, 8 * NUMBYTES);
 }
 
 void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
@@ -5306,7 +5903,8 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
       WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID);
     }
   }
-  else if (TYPEPTR->CLS == TTCRANGE) OUTTYPEREFERENCE(TYPEPTR->RANGEPTR->BASETYPEPTR);
+  else if (TYPEPTR->CLS == TTCRANGE) OUTTYPEREFERENCE(GETFUNDAMENTALTYPE(TYPEPTR));
+  else if (TYPEPTR->CLS == TTCSET) _OUTSETTYPENAME(TYPEPTR);
   else if (TYPEPTR->CLS == TTCRECORD) {
     if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME);
     else {
@@ -5315,7 +5913,7 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
     }
   }
   else if (TYPEPTR->CLS == TTCARRAY) {
-    OUTTYPEREFERENCE(TYPEPTR->ARRAYPTR->VALUETYPEPTR);
+    OUTTYPEREFERENCE(TYPEPTR->ARRAYDEF.VALUETYPEPTR);
     WRITE_c(&CODEGEN.OUTPUT, '*');
   }
   else COMPILEERROR(cat_ss(str_make(30, "Error writing type reference: "), TYPENAME(TYPEPTR)));
@@ -5339,7 +5937,7 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
         POS = first;
         while (1) {
           {
-            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[(int)subrange(NUMVARIANT + 1, 1, 32) - 1] == POS) {
+            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[subrange(NUMVARIANT + 1, 1, 32) - 1] == POS) {
               NUMVARIANT = NUMVARIANT + 1;
               if (NUMVARIANT == 1) {
                 _OUTINDENT();
@@ -5356,7 +5954,7 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
               OUTBEGIN();
             }
             _OUTINDENT();
-            OUTNAMEANDTYPE(RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].NAME, RECPTR->FIELDS[(int)subrange(POS, 1, 32) - 1].TYPEPTR);
+            OUTNAMEANDTYPE(RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR);
             WRITE_c(&CODEGEN.OUTPUT, ';');
             _OUTNEWLINE();
           }
@@ -5411,14 +6009,14 @@ void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMPTR) {
 void OUTNAMEANDARRAY(PString NAME, TPSTYPE *TYPEPTR) {
   TPSTYPE *THETYPE;
   THETYPE = TYPEPTR;
-  while (ISARRAYTYPE(THETYPE)) THETYPE = THETYPE->ARRAYPTR->VALUETYPEPTR;
+  while (ISARRAYTYPE(THETYPE)) THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
   OUTNAMEANDTYPE(NAME, THETYPE);
   THETYPE = TYPEPTR;
   while (ISARRAYTYPE(THETYPE)) {
     WRITE_c(&CODEGEN.OUTPUT, '[');
-    WRITE_i(&CODEGEN.OUTPUT, GETBOUNDEDTYPESIZE(TYPEPTR->ARRAYPTR->INDEXTYPEPTR));
+    WRITE_i(&CODEGEN.OUTPUT, GETBOUNDEDTYPESIZE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR));
     WRITE_c(&CODEGEN.OUTPUT, ']');
-    THETYPE = THETYPE->ARRAYPTR->VALUETYPEPTR;
+    THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
   }
 }
 
@@ -5462,7 +6060,12 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCENUM) OUTNAMEANDENUM(NAME, TYPEPTR->ENUMPTR);
-  else if (TYPEPTR->CLS == TTCRANGE) OUTNAMEANDTYPE(NAME, TYPEPTR->RANGEPTR->BASETYPEPTR);
+  else if (TYPEPTR->CLS == TTCRANGE) OUTNAMEANDTYPE(NAME, GETFUNDAMENTALTYPE(TYPEPTR));
+  else if (TYPEPTR->CLS == TTCSET) {
+    _OUTSETTYPENAME(TYPEPTR);
+    WRITE_c(&CODEGEN.OUTPUT, ' ');
+    WRITE_s(&CODEGEN.OUTPUT, NAME);
+  }
   else if (TYPEPTR->CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYPEPTR->RECPTR);
   else if (TYPEPTR->CLS == TTCARRAY) OUTNAMEANDARRAY(NAME, TYPEPTR);
   else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Error writing name and type: "), NAME), str_make(2, ", ")), TYPENAME(TYPEPTR)));
@@ -5541,7 +6144,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
       POS = first;
       while (1) {
         {
-          OUTVARIABLEDECLARATION(DEF.ARGS[(int)subrange(POS, 1, 8) - 1]);
+          OUTVARIABLEDECLARATION(DEF.ARGS[subrange(POS, 1, 8) - 1]);
           if (POS != DEF.ARGCOUNT) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
         }
         if (POS == last) break;
@@ -5586,13 +6189,13 @@ void OUTPROGRAMHEADING(PString NAME) {
 
 unsigned char SHORTTYPENAME(TPSTYPE *TYPEPTR) {
   unsigned char RESULT;
-  while (ISRANGETYPE(TYPEPTR)) TYPEPTR = TYPEPTR->RANGEPTR->BASETYPEPTR;
+  TYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
   if (ISBOOLEANTYPE(TYPEPTR)) RESULT = 'b';
   else if (ISINTEGERTYPE(TYPEPTR)) RESULT = 'i';
   else if (ISREALTYPE(TYPEPTR)) RESULT = 'r';
   else if (ISCHARTYPE(TYPEPTR)) RESULT = 'c';
   else if (ISSTRINGTYPE(TYPEPTR)) RESULT = 's';
-  else COMPILEERROR(cat_ss(str_make(30, "No short type name exists for "), TYPENAME(TYPEPTR)));
+  else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(5, "Type "), TYPENAME(TYPEPTR)), str_make(26, " is not representable for ")), str_make(24, "READ, WRITE, STR, or VAL")));
   return RESULT;
 }
 
@@ -5640,8 +6243,7 @@ void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
   BRACES = !CODEGEN.ISMULTISTATEMENT && WRITEARG != (void*)0 && (WRITEARG->NEXT != (void*)0 || LINEFEED);
   if (BRACES) OUTBEGIN();
   while (WRITEARG != (void*)0) {
-    TYPEPTR = WRITEARG->ARG->TYPEPTR;
-    while (ISRANGETYPE(TYPEPTR)) TYPEPTR = TYPEPTR->RANGEPTR->BASETYPEPTR;
+    TYPEPTR = GETFUNDAMENTALTYPE(WRITEARG->ARG->TYPEPTR);
     if (ISENUMTYPE(TYPEPTR)) {
       _OUTINDENT();
       WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_e("));
@@ -5783,7 +6385,7 @@ void _OUTPRED(TEXPRESSIONOBJ *EXPR) {
     DISPOSEEXPR(&TMPEXPR);
   }
   else if (ISORDINALTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
-    if (!CODEGEN.CHECKBOUNDS) {
+    if (!OPTIONS.CHECKBOUNDS) {
       TMPEXPR = EXBINARYOP(PFORD(COPYEXPR(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1), TKMINUS);
       OUTEXPRESSION(TMPEXPR);
       DISPOSEEXPR(&TMPEXPR);
@@ -5807,7 +6409,7 @@ void _OUTSUCC(TEXPRESSIONOBJ *EXPR) {
     DISPOSEEXPR(&TMPEXPR);
   }
   else if (ISORDINALTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
-    if (!CODEGEN.CHECKBOUNDS) {
+    if (!OPTIONS.CHECKBOUNDS) {
       TMPEXPR = EXBINARYOP(PFORD(COPYEXPR(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1), TKPLUS);
       OUTEXPRESSION(TMPEXPR);
       DISPOSEEXPR(&TMPEXPR);
@@ -6031,16 +6633,11 @@ void CODEGENRESET() {
   CODEGEN.INDENT = 0;
   CODEGEN.NEWLINE = 1;
   CODEGEN.LASTOUT = TOTNONE;
-  CODEGEN.CHECKBOUNDS = 1;
 }
 
 void CODEGENSETOUTPUT(PString FILENAME) {
   ASSIGN(&CODEGEN.OUTPUT, &FILENAME);
   REWRITE(&CODEGEN.OUTPUT);
-}
-
-void CODEGENSETCHECKBOUNDS(int CHECKBOUNDS) {
-  CODEGEN.CHECKBOUNDS = CHECKBOUNDS;
 }
 
 TEXPRESSIONOBJ *_PF_UNARY_PARSE() {
@@ -6380,13 +6977,21 @@ TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN) {
       RESULT = PFWRITE_PARSE(FN);
       break;
     default:
-      COMPILEERROR(str_make(46, "Internal error: unimplemented special function"));
+      INTERNALERROR(cat_ss(str_make(31, "Unimplemented special function "), DESCRIBEEXPR(FN, 5)));
       break;
   }
   return RESULT;
 }
 
 void COMPILEERROR(PString MSG) {
+  WRITE_s(&STDERR, MSG);
+  WRITE_s(&STDERR, LXWHERESTR());
+  WRITELN(&STDERR);
+  HALT(1);
+}
+
+void INTERNALERROR(PString MSG) {
+  WRITE_s(&STDERR, str_make(17, "Internal error : "));
   WRITE_s(&STDERR, MSG);
   WRITE_s(&STDERR, LXWHERESTR());
   WRITELN(&STDERR);
@@ -6501,6 +7106,7 @@ void PARSECMDLINE() {
   if (cmp_sc(INPUTFILE, '-') != 0) LXOPEN(INPUTFILE);
   if (cmp_sc(OUTPUTFILE, '-') != 0) CODEGENSETOUTPUT(OUTPUTFILE);
   OPTIONS.SUPPRESSWARNINGS = SUPPRESSWARNINGS;
+  OPTIONS.CHECKBOUNDS = 1;
 }
 
 void CLEARSTATE() {
