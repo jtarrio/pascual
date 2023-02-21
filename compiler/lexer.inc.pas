@@ -148,6 +148,8 @@ begin
   else if Lexer.Token.Value = 'RECORD' then Lexer.Token.Id := TkRecord
   else if Lexer.Token.Value = 'REPEAT' then Lexer.Token.Id := TkRepeat
   else if Lexer.Token.Value = 'SET' then Lexer.Token.Id := TkSet
+  else if Lexer.Token.Value = 'SHL' then Lexer.Token.Id := TkShl
+  else if Lexer.Token.Value = 'SHR' then Lexer.Token.Id := TkShr
   else if Lexer.Token.Value = 'THEN' then Lexer.Token.Id := TkThen
   else if Lexer.Token.Value = 'TO' then Lexer.Token.Id := TkTo
   else if Lexer.Token.Value = 'TYPE' then Lexer.Token.Id := TkType
@@ -155,6 +157,7 @@ begin
   else if Lexer.Token.Value = 'VAR' then Lexer.Token.Id := TkVar
   else if Lexer.Token.Value = 'WHILE' then Lexer.Token.Id := TkWhile
   else if Lexer.Token.Value = 'WITH' then Lexer.Token.Id := TkWith
+  else if Lexer.Token.Value = 'XOR' then Lexer.Token.Id := TkXor
 end;
 
 procedure LxGetNumber;

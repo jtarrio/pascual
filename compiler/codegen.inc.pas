@@ -137,6 +137,10 @@ begin
             else Result := 8;
     TkOr : if IsBooleanType(Expr^.TypePtr) then Result := 12
            else Result := 10;
+    TkXor : if IsBooleanType(Expr^.TypePtr) then Result := 7
+            else Result := 9;
+    TkShl : Result := 5;
+    TkShr : Result := 5;
     TkEquals : Result := 7;
     TkNotEquals : Result := 7;
     TkLessthan : Result := 6;
@@ -406,25 +410,36 @@ begin
     TkAsterisk : _GetArithmeticOp := '*';
     TkSlash : _GetArithmeticOp := '/';
     TkDiv : _GetArithmeticOp := '/';
-    TkMod : _GetArithmeticOp := '%'
+    TkMod : _GetArithmeticOp := '%';
   end
 end;
 
 function _IsLogicalOrBitwiseOp(Op : TLxTokenId) : boolean;
 begin
-  _IsLogicalOrBitwiseOp := (Op = TkAnd) or (Op = TkOr)
+  _IsLogicalOrBitwiseOp := (Op = TkAnd) or (Op = TkOr) or (Op = TkXor)
+end;
+
+function _IsBitwiseOp(Op : TLxTokenId) : boolean;
+begin
+  _IsBitwiseOp := (Op = TkShl) or (Op = TkShr)
 end;
 
 function _GetLogicalOp(Op : TLxTokenId) : string;
 begin
   if Op = TkAnd then _GetLogicalOp := '&&'
-  else _GetLogicalOp := '||'
+  else if Op = TkOr then _GetLogicalOp := '||'
+  else if Op = TkXor then _GetLogicalOp := '!='
+  else InternalError('Unimplemented logical operator ' + LxTokenName(Op))
 end;
 
 function _GetBitwiseOp(Op : TLxTokenId) : string;
 begin
   if Op = TkAnd then _GetBitwiseOp := '&'
-  else _GetBitwiseOp := '|'
+  else if Op = TkOr Then _GetBitwiseOp := '|'
+  else if Op = TkXor then _GetBitwiseOp := '^'
+  else if Op = TkShl then _GetBitwiseOp := '<<'
+  else if Op = TkShr then _GetBitwiseOp := '>>'
+  else InternalError('Unimplemented bitwise operator ' + LxTokenName(Op))
 end;
 
 function _IsRelationalOp(Op : TLxTokenId) : boolean;
@@ -447,7 +462,7 @@ begin
 end;
 
 procedure _OutExSetOperation(Left, Right: TExpression; Op : TLxTokenId);
-var
+var 
   ElemTypePtr : TPsTypePtr;
   LowBound, HighBound, LowBoundByte, SetSize : integer;
   ByteNum, BitNum, Bit : integer;
@@ -513,7 +528,7 @@ begin
       _OutExpressionParens(Left, Expr);
       if _IsArithmeticOp(Op) then
         write(Codegen.Output, ' ', _GetArithmeticOp(Op), ' ')
-      else if _IsLogicalOrBitwiseOp(Op) then
+      else if _IsLogicalOrBitwiseOp(Op) or _IsBitwiseOp(Op) then
              write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
       else if _IsRelationalOp(Op) then
              write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')

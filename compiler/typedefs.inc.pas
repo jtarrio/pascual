@@ -12,8 +12,8 @@ type
                 TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
                 TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
                 TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
-                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkThen, TkTo,
-                TkType, TkUntil, TkVar, TkWhile, TkWith);
+                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkShl, TkShr,
+                TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith, TkXor);
   TLxPos = record
     Row, Col : integer
   end;

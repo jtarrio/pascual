@@ -722,13 +722,14 @@ end;
 function IsOpAdding(Tok : TLxToken) : boolean;
 begin
   IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)
+                or (Tok.Id = TkXor)
 end;
 
 function IsOpMultiplying(Tok : TLxToken) : boolean;
 begin
   IsOpMultiplying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
-                     or (Tok.Id = TkDiv) or (Tok.Id = TkMod)
-                     or (Tok.Id = TkAnd)
+                     or (Tok.Id = TkDiv) or (Tok.Id = TkMod) or (Tok.Id = TkAnd)
+                     or (Tok.Id = TkShl) or (Tok.Id = TkShr)
 end;
 
 function IsOpRelational(Tok : TLxToken) : boolean;

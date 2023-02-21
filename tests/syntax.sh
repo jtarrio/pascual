@@ -527,10 +527,13 @@ testexpr real real 'x / 2' | is_valid
 testexpr integer integer 'x div 2' | is_valid
 testexpr integer integer 'x mod 2' | is_valid
 testexpr boolean boolean 'x and y and z' | is_valid
+testexpr integer integer 'x shl y' | is_valid
+testexpr integer integer 'x shr y' | is_valid
 testexpr integer integer '-x' | is_valid
 testexpr integer integer 'x + y + z' | is_valid
 testexpr integer integer 'x - y - z' | is_valid
 testexpr boolean boolean 'x or y or z' | is_valid
+testexpr boolean boolean 'x xor y xor z' | is_valid
 testexpr boolean integer 'x = y' | is_valid
 testexpr boolean integer 'x = y = z' | is_not_valid
 testexpr boolean integer 'x > y' | is_valid

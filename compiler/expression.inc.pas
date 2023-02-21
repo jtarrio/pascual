@@ -341,6 +341,9 @@ begin
                   TkDiv: Result := 3;
                   TkAnd: Result := 3;
                   TkOr: Result := 4;
+                  TkXor: Result := 4;
+                  TkShl: Result := 3;
+                  TkShr: Result := 3;
                   TkEquals: Result := 5;
                   TkNotEquals: Result := 5;
                   TkLessthan: Result := 5;
@@ -381,6 +384,9 @@ begin
     TkDiv: Result := Result + ' div ';
     TkAnd: Result := Result + ' and ';
     TkOr: Result := Result + ' or ';
+    TkXor: Result := Result + ' xor ';
+    TkShl: Result := Result + ' shl ';
+    TkShr: Result := Result + ' shr ';
     TkEquals: Result := Result + ' = ';
     TkNotEquals: Result := Result + ' <> ';
     TkLessthan: Result := Result + ' < ';
@@ -1244,6 +1250,7 @@ begin
   case Op of 
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
+    { TODO TkOr : Lt := Lt xor Rt; }
     TkEquals : Lt := Lt = Rt;
     TkNotEquals : Lt := Lt <> Rt;
     TkLessthan : Lt := Lt < Rt;
@@ -1274,6 +1281,9 @@ begin
     TkMod : Lt := Lt mod Rt;
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
+    { TODO TkXor : Lt := Lt xor Rt; }
+    { TODO TkShl : Lt := Lt shl Rt; }
+    { TODO TkShr : Lt := Lt shr Rt; }
     else
     begin
       Left^.Immediate.Cls := XicBoolean;
@@ -1430,9 +1440,9 @@ end;
 
 function _ExBinOpBoolCmp;
 begin
-  if (Op = TkAnd) or (Op = TkOr) or (Op = TkEquals) or (Op = TkNotEquals)
-     or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
-     or (Op = TkMoreOrEquals) then
+  if (Op = TkAnd) or (Op = TkOr) or (Op = TkXor) or (Op = TkEquals)
+     or (Op = TkNotEquals) or (Op = TkLessthan) or (Op = TkMorethan)
+     or (Op = TkLessOrEquals) or (Op = TkMoreOrEquals) then
   begin
     Result := _NewExpr(XcBinaryOp);
     Result^.Binary.Left := Left;
@@ -1455,7 +1465,8 @@ begin
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkDiv)
-     or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) then
+     or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) or (Op = TkXor)
+     or (Op = TkShl) or (Op = TkShr) then
     Result^.TypePtr := PrimitiveTypes.PtInteger
   else if (Op = TkEquals) or (Op = TkNotEquals)
           or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)

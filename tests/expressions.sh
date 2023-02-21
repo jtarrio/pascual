@@ -45,6 +45,10 @@ testimm 'true or true' boolean | outputs TRUE
 testimm 'true or false' boolean | outputs TRUE
 testimm 'false or true' boolean | outputs TRUE
 testimm 'false or false' boolean | outputs FALSE
+testimm 'true xor true' boolean | will_be_valid
+testimm 'true xor false' boolean | will_be_valid
+testimm 'false xor true' boolean | will_be_valid
+testimm 'false xor false' boolean | will_be_valid
 testimm "true = false" boolean | outputs FALSE
 testimm "true > false" boolean | outputs TRUE
 testimm "true < false" boolean | outputs FALSE
@@ -76,6 +80,10 @@ testvar boolean 'true' 'true' 'a or b' boolean | outputs TRUE
 testvar boolean 'true' 'false' 'a or b' boolean | outputs TRUE
 testvar boolean 'false' 'true' 'a or b' boolean | outputs TRUE
 testvar boolean 'false' 'false' 'a or b' boolean | outputs FALSE
+testvar boolean 'true' 'true' 'a xor b' boolean | outputs FALSE
+testvar boolean 'true' 'false' 'a xor b' boolean | outputs TRUE
+testvar boolean 'false' 'true' 'a xor b' boolean | outputs TRUE
+testvar boolean 'false' 'false' 'a xor b' boolean | outputs FALSE
 testvar boolean 'true' 'false' 'a = b' boolean | outputs FALSE
 testvar boolean 'true' 'false' 'a > b' boolean | outputs TRUE
 testvar boolean 'true' 'false' 'a < b' boolean | outputs FALSE
@@ -106,6 +114,9 @@ testimm '8 div 3' integer | outputs 2
 testimm '8 mod 3' integer | outputs 2
 testimm '5 and 3' integer | outputs 1
 testimm '5 or 3' integer | outputs 7
+testimm '5 xor 3' integer | will_be_valid
+testimm '5 shl 3' integer | will_be_valid
+testimm '40 shr 3' integer | will_be_valid
 testimm "2 = 1" boolean | outputs FALSE
 testimm "2 > 1" boolean | outputs TRUE
 testimm "2 < 1" boolean | outputs FALSE
@@ -137,6 +148,9 @@ testvar integer '8' '3' 'a div b' integer | outputs 2
 testvar integer '8' '3' 'a mod b' integer | outputs 2
 testvar integer '5' '3' 'a and b' integer | outputs 1
 testvar integer '5' '3' 'a or b' integer | outputs 7
+testvar integer '5' '3' 'a xor b' integer | outputs 6
+testvar integer '5' '3' 'a shl b' integer | outputs 40
+testvar integer '40' '3' 'a shr b' integer | outputs 5
 testvar integer '2' '1' 'a = b' boolean | outputs FALSE
 testvar integer '2' '1' 'a > b' boolean | outputs TRUE
 testvar integer '2' '1' 'a < b' boolean | outputs FALSE
