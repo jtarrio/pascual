@@ -193,10 +193,9 @@ end;
 
 procedure _OutSetImmediate(Expr : TExpression);
 var 
-  LowBound, HighBound, LowBoundByte : integer;
+  LowBound, HighBound, LowBoundByte, SetSize : integer;
   Bounds : TExSetBounds;
   ElemTypePtr : TPsTypePtr;
-  SetSize : integer;
   SetElems : array[1..32] of integer;
   Pos, ByteNum, BitNum, Bit : integer;
 begin
@@ -447,6 +446,20 @@ begin
   end
 end;
 
+procedure _OutExSetOperation(Left, Right: TExpression; Op : TLxTokenId);
+var
+  ElemTypePtr : TPsTypePtr;
+  LowBound, HighBound, LowBoundByte, SetSize : integer;
+  ByteNum, BitNum, Bit : integer;
+begin
+  ElemTypePtr := Right^.TypePtr^.ElementTypePtr;
+  LowBound := GetTypeLowBound(ElemTypePtr);
+  HighBound := GetTypeHighBound(ElemTypePtr);
+  LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
+  SetSize := HighBound div 8 - LowBound div 8 + 1;
+  InternalError('Materialized set operations not implemented')
+end;
+
 procedure _OutExBinaryOp(Expr : TExpression);
 var Ltype, Rtype : char;
 begin
@@ -507,6 +520,7 @@ begin
       else CompileError('Not a valid operator: ' + LxTokenName(Op));
       _OutExpressionParensExtra(Right, Expr)
     end
+    else if IsSetType(Right^.TypePtr) then _OutExSetOperation(Left, Right, Op)
     else
     begin
       _OutExpressionParens(Left, Expr);
@@ -621,8 +635,8 @@ end;
 procedure _OutSetTypeName(TypePtr : TPsTypePtr);
 var NumBytes : integer;
 begin
-  NumBytes := GetTypeHighBound(TypePtr^.SetDef.ElementTypePtr) div 8 -
-              GetTypeLowBound(TypePtr^.SetDef.ElementTypePtr) div 8 + 1;
+  NumBytes := GetTypeHighBound(TypePtr^.ElementTypePtr) div 8 -
+              GetTypeLowBound(TypePtr^.ElementTypePtr) div 8 + 1;
   write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 

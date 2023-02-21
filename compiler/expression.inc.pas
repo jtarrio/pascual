@@ -521,7 +521,7 @@ function ExSetConstant(Bounds : TExSetBounds;
                        TypePtr : TPsTypePtr) : TExpression;
 var ElementType : TPsTypePtr;
 begin
-  ElementType := TypePtr^.SetDef.ElementTypePtr;
+  ElementType := TypePtr^.ElementTypePtr;
   if (ElementType <> nil) and not IsOrdinalType(ElementType) then
     CompileError('Not an ordinal type: ' + TypeName(ElementType));
   Result := _ExImmediate(XicSet);
@@ -838,20 +838,14 @@ var LeftType, RightType : TPsTypePtr;
 begin
   LeftType := Left^.TypePtr;
   RightType := Right^.TypePtr;
-  if LeftType^.SetDef.ElementTypePtr = nil then
-    LeftType^.SetDef.ElementTypePtr := RightType^.SetDef.ElementTypePtr
-  else if RightType^.SetDef.ElementTypePtr = nil then
-         RightType^.SetDef.ElementTypePtr := LeftType^.SetDef.ElementTypePtr
-  else if not IsSameType(Left^.Immediate.SetOfTypePtr,
-          Right^.Immediate.SetOfTypePtr) then
+  if LeftType^.ElementTypePtr = nil then
+    LeftType^.ElementTypePtr := RightType^.ElementTypePtr
+  else if RightType^.ElementTypePtr = nil then
+         RightType^.ElementTypePtr := LeftType^.ElementTypePtr
+  else if not IsSameType(LeftType, RightType) then
          CompileError('Type mismatch: cannot combine ' +
                       TypeName(Left^.TypePtr) + ' with ' +
          TypeName(Right^.TypePtr))
-  else
-  begin
-    LeftType^.SetDef.ElementTypePtr := Left^.Immediate.SetOfTypePtr;
-    RightType^.SetDef.ElementTypePtr := Right^.Immediate.SetOfTypePtr
-  end
 end;
 
 function _ExSetUnion(Left, Right : TExpression) : TExpression;
@@ -911,7 +905,7 @@ begin
     { llllll  or  lllllll    }
     {   rrrr        rrrrrrrr }
     { Add part of left before right, go to next left }
-    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last = RtBds^.Last) then
+    else if (RtBds^.First < LtBds^.Last) and (RtBds^.Last >= LtBds^.Last) then
     begin
       NewBds := ExSetAddBounds(NewBds, LtBds^.First, RtBds^.First - 1);
       LtBds := LtBds^.Next
@@ -919,7 +913,7 @@ begin
     { lllll      or  lllll       }
     {      rrrr            rrrrr }
     { Add left, go to next left }
-    else if RtBds^.First > LtBds^.Last then
+    else
     begin
       NewBds := ExSetAddBounds(NewBds, LtBds^.First, LtBds^.Last);
       LtBds := LtBds^.Next
@@ -976,7 +970,7 @@ begin
     { llllll  or  lllllll    }
     {   rrrr        rrrrrrrr }
     { Add first right to last left, go to next left }
-    else if (RtBds^.First > LtBds^.First) and (RtBds^.Last = RtBds^.Last) then
+    else if (RtBds^.First < LtBds^.Last) and (RtBds^.Last >= LtBds^.Last) then
     begin
       NewBds := ExSetAddBounds(NewBds, RtBds^.First, LtBds^.Last);
       LtBds := LtBds^.Next
@@ -984,8 +978,7 @@ begin
     { lllll      or  lllll       }
     {      rrrr            rrrrr }
     { Go to next left }
-    else if RtBds^.First > LtBds^.Last then
-           LtBds := LtBds^.Next
+    else LtBds := LtBds^.Next
   end;
   Result := ExSetConstant(NewBds, Left^.TypePtr);
   DisposeExpr(Left);
@@ -1053,14 +1046,10 @@ var
   TmpVar : TPsVarPtr;
   Wanted : TExpression;
 begin
-  ElemType := Haystack^.TypePtr^.SetDef.ElementTypePtr;
-  if ElemType <> nil then ElemType := GetFundamentalType(ElemType);
-  if (ElemType <> nil)
-     and not IsSameType(GetFundamentalType(Needle^.TypePtr), ElemType) then
-    CompileError('Types of ' + DescribeExpr(Needle, 10) + ' and ' +
-    DescribeExpr(Haystack, 10) + ' are incompatible: ' +
-    TypeName(Needle^.TypePtr) + ' and ' + TypeName(Haystack^.TypePtr));
-  if (Needle^.Cls <> XcVariable) and (ElemType <> nil) then
+  ElemType := Haystack^.TypePtr^.ElementTypePtr;
+  if ElemType = nil then ElemType := Needle^.TypePtr
+  else Needle := ExCoerce(Needle, ElemType);
+  if Needle^.Cls <> XcVariable then
   begin
     TmpVar := AddTmpVariable('elem', ElemType);
     Wanted := ExVariable(TmpVar)
@@ -1236,7 +1225,9 @@ begin
          Result := _ExBinOpPtrCmp(Left, Right, Op)
   else if IsSetType(Right^.TypePtr) then
   begin
-    if ExIsImmediate(Right) then Result := _ExBinOpSetImm(Left, Right, Op)
+    if ExIsImmediate(Right)
+       and (ExIsImmediate(Left) or not IsSetType(Left^.TypePtr)) then
+      Result := _ExBinOpSetImm(Left, Right, Op)
     else Result := _ExBinOpSetCmp(Left, Right, Op)
   end
   else
@@ -1537,7 +1528,22 @@ end;
 
 function _ExBinOpSetCmp;
 begin
-  CompileError('Invalid set operator: ' + LxTokenName(Op))
+  Result := _NewExpr(XcBinaryOp);
+  if Op = TkIn then
+  begin
+    Left := ExCoerce(Left, Right^.TypePtr^.ElementTypePtr);
+    Result^.TypePtr := PrimitiveTypes.PtBoolean
+  end
+  else
+  begin
+    _ExSetCoerceToCommon(Left, Right);
+    Result^.TypePtr := Left^.TypePtr
+  end;
+  Result^.Binary.Left := Left;
+  Result^.Binary.Right := Right;
+  Result^.Binary.Op := Op;
+  Result^.IsAssignable := false;
+  Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
 end;
 
 { Returns whether an expression evaluates to 0 integer or real. }
@@ -1686,8 +1692,8 @@ var
   Outcome : (Pass, Reject, Replace);
   ExprElemType, DestElemType : TPsTypePtr;
 begin
-  ExprElemType := Expr^.TypePtr^.SetDef.ElementTypePtr;
-  DestElemType := TypePtr^.SetDef.ElementTypePtr;
+  ExprElemType := Expr^.TypePtr^.ElementTypePtr;
+  DestElemType := TypePtr^.ElementTypePtr;
   if ExprElemType = nil then Outcome := Replace
   else if not IsSameType(GetFundamentalType(ExprElemType),
           GetFundamentalType(DestElemType)) then Outcome := Reject
@@ -1732,7 +1738,7 @@ begin
   end
   else
     CompileError('Type mismatch: expected ' + TypeName(TypePtr) +
-    ', got ' + TypeName(Expr^.TypePtr))
+    ', got ' + TypeName(Expr^.TypePtr) + ' in ' + DescribeExpr(Expr, 5))
 end;
 
 procedure ExMarkInitialized(Lhs : TExpression);

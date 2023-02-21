@@ -505,6 +505,33 @@ begin
             or IsRangeType(TypePtr)
 end;
 
+function GetTypeLowBound(TypePtr : TPsTypePtr) : integer;
+begin
+  case TypePtr^.Cls of 
+    TtcBoolean : Result := 0;
+    TtcChar : Result := 0;
+    TtcEnum : Result := 0;
+    TtcRange : Result := TypePtr^.RangeDef.First;
+    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+  end
+end;
+
+function GetTypeHighBound(TypePtr : TPsTypePtr) : integer;
+begin
+  case TypePtr^.Cls of 
+    TtcBoolean : Result := 1;
+    TtcChar : Result := 255;
+    TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
+    TtcRange : Result := TypePtr^.RangeDef.Last;
+    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+  end
+end;
+
+function GetBoundedTypeSize(TypePtr : TPsTypePtr) : integer;
+begin
+  Result := GetTypeHighBound(TypePtr) - GetTypeLowBound(TypePtr) + 1
+end;
+
 function IsSameType(A, B : TPsTypePtr) : boolean;
 begin
   if (A = nil) or (B = nil) then IsSameType := A = B
@@ -517,6 +544,12 @@ begin
     IsSameType := (A = B)
                   or (IsPointerType(A) and IsPointerType(B)
                   and IsSameType(A^.PointedTypePtr, B^.PointedTypePtr))
+                  or (IsRangeType(A) and IsRangeType(B)
+                  and IsSameType(GetFundamentalType(A), GetFundamentalType(B))
+                  and (GetTypeLowBound(A) = GetTypeLowBound(B))
+                  and (GetTypeHighBound(A) = GetTypeHighBound(B))
+                  or (IsSetType(A) and IsSetType(B)
+                  and IsSameType(A^.ElementTypePtr, B^.ElementTypePtr)))
   end
 end;
 
@@ -609,8 +642,8 @@ begin
   end
   else if Typ.Cls = TtcSet then
   begin
-    if Typ.SetDef.ElementTypePtr = nil then Result := 'SET OF []'
-    else Result := 'SET OF ' + DeepTypeName(Typ.SetDef.ElementTypePtr, false)
+    if Typ.ElementTypePtr = nil then Result := 'SET OF []'
+    else Result := 'SET OF ' + DeepTypeName(Typ.ElementTypePtr, false)
   end
   else if Typ.Cls = TtcRecord then
   begin
@@ -642,33 +675,6 @@ function TypeName(TypePtr : TPsTypePtr) : string;
 begin
   if TypePtr = nil then TypeName := '(none)'
   else TypeName := DeepTypeName(TypePtr, false)
-end;
-
-function GetTypeLowBound(TypePtr : TPsTypePtr) : integer;
-begin
-  case TypePtr^.Cls of 
-    TtcBoolean : Result := 0;
-    TtcChar : Result := 0;
-    TtcEnum : Result := 0;
-    TtcRange : Result := TypePtr^.RangeDef.First;
-    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
-  end
-end;
-
-function GetTypeHighBound(TypePtr : TPsTypePtr) : integer;
-begin
-  case TypePtr^.Cls of 
-    TtcBoolean : Result := 1;
-    TtcChar : Result := 255;
-    TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
-    TtcRange : Result := TypePtr^.RangeDef.Last;
-    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
-  end
-end;
-
-function GetBoundedTypeSize(TypePtr : TPsTypePtr) : integer;
-begin
-  Result := GetTypeHighBound(TypePtr) - GetTypeLowBound(TypePtr) + 1
 end;
 
 function AddType(Typ : TPsType) : TPsTypePtr;

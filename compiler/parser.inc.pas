@@ -273,12 +273,12 @@ begin
   WantTokenAndRead(TkOf);
 
   Typ := TypeOfClass(TtcSet);
-  Typ.SetDef.ElementTypePtr := PsTypeDenoter;
+  Typ.ElementTypePtr := PsTypeDenoter;
   Result := AddType(Typ);
 
-  if not IsBoundedType(Typ.SetDef.ElementTypePtr) then
+  if not IsBoundedType(Typ.ElementTypePtr) then
     CompileError('Set element types must be bounded ordinal types');
-  if GetBoundedTypeSize(Typ.SetDef.ElementTypePtr) > 256 then
+  if GetBoundedTypeSize(Typ.ElementTypePtr) > 256 then
     CompileError('Set element types may not contain more than 256 values')
 end;
 
@@ -874,7 +874,7 @@ begin
   WantTokenAndRead(TkRbracket);
   SetType := EmptyType;
   SetType.Cls := TtcSet;
-  SetType.SetDef.ElementTypePtr := ElementType;
+  SetType.ElementTypePtr := ElementType;
   Result := ExSetConstant(Bounds, AddType(SetType))
 end;
 

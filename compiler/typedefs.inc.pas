@@ -137,9 +137,7 @@ type
                   First, Last : integer;
                   BaseTypePtr : TPsTypePtr
                   end);
-      TtcSet : (SetDef : record
-                ElementTypePtr : TPsTypePtr
-                end);
+      TtcSet : (ElementTypePtr : TPsTypePtr);
       TtcRecord : (RecPtr : TPsRecPtr);
       TtcArray : (ArrayDef : record
                   IndexTypePtr : TPsTypePtr;
