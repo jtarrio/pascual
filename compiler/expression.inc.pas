@@ -836,29 +836,31 @@ begin
   Result := Expr
 end;
 
-procedure _ExSetUnifyTypes(Left, Right : TPsTypePtr);
+procedure _ExSetCoerceToCommon(Left, Right : TExpression);
 var LeftType, RightType : TPsTypePtr;
 begin
-  if Left^.SetDef.ElementTypePtr = nil then
-    Left^.SetDef.ElementTypePtr := Right^.SetDef.ElementTypePtr
-  else if Right^.SetDef.ElementTypePtr = nil then
-         Right^.SetDef.ElementTypePtr := Left^.SetDef.ElementTypePtr
+  LeftType := Left^.TypePtr;
+  RightType := Right^.TypePtr;
+  if LeftType^.SetDef.ElementTypePtr = nil then
+    LeftType^.SetDef.ElementTypePtr := RightType^.SetDef.ElementTypePtr
+  else if RightType^.SetDef.ElementTypePtr = nil then
+         RightType^.SetDef.ElementTypePtr := LeftType^.SetDef.ElementTypePtr
+  else if not IsSameType(Left^.Immediate.SetOfTypePtr,
+          Right^.Immediate.SetOfTypePtr) then
+         CompileError('Type mismatch: cannot combine ' +
+                      TypeName(Left^.TypePtr) + ' with ' +
+         TypeName(Right^.TypePtr))
   else
   begin
-    LeftType := GetFundamentalType(Left^.SetDef.ElementTypePtr);
-    RightType := GetFundamentalType(Right^.SetDef.ElementTypePtr);
-    if not IsSameType(LeftType, RightType) then
-      CompileError('Type mismatch: ' + TypeName(Left) +
-      ' is not compatible with ' + TypeName(Right));
-    Left^.SetDef.ElementTypePtr := LeftType;
-    Right^.SetDef.ElementTypePtr := RightType
+    LeftType^.SetDef.ElementTypePtr := Left^.Immediate.SetOfTypePtr;
+    RightType^.SetDef.ElementTypePtr := Right^.Immediate.SetOfTypePtr
   end
 end;
 
 function _ExSetUnion(Left, Right : TExpression) : TExpression;
 var NewBds, OldBds : TExSetBounds;
 begin
-  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  _ExSetCoerceToCommon(Left, Right);
   NewBds := nil;
   OldBds := Left^.Immediate.SetBounds;
   while OldBds <> nil do
@@ -881,7 +883,7 @@ function _ExSetDifference(Left, Right : TExpression) : TExpression;
 var 
   LtBds, RtBds, NewBds : TExSetBounds;
 begin
-  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
   RtBds := Right^.Immediate.SetBounds;
   NewBds := nil;
@@ -940,7 +942,7 @@ function _ExSetIntersection(Left, Right : TExpression) : TExpression;
 var 
   LtBds, RtBds, NewBds : TExSetBounds;
 begin
-  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
   RtBds := Right^.Immediate.SetBounds;
   NewBds := nil;
@@ -999,7 +1001,7 @@ var
   LtBds, RtBds : TExSetBounds;
   Equals : boolean;
 begin
-  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
   RtBds := Right^.Immediate.SetBounds;
   Equals := true;
@@ -1021,7 +1023,7 @@ var
   LtBds, RtBds : TExSetBounds;
   Subset : boolean;
 begin
-  _ExSetUnifyTypes(Left^.TypePtr, Right^.TypePtr);
+  _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
   RtBds := Right^.Immediate.SetBounds;
   Subset := true;
@@ -1673,25 +1675,20 @@ var
 begin
   ExprElemType := Expr^.TypePtr^.SetDef.ElementTypePtr;
   DestElemType := TypePtr^.SetDef.ElementTypePtr;
-  Outcome := Reject;
   if ExprElemType = nil then Outcome := Replace
-  else if ExIsImmediate(Expr)
-          and IsSameType(GetFundamentalType(ExprElemType),
-          GetFundamentalType(DestElemType)) then Outcome := Replace
-  else if IsBoundedType(ExprElemType) and IsBoundedType(DestElemType)
-          and (GetTypeLowBound(ExprElemType) >= GetTypeLowBound(DestElemType))
-          and (GetTypeHighBound(ExprElemType) <= GetTypeHighBound(DestElemType))
-         then Outcome := Pass;
+  else if not IsSameType(GetFundamentalType(ExprElemType),
+          GetFundamentalType(DestElemType)) then Outcome := Reject
+  else if ExIsImmediate(Expr) then Outcome := Replace
+  else if (GetTypeLowBound(ExprElemType) = GetTypeLowBound(DestElemType))
+          and (GetTypeHighBound(ExprElemType) = GetTypeHighBound(DestElemType))
+         then Outcome := Pass
+  else Outcome := Reject;
+
   case Outcome of 
     Reject : CompileError('Type mismatch: ' + TypeName(Expr^.TypePtr) +
              ' cannot be assigned to ' + TypeName(TypePtr));
-    Replace :
-              begin
-                Expr^.TypePtr := TypePtr;
-                if ExIsImmediate(Expr) then
-                  Expr^.Immediate.SetOfTypePtr := DestElemType;
-              end;
-    Pass : ;
+    Replace : Expr^.TypePtr := TypePtr;
+    Pass : { do nothing };
   end;
   Result := Expr
 end;
