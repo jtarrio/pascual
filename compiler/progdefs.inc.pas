@@ -913,6 +913,13 @@ begin
   Result.WasUsed := false
 end;
 
+function AddTmpVariable(Prefix : string; TypePtr : TPsTypePtr) : TPsVarPtr;
+var VarNum : string;
+begin
+  Str(DefCounter(TctTmpVar), VarNum);
+  Result :=  AddVariable(MakeVariable(Prefix + VarNum, TypePtr))
+end;
+
 function _MakeArg(Name : string; TypePtr : TPsTypePtr;
                   IsRef, IsConst : boolean) : TPsVariable;
 begin

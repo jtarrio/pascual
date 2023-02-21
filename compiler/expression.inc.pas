@@ -773,7 +773,6 @@ function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
 var 
   Pos : integer;
   FnCall : TExpression;
-  TmpVarNum : string;
 begin
   if FnExpr^.Cls <> XcFnRef then
     CompileError('Cannot call non-function');
@@ -797,10 +796,8 @@ begin
       begin
         if FnExpr^.FnPtr^.Args[Pos].IsConstant then
         begin
-          Str(DefCounter(TctTmpVar), TmpVarNum);
-          Result := ExSetTmpVar(ExVariable(AddVariable(MakeVariable(
-                    'tmp' + TmpVarNum,
-                    FnExpr^.FnPtr^.Args[Pos].TypePtr))),
+          Result := ExSetTmpVar(ExVariable(AddTmpVariable(
+                    'tmp', FnExpr^.FnPtr^.Args[Pos].TypePtr)),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := CopyExpr(Result^.TmpVar)
         end
@@ -1053,6 +1050,8 @@ var
   ElemType : TPsTypePtr;
   Bounds : TExSetBounds;
   Cond : TExpression;
+  TmpVar : TPsVarPtr;
+  Wanted : TExpression;
 begin
   ElemType := Haystack^.TypePtr^.SetDef.ElementTypePtr;
   if ElemType <> nil then ElemType := GetFundamentalType(ElemType);
@@ -1061,27 +1060,41 @@ begin
     CompileError('Types of ' + DescribeExpr(Needle, 10) + ' and ' +
     DescribeExpr(Haystack, 10) + ' are incompatible: ' +
     TypeName(Needle^.TypePtr) + ' and ' + TypeName(Haystack^.TypePtr));
+  if (Needle^.Cls <> XcVariable) and (ElemType <> nil) then
+  begin
+    TmpVar := AddTmpVariable('elem', ElemType);
+    Wanted := ExVariable(TmpVar)
+  end
+  else
+  begin
+    TmpVar := nil;
+    Wanted := Needle;
+  end;
   Result := ExBooleanConstant(false);
   Bounds := Haystack^.Immediate.SetBounds;
   while Bounds <> nil do
   begin
     if Bounds^.First = Bounds^.Last then
-      Cond := ExBinaryOp(ExGetAntiOrdinal(Bounds^.First, ElemType),
-              CopyExpr(Needle),
+      Cond := ExBinaryOp(CopyExpr(Wanted),
+              ExGetAntiOrdinal(Bounds^.First, ElemType),
               TkEquals)
     else
       Cond := ExBinaryOp(
               ExBinaryOp(ExGetAntiOrdinal(Bounds^.First, ElemType),
-              CopyExpr(Needle),
+              CopyExpr(Wanted),
               TkLessOrEquals),
-              ExBinaryOp(CopyExpr(Needle),
+              ExBinaryOp(CopyExpr(Wanted),
               ExGetAntiOrdinal(Bounds^.Last, ElemType),
               TkLessOrEquals),
               TkAnd);
     Result := ExBinaryOp(Result, Cond, TkOr);
     Bounds := Bounds^.Next
   end;
-  DisposeExpr(Needle);
+  if TmpVar <> nil then
+  begin
+    Result := ExSetTmpVar(Wanted, Needle, Result);
+  end
+  else DisposeExpr(Needle);
   DisposeExpr(Haystack)
 end;
 
