@@ -1250,7 +1250,7 @@ begin
   case Op of 
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
-    { TODO TkOr : Lt := Lt xor Rt; }
+    TkXor : Lt := Lt xor Rt;
     TkEquals : Lt := Lt = Rt;
     TkNotEquals : Lt := Lt <> Rt;
     TkLessthan : Lt := Lt < Rt;
@@ -1281,9 +1281,9 @@ begin
     TkMod : Lt := Lt mod Rt;
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
-    { TODO TkXor : Lt := Lt xor Rt; }
-    { TODO TkShl : Lt := Lt shl Rt; }
-    { TODO TkShr : Lt := Lt shr Rt; }
+    TkXor : Lt := Lt xor Rt;
+    TkShl : Lt := Lt shl Rt;
+    TkShr : Lt := Lt shr Rt;
     else
     begin
       Left^.Immediate.Cls := XicBoolean;
