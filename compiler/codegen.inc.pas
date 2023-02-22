@@ -201,10 +201,10 @@ var
   Bounds : TExSetBounds;
   ElemTypePtr : TPsTypePtr;
   SetElems : array[1..32] of integer;
-  Pos, ByteNum, BitNum, Bit : integer;
+  Pos, ByteNum, BitNum : integer;
 begin
   Bounds := Expr^.Immediate.SetBounds;
-  ElemTypePtr := Expr^.Immediate.SetOfTypePtr;
+  ElemTypePtr := Expr^.TypePtr^.ElementTypePtr;
   LowBound := GetTypeLowBound(ElemTypePtr);
   HighBound := GetTypeHighBound(ElemTypePtr);
   LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
@@ -220,14 +220,7 @@ begin
     begin
       ByteNum := 1 + Pos div 8 - LowBoundByte;
       BitNum := Pos mod 8;
-      { TODO implement shl and shr and replace }
-      Bit := 1;
-      while BitNum > 0 do
-      begin
-        Bit := Bit * 2;
-        BitNum := BitNum - 1
-      end;
-      SetElems[ByteNum] := SetElems[ByteNum] or Bit;
+      SetElems[ByteNum] := SetElems[ByteNum] or (1 shl BitNum);
     end;
     Bounds := Bounds^.Next
   end;
