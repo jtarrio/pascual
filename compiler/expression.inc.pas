@@ -844,9 +844,9 @@ var LeftType, RightType : TPsTypePtr;
 begin
   LeftType := Left^.TypePtr;
   RightType := Right^.TypePtr;
-  if LeftType^.ElementTypePtr = nil then
+  if (LeftType^.ElementTypePtr = nil) or ExIsImmediate(Left) then
     LeftType^.ElementTypePtr := RightType^.ElementTypePtr
-  else if RightType^.ElementTypePtr = nil then
+  else if (RightType^.ElementTypePtr = nil) or ExIsImmediate(Right) then
          RightType^.ElementTypePtr := LeftType^.ElementTypePtr
   else if not IsSameType(LeftType, RightType) then
          CompileError('Type mismatch: cannot combine ' +
@@ -1543,6 +1543,11 @@ begin
   if Op = TkIn then
   begin
     Left := ExCoerce(Left, Right^.TypePtr^.ElementTypePtr);
+    Result^.TypePtr := PrimitiveTypes.PtBoolean
+  end
+  else if Op in [TkEquals, TkNotEquals, TkLessOrEquals, TkMoreOrEquals] then
+  begin
+    _ExSetCoerceToCommon(Left, Right);
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   end
   else

@@ -224,13 +224,13 @@ begin
     end;
     Bounds := Bounds^.Next
   end;
-  write(Codegen.Output, '(PSet', SetSize * 8, '){');
+  write(Codegen.Output, '(PSet', SetSize * 8, ') { ');
   for Pos := 1 to SetSize do
   begin
     if Pos <> 1 then write(Codegen.Output, ', ');
     write(Codegen.Output, SetElems[Pos]);
   end;
-  write(Codegen.Output, '}');
+  write(Codegen.Output, ' }');
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
@@ -458,14 +458,61 @@ procedure _OutExSetOperation(Left, Right: TExpression; Op : TLxTokenId);
 var 
   ElemTypePtr : TPsTypePtr;
   LowBound, HighBound, LowBoundByte, SetSize : integer;
-  ByteNum, BitNum, Bit : integer;
 begin
   ElemTypePtr := Right^.TypePtr^.ElementTypePtr;
-  LowBound := GetTypeLowBound(ElemTypePtr);
-  HighBound := GetTypeHighBound(ElemTypePtr);
-  LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
-  SetSize := HighBound div 8 - LowBound div 8 + 1;
-  InternalError('Materialized set operations not implemented')
+  if Op = TkLessOrEquals then _OutExSetOperation(Right, Left, TkMoreOrEquals)
+  else if Op = TkNotEquals then
+  begin
+    write(Codegen.Output, '!');
+    _OutExSetOperation(Left, Right, TkEquals)
+  end
+  else if Op = TkIn then
+  begin
+    LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
+    write(Codegen.Output, 'set_in(');
+    OutExpression(Left);
+    write(Codegen.Output, ', ', LowBoundByte, ', ');
+    _OutExpressionParensPrec(Right, 1);
+    write(Codegen.Output, '.bits)')
+  end
+  else
+  begin
+    LowBound := GetTypeLowBound(ElemTypePtr);
+    HighBound := GetTypeHighBound(ElemTypePtr);
+    SetSize := HighBound div 8 - LowBound div 8 + 1;
+    if Op = TkEquals then
+    begin
+      write(Codegen.Output, 'set_equals(');
+      _OutExpressionParensPrec(Left, 1);
+      write(Codegen.Output, '.bits, ');
+      _OutExpressionParensPrec(Right, 1);
+      write(Codegen.Output, '.bits, ', SetSize, ')')
+    end
+    else if Op = TkMoreOrEquals then
+    begin
+      write(Codegen.Output, 'set_issubset(');
+      _OutExpressionParensPrec(Left, 1);
+      write(Codegen.Output, '.bits, ');
+      _OutExpressionParensPrec(Right, 1);
+      write(Codegen.Output, '.bits, ', SetSize, ')')
+    end
+    else
+    begin
+      write(Codegen.Output, '({ PSet', SetSize * 8, ' dst; ');
+      case Op of 
+        TkPlus: write(Codegen.Output, 'set_union(');
+        TkMinus: write(Codegen.Output, 'set_difference(');
+        TkAsterisk: write(Codegen.Output, 'set_intersection(');
+        else
+          InternalError('Materialized set operation not implemented: ' +
+                        LxTokenName(Op))
+      end;
+      _OutExpressionParensPrec(Left, 1);
+      write(Codegen.Output, '.bits, ');
+      _OutExpressionParensPrec(Right, 1);
+      write(Codegen.Output, '.bits, dst.bits, ', SetSize, '); dst; })')
+    end
+  end
 end;
 
 procedure _OutExBinaryOp(Expr : TExpression);

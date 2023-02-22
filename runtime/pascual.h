@@ -5,6 +5,7 @@
 
 #include "file.h"
 #include "os.h"
+#include "sets.h"
 #include "string.h"
 #include "types.h"
 

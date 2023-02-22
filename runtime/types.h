@@ -21,7 +21,7 @@ typedef struct {
 
 #define DEF_SET_BITS(b)                        \
   typedef struct __attribute__((__packed__)) { \
-    unsigned int bits[b / 8];                  \
+    unsigned char bits[b / 8];                  \
   } PSet##b
 DEF_SET_BITS(8);
 DEF_SET_BITS(16);
