@@ -519,7 +519,7 @@ testexpr integer 'record A : integer; B : integer end' 'x.A' | is_valid
 testexpr integer 'array [1..10] of integer' 'x[1]' | is_valid
 testexpr integer integer 15 | is_valid
 testexpr integer string 'length(x)' | is_valid
-testexpr 'set of char' integer "['a'..'z']" | will_be_valid
+testexpr 'set of char' integer "['a'..'z']" | is_valid
 testexpr integer integer '(x + y + z)' | is_valid
 testexpr boolean boolean 'not x' | is_valid
 testexpr integer integer 'x * y * z' | is_valid
