@@ -1619,6 +1619,10 @@ begin
     { true OR X -> true ; X OR false -> X ; false OR X -> X }
     TkOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
            else if _ExIsFalse(Left) then Use := UseRight;
+    { X shl 0 -> X }
+    TkShl : if _ExIsZero(Right) then Use := UseLeft;
+    { X shr 0 -> X }
+    TkShr : if _ExIsZero(Right) then Use := UseLeft;
   end;
   case Use of 
     UseLeft :
