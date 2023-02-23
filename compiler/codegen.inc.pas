@@ -207,7 +207,7 @@ end;
 procedure _OutSetImmediate(Expr : TExpression);
 var 
   LowBound, HighBound, LowBoundByte, SetSize : integer;
-  Bounds : TExSetBounds;
+  Bounds : TExSetImmBounds;
   ElemTypePtr : TPsTypePtr;
   SetElems : array[1..32] of integer;
   Pos, ByteNum, BitNum : integer;

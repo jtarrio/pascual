@@ -41,7 +41,7 @@ begin
 end;
 
 procedure _DisposeImmediate(var Imm : TExImmediate);
-var Bounds : TExSetBounds;
+var Bounds : TExSetImmBounds;
 begin
   if Imm.Cls = XicSet then
   begin
@@ -153,7 +153,7 @@ begin
 end;
 
 function _CopyImmediate(const Imm : TExImmediate) : TExImmediate;
-var Src, Dst : TExSetBounds;
+var Src, Dst : TExSetImmBounds;
 begin
   Result := Imm;
   if Imm.Cls = XicSet then
@@ -239,7 +239,7 @@ begin
   CopyExpr := Copy
 end;
 
-function _DescribeSet(Bounds : TExSetBounds;
+function _DescribeSet(Bounds : TExSetImmBounds;
                       SetOfTypePtr : TPsTypePtr) : string;
 begin
   Result := '[';
@@ -528,7 +528,7 @@ begin
   Result^.TypePtr := TypePtr
 end;
 
-function ExSetConstant(Bounds : TExSetBounds;
+function ExSetConstant(Bounds : TExSetImmBounds;
                        TypePtr : TPsTypePtr) : TExpression;
 var ElementType : TPsTypePtr;
 begin
@@ -541,10 +541,10 @@ begin
   Result^.TypePtr := TypePtr
 end;
 
-function ExSetAddBounds(Bounds : TExSetBounds;
-                        First, Last : integer) : TExSetBounds;
+function ExSetAddBounds(Bounds : TExSetImmBounds;
+                        First, Last : integer) : TExSetImmBounds;
 var 
-  Prev, This, NewBounds : TExSetBounds;
+  Prev, This, NewBounds : TExSetImmBounds;
   Done : boolean;
 begin
   if First > Last then
@@ -860,7 +860,7 @@ begin
 end;
 
 function _ExSetUnion(Left, Right : TExpression) : TExpression;
-var NewBds, OldBds : TExSetBounds;
+var NewBds, OldBds : TExSetImmBounds;
 begin
   _ExSetCoerceToCommon(Left, Right);
   NewBds := nil;
@@ -883,7 +883,7 @@ end;
 
 function _ExSetDifference(Left, Right : TExpression) : TExpression;
 var 
-  LtBds, RtBds, NewBds : TExSetBounds;
+  LtBds, RtBds, NewBds : TExSetImmBounds;
 begin
   _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
@@ -942,7 +942,7 @@ end;
 
 function _ExSetIntersection(Left, Right : TExpression) : TExpression;
 var 
-  LtBds, RtBds, NewBds : TExSetBounds;
+  LtBds, RtBds, NewBds : TExSetImmBounds;
 begin
   _ExSetCoerceToCommon(Left, Right);
   LtBds := Left^.Immediate.SetBounds;
@@ -999,7 +999,7 @@ end;
 function _ExSetEquals(Left, Right : TExpression;
                       Negate : boolean) : TExpression;
 var 
-  LtBds, RtBds : TExSetBounds;
+  LtBds, RtBds : TExSetImmBounds;
   Equals : boolean;
 begin
   _ExSetCoerceToCommon(Left, Right);
@@ -1021,7 +1021,7 @@ end;
 
 function _ExSetSubset(Left, Right : TExpression) : TExpression;
 var 
-  LtBds, RtBds : TExSetBounds;
+  LtBds, RtBds : TExSetImmBounds;
   Subset : boolean;
 begin
   _ExSetCoerceToCommon(Left, Right);
@@ -1052,7 +1052,7 @@ end;
 function _ExSetIn(Needle, Haystack : TExpression) : TExpression;
 var 
   ElemType : TPsTypePtr;
-  Bounds : TExSetBounds;
+  Bounds : TExSetImmBounds;
   Cond : TExpression;
   TmpVar : TPsVarPtr;
   Wanted : TExpression;

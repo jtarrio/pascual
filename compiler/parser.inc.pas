@@ -835,7 +835,7 @@ end;
 function PsSetConstructor : TExpression;
 var 
   First, Last : TExpression;
-  Bounds : TExSetBounds;
+  Bounds : TExSetImmBounds;
   ElementType : TPsTypePtr;
   SetType : TPsType;
 begin

@@ -33,7 +33,7 @@ type
   TPsFnPtr = ^TPsFunction;
 
   TExpression = ^TExpressionObj;
-  TExSetBounds = ^TExSetBoundsObj;
+  TExSetImmBounds = ^TExSetImmBoundsObj;
   TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicReal, XicChar,
                        XicString, XicEnum, XicSet);
   TExImmediate = record
@@ -45,12 +45,12 @@ type
       XicString : (StringVal : string);
       XicEnum : (EnumOrdinal : integer;
                  EnumPtr : TPsEnumPtr);
-      XicSet : (SetBounds : TExSetBounds;
+      XicSet : (SetBounds : TExSetImmBounds;
                 SetOfTypePtr : TPsTypePtr)
   end;
-  TExSetBoundsObj = record
+  TExSetImmBoundsObj = record
     First, Last : integer;
-    Next : TExSetBounds;
+    Next : TExSetImmBounds;
   end;
   TExFunctionArgs = record
     Size : integer;
