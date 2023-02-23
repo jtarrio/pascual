@@ -169,3 +169,16 @@ testvars integer "1" "set of 0..10" "[1]" "a in b" | outputs TRUE
 testvars integer "1" "set of 0..10" "[2]" "a in b" | outputs FALSE
 testvars integer "1" "set of 0..10" "[0..2]" "a in b" | outputs TRUE
 testvars integer "1" "set of 0..10" "[3..5]" "a in b" | outputs FALSE
+
+# Construct sets using non-immediate expressions
+echo "program foo; var a, i : 0..10;
+      begin a := 5; for i := 0 to 10 do write(i in [1..3, a], ' ') end." |
+will_be_valid # outputs "1 2 3 5 "
+echo "program foo; var a, b, i : 0..10;
+      begin a := 5; b := 7;
+      for i := 0 to 10 do write(i in [1..3, a..b], ' ') end." |
+will_be_valid # outputs "1 2 3 5 6 7 "
+echo "program foo; var a, b, i : 0..10;
+      begin a := 7; b := 5;
+      for i := 0 to 10 do write(i in [1..3, a..b], ' ') end." |
+will_be_valid # outputs "1 2 3 "
