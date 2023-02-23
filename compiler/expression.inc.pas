@@ -1060,7 +1060,7 @@ begin
   ElemType := Haystack^.TypePtr^.ElementTypePtr;
   if ElemType = nil then ElemType := Needle^.TypePtr
   else Needle := ExCoerce(Needle, ElemType);
-  if Needle^.Cls <> XcVariable then
+  if Needle^.IsFunctionResult then
   begin
     TmpVar := AddTmpVariable('elem', ElemType);
     Wanted := ExVariable(TmpVar)
