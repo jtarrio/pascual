@@ -44,19 +44,17 @@ end;
 
 function LxIsAlpha(Chr : char) : boolean;
 begin
-  LxIsAlpha := ((Chr >= 'a') and (Chr <= 'z'))
-               or ((Chr >= 'A') and (Chr <= 'Z'))
+  LxIsAlpha := Chr in ['a'..'z', 'A'..'Z']
 end;
 
 function LxIsDigit(Chr : char) : boolean;
 begin
-  LxIsDigit := (Chr >= '0') and (Chr <= '9')
+  LxIsDigit := Chr in ['0'..'9']
 end;
 
 function LxIsHexDigit(Chr : char) : boolean;
 begin
-  LxIsHexDigit := LxIsDigit(Chr) or ((Chr >= 'a') and (Chr <= 'f'))
-                  or ((Chr >= 'A') and (Chr <= 'F'))
+  LxIsHexDigit := Chr in ['0'..'9', 'a'..'f', 'A'..'F']
 end;
 
 function LxIsAlphaNum(Chr : char) : boolean;
@@ -221,7 +219,7 @@ begin
     end
     else if State = Caret then
     begin
-      if ((Chr >= '@') and (Chr <= '_')) or ((Chr >= 'a') and (Chr <= 'z')) then
+      if (Chr in ['@'..'_']) or (Chr in ['a'..'z']) then
       begin
         Last := Pos;
         State := None

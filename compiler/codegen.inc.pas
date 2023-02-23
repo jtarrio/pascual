@@ -77,7 +77,7 @@ begin
   write(Codegen.Output, '''');
   if Chr = '''' then write(Codegen.Output, '\''')
   else if Chr = '\' then write(Codegen.Output, '\\')
-  else if (Chr >= ' ') and (Chr <= #126) then write(Codegen.Output, Chr)
+  else if Chr in [#32..#126] then write(Codegen.Output, Chr)
   else _OutEscapedChar(Chr);
   write(Codegen.Output, '''')
 end;

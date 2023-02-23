@@ -296,11 +296,10 @@ begin
     Idx := FindName(Lexer.Token.Value, {Required=}false);
     if Idx = nil then
     else if Idx^.Cls = TncType then Result := PsTypeIdentifier
-    else if (Idx^.Cls = TncConstant) or (Idx^.Cls = TncEnumVal) then
+    else if Idx^.Cls in [TncConstant, TncEnumVal] then
            Result := PsRangeType
   end
-  else if (Lexer.Token.Id = TkInteger) or (Lexer.Token.Id = TkString)
-          or (Lexer.Token.Id = TkMinus) or (Lexer.Token.Id = TkPlus) then
+  else if Lexer.Token.Id in [TkInteger, TkString, TkMinus, TkPlus] then
          Result := PsRangeType;
   if Result = nil then
     CompileError('Expected type denoter, found ' + LxTokenStr);
@@ -703,14 +702,11 @@ var
   Done : boolean;
 begin
   if (Expr^.Cls = XcVariable)
-     and ((Lexer.Token.Id = TkDot)
-     or (Lexer.Token.Id = TkLbracket)
-     or (Lexer.Token.Id = TkCaret)) then
+     and (Lexer.Token.Id in [TkDot, TkLbracket, TkCaret]) then
     Expr^.VarPtr^.WasUsed := true;
   Done := false;
   repeat
-    if (Expr^.Cls = XcFnRef) or (Expr^.Cls = XcPseudoFnRef) then
-      Expr := PsFunctionCall(Expr)
+    if Expr^.Cls in [XcFnRef, XcPseudoFnRef] then Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
@@ -721,23 +717,19 @@ end;
 
 function IsOpAdding(Tok : TLxToken) : boolean;
 begin
-  IsOpAdding := (Tok.Id = TkPlus) or (Tok.Id = TkMinus) or (Tok.Id = TkOr)
-                or (Tok.Id = TkXor)
+  IsOpAdding := Tok.Id in [TkPlus, TkMinus, TkOr, TkXor]
 end;
 
 function IsOpMultiplying(Tok : TLxToken) : boolean;
 begin
-  IsOpMultiplying := (Tok.Id = TkAsterisk) or (Tok.Id = TkSlash)
-                     or (Tok.Id = TkDiv) or (Tok.Id = TkMod) or (Tok.Id = TkAnd)
-                     or (Tok.Id = TkShl) or (Tok.Id = TkShr)
+  IsOpMultiplying := Tok.Id in [TkAsterisk, TkSlash, TkDiv, TkMod, TkAnd,
+                     TkShl, TkShr]
 end;
 
 function IsOpRelational(Tok : TLxToken) : boolean;
 begin
-  IsOpRelational := (Tok.Id = TkEquals) or (Tok.Id = TkNotEquals)
-                    or (Tok.Id = TkLessthan) or (Tok.Id = TkMorethan)
-                    or (Tok.Id = TkLessOrEquals) or (Tok.Id = TkMoreOrEquals)
-                    or (Tok.Id = TkIn);
+  IsOpRelational := Tok.Id in [TkEquals, TkNotEquals, TkLessthan, TkMorethan,
+                    TkLessOrEquals, TkMoreOrEquals, TkIn]
 end;
 
 function ParseString(Pstr : string) : string;
@@ -811,18 +803,18 @@ begin
     begin
       Pos := Pos + 1;
       State := None;
-      if (Ch >= '@') and (Ch <= '_') then
+      if Ch in ['@'..'_'] then
         Result := Result + Chr(Ord(Ch) - 64)
-      else if (Ch >= 'a') and (Ch <= 'z') then
+      else if Ch in ['a'..'z'] then
              Result := Result + Chr(Ord(Ch) - 96)
       else State := Error
     end
     else if State = Error then
            CompileError('Invalid character in string: ' + Pstr)
   end;
-  if (State = QuotedStr) or (State = Caret) then
+  if State in [QuotedStr, Caret] then
     CompileError('String is not terminated: ' + Pstr);
-  if (State = NumCharDec) or (State = NumCharHex) then
+  if State in [NumCharDec, NumCharHex] then
     Result := Result + Chr(ChNum);
 end;
 
@@ -1106,7 +1098,7 @@ begin
     OutCaseStatementEnd;
     WantToken3(TkSemicolon, TkElse, TkEnd);
     SkipToken(TkSemicolon);
-  until (Lexer.Token.Id = TkElse) or (Lexer.Token.Id = TkEnd);
+  until Lexer.Token.Id in [TkElse, TkEnd];
   OutCaseElseBegin;
   if Lexer.Token.Id = TkElse then
     repeat
@@ -1237,8 +1229,7 @@ procedure ExecuteDirective(Dir : string);
 begin
   if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
     LxInclude(Copy(Dir, 4, 255))
-  else if (length(Dir) = 3) and (Dir[2] = 'R') and
-          ((Dir[3] = '-') or (Dir[3] = '+')) then
+  else if (length(Dir) = 3) and (Dir[2] = 'R') and (Dir[3] in ['-', '+']) then
          Options.CheckBounds := Dir[3] = '+'
 end;
 

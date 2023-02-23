@@ -16,7 +16,7 @@ begin
   if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
   if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
   if Call.Arg3 <> nil then DisposeExpr(Call.Arg3);
-  if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
+  if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     ReadArg := Call.ReadArgs;
     while ReadArg <> nil do
@@ -27,7 +27,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.PseudoFn = TpfRead) or (Call.PseudoFn = TpfReadln) then
+  else if Call.PseudoFn in [TpfRead, TpfReadln] then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
@@ -106,7 +106,7 @@ begin
   if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
   if Call.Arg3 <> nil then Copy.Arg3 := CopyExpr(Call.Arg3);
-  if (Call.PseudoFn = TpfWrite) or (Call.PseudoFn = TpfWriteln) then
+  if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     ReadArg := Call.ReadArgs;
     CopyReadArg := nil;
@@ -128,7 +128,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if (Call.PseudoFn = TpfRead) or (Call.PseudoFn = TpfReadln) then
+  else if Call.PseudoFn in [TpfRead, TpfReadln] then
   begin
     WriteArg := Call.WriteArgs;
     CopyWriteArg := nil;
