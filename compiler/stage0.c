@@ -2356,6 +2356,9 @@ int _EXPRPRECEDENCE(TEXPRESSIONOBJ *EXPR) {
         case TKSHR:
           RESULT = 3;
           break;
+        case TKIN:
+          RESULT = 5;
+          break;
         case TKEQUALS:
           RESULT = 5;
           break;
@@ -2444,6 +2447,9 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
     case TKSHR:
       RESULT = cat_ss(RESULT, str_make(5, " shr "));
       break;
+    case TKIN:
+      RESULT = cat_ss(RESULT, str_make(4, " in "));
+      break;
     case TKEQUALS:
       RESULT = cat_ss(RESULT, str_make(3, " = "));
       break;
@@ -2463,7 +2469,7 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ *EXPR, int LEVELS) {
       RESULT = cat_ss(RESULT, str_make(4, " >= "));
       break;
     default:
-      INTERNALERROR(str_make(32, "Cannot describe binary operation"));
+      INTERNALERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(46, "Cannot describe binary operation for operator "), LXTOKENNAME(EXPR->BINARY.OP)), str_make(14, " and operands ")), DESCRIBEEXPR(EXPR->BINARY.LEFT, 5)), str_make(5, " and ")), DESCRIBEEXPR(EXPR->BINARY.RIGHT, 5)));
       break;
   }
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->BINARY.RIGHT);
@@ -2918,8 +2924,8 @@ void _EXSETCOERCETOCOMMON(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
   TPSTYPE *RIGHTTYPE;
   LEFTTYPE = LEFT->TYPEPTR;
   RIGHTTYPE = RIGHT->TYPEPTR;
-  if (LEFTTYPE->ELEMENTTYPEPTR == (void*)0) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
-  else if (RIGHTTYPE->ELEMENTTYPEPTR == (void*)0) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
+  if (LEFTTYPE->ELEMENTTYPEPTR == (void*)0 || EXISIMMEDIATE(LEFT)) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
+  else if (RIGHTTYPE->ELEMENTTYPEPTR == (void*)0 || EXISIMMEDIATE(RIGHT)) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
   else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(30, "Type mismatch: cannot combine "), TYPENAME(LEFT->TYPEPTR)), str_make(6, " with ")), TYPENAME(RIGHT->TYPEPTR)));
 }
 
@@ -3069,7 +3075,7 @@ TEXPRESSIONOBJ *_EXSETIN(TEXPRESSIONOBJ *NEEDLE, TEXPRESSIONOBJ *HAYSTACK) {
   ELEMTYPE = HAYSTACK->TYPEPTR->ELEMENTTYPEPTR;
   if (ELEMTYPE == (void*)0) ELEMTYPE = NEEDLE->TYPEPTR;
   else NEEDLE = EXCOERCE(NEEDLE, ELEMTYPE);
-  if (NEEDLE->CLS != XCVARIABLE) {
+  if (NEEDLE->ISFUNCTIONRESULT) {
     TMPVAR = ADDTMPVARIABLE(str_make(4, "elem"), ELEMTYPE);
     WANTED = EXVARIABLE(TMPVAR);
   }
@@ -3098,7 +3104,7 @@ TEXPRESSIONOBJ *_EXUNOPCMP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP);
 
 TEXPRESSIONOBJ *EXUNARYOP(TEXPRESSIONOBJ *PARENT, TLXTOKENID OP) {
   TEXPRESSIONOBJ *RESULT;
-  if (OP == TKMINUS || OP == TKPLUS) {
+  if (TKPLUS <= OP && OP <= TKMINUS) {
     if (!ISNUMERICTYPE(PARENT->TYPEPTR)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(17, "Invalid type for "), LXTOKENNAME(OP)), str_make(2, ": ")), TYPENAME(PARENT->TYPEPTR)));
   }
   else if (OP == TKNOT) {
@@ -3201,6 +3207,9 @@ TEXPRESSIONOBJ *_EXBINOPBOOLIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLX
     case TKOR:
       LT = LT || RT;
       break;
+    case TKXOR:
+      LT = LT != RT;
+      break;
     case TKEQUALS:
       LT = LT == RT;
       break;
@@ -3259,6 +3268,15 @@ TEXPRESSIONOBJ *_EXBINOPINTIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
       break;
     case TKOR:
       LT = LT | RT;
+      break;
+    case TKXOR:
+      LT = LT ^ RT;
+      break;
+    case TKSHL:
+      LT = LT << RT;
+      break;
+    case TKSHR:
+      LT = LT >> RT;
       break;
     default:
       {
@@ -3494,7 +3512,7 @@ TEXPRESSIONOBJ *_EXBINOPSETIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
 
 TEXPRESSIONOBJ *_EXBINOPBOOLCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
   TEXPRESSIONOBJ *RESULT;
-  if (OP == TKAND || OP == TKOR || OP == TKXOR || OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) {
+  if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS || OP == TKAND || OP == TKOR || OP == TKXOR) {
     RESULT = _NEWEXPR(XCBINARYOP);
     RESULT->BINARY.LEFT = LEFT;
     RESULT->BINARY.RIGHT = RIGHT;
@@ -3515,8 +3533,8 @@ TEXPRESSIONOBJ *_EXBINOPINTCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   RESULT->BINARY.OP = OP;
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKDIV || OP == TKMOD || OP == TKAND || OP == TKOR || OP == TKXOR || OP == TKSHL || OP == TKSHR) RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
-  else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  if (TKPLUS <= OP && OP <= TKASTERISK || OP == TKAND || OP == TKDIV || OP == TKMOD || OP == TKOR || TKSHL <= OP && OP <= TKSHR || OP == TKXOR) RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
+  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(26, "Invalid integer operator: "), LXTOKENNAME(OP)));
   return RESULT;
 }
@@ -3529,8 +3547,8 @@ TEXPRESSIONOBJ *_EXBINOPNUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   RESULT->BINARY.OP = OP;
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKSLASH) RESULT->TYPEPTR = PRIMITIVETYPES.PTREAL;
-  else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  if (TKPLUS <= OP && OP <= TKSLASH) RESULT->TYPEPTR = PRIMITIVETYPES.PTREAL;
+  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(23, "Invalid real operator: "), LXTOKENNAME(OP)));
   return RESULT;
 }
@@ -3544,7 +3562,7 @@ TEXPRESSIONOBJ *_EXBINOPSTRCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
   if (OP == TKPLUS) RESULT->TYPEPTR = PRIMITIVETYPES.PTSTRING;
-  else if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(25, "Invalid string operator: "), LXTOKENNAME(OP)));
   return RESULT;
 }
@@ -3557,7 +3575,7 @@ TEXPRESSIONOBJ *_EXBINOPENUMCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLX
   RESULT->BINARY.OP = OP;
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   else COMPILEERROR(cat_ss(str_make(23, "Invalid enum operator: "), LXTOKENNAME(OP)));
   return RESULT;
 }
@@ -3580,6 +3598,10 @@ TEXPRESSIONOBJ *_EXBINOPSETCMP(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   RESULT = _NEWEXPR(XCBINARYOP);
   if (OP == TKIN) {
     LEFT = EXCOERCE(LEFT, RIGHT->TYPEPTR->ELEMENTTYPEPTR);
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+  }
+  else if (OP == TKEQUALS || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) {
+    _EXSETCOERCETOCOMMON(LEFT, RIGHT);
     RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
   }
   else {
@@ -3648,6 +3670,12 @@ int _EXBINOPSHORTCUT(TEXPRESSIONOBJ **LEFT, TEXPRESSIONOBJ **RIGHT, TLXTOKENID O
     case TKOR:
       if (_EXISTRUE(*LEFT) || _EXISFALSE(*RIGHT)) USE = USELEFT;
       else if (_EXISFALSE(*LEFT)) USE = USERIGHT;
+      break;
+    case TKSHL:
+      if (_EXISZERO(*RIGHT)) USE = USELEFT;
+      break;
+    case TKSHR:
+      if (_EXISZERO(*RIGHT)) USE = USELEFT;
       break;
     default:
       break;
@@ -5136,6 +5164,10 @@ void _OUTSTRING(PString *STR) {
 
 int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
   int RESULT;
+  int ISSETLEFT;
+  int ISSETRIGHT;
+  ISSETLEFT = ISSETTYPE(EXPR->BINARY.LEFT->TYPEPTR);
+  ISSETRIGHT = ISSETTYPE(EXPR->BINARY.RIGHT->TYPEPTR);
   switch (EXPR->BINARY.OP) {
     case TKPLUS:
       if (ISSTRINGYTYPE(EXPR->TYPEPTR)) RESULT = 1;
@@ -5174,11 +5206,17 @@ int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
     case TKSHR:
       RESULT = 5;
       break;
+    case TKIN:
+      if (EXISIMMEDIATE(EXPR->BINARY.RIGHT)) RESULT = 12;
+      else RESULT = 1;
+      break;
     case TKEQUALS:
-      RESULT = 7;
+      if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
+      else RESULT = 7;
       break;
     case TKNOTEQUALS:
-      RESULT = 7;
+      if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
+      else RESULT = 7;
       break;
     case TKLESSTHAN:
       RESULT = 6;
@@ -5187,10 +5225,12 @@ int _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
       RESULT = 6;
       break;
     case TKLESSOREQUALS:
-      RESULT = 6;
+      if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
+      else RESULT = 6;
       break;
     case TKMOREOREQUALS:
-      RESULT = 6;
+      if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
+      else RESULT = 6;
       break;
     default:
       INTERNALERROR(cat_ss(str_make(35, "Unknown precedence for operator in "), DESCRIBEEXPR(EXPR, 5)));
@@ -5285,9 +5325,8 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   int POS;
   int BYTENUM;
   int BITNUM;
-  int BIT;
   BOUNDS = EXPR->IMMEDIATE.SETBOUNDS;
-  ELEMTYPEPTR = EXPR->IMMEDIATE.SETOFTYPEPTR;
+  ELEMTYPEPTR = EXPR->TYPEPTR->ELEMENTTYPEPTR;
   LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
   HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
   LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
@@ -5315,12 +5354,7 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
           {
             BYTENUM = 1 + POS / 8 - LOWBOUNDBYTE;
             BITNUM = POS % 8;
-            BIT = 1;
-            while (BITNUM > 0) {
-              BIT = BIT * 2;
-              BITNUM = BITNUM - 1;
-            }
-            SETELEMS[subrange(BYTENUM, 1, 32) - 1] = SETELEMS[subrange(BYTENUM, 1, 32) - 1] | BIT;
+            SETELEMS[subrange(BYTENUM, 1, 32) - 1] = SETELEMS[subrange(BYTENUM, 1, 32) - 1] | 1 << BITNUM;
           }
           if (POS == last) break;
           ++POS;
@@ -5331,7 +5365,7 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
   }
   WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(PSet"));
   WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "){"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, ") { "));
   do {
     int first = 1;
     int last = SETSIZE;
@@ -5347,7 +5381,7 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
       }
     }
   } while(0);
-  WRITE_c(&CODEGEN.OUTPUT, '}');
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"));
 }
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
@@ -5535,7 +5569,7 @@ void _OUTEXUNARYOP(TEXPRESSIONOBJ *EXPR) {
 
 int _ISARITHMETICOP(TLXTOKENID OP) {
   int RESULT;
-  RESULT = OP == TKPLUS || OP == TKMINUS || OP == TKASTERISK || OP == TKSLASH || OP == TKDIV || OP == TKMOD;
+  RESULT = TKPLUS <= OP && OP <= TKSLASH || OP == TKDIV || OP == TKMOD;
   return RESULT;
 }
 
@@ -5574,7 +5608,7 @@ int _ISLOGICALORBITWISEOP(TLXTOKENID OP) {
 
 int _ISBITWISEOP(TLXTOKENID OP) {
   int RESULT;
-  RESULT = OP == TKSHL || OP == TKSHR;
+  RESULT = TKSHL <= OP && OP <= TKSHR;
   return RESULT;
 }
 
@@ -5600,7 +5634,7 @@ PString _GETBITWISEOP(TLXTOKENID OP) {
 
 int _ISRELATIONALOP(TLXTOKENID OP) {
   int RESULT;
-  RESULT = OP == TKEQUALS || OP == TKNOTEQUALS || OP == TKLESSTHAN || OP == TKMORETHAN || OP == TKLESSOREQUALS || OP == TKMOREOREQUALS;
+  RESULT = TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS;
   return RESULT;
 }
 
@@ -5637,15 +5671,70 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
   int HIGHBOUND;
   int LOWBOUNDBYTE;
   int SETSIZE;
-  int BYTENUM;
-  int BITNUM;
-  int BIT;
   ELEMTYPEPTR = RIGHT->TYPEPTR->ELEMENTTYPEPTR;
-  LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
-  HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
-  LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
-  SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
-  INTERNALERROR(str_make(43, "Materialized set operations not implemented"));
+  if (OP == TKLESSOREQUALS) _OUTEXSETOPERATION(RIGHT, LEFT, TKMOREOREQUALS);
+  else if (OP == TKNOTEQUALS) {
+    WRITE_c(&CODEGEN.OUTPUT, '!');
+    _OUTEXSETOPERATION(LEFT, RIGHT, TKEQUALS);
+  }
+  else if (OP == TKIN) {
+    LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
+    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "set_in("));
+    OUTEXPRESSION(LEFT);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_i(&CODEGEN.OUTPUT, LOWBOUNDBYTE);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ".bits)"));
+  }
+  else {
+    LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
+    HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
+    SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
+    if (OP == TKEQUALS) {
+      WRITE_s(&CODEGEN.OUTPUT, str_make(11, "set_equals("));
+      _OUTEXPRESSIONPARENSPREC(LEFT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
+      WRITE_c(&CODEGEN.OUTPUT, ')');
+    }
+    else if (OP == TKMOREOREQUALS) {
+      WRITE_s(&CODEGEN.OUTPUT, str_make(13, "set_issubset("));
+      _OUTEXPRESSIONPARENSPREC(LEFT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
+      WRITE_c(&CODEGEN.OUTPUT, ')');
+    }
+    else {
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, "({ PSet"));
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(6, " dst; "));
+      switch (OP) {
+        case TKPLUS:
+          WRITE_s(&CODEGEN.OUTPUT, str_make(10, "set_union("));
+          break;
+        case TKMINUS:
+          WRITE_s(&CODEGEN.OUTPUT, str_make(15, "set_difference("));
+          break;
+        case TKASTERISK:
+          WRITE_s(&CODEGEN.OUTPUT, str_make(17, "set_intersection("));
+          break;
+        default:
+          INTERNALERROR(cat_ss(str_make(44, "Materialized set operation not implemented: "), LXTOKENNAME(OP)));
+          break;
+      }
+      _OUTEXPRESSIONPARENSPREC(LEFT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(17, ".bits, dst.bits, "));
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(10, "); dst; })"));
+    }
+  }
 }
 
 void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
@@ -5654,7 +5743,42 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   {
     TEXBINARYOP *with1 = &EXPR->BINARY;
     {
-      if (ISSTRINGYTYPE(with1->LEFT->TYPEPTR)) {
+      if (ISBOOLEANTYPE(with1->LEFT->TYPEPTR) && ISBOOLEANTYPE(with1->RIGHT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+        if (_ISLOGICALORBITWISEOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else if (_ISRELATIONALOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
+      }
+      else if (ISNUMERICTYPE(with1->LEFT->TYPEPTR) && ISNUMERICTYPE(with1->RIGHT->TYPEPTR)) {
+        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
+        if (_ISARITHMETICOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else if (_ISLOGICALORBITWISEOP(with1->OP) || _ISBITWISEOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else if (_ISRELATIONALOP(with1->OP)) {
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
+          WRITE_c(&CODEGEN.OUTPUT, ' ');
+        }
+        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
+        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
+      }
+      else if (ISSTRINGYTYPE(with1->LEFT->TYPEPTR) && ISSTRINGYTYPE(with1->RIGHT->TYPEPTR)) {
         if (ISCHARTYPE(with1->LEFT->TYPEPTR)) LTYPE = 'c';
         else LTYPE = 's';
         if (ISCHARTYPE(with1->RIGHT->TYPEPTR)) RTYPE = 'c';
@@ -5694,41 +5818,6 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
           }
           else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         }
-      }
-      else if (ISBOOLEANTYPE(with1->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
-        if (_ISLOGICALORBITWISEOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
-      }
-      else if (ISNUMERICTYPE(with1->LEFT->TYPEPTR)) {
-        _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
-        if (_ISARITHMETICOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISLOGICALORBITWISEOP(with1->OP) || _ISBITWISEOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else if (_ISRELATIONALOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-        }
-        else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
-        _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
       else if (ISSETTYPE(with1->RIGHT->TYPEPTR)) _OUTEXSETOPERATION(with1->LEFT, with1->RIGHT, with1->OP);
       else {
