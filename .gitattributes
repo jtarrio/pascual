@@ -1,0 +1,3 @@
+# Mark the generated C files as such.
+compiler/stage0.c linguist-generated
+examples/*.c linguist-generated
