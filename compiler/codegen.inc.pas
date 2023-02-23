@@ -124,7 +124,10 @@ begin
 end;
 
 function _BinOpPrec(Expr : TExpression) : integer;
+var IsSetLeft, IsSetRight : boolean;
 begin
+  IsSetLeft := IsSetType(Expr^.Binary.Left^.TypePtr);
+  IsSetRight := IsSetType(Expr^.Binary.Right^.TypePtr);
   case Expr^.Binary.Op of 
     TkPlus : if IsStringyType(Expr^.TypePtr) then Result := 1
              else Result := 4;
@@ -141,12 +144,18 @@ begin
             else Result := 9;
     TkShl : Result := 5;
     TkShr : Result := 5;
-    TkEquals : Result := 7;
-    TkNotEquals : Result := 7;
+    TkIn : if ExIsImmediate(Expr^.Binary.Right) then Result := 12
+           else Result := 1;
+    TkEquals : if IsSetLeft and IsSetRight then Result := 1
+               else Result := 7;
+    TkNotEquals : if IsSetLeft and IsSetRight then Result := 1
+                  else Result := 7;
     TkLessthan : Result := 6;
     TkMorethan : Result := 6;
-    TkLessOrEquals : Result := 6;
-    TkMoreOrEquals : Result := 6;
+    TkLessOrEquals : if IsSetLeft and IsSetRight then Result := 1
+                     else Result := 6;
+    TkMoreOrEquals : if IsSetLeft and IsSetRight then Result := 1
+                     else Result := 6;
     else InternalError('Unknown precedence for operator in ' +
                        DescribeExpr(Expr, 5))
   end
@@ -520,7 +529,29 @@ var Ltype, Rtype : char;
 begin
   with Expr^.Binary do
   begin
-    if IsStringyType(Left^.TypePtr) then
+    if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
+    begin
+      _OutExpressionParens(Left, Expr);
+      if _IsLogicalOrBitwiseOp(Op) then
+        write(Codegen.Output, ' ', _GetLogicalOp(Op), ' ')
+      else if _IsRelationalOp(Op) then
+             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
+      else CompileError('Not a valid operator: ' + LxTokenName(Op));
+      _OutExpressionParensExtra(Right, Expr)
+    end
+    else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
+    begin
+      _OutExpressionParens(Left, Expr);
+      if _IsArithmeticOp(Op) then
+        write(Codegen.Output, ' ', _GetArithmeticOp(Op), ' ')
+      else if _IsLogicalOrBitwiseOp(Op) or _IsBitwiseOp(Op) then
+             write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
+      else if _IsRelationalOp(Op) then
+             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
+      else CompileError('Not a valid operator: ' + LxTokenName(Op));
+      _OutExpressionParensExtra(Right, Expr)
+    end
+    else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
     begin
       if IsCharType(Left^.TypePtr) then Ltype := 'c'
       else Ltype := 's';
@@ -552,28 +583,6 @@ begin
           write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
         else CompileError('Not a valid operator: ' + LxTokenName(Op))
       end
-    end
-    else if IsBooleanType(Left^.TypePtr) then
-    begin
-      _OutExpressionParens(Left, Expr);
-      if _IsLogicalOrBitwiseOp(Op) then
-        write(Codegen.Output, ' ', _GetLogicalOp(Op), ' ')
-      else if _IsRelationalOp(Op) then
-             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
-      else CompileError('Not a valid operator: ' + LxTokenName(Op));
-      _OutExpressionParensExtra(Right, Expr)
-    end
-    else if IsNumericType(Left^.TypePtr) then
-    begin
-      _OutExpressionParens(Left, Expr);
-      if _IsArithmeticOp(Op) then
-        write(Codegen.Output, ' ', _GetArithmeticOp(Op), ' ')
-      else if _IsLogicalOrBitwiseOp(Op) or _IsBitwiseOp(Op) then
-             write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
-      else if _IsRelationalOp(Op) then
-             write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
-      else CompileError('Not a valid operator: ' + LxTokenName(Op));
-      _OutExpressionParensExtra(Right, Expr)
     end
     else if IsSetType(Right^.TypePtr) then _OutExSetOperation(Left, Right, Op)
     else

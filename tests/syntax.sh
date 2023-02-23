@@ -541,7 +541,7 @@ testexpr boolean integer 'x < y' | is_valid
 testexpr boolean integer 'x >= y' | is_valid
 testexpr boolean integer 'x <= y' | is_valid
 testexpr boolean integer 'x <> y' | is_valid
-testexpr boolean 'set of char' "'a' in x" | will_be_valid
+testexpr boolean 'set of char' "'a' in x" | is_valid
 
 # Statements
 echo 'program foo; begin ; ; end.' | is_valid

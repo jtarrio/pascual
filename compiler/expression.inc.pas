@@ -344,6 +344,7 @@ begin
                   TkXor: Result := 4;
                   TkShl: Result := 3;
                   TkShr: Result := 3;
+                  TkIn: Result := 5;
                   TkEquals: Result := 5;
                   TkNotEquals: Result := 5;
                   TkLessthan: Result := 5;
@@ -387,13 +388,17 @@ begin
     TkXor: Result := Result + ' xor ';
     TkShl: Result := Result + ' shl ';
     TkShr: Result := Result + ' shr ';
+    TkIn: Result := Result + ' in ';
     TkEquals: Result := Result + ' = ';
     TkNotEquals: Result := Result + ' <> ';
     TkLessthan: Result := Result + ' < ';
     TkMorethan: Result := Result + ' > ';
     TkLessOrEquals: Result := Result + ' <= ';
     TkMoreOrEquals: Result := Result + ' >= ';
-    else InternalError('Cannot describe binary operation')
+    else InternalError('Cannot describe binary operation for operator ' +
+                       LxTokenName(Expr^.Binary.Op) + ' and operands ' +
+      DescribeExpr(Expr^.Binary.Left, 5) +
+      ' and ' + DescribeExpr(Expr^.Binary.Right, 5))
   end;
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Right);
   if UseParens then Result := Result + '(';

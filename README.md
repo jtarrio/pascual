@@ -8,8 +8,8 @@ Pascual generates C code that can then be compiled into an executable file.
 
 Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 
-* `Boolean`, `integer`, `real`, `char`, and `string`; enumerated types, subranges; arrays, records, and pointers; text files.
-    * Missing sets, non-text files.
+* `Boolean`, `integer`, `real`, `char`, and `string`; enumerated types, subranges; arrays, records, pointers, and sets; text files.
+    * Missing non-text files.
     * Missing narrow machine types for subranges (eg 16-bit word for 0..65535).
     * Missing packed arrays and records.
     * Missing active I/O result checking.
