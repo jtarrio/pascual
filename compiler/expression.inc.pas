@@ -1104,7 +1104,7 @@ function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 forward;
 function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
-  if (Op = TkMinus) or (Op = TkPlus) then
+  if Op in [TkMinus, TkPlus] then
   begin
     if not IsNumericType(Parent^.TypePtr) then
       CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
@@ -1445,9 +1445,8 @@ end;
 
 function _ExBinOpBoolCmp;
 begin
-  if (Op = TkAnd) or (Op = TkOr) or (Op = TkXor) or (Op = TkEquals)
-     or (Op = TkNotEquals) or (Op = TkLessthan) or (Op = TkMorethan)
-     or (Op = TkLessOrEquals) or (Op = TkMoreOrEquals) then
+  if Op in [TkAnd, tkOr, TkXor, TkEquals, TkNotEquals, TkLessthan, TkMorethan,
+     TkLessOrEquals, TkMoreOrEquals] then
   begin
     Result := _NewExpr(XcBinaryOp);
     Result^.Binary.Left := Left;
@@ -1469,13 +1468,11 @@ begin
   Result^.Binary.Op := Op;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkDiv)
-     or (Op = TkMod) or (Op = TkAnd) or (Op = TkOr) or (Op = TkXor)
-     or (Op = TkShl) or (Op = TkShr) then
+  if Op in [TkPlus, TkMinus, TkAsterisk, TkDiv, TkMod, TkAnd, TkOr, TkXor,
+     TkShl, TkShr] then
     Result^.TypePtr := PrimitiveTypes.PtInteger
-  else if (Op = TkEquals) or (Op = TkNotEquals)
-          or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
-          or (Op = TkMoreOrEquals) then
+  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
+          TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid integer operator: ' + LxTokenName(Op))
 end;
@@ -1488,11 +1485,10 @@ begin
   Result^.Binary.Op := Op;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk) or (Op = TkSlash) then
+  if Op in [TkPlus, TkMinus, TkAsterisk, TkSlash] then
     Result^.TypePtr := PrimitiveTypes.PtReal
-  else if (Op = TkEquals) or (Op = TkNotEquals)
-          or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
-          or (Op = TkMoreOrEquals) then
+  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
+          TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid real operator: ' + LxTokenName(Op))
 end;
@@ -1507,9 +1503,8 @@ begin
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if Op = TkPlus then
     Result^.TypePtr := PrimitiveTypes.PtString
-  else if (Op = TkEquals) or (Op = TkNotEquals)
-          or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
-          or (Op = TkMoreOrEquals) then
+  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
+          TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;
@@ -1522,9 +1517,8 @@ begin
   Result^.Binary.Op := Op;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if (Op = TkEquals) or (Op = TkNotEquals)
-     or (Op = TkLessthan) or (Op = TkMorethan) or (Op = TkLessOrEquals)
-     or (Op = TkMoreOrEquals) then
+  if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
+     TkMoreOrEquals] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid enum operator: ' + LxTokenName(Op))
 end;
@@ -1537,7 +1531,7 @@ begin
   Result^.Binary.Op := Op;
   Result^.IsAssignable := false;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if (Op = TkEquals) or (Op = TkNotEquals) then
+  if Op in [TkEquals, TkNotEquals] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   else CompileError('Invalid string operator: ' + LxTokenName(Op))
 end;

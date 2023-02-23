@@ -400,8 +400,7 @@ end;
 
 function _IsArithmeticOp(Op : TLxTokenId) : boolean;
 begin
-  _IsArithmeticOp := (Op = TkPlus) or (Op = TkMinus) or (Op = TkAsterisk)
-                     or (Op = TkSlash) or (Op = TkDiv) or (Op = TkMod)
+  _IsArithmeticOp := Op in [TkPlus, TkMinus, TkAsterisk, TkSlash, TkDiv, TkMod]
 end;
 
 function _GetArithmeticOp(Op : TLxTokenId) : string;
@@ -418,12 +417,12 @@ end;
 
 function _IsLogicalOrBitwiseOp(Op : TLxTokenId) : boolean;
 begin
-  _IsLogicalOrBitwiseOp := (Op = TkAnd) or (Op = TkOr) or (Op = TkXor)
+  _IsLogicalOrBitwiseOp := Op in [TkAnd, TkOr, TkXor]
 end;
 
 function _IsBitwiseOp(Op : TLxTokenId) : boolean;
 begin
-  _IsBitwiseOp := (Op = TkShl) or (Op = TkShr)
+  _IsBitwiseOp := Op in [TkShl, TkShr]
 end;
 
 function _GetLogicalOp(Op : TLxTokenId) : string;
@@ -446,9 +445,8 @@ end;
 
 function _IsRelationalOp(Op : TLxTokenId) : boolean;
 begin
-  _IsRelationalOp := (Op = TkEquals) or (Op = TkNotEquals) or (Op = TkLessthan)
-                     or (Op = TkMorethan) or (Op = TkLessOrEquals)
-                     or (Op = TkMoreOrEquals)
+  _IsRelationalOp := Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan,
+                     TkLessOrEquals, TkMoreOrEquals]
 end;
 
 function _GetRelationalOp(Op : TLxTokenId) : string;
