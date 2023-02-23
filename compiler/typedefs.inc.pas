@@ -82,7 +82,7 @@ type
     Op : TLxTokenId
   end;
 
-  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcSetTmpVar,
+  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,
                       XcSubrange, XcVariable, XcField, XcArray, XcPointer,
                       XcStringChar, XcFnRef, XcFnCall, XcPseudoFnRef,
                       XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
@@ -94,6 +94,9 @@ type
       XcImmediate : (Immediate : TExImmediate);
       XcToString : (ToStrParent : TExpression);
       XcToReal : (ToRealParent : TExpression);
+      XcWithTmpVar : (TmpVar : TExpression;
+                      TmpVarValue : TExpression;
+                      TmpVarChild : TExpression);
       XcSubrange : (SubrangeParent : TExpression);
       XcVariable : (VarPtr : TPsVarPtr);
       XcField : (RecExpr : TExpression;
@@ -110,9 +113,6 @@ type
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
-      XcSetTmpVar : (TmpVar : TExpression;
-                     TmpVarValue : TExpression;
-                     TmpVarChild : TExpression);
   end;
 
   TPsIdentifier = record

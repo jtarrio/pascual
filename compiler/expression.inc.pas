@@ -61,12 +61,12 @@ begin
     XcImmediate : _DisposeImmediate(Expr^.Immediate);
     XcToString : DisposeExpr(Expr^.ToStrParent);
     XcToReal : DisposeExpr(Expr^.ToRealParent);
-    XcSetTmpVar :
-                  begin
-                    DisposeExpr(Expr^.TmpVar);
-                    DisposeExpr(Expr^.TmpVarValue);
-                    DisposeExpr(Expr^.TmpVarChild);
-                  end;
+    XcWithTmpVar :
+                   begin
+                     DisposeExpr(Expr^.TmpVar);
+                     DisposeExpr(Expr^.TmpVarValue);
+                     DisposeExpr(Expr^.TmpVarChild);
+                   end;
     XcSubrange : DisposeExpr(Expr^.SubrangeParent);
     XcField : DisposeExpr(Expr^.RecExpr);
     XcArray :
@@ -187,12 +187,12 @@ begin
     XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := CopyExpr(Expr^.ToRealParent);
-    XcSetTmpVar :
-                  begin
-                    Copy^.TmpVar := CopyExpr(Expr^.TmpVar);
-                    Copy^.TmpVarValue := CopyExpr(Expr^.TmpVarValue);
-                    Copy^.TmpVarChild := CopyExpr(Expr^.TmpVarChild);
-                  end;
+    XcWithTmpVar :
+                   begin
+                     Copy^.TmpVar := CopyExpr(Expr^.TmpVar);
+                     Copy^.TmpVarValue := CopyExpr(Expr^.TmpVarValue);
+                     Copy^.TmpVarChild := CopyExpr(Expr^.TmpVarChild);
+                   end;
     XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
@@ -319,7 +319,7 @@ begin
     XcImmediate: Result := 0;
     XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
     XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
-    XcSetTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
+    XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
     XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
     XcVariable: Result := 0;
     XcField: Result := 1;
@@ -406,15 +406,15 @@ begin
   if UseParens then Result := Result + ')';
 end;
 
-function _DescribeSetTmpVar(Expr : TExpression; Levels : integer) : string;
+function _DescribeWithTmpVar(Expr : TExpression; Levels : integer) : string;
 begin
   Result := '{with ';
-  while Expr^.Cls = XcSetTmpVar do
+  while Expr^.Cls = XcWithTmpVar do
   begin
     Result := Result + DescribeExpr(Expr^.TmpVar, Levels) + ':=' +
               DescribeExpr(Expr^.TmpVarValue, Levels - 1);
     Expr := Expr^.TmpVarChild;
-    if Expr^.Cls = XcSetTmpVar then Result := Result + ', '
+    if Expr^.Cls = XcWithTmpVar then Result := Result + ', '
   end;
   Result := Result + '} ' + DescribeExpr(Expr, Levels - 1)
 end;
@@ -429,7 +429,7 @@ begin
       XcImmediate: Result := _DescribeImmediate(Expr);
       XcToString: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcToReal: Result := DescribeExpr(Expr^.ToRealParent, Levels);
-      XcSetTmpVar: Result := _DescribeSetTmpVar(Expr, Levels);
+      XcWithTmpVar: Result := _DescribeWithTmpVar(Expr, Levels);
       XcSubrange: Result := DescribeExpr(Expr^.ToStrParent, Levels);
       XcVariable: Result := Expr^.VarPtr^.Name;
       XcField: Result := DescribeExpr(Expr^.RecExpr, Levels) + '.' +
@@ -673,9 +673,9 @@ begin
   end;
 end;
 
-function ExSetTmpVar(TmpVar, Value, Child : TExpression) : TExpression;
+function ExWithTmpVar(TmpVar, Value, Child : TExpression) : TExpression;
 begin
-  Result := _NewExpr(XcSetTmpVar);
+  Result := _NewExpr(XcWithTmpVar);
   Result^.TmpVar := TmpVar;
   Result^.TmpVarValue := Value;
   Result^.TmpVarChild := Child;
@@ -807,7 +807,7 @@ begin
       begin
         if FnExpr^.FnPtr^.Args[Pos].IsConstant then
         begin
-          Result := ExSetTmpVar(ExVariable(AddTmpVariable(
+          Result := ExWithTmpVar(ExVariable(AddTmpVariable(
                     'tmp', FnExpr^.FnPtr^.Args[Pos].TypePtr)),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := CopyExpr(Result^.TmpVar)
@@ -1092,7 +1092,7 @@ begin
   end;
   if TmpVar <> nil then
   begin
-    Result := ExSetTmpVar(Wanted, Needle, Result);
+    Result := ExWithTmpVar(Wanted, Needle, Result);
   end
   else DisposeExpr(Needle);
   DisposeExpr(Haystack)

@@ -167,7 +167,7 @@ begin
     XcImmediate : Result := 0;
     XcToString : Result := 0;
     XcToReal : Result := 2;
-    XcSetTmpVar : Result := 0;
+    XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
                  else Result := 0;
@@ -594,10 +594,10 @@ begin
   end
 end;
 
-procedure _OutExSetTmpVar(Expr : TExpression);
+procedure _OutExWithTmpVar(Expr : TExpression);
 begin
   write(Codegen.Output, '({ ');
-  while Expr^.Cls = XcSetTmpVar do
+  while Expr^.Cls = XcWithTmpVar do
   begin
     OutVariableDeclaration(Expr^.TmpVar^.VarPtr^);
     write(Codegen.Output, ' = ');
@@ -624,7 +624,7 @@ begin
                 write(Codegen.Output, '(double)');
                 OutExpression(Expr^.ToRealParent)
               end;
-    XcSetTmpVar: _OutExSetTmpVar(Expr);
+    XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcVariable : _OutExVariable(Expr);
     XcField: _OutExFieldAccess(Expr);

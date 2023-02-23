@@ -1028,7 +1028,7 @@ begin
   begin
     OrigLhs := Lhs;
     UsesTmpVars := false;
-    while Lhs^.Cls = XcSetTmpVar do
+    while Lhs^.Cls = XcWithTmpVar do
     begin
       if not UsesTmpVars then
       begin
