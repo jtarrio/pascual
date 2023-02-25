@@ -23,11 +23,12 @@ The built Pascual compiler will be available in the `dist` subdirectory.
 
 To check if Pascual works, let's write a small program and compile it:
 ```
-$ cat helloworld.pas
+$ cat > helloworld.pas
 program Check;
 begin
   writeln('It works!)
 end.
+^D
 $ dist/pascualc check.pas
 $ ./check
 It works!
