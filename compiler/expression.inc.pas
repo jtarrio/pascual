@@ -54,6 +54,19 @@ begin
   end
 end;
 
+procedure _DisposeBounds(Bounds : TExSetExprBounds);
+var Next : TExSetExprBounds;
+begin
+  while Bounds <> nil do
+  begin
+    Next := Bounds^.Next;
+    DisposeExpr(Bounds^.First);
+    if Bounds^.Last <> nil then DisposeExpr(Bounds^.Last);
+    dispose(Bounds);
+    Bounds := Next
+  end
+end;
+
 procedure DisposeExpr;
 var Pos : integer;
 begin
@@ -68,6 +81,11 @@ begin
                      DisposeExpr(Expr^.TmpVarChild);
                    end;
     XcSubrange : DisposeExpr(Expr^.SubrangeParent);
+    XcSet :
+            begin
+              DisposeExpr(Expr^.SetBase);
+              _DisposeBounds(Expr^.SetBounds);
+            end;
     XcField : DisposeExpr(Expr^.RecExpr);
     XcArray :
               begin
@@ -174,6 +192,31 @@ begin
   end
 end;
 
+function _CopyBounds(Bounds : TExSetExprBounds) : TExSetExprBounds;
+var Src, Dst : TExSetExprBounds;
+begin
+  Src := Bounds;
+  Dst := nil;
+  while Src <> nil do
+  begin
+    if Dst = nil then
+    begin
+      new(Dst);
+      Result := Dst;
+    end
+    else
+    begin
+      new(Dst^.Next);
+      Dst := Dst^.Next
+    end;
+    Dst^.First := CopyExpr(Src^.First);
+    if Src^.Last <> nil then Dst^.Last := CopyExpr(Src^.Last)
+    else Dst^.Last := nil;
+    Dst^.Next := nil;
+    Src := Src^.Next
+  end
+end;
+
 function CopyExpr;
 var 
   Copy : TExpression;
@@ -194,6 +237,11 @@ begin
                      Copy^.TmpVarChild := CopyExpr(Expr^.TmpVarChild);
                    end;
     XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
+    XcSet :
+            begin
+              Copy^.SetBase := CopyExpr(Expr^.SetBase);
+              Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
+            end;
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
              begin
@@ -239,10 +287,10 @@ begin
   CopyExpr := Copy
 end;
 
-function _DescribeSet(Bounds : TExSetImmBounds;
-                      SetOfTypePtr : TPsTypePtr) : string;
+function _DescribeImmSetInternal(Bounds : TExSetImmBounds;
+                                 SetOfTypePtr : TPsTypePtr) : string;
 begin
-  Result := '[';
+  Result := '';
   while Bounds <> nil do
   begin
     Result := Result +
@@ -252,8 +300,13 @@ begin
                 DescribeExpr(ExGetAntiOrdinal(Bounds^.Last, SetOfTypePtr), 100);
     Bounds := Bounds^.Next;
     if Bounds <> nil then Result := Result + ', '
-  end;
-  Result := Result + ']'
+  end
+end;
+
+function _DescribeImmSet(Bounds : TExSetImmBounds;
+                         SetOfTypePtr : TPsTypePtr) : string;
+begin
+  Result := '[' + _DescribeImmSetInternal(Bounds, SetOfTypePtr) + ']'
 end;
 
 function _DescribeImmediate(Expr : TExpression) : string;
@@ -267,7 +320,7 @@ begin
       XicChar: Result := UnparseChar(CharVal);
       XicString: Result := UnparseString(StringVal);
       XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
-      XicSet: Result := _DescribeSet(SetBounds, SetOfTypePtr);
+      XicSet: Result := _DescribeImmSet(SetBounds, SetOfTypePtr);
       else InternalError('Cannot describe immediate value')
     end
 end;
@@ -321,6 +374,7 @@ begin
     XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
     XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
     XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
+    XcSet: Result := 0;
     XcVariable: Result := 0;
     XcField: Result := 1;
     XcArray: Result := 1;
@@ -419,6 +473,25 @@ begin
   Result := Result + '} ' + DescribeExpr(Expr, Levels - 1)
 end;
 
+function _DescribeSet(Expr : TExpression; Levels : integer) : string;
+var 
+  Bounds : TExSetExprBounds;
+begin
+  Result := '[' + _DescribeImmSetInternal(Expr^.SetBase^.Immediate.SetBounds,
+            Expr^.SetBase^.Immediate.SetOfTypePtr);
+  if Expr^.SetBase^.Immediate.SetBounds <> nil then Result := Result + ', ';
+  Bounds := Expr^.SetBounds;
+  while Bounds <> nil do
+  begin
+    Result := Result + DescribeExpr(Bounds^.First, Levels);
+    if Bounds^.Last <> nil then
+      Result := Result + '..' + DescribeExpr(Bounds^.Last, Levels);
+    Bounds := Bounds^.Next;
+    if Bounds <> nil then Result := Result + ', '
+  end;
+  Result := Result + ']'
+end;
+
 function DescribeExpr;
 var 
   Pos : integer;
@@ -431,6 +504,7 @@ begin
       XcToReal: Result := DescribeExpr(Expr^.ToRealParent, Levels);
       XcWithTmpVar: Result := _DescribeWithTmpVar(Expr, Levels);
       XcSubrange: Result := DescribeExpr(Expr^.ToStrParent, Levels);
+      XcSet: Result := _DescribeSet(Expr, Levels);
       XcVariable: Result := Expr^.VarPtr^.Name;
       XcField: Result := DescribeExpr(Expr^.RecExpr, Levels) + '.' +
                          Expr^.RecExpr^.TypePtr^.RecPtr^
@@ -623,6 +697,79 @@ function ExIsImmediateOfClass(Expr : TExpression;
                               Cls : TExImmediateClass) : boolean;
 begin
   Result := (Expr^.Cls = XcImmediate) and (Expr^.Immediate.Cls = Cls)
+end;
+
+function ExSet : TExpression;
+var SetType : TPsType;
+begin
+  SetType := EmptyType;
+  SetType.Cls := TtcSet;
+  SetType.ElementTypePtr := nil;
+  Result := _ExImmediate(XicSet);
+  Result^.Immediate.SetBounds := nil;
+  Result^.Immediate.SetOfTypePtr := nil;
+  Result^.TypePtr := AddType(SetType)
+end;
+
+function ExSetAddRange(SetExpr : TExpression;
+                       First, Last : TExpression) : TExpression;
+var 
+  ElementTypePtr : TPsTypePtr;
+  ImmSet : TExpression;
+  ExprSet : TExpression;
+  NewBounds : TExSetExprBounds;
+begin
+  ElementTypePtr := SetExpr^.TypePtr^.ElementTypePtr;
+  if ElementTypePtr = nil then
+  begin
+    ElementTypePtr := GetFundamentalType(First^.TypePtr);
+    SetExpr^.Immediate.SetOfTypePtr := ElementTypePtr;
+    SetExpr^.TypePtr^.ElementTypePtr := ElementTypePtr
+  end;
+  if not IsSameType(GetFundamentalType(First^.TypePtr), ElementTypePtr) then
+    CompileError('Cannot add an element of type ' + TypeName(First^.TypePtr) +
+    ' to ' + TypeName(SetExpr^.TypePtr));
+  if (Last <> nil) and not IsSameType(GetFundamentalType(Last^.TypePtr),
+     ElementTypePtr) and not IsSameType(First^.TypePtr, Last^.TypePtr) then
+    CompileError('Cannot add an element of type ' + TypeName(Last^.TypePtr) +
+    ' to ' + TypeName(SetExpr^.TypePtr));
+
+  if ExIsImmediate(SetExpr) then
+  begin
+    ImmSet := SetExpr;
+    ExprSet := nil
+  end
+  else
+  begin
+    ImmSet := SetExpr^.SetBase;
+    ExprSet := SetExpr
+  end;
+  if ExIsImmediate(First) and (Last = nil) then Last := CopyExpr(First);
+  if ExIsImmediate(First) and ExIsImmediate(Last) then
+  begin
+    with ImmSet^.Immediate do
+      SetBounds := ExSetAddBounds(SetBounds,
+                   ExGetOrdinal(First), ExGetOrdinal(Last));
+    DisposeExpr(First);
+    DisposeExpr(Last)
+  end
+  else
+  begin
+    if ExprSet = nil then
+    begin
+      ExprSet := _NewExpr(XcSet);
+      ExprSet^.SetBase := ImmSet;
+      ExprSet^.SetBounds := nil;
+      ExprSet^.TypePtr := ImmSet^.TypePtr;
+    end;
+    new(NewBounds);
+    NewBounds^.First := First;
+    NewBounds^.Last := Last;
+    NewBounds^.Next := ExprSet^.SetBounds;
+    ExprSet^.SetBounds := NewBounds;
+  end;
+  if ExprSet <> nil then Result := ExprSet
+  else Result := ImmSet
 end;
 
 function ExToString(Parent : TExpression) : TExpression;
@@ -1052,7 +1199,10 @@ end;
 function _ExSetIn(Needle, Haystack : TExpression) : TExpression;
 var 
   ElemType : TPsTypePtr;
-  Bounds : TExSetImmBounds;
+  ImmSet : TExpression;
+  ExprSet : TExpression;
+  ImmBounds : TExSetImmBounds;
+  ExprBounds : TExSetExprBounds;
   Cond : TExpression;
   TmpVar : TPsVarPtr;
   Wanted : TExpression;
@@ -1071,24 +1221,58 @@ begin
     Wanted := Needle;
   end;
   Result := ExBooleanConstant(false);
-  Bounds := Haystack^.Immediate.SetBounds;
-  while Bounds <> nil do
+  if ExIsImmediate(Haystack) then
   begin
-    if Bounds^.First = Bounds^.Last then
-      Cond := ExBinaryOp(CopyExpr(Wanted),
-              ExGetAntiOrdinal(Bounds^.First, ElemType),
-              TkEquals)
-    else
-      Cond := ExBinaryOp(
-              ExBinaryOp(ExGetAntiOrdinal(Bounds^.First, ElemType),
-              CopyExpr(Wanted),
-              TkLessOrEquals),
-              ExBinaryOp(CopyExpr(Wanted),
-              ExGetAntiOrdinal(Bounds^.Last, ElemType),
-              TkLessOrEquals),
-              TkAnd);
-    Result := ExBinaryOp(Result, Cond, TkOr);
-    Bounds := Bounds^.Next
+    ImmSet := Haystack;
+    ExprSet := nil
+  end
+  else
+  begin
+    ImmSet := Haystack^.SetBase;
+    ExprSet := Haystack
+  end;
+  if ImmSet <> nil then
+  begin
+    ImmBounds := ImmSet^.Immediate.SetBounds;
+    while ImmBounds <> nil do
+    begin
+      if ImmBounds^.First = ImmBounds^.Last then
+        Cond := ExBinaryOp(CopyExpr(Wanted),
+                ExGetAntiOrdinal(ImmBounds^.First, ElemType),
+                TkEquals)
+      else
+        Cond := ExBinaryOp(
+                ExBinaryOp(ExGetAntiOrdinal(ImmBounds^.First, ElemType),
+                CopyExpr(Wanted),
+                TkLessOrEquals),
+                ExBinaryOp(CopyExpr(Wanted),
+                ExGetAntiOrdinal(ImmBounds^.Last, ElemType),
+                TkLessOrEquals),
+                TkAnd);
+      Result := ExBinaryOp(Result, Cond, TkOr);
+      ImmBounds := ImmBounds^.Next
+    end
+  end;
+  if ExprSet <> nil then
+  begin
+    ExprBounds := ExprSet^.SetBounds;
+    while ExprBounds <> nil do
+    begin
+      if ExprBounds^.Last = nil then
+        Cond := ExBinaryOp(CopyExpr(Wanted), CopyExpr(ExprBounds^.First),
+                TkEquals)
+      else
+        Cond := ExBinaryOp(
+                ExBinaryOp(CopyExpr(ExprBounds^.First),
+                CopyExpr(Wanted),
+                TkLessOrEquals),
+                ExBinaryOp(CopyExpr(Wanted),
+                CopyExpr(ExprBounds^.Last),
+                TkLessOrEquals),
+                TkAnd);
+      Result := ExBinaryOp(Result, Cond, TkOr);
+      ExprBounds := ExprBounds^.Next
+    end
   end;
   if TmpVar <> nil then
   begin
@@ -1239,6 +1423,8 @@ begin
     if ExIsImmediate(Right)
        and (ExIsImmediate(Left) or not IsSetType(Left^.TypePtr)) then
       Result := _ExBinOpSetImm(Left, Right, Op)
+    else if (Op = TkIn) and (Right^.Cls = XcSet) then
+           Result := _ExBinOpSetImm(Left, Right, Op)
     else Result := _ExBinOpSetCmp(Left, Right, Op)
   end
   else
@@ -1717,6 +1903,7 @@ begin
   else if not IsSameType(GetFundamentalType(ExprElemType),
           GetFundamentalType(DestElemType)) then Outcome := Reject
   else if ExIsImmediate(Expr) then Outcome := Replace
+  else if Expr^.Cls = XcSet then Outcome := Replace
   else if (GetTypeLowBound(ExprElemType) = GetTypeLowBound(DestElemType))
           and (GetTypeHighBound(ExprElemType) = GetTypeHighBound(DestElemType))
          then Outcome := Pass
@@ -1725,7 +1912,11 @@ begin
   case Outcome of 
     Reject : CompileError('Type mismatch: ' + TypeName(Expr^.TypePtr) +
              ' cannot be assigned to ' + TypeName(TypePtr));
-    Replace : Expr^.TypePtr := TypePtr;
+    Replace :
+              begin
+                Expr^.TypePtr := TypePtr;
+                if Expr^.Cls = XcSet then Expr^.SetBase^.TypePtr := TypePtr
+              end;
     Pass : { do nothing };
   end;
   Result := Expr

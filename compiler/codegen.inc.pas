@@ -169,6 +169,7 @@ begin
     XcToReal : Result := 2;
     XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
+    XcSet : Result := 0;
     XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
                  else Result := 0;
     XcField : Result := 1;
@@ -202,6 +203,14 @@ end;
 procedure _OutExpressionParensExtra(Expr, Ref : TExpression);
 begin
   _OutExpressionParensPrec(Expr, _Precedence(Ref) - 1)
+end;
+
+procedure _OutSetTypeName(TypePtr : TPsTypePtr);
+var NumBytes : integer;
+begin
+  NumBytes := GetTypeHighBound(TypePtr^.ElementTypePtr) div 8 -
+              GetTypeLowBound(TypePtr^.ElementTypePtr) div 8 + 1;
+  write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 
 procedure _OutSetImmediate(Expr : TExpression);
@@ -240,6 +249,38 @@ begin
     write(Codegen.Output, SetElems[Pos]);
   end;
   write(Codegen.Output, ' }');
+end;
+
+procedure _OutExSet(Expr : TExpression);
+var
+  ElementTypePtr : TPsTypePtr;
+  Bounds : TExSetExprBounds;
+  First, Last : TExpression;
+  LowBoundByte : integer;
+begin
+  ElementTypePtr := Expr^.TypePtr^.ElementTypePtr;
+  LowBoundByte := GetTypeLowBound(ElementTypePtr) div 8;
+  write(Codegen.Output, '({ ');
+  _OutSetTypeName(Expr^.TypePtr);
+  write(Codegen.Output, ' dst = ');
+  _OutSetImmediate(Expr^.SetBase);
+  write(Codegen.Output, '; ');
+  Bounds := Expr^.SetBounds;
+  while Bounds <> nil do
+  begin
+    write(Codegen.Output, 'set_set(');
+    First := PfOrd(ExCoerce(CopyExpr(Bounds^.First), ElementTypePtr));
+    if Bounds^.Last = nil then Last := CopyExpr(First)
+    else Last := PfOrd(ExCoerce(CopyExpr(Bounds^.Last), ElementTypePtr));
+    OutExpression(First);
+    write(Codegen.Output, ', ');
+    OutExpression(Last);
+    write(Codegen.Output, ', ', LowBoundByte, ', dst.bits); ');
+    DisposeExpr(First);
+    DisposeExpr(Last);
+    Bounds := Bounds^.Next
+  end;
+  write(Codegen.Output, 'dst; })')
 end;
 
 procedure _OutExImmediate(Expr : TExpression);
@@ -497,7 +538,7 @@ begin
     end
     else if Op = TkMoreOrEquals then
     begin
-      write(Codegen.Output, 'set_issubset(');
+      write(Codegen.Output, 'set_issuperset(');
       _OutExpressionParensPrec(Left, 1);
       write(Codegen.Output, '.bits, ');
       _OutExpressionParensPrec(Right, 1);
@@ -626,6 +667,7 @@ begin
               end;
     XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
+    XcSet: _OutExSet(Expr);
     XcVariable : _OutExVariable(Expr);
     XcField: _OutExFieldAccess(Expr);
     XcArray:
@@ -692,14 +734,6 @@ function OutVariableName(Name : string; IsReference : boolean) : string;
 begin
   if IsReference then OutVariableName := '*' + Name
   else OutVariableName := Name
-end;
-
-procedure _OutSetTypeName(TypePtr : TPsTypePtr);
-var NumBytes : integer;
-begin
-  NumBytes := GetTypeHighBound(TypePtr^.ElementTypePtr) div 8 -
-              GetTypeLowBound(TypePtr^.ElementTypePtr) div 8 + 1;
-  write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 
 procedure OutTypeReference(TypePtr : TPsTypePtr);

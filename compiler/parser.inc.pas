@@ -833,42 +833,32 @@ begin
 end;
 
 function PsSetConstructor : TExpression;
-var 
-  First, Last : TExpression;
-  Bounds : TExSetImmBounds;
-  ElementType : TPsTypePtr;
-  SetType : TPsType;
+var First, Last : TExpression;
 begin
-  Bounds := nil;
-  ElementType := nil;
+  Result := ExSet;
   WantTokenAndRead(TkLbracket);
   while Lexer.Token.Id <> TkRbracket do
   begin
-    First := PsImmediate;
+    First := PsExpression;
     if not IsOrdinalType(First^.TypePtr) then
       CompileError('Set elements must belong to ordinal types, got ' +
                    TypeName(First^.TypePtr));
     if Lexer.Token.Id = TkRange then
     begin
       WantTokenAndRead(TkRange);
-      Last := PsImmediate;
+      Last := PsExpression;
       if not IsSameType(First^.TypePtr, Last^.TypePtr) then
         CompileError('Set element range boundaries must belong to the same ' +
                      'type, got ' + TypeName(First^.TypePtr) + ' and ' +
         TypeName(Last^.TypePtr))
     end
     else
-      Last := CopyExpr(First);
-    if ElementType = nil then ElementType := First^.TypePtr;
-    Bounds := ExSetAddBounds(Bounds, ExGetOrdinal(First), ExGetOrdinal(Last));
+      Last := nil;
+    Result := ExSetAddRange(Result, First, Last);
     WantToken2(TkComma, TkRbracket);
     SkipToken(TkComma)
   end;
-  WantTokenAndRead(TkRbracket);
-  SetType := EmptyType;
-  SetType.Cls := TtcSet;
-  SetType.ElementTypePtr := ElementType;
-  Result := ExSetConstant(Bounds, AddType(SetType))
+  WantTokenAndRead(TkRbracket)
 end;
 
 function PsFactor : TExpression;

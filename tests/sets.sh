@@ -2,6 +2,7 @@
 
 . ./testing.libsh
 
+# Immediate sets
 # testimmset elemtype set lbound hbound
 testimmset() {
   echo "program foo; var i : $1;
@@ -50,6 +51,61 @@ testimmset integer "[1..3] * [4..6]" 1 10 | outputs ''
 testimmset integer "[1..5] * [3..6]" 1 10 | outputs '3 4 5 '
 testimmset integer "[1] * [3]" 1 10 | outputs ''
 
+# Semi-immediate sets (with non-immediate elements)
+# testsemiset elemtype a_value b_value set lbound hbound
+testsemiset() {
+  echo "program foo; var i, a, b : $1;
+        begin a := $2; b := $3; for i := $5 to $6 do if i in $4 then write(i, ' ') end."
+}
+
+# Test the different types of sets
+testsemiset boolean false true "[]" false true | outputs ''
+testsemiset boolean false true "[a]" false true | outputs 'FALSE '
+testsemiset boolean false true "[b]" false true | outputs 'TRUE '
+testsemiset boolean false true "[a..b]" false true | outputs 'FALSE TRUE '
+testsemiset boolean false true "[b..a]" false true | outputs ''
+
+testsemiset char "'e'" "'h'" "[]" "'a'" "'z'" | outputs ''
+testsemiset char "'e'" "'h'" "['c', a..b]" "'a'" "'z'" | outputs 'c e f g h '
+testsemiset char "'e'" "'h'" "[a..b, 'j']" "'a'" "'z'" | outputs 'e f g h j '
+testsemiset char "'e'" "'h'" "['c', a, 'j']" "'a'" "'z'" | outputs 'c e j '
+testsemiset char "'e'" "'h'" "['c', a..b, 'j']" "'a'" "'z'" | outputs 'c e f g h j '
+
+testsemiset integer 5 7 "[]" 1 10 | outputs ''
+testsemiset integer 5 7 "[1,a..b]" 1 10 | outputs '1 5 6 7 '
+testsemiset integer 5 7 "[a..b, 10]" 1 10 | outputs '5 6 7 10 '
+testsemiset integer 5 7 "[1, a..b, 10]" 1 10 | outputs '1 5 6 7 10 '
+testsemiset integer 5 7 "[1, a, 10]" 1 10 | outputs '1 5 10 '
+
+# Operations on sets
+# testsemisetop elemtype a_value b_value l_set r_set op lbound hbound
+testsemisetop() {
+  echo "program foo; var i, a, b : $1; l, r : set of $7..$8;
+        begin a := $2; b := $3; l := $4; r := $5;
+        for i := $7 to $8 do if i in (l $6 r) then write(i, ' ') end."
+}
+testsemisetop integer 3 4 "[]" "[]" '+' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..a]" "[]" '+' 1 10 | outputs '1 2 3 '
+testsemisetop integer 3 4 "[]" "[b..b+2]" '+' 1 10 | outputs '4 5 6 '
+testsemisetop integer 3 4 "[1..a]" "[4..6]" '+' 1 10 | outputs '1 2 3 4 5 6 '
+testsemisetop integer 3 4 "[1..b+1]" "[a..6]" '+' 1 10 | outputs '1 2 3 4 5 6 '
+testsemisetop integer 3 4 "[1]" "[a]" '+' 1 10 | outputs '1 3 '
+
+testsemisetop integer 3 4 "[]" "[]" '-' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..a]" "[]" '-' 1 10 | outputs '1 2 3 '
+testsemisetop integer 3 4 "[]" "[b..b+2]" '-' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..a]" "[4..6]" '-' 1 10 | outputs '1 2 3 '
+testsemisetop integer 3 4 "[1..b+1]" "[a..6]" '-' 1 10 | outputs '1 2 '
+testsemisetop integer 3 4 "[1]" "[a]" '-' 1 10 | outputs '1 '
+
+testsemisetop integer 3 4 "[]" "[]" '*' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..a]" "[]" '*' 1 10 | outputs ''
+testsemisetop integer 3 4 "[]" "[b..b+2]" '*' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..a]" "[4..6]" '*' 1 10 | outputs ''
+testsemisetop integer 3 4 "[1..b+1]" "[a..6]" '*' 1 10 | outputs '3 4 5 '
+testsemisetop integer 3 4 "[1]" "[a]" '*' 1 10 | outputs ''
+
+# Sets returned by expressions
 # testexpr expr
 testexpr() {
   echo "program foo; begin write($1) end."
@@ -169,16 +225,3 @@ testvars integer "1" "set of 0..10" "[1]" "a in b" | outputs TRUE
 testvars integer "1" "set of 0..10" "[2]" "a in b" | outputs FALSE
 testvars integer "1" "set of 0..10" "[0..2]" "a in b" | outputs TRUE
 testvars integer "1" "set of 0..10" "[3..5]" "a in b" | outputs FALSE
-
-# Construct sets using non-immediate expressions
-echo "program foo; var a, i : 0..10;
-      begin a := 5; for i := 0 to 10 do write(i in [1..3, a], ' ') end." |
-will_be_valid # outputs "1 2 3 5 "
-echo "program foo; var a, b, i : 0..10;
-      begin a := 5; b := 7;
-      for i := 0 to 10 do write(i in [1..3, a..b], ' ') end." |
-will_be_valid # outputs "1 2 3 5 6 7 "
-echo "program foo; var a, b, i : 0..10;
-      begin a := 7; b := 5;
-      for i := 0 to 10 do write(i in [1..3, a..b], ' ') end." |
-will_be_valid # outputs "1 2 3 "

@@ -31,9 +31,10 @@ type
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
   TPsFnPtr = ^TPsFunction;
+  TExSetImmBounds = ^TExSetImmBoundsObj;
+  TExSetExprBounds = ^TExSetExprboundsObj;
 
   TExpression = ^TExpressionObj;
-  TExSetImmBounds = ^TExSetImmBoundsObj;
   TExImmediateClass = (XicNil, XicBoolean, XicInteger, XicReal, XicChar,
                        XicString, XicEnum, XicSet);
   TExImmediate = record
@@ -51,6 +52,10 @@ type
   TExSetImmBoundsObj = record
     First, Last : integer;
     Next : TExSetImmBounds;
+  end;
+  TExSetExprboundsObj = record
+    First, Last : TExpression;
+    Next : TExSetExprBounds;
   end;
   TExFunctionArgs = record
     Size : integer;
@@ -83,8 +88,8 @@ type
   end;
 
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,
-                      XcSubrange, XcVariable, XcField, XcArray, XcPointer,
-                      XcStringChar, XcFnRef, XcFnCall, XcPseudoFnRef,
+                      XcSubrange, XcSet, XcVariable, XcField, XcArray,
+                      XcPointer, XcStringChar, XcFnRef, XcFnCall, XcPseudoFnRef,
                       XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
@@ -98,6 +103,8 @@ type
                       TmpVarValue : TExpression;
                       TmpVarChild : TExpression);
       XcSubrange : (SubrangeParent : TExpression);
+      XcSet : (SetBase : TExpression;
+               SetBounds : TExSetExprBounds);
       XcVariable : (VarPtr : TPsVarPtr);
       XcField : (RecExpr : TExpression;
                  RecFieldNum : integer);
