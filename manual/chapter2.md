@@ -18,7 +18,7 @@ Traditionally, when a programmer wants to try out a language, they write a progr
 
 Type out the following program into a file named `helloworld.pas` (you _could_ copy and paste, but I find that typing out example programs by hand gives me a better feel for the language and helps me learn better:)
 
-```
+```pascal
 program HelloWorld;
 begin
   writeln('Hello world!')
@@ -29,7 +29,7 @@ Don't worry too much about using capital or small letters (computer people call 
 
 After saving your program, compile and run it:
 
-```pascal
+```
 $ dist/pascualc helloworld.pas
 $ ./helloworld
 Hello world!
@@ -70,7 +70,7 @@ The "Hello World" program is the traditional first program, but it is not very i
 
 Type out the following program and save it into a file named `helloname.pas`:
 
-```
+```pascal
 program HelloName;
 
 var Name : string;
