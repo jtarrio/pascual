@@ -870,6 +870,8 @@ begin
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;
   TmpVar.IsReference := Base^.IsAssignable;
+  TmpVar.WasInitialized := true;
+  TmpVar.WasUsed := true;
   TmpVarPtr := AddVariable(TmpVar);
   WithVarPtr := _AddDef(TdcWithVar)^.WithVarPtr;
   WithVarPtr^.VarPtr := TmpVarPtr;
