@@ -23,16 +23,11 @@ The built Pascual compiler will be available in the `dist` subdirectory.
 
 To check if Pascual works, let's write a small program and compile it:
 ```
-$ cat > helloworld.pas
-program Check;
-begin
-  writeln('It works!)
-end.
-^D
+$ echo "program p; begin writeln('It works!') end." > check.pas
 $ dist/pascualc check.pas
 $ ./check
 It works!
 $
 ```
 
-Once you have Pascual running, proceed to chapter 2.
+Once you have Pascual running, proceed to [chapter 2](chapter2.md).

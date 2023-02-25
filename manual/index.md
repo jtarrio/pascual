@@ -30,7 +30,7 @@ This manual is made available under a [Creative Commons Attribution-ShareAlike 4
 
 Chapter 1, "[Getting Started with Pascual](chapter1.md)", describes how to download and build Pascual, and how to use it.
 
-Chapter 2, "How to Program in Pascal", is an introduction to the Pascal programming language. Even if you don't know how to program, this chapter should tell you all you need to know to get you started.
+Chapter 2, "[How to Program in Pascal](chapter2.md)", is an introduction to the Pascal programming language. Even if you don't know how to program, this chapter should tell you all you need to know to get you started.
 
 The following chapters give you more in-depth information about all the aspects of Pascal programming:
 * Chapter 3, "Basic elements" describes the symbols and reserved words of the language, the standard data types, and the syntax used to write numbers, character strings, and comments.
