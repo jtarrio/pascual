@@ -12,6 +12,22 @@ As for Niklaus Wirth, Pascal wasn't his first language or his last one. Before P
 
 Before we try to write our first program in Pascal, we need to set up our development environment. Follow the instructions in [chapter 1](chapter1.md) to download and build Pascual. Afterwards, you can write your programs in the `pascual` or `pascual-main` directory and use the `dist/pascualc` command to compile them.
 
+## Pascal and Pascual
+
+This chapter shows you how to program in the Pascal programming language using the Pascual compiler.
+
+Let me explain.
+
+The Pascal language is a set of rules on how to write and organize a program. It tells you how to write a number, how to write a character string, how to write an assignment statement, a conditional statement, etc. When you write a program following those rules, we say that this program was written in the Pascal language.
+
+A Pascal compiler is a program. It takes a program written in the Pascal language and converts it into a form that is executable by the computer.
+
+There are many Pascal compilers, and they all work slightly differently from each other. Computers have changed and evolved a lot since the rules for the Pascal language were written, and different compilers adopted slightly different rules to write programs for the new things computers can do. However, there is a "core" Pascal language that most (if not all) compilers agree on.
+
+Pascual is a Pascal compiler, and of course it has its own quirks.
+
+So, in this chapter, when I talk about "Pascal", I refer to the Pascal language, especially to the parts that most compilers agree on. When I talk about "Pascual", I refer to the Pascual compiler, or to the parts of the language that are specific to Pascual.
+
 ## Writing the first program
 
 Traditionally, when a programmer wants to try out a language, they write a program that prints out the text "Hello world"; let's do exactly that!
@@ -25,9 +41,7 @@ begin
 end.
 ```
 
-Don't worry too much about using capital or small letters (computer people call them "upper case" and "lower case" letters). For the most part, Pascal doesn't care about that (or, as the computer people say, Pascal is not case sensitive). So you can write `program HelloWorld` but also `Program helloworld` or even `pRoGrAm HeLlOwOrLd`; it will all be the same to Pascal. The only exception is the bit between quote signs (`'`), but we'll get to that later.
-
-After saving your program, compile and run it:
+After saving your program, compile it and execute it:
 
 ```
 $ dist/pascualc helloworld.pas
@@ -40,19 +54,25 @@ That's it! That's your first program. Now, if you want, you can modify it to see
 
 Let's go through the elements of this program:
 
-The first line declares the program's name. You can write any name you want, as long as it's a single word; so you could write `program Hello` or `program JacoboSaysHello` or `program ThisIsMyFirstProgram`, but not `program I have no idea what I am doing`. Nowadays, the compiler ignores whatever you write in there, so it is mostly for the programmer's benefit, but it is still a mandatory part of a Pascal program.
+The first line declares the program's name. You can write any name you want, as long as it's a single word; so you could write `program Hello` or `program JacoboSaysHello` or `program ThisIsMyFirstProgram`, but not `program I have no idea what I am doing`.
+
+Declaring the name of a program in the program itself used to be important in old computers, but not in modern ones, so you can write whatever name you want in there. It is a good practice, though, to write a real name for the program.
 
 Notice the semicolon (`;`) at the end of the line. It marks the end of the `program` definition, so don't forget to write it! I'll talk more about semicolons later.
 
-The next line, `begin`, tells the compiler that the following lines contain the program's code.
+The next line, `begin`, tells the compiler that the program's code comes after.
 
-The next line is the first (and only) statement in the program. It calls the `writeln` procedure, passing it the string `'Hello, world!'` as an argument. The `writeln` procedure prints out the value of its argument. The single quotes that enclose the argument (`'`) tell Pascual that it's a character string. Therefore, `writeln` will write out the string "`Hello world!`" 
+The next line is the first (and only) statement in the program. It causes the string `Hello, world!` to be printed out to the screen, and it does that through the `writeln` procedure.
+
+In Pascal, a procedure is a type of subroutine (or subprogram, if you may). It's a piece of code with a name, that can be called and executed from different parts of the program by using that name. In this program, the `writeln` procedure prints out the value of its argument to the screen. The arguments are specified between parentheses, and, in this case, the single quotes that enclose the argument (`'`) indicate that it's a character string.
 
 In the final line, `end.` with the final period marks the end of the program.
 
 ### Some things to try
 
-Play around with this program before proceeding to the next section. For example, some people like to write everything in uppercase (`PROGRAM`, `BEGIN`, `WRITELN`, `END`), while other people like capitalizing the first letter only (`Program`, `Begin`, `Writeln`, `End`). Does it make a difference?
+You should try making a few changes to this program before continuing to the next section. Get a feel for the language! Here are a few things you can try:
+
+The Pascal language is case-insensitive (that's computerese for "it doesn't care whether you use capital letters or small letters"). Therefore, whether you write `program` or `PROGRAM` or `pRoGrAm`, it is all the same. Try changing some of the keywords to upper case (that's computerese for "capitals") like in `BEGIN` or `WRITELN`, or capitalize the first letter only like in `Begin` or `Writeln`. Which option looks most pleasing to you? Different people have different opinions.
 
 How about the character string between the single quotes? Does it make any difference to write `'Hello world!'` or `'HELLO WORLD!'`?
 
@@ -60,9 +80,9 @@ Try removing the semicolon at the end of the `program` line, or the period at th
 
 Try declaring different program names. I already told you it needs to be a single word, but try adding numbers, like `program Number1`, or `program 1stProgram`. Try some symbols too, like the underscore (`_`) or the hyphen (`-`). What works? What does not work?
 
-This program was given to you in four lines. What happens if you just mash everything together in a single line? What if you split a line in two?
+This program was written in four lines. What happens if you just mash everything together in a single line? What if you split a line in two? Does it matter where you split the line?
 
-Feel free to play around as much as you like. You can't break anything by accident; the worst thing that will happen is that Pascual will give you an error message. So just make changes, try them, read the error messages, try to fix them, and have fun!
+Feel free to play around as much as you like. You won't break anything; the worst thing that will happen is that Pascual will give you an error message. So just make changes, try them, read the error messages, try to fix them, and have fun!
 
 ## Writing the second program
 
@@ -72,9 +92,7 @@ Type out the following program and save it into a file named `helloname.pas`:
 
 ```pascal
 program HelloName;
-
 var Who : string;
-
 begin
   write('What is your name? ');
   readln(Who);
@@ -92,16 +110,13 @@ Hello, Jacobo!
 $
 ```
 
-Like the previous program, this one starts with a line that declares the program's name, followed by a semicolon.
+There are a couple of differences between the previous program and this one, that you may notice immediately.
 
-This program has many more semicolons (`;`) than the previous one! The Pascal language uses semicolons to separate the different parts of a program, or to separate two statements. For example, there is a semicolon between the `program` declaration and the `var` declaration, and another semicolon between the `var` declaration and the beginning of the program. You can also see semicolons between the `write` statement and the `readln` statement, and between the `readln` statement and the `writeln` statement.
-
-(This program has no semicolons after `begin` and before `end` because they are not statements, so there is nothing to separate in there. You _could_ add semicolons there if you wanted, and Pascual would not complain, and everything would work correctly, but then everybody who read your source code would know that you don't really know where you need to add semicolons, and we can't have that.)
-
-The line after `program` is new. It starts with the keyword `var`, which tells Pascual that it is a _variable declaration block_.
+The first one is the line that starts with the keyword `var`. That keyword begins a _variable declaration block_.
 
 A variable is a name for a location in the computer's memory, which can be used to store modifiable data. You would use variables to store the results of calculations, information provided by the user, or generally anything that is not hardcoded into the program.
 
 In the Pascal language, variables need to be declared before the code that uses them. When you declare the variable, you give it a name and assign a type to it. This program declares a single variable, named `Who`, of type `string`.
 
-After the variable declaration, the keyword `begin` tells Pascual that the program's code follows.
+The other difference is that, between the keywords `begin` and `end`, there are three statements instead of just one: a call to the `write` procedure, a call to `readln`, and, finally, a call to `writeln`. Notice how the three statements are separated with semicolons (`;`). Some languages want you to put each statement in a separate line; other languages require a semicolon after each statement, but Pascal uses it as a separator.
+
