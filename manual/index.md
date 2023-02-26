@@ -1,6 +1,6 @@
 # Pascual User's Manual
 
-This is the user manual to [Pascual](https://github.com/jtarrio/pascual), a Pascal compiler written by [Jacobo Tarrío](https://jacobo.tarrio.org).
+This is the user's manual to [Pascual](https://github.com/jtarrio/pascual), a Pascal compiler written by [Jacobo Tarrío](https://jacobo.tarrio.org).
 
 Pascual is a Pascal compiler written in Pascal, which has been able to compile itself since January 2nd, 2023.
 

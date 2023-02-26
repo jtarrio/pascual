@@ -6,7 +6,7 @@ Pascal is a programming language that was released in 1970 by Niklaus Wirth. It 
 
 It was modestly successful until Borland released Turbo Pascal, an affordable Pascal compiler for home computers that was extremely fast and came with an IDE. As Borland released newer and bigger versions, its popularity grew; many games and applications from the early 90s were written in Turbo Pascal and in Borland Pascal. In 1995, Borland released Delphi, which is the dialect of Pascal most people are familiar with nowadays.
 
-As for Niklaus Wirth, Pascal wasn't his first language or his last one. Before Pascal he developed Euler, PL360, and ALGOL W, and after Pascal he worked on Modula and Modula-2. In 1984 he won the Turing Award (the highest distinction in computer science), but he didn't stop there and then went on to develop the Oberon family of languages and operating systems.
+As for Niklaus Wirth, Pascal wasn't his first language or his last one. Before Pascal he developed Euler, PL360, and ALGOL W, and after Pascal he worked on Modula and Modula-2. In 1984 he won the Turing Award (the highest distinction in computer science), but he didn't stop there and went on to develop the Oberon family of languages and operating systems.
 
 ## Preparing the computer
 
@@ -73,12 +73,35 @@ Type out the following program and save it into a file named `helloname.pas`:
 ```pascal
 program HelloName;
 
-var Name : string;
+var Who : string;
 
 begin
   write('What is your name? ');
-  readln(Name);
-  write('Hello, ', Name, '!')
+  readln(Who);
+  writeln('Hello, ', Who, '!')
 end.
 ```
 
+When you compile and run this program, it will ask your name. After you write it, the program will greet you by name!
+
+```
+$ dist/pascualc helloname.pas
+$ ./helloname
+What is your name? Jacobo
+Hello, Jacobo!
+$
+```
+
+Like the previous program, this one starts with a line that declares the program's name, followed by a semicolon.
+
+This program has many more semicolons (`;`) than the previous one! The Pascal language uses semicolons to separate the different parts of a program, or to separate two statements. For example, there is a semicolon between the `program` declaration and the `var` declaration, and another semicolon between the `var` declaration and the beginning of the program. You can also see semicolons between the `write` statement and the `readln` statement, and between the `readln` statement and the `writeln` statement.
+
+(This program has no semicolons after `begin` and before `end` because they are not statements, so there is nothing to separate in there. You _could_ add semicolons there if you wanted, and Pascual would not complain, and everything would work correctly, but then everybody who read your source code would know that you don't really know where you need to add semicolons, and we can't have that.)
+
+The line after `program` is new. It starts with the keyword `var`, which tells Pascual that it is a _variable declaration block_.
+
+A variable is a name for a location in the computer's memory, which can be used to store modifiable data. You would use variables to store the results of calculations, information provided by the user, or generally anything that is not hardcoded into the program.
+
+In the Pascal language, variables need to be declared before the code that uses them. When you declare the variable, you give it a name and assign a type to it. This program declares a single variable, named `Who`, of type `string`.
+
+After the variable declaration, the keyword `begin` tells Pascual that the program's code follows.
