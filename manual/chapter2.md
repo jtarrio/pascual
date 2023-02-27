@@ -96,7 +96,7 @@ Type out the following program and save it into a file named `helloname.pas`:
 program HelloName;
 var Who : string;
 begin
-  writeln('What is your name? ');
+  writeln('What is your name?');
   readln(Who);
   writeln('Hello, ', Who, '!')
 end.
@@ -146,3 +146,29 @@ So far, we've seen calls to `writeln` with one argument and with three arguments
 Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the keyword `var` twice, or can you get away with using it only once? (Hint: I said that the keyword `var` _begins_ a variable declaration block.)
 
 Do you need to have each statement in a separate line? How can you join them? Do you need to have each statement in a single line? Where can you split them?
+
+## If-then-else
+
+So far, I've only shown you programs that always do the same thing. Yes, the second one will display different names if you type different names into it, but it will always execute the same statements no matter what.
+
+There is a way to let your program execute some statements or others depending on a condition: the `if` statement, which I show you in the following example:
+
+```pascal
+program PasswordGame;
+var Pass : string;
+begin
+  writeln('In an alleyway, a painted steel door tries to blend with the wall.');
+  writeln('After you knock on the door, a voice asks:')
+  writeln('"What is the password?"');
+  readln(Pass);
+  if Pass = 'swordfish' then
+    writeln('"That''s right, but we''re full tonight."')
+  else
+    writeln('"Go away!"');
+  writeln('You keep knocking on the door, but it remains stubbornly shut.')
+end.
+```
+
+In this excerpt from an adventure game set during Prohibition, you as the detective approach a locked steel door, knock on it and, depending on whether you know the password or not, you get one response or another.
+
+This is achieved through the "if-then-else" statement.
