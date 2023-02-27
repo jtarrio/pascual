@@ -70,7 +70,7 @@ What is the value of the argument? You can see that it is enclosed by a pair of 
 
 And, with this, we reach the `end` keyword with a period (`.`) at the end, which marks the end of the program.
 
-### Some things to try
+### Some things you can try
 
 You should try making a few changes to this program before continuing to the next section. Get a feel for the language! Here are a few things you can try:
 
@@ -133,7 +133,7 @@ In the next line, `writeln` gets three arguments: the string `'Hello, '`, the va
 
 Finally, as in the previous example, the `end` keyword with a period at the end (`.`) marks the end of the program.
 
-### Some things to try
+### Some things you can try
 
 This program does many more things than the first one, and it is so much more interesting! Here are some ideas for things you can try doing to it:
 
@@ -208,7 +208,7 @@ if Pass = 'swordfish' then
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
   writeln('"Don''t let him in, Johnnie! He reeks of cop!", she shouts.');
-  writeln('The door closes and locks with a click.')
+  writeln('The door closes and another click announces it''s been locked.')
 else
   writeln('"Go away!" the voice says.');
 writeln('You knock on the door again, but it remains stubbornly shut.')
@@ -225,9 +225,12 @@ begin
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
   writeln('"Don''t let him in, Johnnie! He reeks of cop!", she shouts.');
-  writeln('The door closes and locks with a click.')
+  writeln('The door closes and another click announces it''s been locked.')
 end
 else
   writeln('"Go away!" the voice says.');
 writeln('You knock on the door again, but it remains stubbornly shut.')
 ```
+
+### Some things you can try
+
