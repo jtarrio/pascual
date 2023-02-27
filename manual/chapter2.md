@@ -26,7 +26,7 @@ So, in this chapter, when I talk about "Pascal", I refer to the Pascal language,
 
 Before we try to write our first program in Pascal, we need to set up our development environment. Follow the instructions in [chapter 1](chapter1.md) to download and build Pascual. Afterwards, you can write your programs in the `pascual` or `pascual-main` directory and use the `dist/pascualc` command to compile them.
 
-## Writing the first program
+## The first program
 
 Traditionally, when a programmer wants to try out a language, they write a program that prints out the text "Hello world"; let's do exactly that!
 
@@ -86,7 +86,7 @@ This program was written in four lines. What happens if you just mash everything
 
 Feel free to play around as much as you like. You won't break anything; the worst thing that will happen is that Pascual will give you an error message. So just make changes, try them, read the error messages, try to fix them, and have fun!
 
-## Writing the second program
+## Variables
 
 The "Hello World" program is the traditional first program, but it is not very interesting: it only contains one statement and always does the same thing. Therefore, let's write a slightly more complicated example.
 
@@ -117,9 +117,11 @@ There are a couple of differences between the previous program and this one, tha
 
 The first one is the line that starts with the keyword `var`. That keyword begins a _variable declaration block_.
 
-A variable is a name for a location in the computer's memory, which can be used to store modifiable data. You would use variables to store the results of calculations, information provided by the user or read from the disk or received from the network, or generally anything that is not hardcoded into the program.
+A variable is a chunk of memory that is used by the program to store data. You can read data from variables and you can modify their content, so you can use them to store information provided by the user or read from the network, or the results of calculations, or intermediate steps, or generally anything that is not hardcoded into the program.
 
-In the Pascal language, variables need to be declared before the code that uses them. When you declare the variable, you give it a name and assign a type to it. This program declares a single variable, named `Who`, of type `string`, which can hold a character string.
+In the Pascal language, variables need to be declared before the code that uses them. When you declare the variable, you give it a name so the program can refer to it and access its content, and you also assign a type to it so the compiler knows how much memory needs to be reserved for the variable and what operations can be performed on it.
+
+This program declares a single variable, named `Who`, of type `string`, which can hold a character string.
 
 The other difference between this program and the previous one is that, between the keywords `begin` and `end`, there are three statements instead of just one: a call to the `writeln` procedure, a call to `readln`, and, finally, another call to `writeln`. Notice how the three statements are separated with semicolons (`;`). As I told you in the previous section, Pascal also uses semicolons to separate the statements in a sequence of statements.
 
@@ -139,7 +141,7 @@ Try removing the variable declaration block. Does the program compile? What is t
 
 What happens if you try to use a variable that you haven't declared?
 
-So far, we've seen calls to `writeln` with one argument and with three arguments. How many arguments can `writeln` take? Can it take two? Four? Twenty? None? How do you even pass zero arguments to `writeln`? Do you need to use parentheses if you have zero arguments? What even _happens_ if you pass zero arguments to `writeln`?
+So far, we've seen calls to `writeln` with one argument and with three arguments. How many arguments can `writeln` take? Can it take two? Four? Twenty? Zero? How do you even pass zero arguments to `writeln`? Do you need to use parentheses if you have zero arguments? What even _happens_ if you pass zero arguments to `writeln`?
 
 Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the keyword `var` twice, or can you get away with using it only once? (Hint: I said that the keyword `var` _begins_ a variable declaration block.)
 
