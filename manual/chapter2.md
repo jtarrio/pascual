@@ -207,7 +207,7 @@ if Pass = 'swordfish' then
   writeln('aside, you see a wood paneled room with a bar in the middle.');
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
-  writeln('"Don't let him in, Johnnie! He reeks of cop!", she shouts.');
+  writeln('"Don''t let him in, Johnnie! He reeks of cop!", she shouts.');
   writeln('The door closes and locks with a click.')
 else
   writeln('"Go away!" the voice says.');
@@ -224,7 +224,7 @@ begin
   writeln('aside, you see a wood paneled room with a bar in the middle.');
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
-  writeln('"Don't let him in, Johnnie! He reeks of cop!", she shouts.');
+  writeln('"Don''t let him in, Johnnie! He reeks of cop!", she shouts.');
   writeln('The door closes and locks with a click.')
 end
 else
