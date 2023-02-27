@@ -158,13 +158,13 @@ program PasswordGame;
 var Pass : string;
 begin
   writeln('In an alleyway, a painted steel door tries to blend with the wall.');
-  writeln('After you knock on the door, a voice asks:')
+  writeln('After you knock on the door, a voice asks:');
   writeln('"What is the password?"');
   readln(Pass);
   if Pass = 'swordfish' then
-    writeln('"That''s right, but we''re full tonight."')
+    writeln('"That''s right, but we''re full tonight," the voice says.')
   else
-    writeln('"Go away!"');
+    writeln('"Go away!" the voice says.');
   writeln('You keep knocking on the door, but it remains stubbornly shut.')
 end.
 ```
