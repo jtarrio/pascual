@@ -202,8 +202,8 @@ Let's put this into practice. Imagine you want to change the game so that, if th
 
 ```pascal
 if Pass = 'swordfish' then
-  writeln('The door opens with a click. "Welcome to Horse Feathers.");
-  writeln('There is a thick curtain in front of you. As the doorman pulls it ');
+  writeln('The door opens with a click. "Welcome to Horse Feathers."');
+  writeln('There is a thick curtain in front of you. As the doorman pulls it');
   writeln('aside, you see a wood paneled room with a bar in the middle.');
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
@@ -219,8 +219,8 @@ The code in this example would not compile, because Pascual would think that the
 ```pascal
 if Pass = 'swordfish' then
 begin
-  writeln('The door opens with a click. "Welcome to Horse Feathers.");
-  writeln('There is a thick curtain in front of you. As the doorman pulls it ');
+  writeln('The door opens with a click. "Welcome to Horse Feathers."');
+  writeln('There is a thick curtain in front of you. As the doorman pulls it');
   writeln('aside, you see a wood paneled room with a bar in the middle.');
   writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
   writeln('Before you can step in, a furious woman appears and kicks you out.');
