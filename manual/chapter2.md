@@ -137,6 +137,10 @@ This program does many more things than the first one, and it is so much more in
 
 Try removing the variable declaration block. Does the program compile? What is the error message? What does the error message _mean_?
 
-We've seen calls to `writeln` with one argument and with three arguments. How many arguments can `writeln` take? Can it take two? Four? Twenty? None? How do you even pass zero arguments to `writeln`? What even _happens_ if you pass zero arguments to `writeln`?
+What happens if you try to use a variable that you haven't declared?
+
+So far, we've seen calls to `writeln` with one argument and with three arguments. How many arguments can `writeln` take? Can it take two? Four? Twenty? None? How do you even pass zero arguments to `writeln`? Do you need to use parentheses if you have zero arguments? What even _happens_ if you pass zero arguments to `writeln`?
 
 Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the keyword `var` twice, or can you get away with using it only once? (Hint: I said that the keyword `var` _begins_ a variable declaration block.)
+
+Do you need to have each statement in a separate line? How can you join them? Do you need to have each statement in a single line? Where can you split them?
