@@ -165,10 +165,69 @@ begin
     writeln('"That''s right, but we''re full tonight," the voice says.')
   else
     writeln('"Go away!" the voice says.');
-  writeln('You keep knocking on the door, but it remains stubbornly shut.')
+  writeln('You knock on the door again, but it remains stubbornly shut.')
 end.
 ```
 
 In this excerpt from an adventure game set during Prohibition, you as the detective approach a locked steel door, knock on it and, depending on whether you know the password or not, you get one response or another.
 
-This is achieved through the "if-then-else" statement.
+This is achieved through the "if-then-else" statement. This statement takes three things: a condition to check, a statement to execute if the condition is true, and a statement to execute if the condition is false.
+
+In this example, the condition is `Pass = 'swordfish'`. That is: the condition is true if the variable `Pass` contains a value that's equal to the string `swordfish`. If so, the statement after the `then` keyword is executed; otherwise, the statement after the `else` keyword is executed.
+
+Try it! Compile and run the program, and give it the correct password once and an incorrect password in the next run. See the difference?
+
+If you are keeping track of where the semicolons go, you will notice that there isn't one inside the "if-then-else" statement. That's because it's all a single statement, so there is nothing to separate:
+
+```pascal
+if condition then statement_true else statement_false
+```
+
+If you added a semicolon between the `statement_true` and the `else`, Pascual would think that the `else` belonged to a different statement and it would give you an error message when you tried to compile it.
+
+There are two more things I want to say about "if-then-else": the first one is that the `else` part is not mandatory. If there is a statement you want to execute if the condition is true but you don't have anything for a false condition, you can just write an "if-then" statement:
+
+```pascal
+if Age < 21 then writeln('You are not of legal drinking age in the USA.');
+writeln('Your age is: ', Age)
+```
+
+The second thing is actually quite important, so let me say it in a new paragraph:
+
+Wherever Pascal wants you to write one statement, you can actually write a sequence of several statements if you enclose them between a pair of `begin`/`end` keywords. This turns the sequence of statements into a single statement in Pascal's eyes.
+
+Why is it so important? Because it lets you execute more than one statement if the condition is true or false, and because this is useful in many places other than "if-then-else" statements.
+
+Let's put this into practice. Imagine you want to change the game so that, if the player guesses the password, the door is opened and the player gets a glimpse of the inside, and you don't know about using `begin`/`end`:
+
+```pascal
+if Pass = 'swordfish' then
+  writeln('The door opens with a click. "Welcome to Horse Feathers.");
+  writeln('There is a thick curtain in front of you. As the doorman pulls it ');
+  writeln('aside, you see a wood paneled room with a bar in the middle.');
+  writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
+  writeln('Before you can step in, a furious woman appears and kicks you out.');
+  writeln('"Don't let him in, Johnnie! He reeks of cop!", she shouts.');
+  writeln('The door closes and locks with a click.')
+else
+  writeln('"Go away!" the voice says.');
+writeln('You knock on the door again, but it remains stubbornly shut.')
+```
+
+The code in this example would not compile, because Pascual would think that the first `writeln` was the single statement that goes with the "if-then" statement, and then it would be very surprised to find a single `else` keyword later in the source code. The proper way to write this is by enclosing the sequence of `writeln` statements in a pair of `begin`/`end` keywords:
+
+```pascal
+if Pass = 'swordfish' then
+begin
+  writeln('The door opens with a click. "Welcome to Horse Feathers.");
+  writeln('There is a thick curtain in front of you. As the doorman pulls it ');
+  writeln('aside, you see a wood paneled room with a bar in the middle.');
+  writeln('A bartender is pouring an unidentifiable liquid into a shot glass.');
+  writeln('Before you can step in, a furious woman appears and kicks you out.');
+  writeln('"Don't let him in, Johnnie! He reeks of cop!", she shouts.');
+  writeln('The door closes and locks with a click.')
+end
+else
+  writeln('"Go away!" the voice says.');
+writeln('You knock on the door again, but it remains stubbornly shut.')
+```
