@@ -84,7 +84,7 @@ I've seen so many programs that convert a language to some other language, and t
 
 # Documentation
 
-I'm going to write it and it's going to be awesome.
+I just started writing [a manual](manual/index.md). When I finish it, it's going to be awesome.
 
 In the meantime, you can look at the `examples` subdirectory to see what kinds of features are supported and how they are used.
 
