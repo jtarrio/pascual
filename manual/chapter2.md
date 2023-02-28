@@ -185,6 +185,19 @@ if condition then statement_true else statement_false
 
 If you added a semicolon between the `statement_true` and the `else`, Pascual would think that the `else` belonged to a different statement and it would give you an error message when you tried to compile it.
 
+You can have "if-then-else" statements inside other "if-then-else" statements. In particular, "if-then-else if" is a very common pattern for when you are checking several conditions, one after the other, and you want to do something for the first one that matches.
+
+```pascal
+if Pass = 'swordfish' then
+  writeln('"That''s right, but we''re full tonight," the voice says.')
+else if Pass = 'sturgeon' then
+  writeln('"Welcome to the... HEY, YOU ARE NOT THE GOVERNOR!" the voice says.')
+else if Pass = 'hammerhead' then
+  writeln('"The service entrance is in the front," the voice says.')
+else
+  writeln('"Go away!" the voice says.');
+```
+
 There are two more things I want to say about "if-then-else": the first one is that the `else` part is not mandatory. If there is a statement you want to execute if the condition is true but you don't have anything for a false condition, you can just write an "if-then" statement:
 
 ```pascal
@@ -232,5 +245,4 @@ else
 writeln('You knock on the door again, but it remains stubbornly shut.')
 ```
 
-### Some things you can try
-
+Another interesting thing I didn't mention above: look at the description of what happens when you give the correct password. In particular, look at the line where the furious lady shouts at the doorman. She says "don't", but I didn't write it as `don't` but as `don''t`. Why do you think I did it that way? What is written out to the screen when you run the program?
