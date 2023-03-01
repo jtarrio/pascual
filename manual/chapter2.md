@@ -295,18 +295,26 @@ program GuessMyNumber;
 var
   Number : integer;
   Guess : integer;
+  Tries : integer;
 begin
+  Randomize;
   Number := Random(100) + 1;
-  writeln('Guess my number!');
+  Tries := 0;
+  writeln('I''ve chosen a number between 1 and 100.');
+  writeln('Try to guess it in less than 10 tries!');
   repeat
-    write('What is your guess? ');
+    Tries := Tries + 1;
+    write('Attempt ', Tries, ': What is your guess? ');
     readln(Guess);
     if Guess < Number then
-      writeln('Higher!')
+      writeln('Go higher!')
     else if Guess > Number then
-      writeln('Lower!')
-  until Guess = Number;
-  writeln('You guessed it! The number was ', Number, '!')
+      writeln('Go lower!');
+  until (Guess = Number) or (Tries = 10);
+  if Guess = Number then
+    writeln('You guessed it in ', Tries, ' tries! It was ', Number, '!')
+  else
+    writeln('Sorry, you didn''t guess the number. It was ', Number);
 end.
 ```
 

@@ -1,6 +1,9 @@
 #include "math.h"
 
 #include <stdlib.h>
+#include <time.h>
+
+void RANDOMIZE(void) { srand(time(0)); }
 
 double RANDOM_n(void) { return (double)rand() / RAND_MAX; }
 

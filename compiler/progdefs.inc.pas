@@ -954,6 +954,13 @@ begin
   MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
 
+function MakeProcedure0(Name : string) : TPsFunction;
+begin
+  Result := EmptyFunction;
+  Result.Name := Name;
+  Result.ArgCount := 0
+end;
+
 function MakeProcedure1(Name : string; Arg : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;

@@ -82,6 +82,7 @@ begin
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
   AddFunction(MakeFunction1('PARAMSTR', PrimitiveTypes.PtString,
               MakeArg('I', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeProcedure0('RANDOMIZE'));
   AddFunction(MakeFunction0('RANDOM_n', PrimitiveTypes.PtReal));
   AddFunction(MakeFunction1('RANDOM_i', PrimitiveTypes.PtInteger,
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
