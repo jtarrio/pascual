@@ -1,6 +1,10 @@
 # How to Program in Pascal
 
-This chapter shows you how to program in the Pascal language using the Pascual compiler. Even if you don't know how to program, this chapter has everything you need to know to get you started.
+If you want to learn how to write programs in the Pascal language using the Pascual compiler, this chapter is for you.
+
+It doesn't matter whether you don't know how to program or you know how to program in other languages; this chapter has everything you need to know to get you started.
+
+After you know the basics, you should read the following chapters to learn the language in depth.
 
 ## A little history of Pascal
 
@@ -62,11 +66,11 @@ The `begin` keyword in the next line tells the compiler that this is the beginni
 
 This program only contains one statement, which causes the string `Hello world!` to be written out to the screen. This is done through the `writeln` procedure.
 
-In Pascal, a procedure is a type of subroutine. A subroutine is a piece of code with a name, that can be executed (or _called_) from different parts of the program. It's a bit like having a smaller program inside your larger program, that your larger program can execute several times with different arguments. The arguments to the procedure are specified between parentheses right after the name of the procedure to be called.
+In Pascal, a procedure is a type of subroutine. A subroutine is a piece of code with a name, that can be executed (or _called_) from different parts of the program. It's a bit like having a smaller program inside your larger program, that your larger program can execute several times with different parameters. The parameters to the procedure are specified between parentheses right after the name of the procedure to be called.
 
-Pascal compilers provide many subroutines which our programs can execute to do lots of different useful things. Programmers can also define their own subroutines, which I'll show you how to do later in this chapter. For now, in this program, we call the `writeln` procedure, which our compiler provides, with the argument `'Hello world!'`, and this procedure writes out the value of its argument to the screen.
+Pascal compilers provide many subroutines which our programs can execute to do lots of different useful things. Programmers can also define their own subroutines, which I'll show you how to do later in this chapter. For now, in this program, we call the `writeln` procedure, which our compiler provides, with the parameter `'Hello world!'`, and this procedure writes out the value of its parameter to the screen.
 
-What is the value of the argument? You can see that it is enclosed by a pair of single quotes (`'`), which tells the compiler that it is a character string. Therefore, the value of the argument `'Hello world!'` is the character string `Hello world!`, which is exactly what the `writeln` procedure writes out to the screen!
+What is the value of the parameter? You can see that it is enclosed by a pair of single quotes (`'`), which tells the compiler that it is a character string. Therefore, the value of the parameter `'Hello world!'` is the character string `Hello world!`, which is exactly what the `writeln` procedure writes out to the screen!
 
 And, with this, we reach the `end` keyword with a period (`.`) at the end, which marks the end of the program.
 
@@ -127,9 +131,9 @@ The other difference between this program and the previous one is that, between 
 
 The first statement writes out a prompt asking for the user's name, using the `writeln` procedure.
 
-The `readln` procedure in the second statement reads some text from the keyboard and puts it in the variable indicated in its argument. Therefore, when the user types `Jacobo` or whatever their name is, this `Jacobo` text string gets put in the variable `Who`.
+The `readln` procedure in the second statement reads some text from the keyboard and puts it in the variable indicated in its parameter. Therefore, when the user types `Jacobo` or whatever their name is, this `Jacobo` text string gets put in the variable `Who`.
 
-In the next line, `writeln` gets three arguments: the string `'Hello, '`, the variable `Who`, and the string `'!'`. As you remember, `writeln` writes out the values of its arguments to the screen. For the first argument, it writes out `Hello, `; for the second argument, it writes out the content of the `Who` variable (`Jacobo`, in my example); finally, for the third argument, it writes out `!`. All together, that forms `Hello, Jacobo!`.
+In the next line, `writeln` gets three parameters: the string `'Hello, '`, the variable `Who`, and the string `'!'`. As you remember, `writeln` writes out the values of its parameters to the screen. For the first parameter, it writes out `Hello, `; for the second parameter, it writes out the content of the `Who` variable (`Jacobo`, in my example); finally, for the third parameter, it writes out `!`. All together, that forms `Hello, Jacobo!`.
 
 Finally, as in the previous example, the `end` keyword with a period at the end (`.`) marks the end of the program.
 
@@ -141,7 +145,7 @@ Try removing the variable declaration block. Does the program compile? What is t
 
 What happens if you try to use a variable that you haven't declared?
 
-So far, we've seen calls to `writeln` with one argument and with three arguments. How many arguments can `writeln` take? Can it take two? Four? Twenty? Zero? How do you even pass zero arguments to `writeln`? Do you need to use parentheses if you have zero arguments? What even _happens_ if you pass zero arguments to `writeln`?
+So far, we've seen calls to `writeln` with one parameter and with three parameters. How many parameters can `writeln` take? Can it take two? Four? Twenty? Zero? How do you even pass zero parameters to `writeln`? Do you need to use parentheses if you have zero parameters? What even _happens_ if you pass zero parameters to `writeln`?
 
 Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the keyword `var` twice, or can you get away with using it only once? (Hint: I said that the keyword `var` _begins_ a variable declaration block.)
 
@@ -201,8 +205,9 @@ else
 There are two more things I want to say about "if-then-else": the first one is that the `else` part is not mandatory. If there is a statement you want to execute if the condition is true but you don't have anything for a false condition, you can just write an "if-then" statement:
 
 ```pascal
-if Age < 21 then writeln('You are not of legal drinking age in the USA.');
-writeln('Your age is: ', Age)
+if Pass = 'swordfish' then
+  writeln('"That''s right, but we''re full tonight," the voice says.');
+writeln('You knock on the door again, but it remains stubbornly shut.')
 ```
 
 The second thing is actually quite important, so let me say it in a new paragraph:
@@ -247,48 +252,11 @@ writeln('You knock on the door again, but it remains stubbornly shut.')
 
 Another interesting thing I didn't mention above: look at the description of what happens when you give the correct password. In particular, look at the line where the furious lady shouts at the doorman. She says "don't", but I didn't write it as `don't` but as `don''t`. Why do you think I did it that way? What is written out to the screen when you run the program?
 
-## More about conditional expressions
-
-The "if" statement takes a _conditional expression_ that decides if the "then" statement or the "else" statement is executed.
-
-Typically, a conditional expression compares two values. You've already seen `Pass = 'swordfish'`, which returns true if the variable `Pass` contains a value that is equal to the string `swordfish`, and you've seen `Age < 21`, which is true if the variable `Age` contains a value that is less than 21.
-
-In an expression like `Age < 21`, the symbol `<` is called the _operator_, and `Age` and `21` are called the _operands_. (You could say that the expression is an "operation".)
-
-Pascal has quite a few comparison operators, which are `=` (equal to), `<` (less than), `>` (more than), `<=` (less than or equal to), `>=` (more than or equal to), and `<>` (different from). As you can see, those operators look like the same comparison operators you used in school mathematics, except for `<>`, which was chosen because most computers didn't have a `≠` symbol.
-
-In a comparison operation, both operands need to be the same type. So you could write `15 < 21` or `'abc' < 'def'`, but not `15 < 'def'`, because the number 15 and the string `def` belong to different types and, therefore, cannot be compared. And, of course, if you are using variables, they must be the same type as whatever you are comparing them to.
-
-Let me put this in a table so it is clearer:
-
-Comparison operation | Result
----------------------|---------
-_a_ `=` _b_          | True if _a_ and _b_ are equal, false otherwise.
-_a_ `<>` _b_         | True if _a_ and _b_ are different, false otherwise.
-_a_ `<` _b_          | True if _a_ is less than _b_, false otherwise.
-_a_ `>` _b_          | True is _a_ is greater than _b_, false otherwise.
-_a_ `<=` _b_         | True if _a_ is less than or equal to _b_, false otherwise.
-_a_ `>=` _b_         | True is _a_ is greater than or equal to _b_, false otherwise.
-
-(When comparing strings, "is less than" means "comes alphabetically before", and "is more than" means "comes alphabetically after".)
-
-You can combine several comparisons at once in a single conditional expression, using the `and`, `or` and `not` operators. This lets you write stuff like `(Pass = 'swordfish') and (Age >= 21)`, which is true if the password is correct and the age is 21 or over, at the same time.
-
-Notice how, in the example above, I wrote the comparison operations in parentheses. Pascal evaluates the `and`, `or`, and `not` operations before it evaluates comparison operations, so if I decided to omit the parentheses and wrote `Pass = 'swordfish' and Age >= 21`, the Pascal compiler would try to apply the operator `and` to `'swordfish'` and to `Age`. Therefore, we always need to add the parentheses.
-
-As a summary, here is a table summarizing the three logical operators I mentioned above:
-
-Logical operation | Result
-------------------|--------
-_a_ `and` _b_     | True if both _a_ and _b_ are true, false otherwise.
-_a_ `or` _b_      | True if either _a_ or _b_ or both are true, false if none are true.
-`not` _a_         | True if _a_ is false, false if _a_ is true.
-
 ## Repeat-until and while-do
 
 Programs rarely start at the beginning and then go straight through to the end. Quite often, there are some parts that are executed over and over until something happens. Imagine a program that waits until you press a key: it's going to check if you pressed a key, and if you didn't, it's going to check again, and again, and again, until it detects that you've finally pressed a key.
 
-There are two statements in Pascal that you can use to do this. The first one is called "repeat-until":
+There are two statements in Pascal that you can use to do this. The first one is called "repeat-until", and we are going to see it in action in a guess-the-number game:
 
 ```pascal
 program GuessMyNumber;
@@ -297,11 +265,11 @@ var
   Guess : integer;
   Tries : integer;
 begin
+  Tries := 0;
   Randomize;
   Number := Random(100) + 1;
-  Tries := 0;
   writeln('I''ve chosen a number between 1 and 100.');
-  writeln('Try to guess it in less than 10 tries!');
+  writeln('Try to guess it in 10 tries or less!');
   repeat
     Tries := Tries + 1;
     write('Attempt ', Tries, ': What is your guess? ');
@@ -317,4 +285,26 @@ begin
     writeln('Sorry, you didn''t guess the number. It was ', Number);
 end.
 ```
+
+There are lots of interesting stuff in here! We can start with the fact that we are declaring three variables, all of type `integer`. Variables of type `integer` hold whole numbers, so they are definitely the right choice for a guess-the-number game. The three variables are `Number`, which will hold the number that needs to be guessed; `Guess`, which will hold the player's latest guess; and `Tries`, which will hold the number of times the user has tried so far.
+
+In the first statement, the symbol `:=` means that it is an assignment statement; it will assign the value of the expression on the right of the `:=` to the variable on the left. So it will assign the value `0` to the `Tries` variable.
+
+(People who are used to other programming languages often forget to write `:=` and write `=` instead, which results in an "invalid statement" error message from the compiler. In Pascal, `=` is always a comparison operator, while `:=` is always an assignment operator. It is supposed to remind you of the shape of an arrow, as in `Tries ⇐ 0`.)
+
+The second statement is a call to the `Randomize` procedure, which takes no parameters and therefore doesn't need any parentheses after it. The `Randomize` procedure initializes the random number generator. It's a little hard to explain what this means, but without a call to `Randomize`, the program would always have you guess the same number, and it wouldn't be a fun game for very long.
+
+The third statement is the one that chooses a number at random. It is an assignment statement, like before, which assigns the result of `Random(100) + 1` to the variable `Number`.
+
+So, what is `Random(100) + 1`? It is an arithmetic expression. As you can imagine, the `+` means that it is an addition: its value will be the result of adding 1 to the result of `Random(100)`.
+
+As for `Random`, it is a function. A function is another type of subroutine. Like a procedure, it has a name and can receive parameters, but unlike a procedure, it returns a value that can be used in an expression. The `Random` function returns a random integer between 0 and the value of its parameter minus one; therefore, in this program, it returns a number between 0 and 99.
+
+And with this, we have everything we need to know what the third statement does: it gets a random value between 0 and 99 through the `Random` function, adds 1 so it will be between 1 and 100, and assigns the result to the `Number` variable.
+
+After this we have a couple of `writeln` procedure calls and we get to the heart of this section: the "repeat-until" statement.
+
+This statement has a `repeat` keyword and a sequence of statements followed by an `until` keyword and a condition. It will execute the sequence of statements and then check if the condition is true; if it is not true, it will execute the statements again and check the condition; if it is still not true, it will repeat the statements over and over until, finally, the condition is true.
+
+In this example, the condition is `(Guess = Number) or (Tries = 10)`; therefore, it will execute the statements between the `repeat` and `until` keywords until the player guesses the number or until they have tried 10 times.
 
