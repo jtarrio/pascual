@@ -32,7 +32,7 @@ Before we try to write our first program in Pascal, we need to set up our develo
 
 ## The first program
 
-Traditionally, when a programmer wants to try out a language, they write a program that prints out the text "Hello world"; let's do exactly that!
+Traditionally, when a programmer wants to try out a language, they write a program that writes out the text "Hello world"; let's do exactly that!
 
 Type out the following program into a file named `helloworld.pas` (you _could_ copy and paste, but I find that typing out example programs by hand gives me a better feel for the language and helps me learn better:)
 
@@ -252,7 +252,7 @@ writeln('You knock on the door again, but it remains stubbornly shut.')
 
 Another interesting thing I didn't mention above: look at the description of what happens when you give the correct password. In particular, look at the line where the furious lady shouts at the doorman. She says "don't", but I didn't write it as `don't` but as `don''t`. Why do you think I did it that way? What is written out to the screen when you run the program?
 
-## Repeat-until and while-do
+## Repeat-until
 
 Programs rarely start at the beginning and then go straight through to the end. Quite often, there are some parts that are executed over and over until something happens. Imagine a program that waits until you press a key: it's going to check if you pressed a key, and if you didn't, it's going to check again, and again, and again, until it detects that you've finally pressed a key.
 
@@ -307,4 +307,14 @@ After this we have a couple of `writeln` procedure calls and we get to the heart
 This statement has a `repeat` keyword and a sequence of statements followed by an `until` keyword and a condition. It will execute the sequence of statements and then check if the condition is true; if it is not true, it will execute the statements again and check the condition; if it is still not true, it will repeat the statements over and over until, finally, the condition is true.
 
 In this example, the condition is `(Guess = Number) or (Tries = 10)`; therefore, it will execute the statements between the `repeat` and `until` keywords until the player guesses the number or until they have tried 10 times.
+
+So let's look at what's inside the "repeat-until" block. First of all, we add 1 to the value of `Tries`, and then we ask the player for their guess, which goes into the `Guess` variable. Using "if-then-else if", we check if the player's guess is lower or higher than the number and we tell them to go higher or lower, as appropriate. Finally, we reach the `until` keyword, which will decide whether we execute the statements again or we leave the loop.
+
+Finally, we check whether the user guessed the number or reached the maximum number of tries without guessing it, and we write out the appropriate message.
+
+### Other things to know
+
+Notice how we use the operators `>`, `<`, and `=` to check if one number is greater than, smaller than, or equal to another one. I thought you might be interested to know that we also have operators for "greater than or equal to" (`>=`), "smaller than or equal to" (`<=`), and "not equal to" (`<>`).
+
+Also, look at the `until` condition: we use an `or` operator to check if either one of the comparisons is true. What would you say if I told you that Pascal also has an `and` operator to check if both are true at the same time?
 
