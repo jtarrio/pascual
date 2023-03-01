@@ -79,6 +79,68 @@ void READLN(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieReadError);
 }
 
+static int read_token(PFile* file, PString* str) {
+  check_ioresult();
+  if (!is_open(file)) return 0;
+  clearerr(file->file);
+  int len = 0;
+  int chr = 0;
+  int stage = 0;
+  while (len < 255 && stage != 2) {
+    chr = fgetc(file->file);
+    if (chr == -1)
+      break;
+    else if (chr == ' ' || chr == '\t' || chr == '\n') {
+      if (stage == 1) {
+        stage = 2;
+        ungetc(chr, file->file);
+      }
+    } else {
+      if (stage == 0) stage = 1;
+      str->value[len++] = chr;
+    }
+  }
+  str->len = len;
+  if (ferror(file->file)) {
+    set_ioresult(file, ieReadError);
+    return 0;
+  }
+  if (chr == -1) return 0;
+  return 1;
+}
+
+void READ_i(PFile* file, int* num) {
+  PString str;
+  int code;
+  if (read_token(file, &str)) {
+    VAL_i(&str, num, &code);
+    if (code != 0) set_ioresult(file, ieReadError);
+  }
+}
+
+void READ_r(PFile* file, double* num) {
+  PString str;
+  int code;
+  if (read_token(file, &str)) {
+    VAL_r(&str, num, &code);
+    if (code != 0) set_ioresult(file, ieReadError);
+  }
+}
+
+void READ_c(PFile* file, unsigned char* chr) {
+  int ch = 0;
+  check_ioresult();
+  if (!is_open(file)) return;
+  clearerr(file->file);
+  ch = fgetc(file->file);
+  if (ferror(file->file))
+    set_ioresult(file, ieReadError);
+  else if (ch == -1)
+    *chr = 26;
+  else
+    *chr = ch;
+}
+
 void READ_s(PFile* file, PString* str) {
   check_ioresult();
   if (!is_open(file)) return;

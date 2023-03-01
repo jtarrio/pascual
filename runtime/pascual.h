@@ -4,6 +4,7 @@
 #include <malloc.h>
 
 #include "file.h"
+#include "math.h"
 #include "os.h"
 #include "sets.h"
 #include "string.h"

@@ -114,6 +114,35 @@ begin
   end
 end;
 
+function PfRandom_Parse(FnExpr : TExpression) : TExpression;
+var
+  Arg : TExpression;
+  Args : TExFunctionArgs;
+  FnPtr : TPsFnPtr;
+begin
+  DisposeExpr(FnExpr);
+  Arg := nil;
+  if Lexer.Token.Id = TkLparen then
+  begin
+    WantTokenAndRead(TkLparen);
+    if Lexer.Token.Id <> TkRparen then Arg := PsExpression;
+    WantTokenAndRead(TkRparen);
+  end;
+  if Arg = nil then
+  begin
+    FnPtr := FindNameOfClass('RANDOM', TncFunction, {Required=}true)^.FnPtr;
+    Args.Size := 0;
+    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+  end
+  else
+  begin
+    FnPtr := FindNameOfClass('RANDOM_i', TncFunction, {Required=}true)^.FnPtr;
+    Args.Size := 1;
+    Args.Values[1] := Arg;
+    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+  end
+end;
+
 function PfRead_Parse(FnExpr : TExpression) : TExpression;
 var 
   First : boolean;
@@ -138,8 +167,7 @@ begin
       end
       else
       begin
-        if not OutVar^.IsAssignable
-           or not IsStringyType(OutVar^.TypePtr) then
+        if not OutVar^.IsAssignable then
           CompileError('Invalid argument for READ');
         if ReadArg = nil then
         begin
@@ -305,6 +333,7 @@ begin
     TpfNew : Result := PfNew_Parse(Fn);
     TpfOrd : Result := PfOrd_Parse(Fn);
     TpfPred : Result := PfPred_Parse(Fn);
+    TpfRandom : Result := PfRandom_Parse(Fn);
     TpfRead : Result := PfRead_Parse(Fn);
     TpfReadln : Result := PfRead_Parse(Fn);
     TpfStr : Result := PfStr_Parse(Fn);
@@ -315,3 +344,46 @@ begin
     else InternalError('Unimplemented special function ' + DescribeExpr(Fn, 5))
   end
 end;
+
+function Pf_DescribeName(Fn : TExpression) : string;
+begin
+  case Fn^.PseudoFn of 
+    TpfConcat: Result := 'CONCAT';
+    TpfDispose: Result := 'DISPOSE';
+    TpfNew: Result := 'NEW';
+    TpfOrd: Result := 'ORD';
+    TpfPred: Result := 'PRED';
+    TpfRandom : Result := 'RANDOM';
+    TpfRead: Result := 'READ';
+    TpfReadln: Result := 'READLN';
+    TpfStr: Result := 'STR';
+    TpfSucc: Result := 'SUCC';
+    TpfVal: Result := 'VAL';
+    TpfWrite: Result := 'WRITE';
+    TpfWriteln: Result := 'WRITELN';
+    else InternalError('Cannot describe pseudofun')
+  end
+end;
+
+function Pf_DescribeCall(Expr : TExpression; Levels : integer) : string;
+begin
+  with Expr^.PseudoFnCall do
+    case PseudoFn of 
+      TpfDispose: Result := 'DISPOSE(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfOrd: Result := 'ORD(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfRead: Result := 'READ(...)';
+      TpfReadln: Result := 'READLN(...)';
+      TpfStr: Result := 'STR(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
+                        DescribeExpr(Arg2, Levels - 1) + ')';
+      TpfSucc: Result := 'SUCC(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfVal: Result := 'VAL(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
+                        DescribeExpr(Arg2, Levels - 1) + ', ' +
+                        DescribeExpr(Arg3, Levels - 1) + ')';
+      TpfWrite: Result := 'WRITE(...)';
+      TpfWriteln: Result := 'WRITELN(...)';
+      else InternalError('Cannot describe pseudofun')
+    end
+end;
+

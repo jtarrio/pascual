@@ -325,47 +325,6 @@ begin
     end
 end;
 
-function _DescribePseudoFnExpr(Expr : TExpression) : string;
-begin
-  case Expr^.PseudoFn of 
-    TpfConcat: Result := 'CONCAT';
-    TpfDispose: Result := 'DISPOSE';
-    TpfNew: Result := 'NEW';
-    TpfOrd: Result := 'ORD';
-    TpfPred: Result := 'PRED';
-    TpfRead: Result := 'READ';
-    TpfReadln: Result := 'READLN';
-    TpfStr: Result := 'STR';
-    TpfSucc: Result := 'SUCC';
-    TpfVal: Result := 'VAL';
-    TpfWrite: Result := 'WRITE';
-    TpfWriteln: Result := 'WRITELN';
-    else InternalError('Cannot describe pseudofun')
-  end
-end;
-
-function _DescribePseudoCallExpr(Expr : TExpression; Levels : integer) : string;
-begin
-  with Expr^.PseudoFnCall do
-    case PseudoFn of 
-      TpfDispose: Result := 'DISPOSE(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfOrd: Result := 'ORD(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfRead: Result := 'READ(...)';
-      TpfReadln: Result := 'READLN(...)';
-      TpfStr: Result := 'STR(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
-                        DescribeExpr(Arg2, Levels - 1) + ')';
-      TpfSucc: Result := 'SUCC(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfVal: Result := 'VAL(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
-                        DescribeExpr(Arg2, Levels - 1) + ', ' +
-                        DescribeExpr(Arg3, Levels - 1) + ')';
-      TpfWrite: Result := 'WRITE(...)';
-      TpfWriteln: Result := 'WRITELN(...)';
-      else InternalError('Cannot describe pseudofun')
-    end
-end;
-
 function _ExprPrecedence(Expr : TExpression) : integer;
 begin
   case Expr^.Cls of 
@@ -530,8 +489,8 @@ begin
                   end;
                   Result := Result + ')'
                 end;
-      XcPseudoFnRef: Result := _DescribePseudoFnExpr(Expr);
-      XcPseudoFnCall: Result := _DescribePseudoCallExpr(Expr, Levels);
+      XcPseudoFnRef: Result := Pf_DescribeName(Expr);
+      XcPseudoFnCall: Result := Pf_DescribeCall(Expr, Levels);
       XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr, Levels);
       XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr, Levels);
       else InternalError('Cannot describe expression')

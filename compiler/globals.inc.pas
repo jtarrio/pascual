@@ -76,11 +76,15 @@ begin
               MakeArg('CHR', PrimitiveTypes.PtChar)));
 
   { Misc subroutines }
+  AddPseudoFn('RANDOM', TpfRandom);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
   AddFunction(MakeFunction1('PARAMSTR', PrimitiveTypes.PtString,
               MakeArg('I', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction0('RANDOM_n', PrimitiveTypes.PtReal));
+  AddFunction(MakeFunction1('RANDOM_i', PrimitiveTypes.PtInteger,
+              MakeArg('NUM', PrimitiveTypes.PtInteger)));
 
   { Mark everything as initialized and used }
   Def := Defs.Latest;

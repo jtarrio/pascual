@@ -20,6 +20,9 @@ void REWRITE(PFile* file);
 int EOF(PFile* file);
 
 void READLN(PFile* file);
+void READ_i(PFile* file, int* num);
+void READ_r(PFile* file, double* num);
+void READ_c(PFile* file, unsigned char* chr);
 void READ_s(PFile* file, PString* str);
 
 void WRITELN(PFile* file);
