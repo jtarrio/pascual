@@ -246,3 +246,67 @@ writeln('You knock on the door again, but it remains stubbornly shut.')
 ```
 
 Another interesting thing I didn't mention above: look at the description of what happens when you give the correct password. In particular, look at the line where the furious lady shouts at the doorman. She says "don't", but I didn't write it as `don't` but as `don''t`. Why do you think I did it that way? What is written out to the screen when you run the program?
+
+## More about conditional expressions
+
+The "if" statement takes a _conditional expression_ that decides if the "then" statement or the "else" statement is executed.
+
+Typically, a conditional expression compares two values. You've already seen `Pass = 'swordfish'`, which returns true if the variable `Pass` contains a value that is equal to the string `swordfish`, and you've seen `Age < 21`, which is true if the variable `Age` contains a value that is less than 21.
+
+In an expression like `Age < 21`, the symbol `<` is called the _operator_, and `Age` and `21` are called the _operands_. (You could say that the expression is an "operation".)
+
+Pascal has quite a few comparison operators, which are `=` (equal to), `<` (less than), `>` (more than), `<=` (less than or equal to), `>=` (more than or equal to), and `<>` (different from). As you can see, those operators look like the same comparison operators you used in school mathematics, except for `<>`, which was chosen because most computers didn't have a `≠` symbol.
+
+In a comparison operation, both operands need to be the same type. So you could write `15 < 21` or `'abc' < 'def'`, but not `15 < 'def'`, because the number 15 and the string `def` belong to different types and, therefore, cannot be compared. And, of course, if you are using variables, they must be the same type as whatever you are comparing them to.
+
+Let me put this in a table so it is clearer:
+
+Comparison operation | Result
+---------------------|---------
+_a_ `=` _b_          | True if _a_ and _b_ are equal, false otherwise.
+_a_ `<>` _b_         | True if _a_ and _b_ are different, false otherwise.
+_a_ `<` _b_          | True if _a_ is less than _b_, false otherwise.
+_a_ `>` _b_          | True is _a_ is greater than _b_, false otherwise.
+_a_ `<=` _b_         | True if _a_ is less than or equal to _b_, false otherwise.
+_a_ `>=` _b_         | True is _a_ is greater than or equal to _b_, false otherwise.
+
+(When comparing strings, "is less than" means "comes alphabetically before", and "is more than" means "comes alphabetically after".)
+
+You can combine several comparisons at once in a single conditional expression, using the `and`, `or` and `not` operators. This lets you write stuff like `(Pass = 'swordfish') and (Age >= 21)`, which is true if the password is correct and the age is 21 or over, at the same time.
+
+Notice how, in the example above, I wrote the comparison operations in parentheses. Pascal evaluates the `and`, `or`, and `not` operations before it evaluates comparison operations, so if I decided to omit the parentheses and wrote `Pass = 'swordfish' and Age >= 21`, the Pascal compiler would try to apply the operator `and` to `'swordfish'` and to `Age`. Therefore, we always need to add the parentheses.
+
+As a summary, here is a table summarizing the three logical operators I mentioned above:
+
+Logical operation | Result
+------------------|--------
+_a_ `and` _b_     | True if both _a_ and _b_ are true, false otherwise.
+_a_ `or` _b_      | True if either _a_ or _b_ or both are true, false if none are true.
+`not` _a_         | True if _a_ is false, false if _a_ is true.
+
+## Repeat-until and while-do
+
+Programs rarely start at the beginning and then go straight through to the end. Quite often, there are some parts that are executed over and over until something happens. Imagine a program that waits until you press a key: it's going to check if you pressed a key, and if you didn't, it's going to check again, and again, and again, until it detects that you've finally pressed a key.
+
+There are two statements in Pascal that you can use to do this. The first one is called "repeat-until":
+
+```pascal
+program GuessMyNumber;
+var
+  Number : integer;
+  Guess : integer;
+begin
+  Number := Random(100) + 1;
+  writeln('Guess my number!');
+  repeat
+    write('What is your guess? ');
+    readln(Guess);
+    if Guess < Number then
+      writeln('Higher!')
+    else if Guess > Number then
+      writeln('Lower!')
+  until Guess = Number;
+  writeln('You guessed it! The number was ', Number, '!')
+end.
+```
+
