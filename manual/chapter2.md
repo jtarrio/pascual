@@ -361,3 +361,34 @@ begin
 end.
 ```
 
+Before we analyze this program, let's look at the differences between "repeat-until" and "while-do".
+
+The first difference is what breaks the loop. For "repeat-until", the statements keep executing _until_ the condition is true. So, as long as it is false, it continues looping. For "while-do", however, the statement keeps executing _while_ the condition is true. So, as long as it is true, it continues looping.
+
+The second difference is when the condition is checked. For "repeat-until", the condition is checked _after_ executing the statements. For "while-do", it is checked _before_.
+
+The third difference is in how many statements each construct takes. "Repeat-until" takes a sequence of statements between the `repeat` and `until` keywords. "While-do", however, takes a single statement after the `do` keyword. (However, it is common to use `begin`/`end` to have a sequence of statements for a `while`, like we do for "if-then-else".)
+
+So this is what a "repeat-until" looks like:
+
+```pascal
+repeat
+  statement_1;
+  statement_2;
+  statement_n
+until condition
+```
+
+And this is what a "while-do" looks like:
+
+```pascal
+while condition do statement;
+
+while condition do
+begin
+  statement_1;
+  statement_2;
+  statement_n
+end
+```
+
