@@ -436,9 +436,9 @@ Other times, the need to use one or other is not so clear; in that case, you wou
 
 ## For
 
-Pascal's third loop statement is the "for" statement. It is used to assign a sequence of numbers to a variable and execute a statement for each value in that sequence.
+Pascal's third loop statement is the "for" statement. It is used to count from one number to another, executing a statement for each value in that count.
 
-It will be easier with an example, and for that, I'm going to use the very well-known "FizzBuzz" program.
+It will be easier to explain with an example, and for that, I'm going to use the very well-known "FizzBuzz" program.
 
 ```pascal
 program FizzBuzz;
@@ -462,4 +462,21 @@ end.
 ```
 
 I'm going to get it out of the way first so I can talk about the "for" loop: the `mod` operator is the modulo operator, which returns the remainder of a division. So `Count mod 3` would return the remainder of the division of `Count` and 3. If it is equal to 0, that means that `Count` is divisible by 3.
+
+The `for Count := 1 to Limit` statement means: assign the value `1` to `Count` and execute the statement; then assign `2` and execute; then `3` and so on until you finally reach `Limit`, execute the statement for the last time, and then exit the loop.
+
+So if the user entered `7` as the value of `Limit`, the output of this program would be: `1 2 fizz 4 buzz fizz 7`.
+
+In Pascal, the `for` statement can only count 1 at a time, up or down. If you want to count down, you need to use the keyword `downto` instead of `to`:
+
+```pascal
+program Countdown;
+var
+  Num : integer;
+begin
+  for Num := 10 downto 1 do
+    write(Num, ' ');
+  writeln('Ignition!')
+end.
+```
 
