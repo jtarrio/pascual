@@ -444,8 +444,7 @@ It will be easier to explain with an example, and for that, I'm going to use the
 
 ```pascal
 program FizzBuzz;
-var
-  Count, Limit : integer;
+var Count, Limit : integer;
 begin
   write('How many? ');
   readln(Limit);
@@ -473,8 +472,7 @@ In Pascal, the `for` statement can only count 1 at a time, up or down. If you wa
 
 ```pascal
 program Countdown;
-var
-  Num : integer;
+var Num : integer;
 begin
   for Num := 10 downto 1 do
     write(Num, ' ');
