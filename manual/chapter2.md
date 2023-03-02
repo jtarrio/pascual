@@ -277,7 +277,7 @@ begin
     if Guess < Number then
       writeln('Go higher!')
     else if Guess > Number then
-      writeln('Go lower!');
+      writeln('Go lower!')
   until (Guess = Number) or (Tries = 10);
   if Guess = Number then
     writeln('You guessed it in ', Tries, ' tries! It was ', Number, '!')
