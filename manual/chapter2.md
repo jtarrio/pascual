@@ -256,7 +256,9 @@ Another interesting thing I didn't mention above: look at the description of wha
 
 Programs rarely start at the beginning and then go straight through to the end. Quite often, there are some parts that are executed over and over until something happens. Imagine a program that waits until you press a key: it's going to check if you pressed a key, and if you didn't, it's going to check again, and again, and again, until it detects that you've finally pressed a key.
 
-There are two statements in Pascal that you can use to do this. The first one is called "repeat-until", and we are going to see it in action in a guess-the-number game:
+This kind of construct (where one or more statements repeat) is called a _loop statement_, and Pascal has three of them.
+
+The first loop statement is called "repeat-until", and I'm going to show you how it would be used in a guess-the-number game:
 
 ```pascal
 program GuessMyNumber;
@@ -302,9 +304,9 @@ As for `Random`, it is a function. A function is another type of subroutine. Lik
 
 And with this, we have everything we need to know what the third statement does: it gets a random value between 0 and 99 through the `Random` function, adds 1 so it will be between 1 and 100, and assigns the result to the `Number` variable.
 
-After this we have a couple of `writeln` procedure calls and we get to the heart of this section: the "repeat-until" statement.
+After this we have a couple of `writeln` procedure calls and we get to the heart of this section: the "repeat-until" loop statement.
 
-This statement has a `repeat` keyword and a sequence of statements followed by an `until` keyword and a condition. It will execute the sequence of statements and then check if the condition is true; if it is not true, it will execute the statements again and check the condition; if it is still not true, it will repeat the statements over and over until, finally, the condition is true.
+This statement has a `repeat` keyword and a sequence of statements followed by an `until` keyword and a condition. It will execute the sequence of statements and then check if the condition is true; if it is not true, it will loop: execute the statements again and check the condition; if it is still not true, it will loop over and over until, finally, the condition is true.
 
 In this example, the condition is `(Guess = Number) or (Tries = 10)`; therefore, it will execute the statements between the `repeat` and `until` keywords until the player guesses the number or until they have tried 10 times.
 
@@ -322,9 +324,7 @@ In one line, this program uses the procedure `write` instead of the procedure `w
 
 ## While-do
 
-In the previous section I told you about "repeat-until" and how it lets you execute a sequence of statements repeatedly until a condition is true, and I also told you that Pascal has two of these.
-
-The second statement is "while-do", and it kind of works in the opposite way as "repeat-until". Where "repeat-until" first executes the statements and then checks if it should stop repeating them, "while-do" first checks the condition and, if it is true, it executes the statement.
+The second loop statement in the Pascal language is "while-do", and it kind of works in the opposite way as "repeat-until". Where "repeat-until" first executes the statements and then checks if it should stop looping, "while-do" first checks the condition and, if it is true, it executes the statement and then loops.
 
 Since "while-do" is the opposite of "repeat-until", let's see it in action in a program that is the opposite of the game in the previous section: this time, the player chooses a number and the computer tries to guess it.
 
@@ -361,9 +361,27 @@ begin
 end.
 ```
 
-Before we analyze this program, let's look at the differences between "repeat-until" and "while-do".
+As usual, this program starts by declaring its variables, and we can see something new in here: one variable is being declared with the type `boolean`. Instead of numbers or strings, boolean variables hold "true" and "false" values. That's the same type as the conditional expressions that I talked about earlier in this chapter, so you can also store the result of one of those expressions in a boolean variable.
 
-The first difference is what breaks the loop. For "repeat-until", the statements keep executing _until_ the condition is true. So, as long as it is false, it continues looping. For "while-do", however, the statement keeps executing _while_ the condition is true. So, as long as it is true, it continues looping.
+Also look at how the three variables, `Low`, `High`, and `Guess` are being declared as `integer` at the same time.
+
+After a couple of variable assignments and `writeln` statements, we get to the `while` keyword. Unlike "repeat-until", "while-do" takes only one statement to be looped, so if you want to loop more than one statement (like in this example), you need to enclose them with `begin`/`end`.
+
+The conditional expression for the `while` statement also has a couple of new things. One is the `not` operator. It takes what comes after it (the variable `Guessed`) and, if it is true, it makes it false, and if it is false, it makes it true. So when `Guessed` is false, `not Guessed` is true and vice versa. The other new thing is the `and` operator, which returns true when the expressions on both sides of the `and` are true.
+
+The `while` statement starts by checking if the condition is true and, if so, it loops the following sequence of statements over and over until the condition evaluates to false.
+
+The looped statements show a guess to the user and ask the user if they guessed correctly or they chosen number is higher or lower, and adjust the next guess accordinly. Most of them are things we have seen before: there are a few variable assignments, `write`, `writeln`, `readln`, "if-then-else if", "repeat-until", ... The only new thing is the expression that computes a new value for the `Guess` variable.
+
+In the `Guess := (Low + High) div 2` statement, the `div` operator performs an _integer division_. That's a division operation discarding any remainder or decimals. So if `Low` is 1 and `High` is 100, the result of `Low + High` would be 101, and `101 div 2` would be `50`, not `50.5`.
+
+As I said before, these statements keep looping until the user tells the program that it guessed the number (signified by the variable `Guessed` receiving the value `true`) or the program is sure that it knows the number (signified by the variables `Low` and `High` having the same value). At the end, the program shows the guessed number.
+
+### Differences between "repeat-until" and "while-do"
+
+The "repeat-until" and "while-do" statements do very similar things, but they have three crucial differences.
+
+The first difference is how the program decides when to break the loop. For "repeat-until", the statements keep looping _until_ the condition is true. So, as long as it is false, it continues looping. For "while-do", however, the statement keeps executing _while_ the condition is true. So, as long as it is true, it continues looping.
 
 The second difference is when the condition is checked. For "repeat-until", the condition is checked _after_ executing the statements. For "while-do", it is checked _before_.
 
@@ -384,6 +402,8 @@ And this is what a "while-do" looks like:
 ```pascal
 while condition do statement;
 
+{ or }
+
 while condition do
 begin
   statement_1;
@@ -391,4 +411,55 @@ begin
   statement_n
 end
 ```
+
+How would you choose between using "repeat-until" and using "while-do"? Mainly, depending on whether you need to execute the looped statements at least once (for example, to initialize the variables that are used in the conditional expression). If so, you would use a "repeat-until" loop statement, since it only checks the condition after executing the statements.
+
+```pascal
+repeat
+  IsWarning := CheckWarning;
+  if IsWarning then DisplayWarning
+until not IsWarning;
+```
+
+If the loop statements must not be executed if the condition is false, a "while-do" statement is appropriate.
+
+```pascal
+readln(Thumps);
+while Thumps > 0 do
+begin
+  writeln('Thump!');
+  Thump := Thump - 1
+end
+```
+
+Other times, the need to use one or other is not so clear; in that case, you would choose depending on what makes the surrounding code or the conditional expression easier to write.
+
+## For
+
+Pascal's third loop statement is the "for" statement. It is used to assign a sequence of numbers to a variable and execute a statement for each value in that sequence.
+
+It will be easier with an example, and for that, I'm going to use the very well-known "FizzBuzz" program.
+
+```pascal
+program FizzBuzz;
+var
+  Count, Limit : integer;
+begin
+  write('How many? ');
+  readln(Limit);
+  for Count := 1 to Limit do
+  begin
+    if (Count mod 3 = 0) and (Count mod 5 = 0) then
+      write('fizzbuzz ')
+    else if Count mod 3 = 0 then
+      write('fizz ')
+    else if Count mod 5 = 0 then
+      write('buzz ')
+    else write(Count, ' ')
+  end;
+  writeln;
+end.
+```
+
+I'm going to get it out of the way first so I can talk about the "for" loop: the `mod` operator is the modulo operator, which returns the remainder of a division. So `Count mod 3` would return the remainder of the division of `Count` and 3. If it is equal to 0, that means that `Count` is divisible by 3.
 
