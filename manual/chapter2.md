@@ -312,9 +312,52 @@ So let's look at what's inside the "repeat-until" block. First of all, we add 1 
 
 Finally, we check whether the user guessed the number or reached the maximum number of tries without guessing it, and we write out the appropriate message.
 
-### Other things to know
+### Other things to know and try
 
 Notice how we use the operators `>`, `<`, and `=` to check if one number is greater than, smaller than, or equal to another one. I thought you might be interested to know that we also have operators for "greater than or equal to" (`>=`), "smaller than or equal to" (`<=`), and "not equal to" (`<>`).
 
 Also, look at the `until` condition: we use an `or` operator to check if either one of the comparisons is true. What would you say if I told you that Pascal also has an `and` operator to check if both are true at the same time?
+
+In one line, this program uses the procedure `write` instead of the procedure `writeln` we had already seen. They both write their parameters out to the screen, but there is a difference. What do you think it is? Try replacing some `writeln` with `write` and vice versa to see if you notice a pattern.
+
+## While-do
+
+In the previous section I told you about "repeat-until" and how it lets you execute a sequence of statements repeatedly until a condition is true, and I also told you that Pascal has two of these.
+
+The second statement is "while-do", and it kind of works in the opposite way as "repeat-until". Where "repeat-until" first executes the statements and then checks if it should stop repeating them, "while-do" first checks the condition and, if it is true, it executes the statement.
+
+Since "while-do" is the opposite of "repeat-until", let's see it in action in a program that is the opposite of the game in the previous section: this time, the player chooses a number and the computer tries to guess it.
+
+```pascal
+program ComputerGuesses;
+var
+  Low, High, Guess : integer;
+  Tries : integer;
+  Answer : string;
+  Guessed : boolean;
+begin
+  Low := 1;
+  High := 100;
+  Tries := 0;
+  Guessed := false;
+  writeln('Choose a number between 1 and 100!');
+  writeln('I will guess it in 7 tries or less.');
+  while not Guessed and (Low < High) do
+  begin
+    Tries := Tries + 1;
+    Guess := (Low + High) div 2;
+    writeln('Is your number ', Guess, '?');
+    repeat
+      write('Answer (yes/higher/lower): ');
+      readln(Answer)
+    until (Answer = 'yes') or (Answer = 'higher') or (Answer = 'lower');
+    if Answer = 'yes' then Guessed := true
+    else if Answer = 'higher' then Low := Guess + 1
+    else if Answer = 'lower' then High := Guess - 1
+  end;
+  if Guessed then writeln('Your number is ', Guess)
+  else writeln('Your number is ', Low);
+  writeln('I guessed your number in ', Tries, ' tries')
+end.
+```
 
