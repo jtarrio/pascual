@@ -282,7 +282,7 @@ begin
   if Guess = Number then
     writeln('You guessed it in ', Tries, ' tries! It was ', Number, '!')
   else
-    writeln('Sorry, you didn''t guess the number. It was ', Number);
+    writeln('Sorry, you didn''t guess the number. It was ', Number)
 end.
 ```
 
