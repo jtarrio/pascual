@@ -252,11 +252,13 @@ writeln('You knock on the door again, but it remains stubbornly shut.')
 
 Another interesting thing I didn't mention above: look at the description of what happens when you give the correct password. In particular, look at the line where the furious lady shouts at the doorman. She says "don't", but I didn't write it as `don't` but as `don''t`. Why do you think I did it that way? What is written out to the screen when you run the program?
 
-## Repeat-until
+## Loop statements
 
 Programs rarely start at the beginning and then go straight through to the end. Quite often, there are some parts that are executed over and over until something happens. Imagine a program that waits until you press a key: it's going to check if you pressed a key, and if you didn't, it's going to check again, and again, and again, until it detects that you've finally pressed a key.
 
-This kind of construct (where one or more statements repeat) is called a _loop statement_, and Pascal has three of them.
+This kind of construct (where one or more statements repeat) is called a _loop statement_, and Pascal has three of them: "repeat-until", "while-do", and "for".
+
+### Repeat-until
 
 The first loop statement is called "repeat-until", and I'm going to show you how it would be used in a guess-the-number game:
 
@@ -314,7 +316,7 @@ So let's look at what's inside the "repeat-until" block. First of all, we add 1 
 
 Finally, we check whether the user guessed the number or reached the maximum number of tries without guessing it, and we write out the appropriate message.
 
-### Other things to know and try
+#### Other things to know and try
 
 Notice how we use the operators `>`, `<`, and `=` to check if one number is greater than, smaller than, or equal to another one. I thought you might be interested to know that we also have operators for "greater than or equal to" (`>=`), "smaller than or equal to" (`<=`), and "not equal to" (`<>`).
 
@@ -322,7 +324,7 @@ Also, look at the `until` condition: we use an `or` operator to check if either 
 
 In one line, this program uses the procedure `write` instead of the procedure `writeln` we had already seen. They both write their parameters out to the screen, but there is a difference. What do you think it is? Try replacing some `writeln` with `write` and vice versa to see if you notice a pattern.
 
-## While-do
+### While-do
 
 The second loop statement in the Pascal language is "while-do", and it kind of works in the opposite way as "repeat-until". Where "repeat-until" first executes the statements and then checks if it should stop looping, "while-do" first checks the condition and, if it is true, it executes the statement and then loops.
 
@@ -377,7 +379,7 @@ In the `Guess := (Low + High) div 2` statement, the `div` operator performs an _
 
 As I said before, these statements keep looping until the user tells the program that it guessed the number (signified by the variable `Guessed` receiving the value `true`) or the program is sure that it knows the number (signified by the variables `Low` and `High` having the same value). At the end, the program shows the guessed number.
 
-### Differences between "repeat-until" and "while-do"
+#### Differences between "repeat-until" and "while-do"
 
 The "repeat-until" and "while-do" statements do very similar things, but they have three crucial differences.
 
@@ -434,7 +436,7 @@ end
 
 Other times, the need to use one or other is not so clear; in that case, you would choose depending on what makes the surrounding code or the conditional expression easier to write.
 
-## For
+### For
 
 Pascal's third loop statement is the "for" statement. It is used to count from one number to another, executing a statement for each value in that count.
 
