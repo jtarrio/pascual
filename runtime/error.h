@@ -1,7 +1,7 @@
 #ifndef __PASCUAL_ERROR_H
 #define __PASCUAL_ERROR_H
 
-typedef enum { reUnknown, reOutOfBounds } RtError;
+typedef enum { reUnknown, reOutOfBounds, reMath } RtError;
 typedef enum {
   ieUnknown,
   ieFileNotFound,

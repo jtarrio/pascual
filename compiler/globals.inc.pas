@@ -17,6 +17,7 @@ begin
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
   AddConstant(MakeConstant('TRUE', ExBooleanConstant(true)));
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
+  AddConstant(MakeConstant('PI', ExRealConstant(3.141592653589793238)));
 
   { Default files }
   AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText));
@@ -27,6 +28,40 @@ begin
   AddPseudoFn('ORD', TpfOrd);
   AddPseudoFn('PRED', TpfPred);
   AddPseudoFn('SUCC', TpfSucc);
+
+  { Math subroutines }
+  AddPseudoFn('ABS', TpfAbs);
+  AddPseudoFn('SQR', TpfSqr);
+  AddFunction(MakeFunction1('ABS_i', PrimitiveTypes.PtInteger,
+              MakeArg('NUM', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction1('ABS_r', PrimitiveTypes.PtReal,
+              MakeArg('NUM', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('ARCTAN', PrimitiveTypes.PtReal,
+              MakeArg('TAN', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('COS', PrimitiveTypes.PtReal,
+              MakeArg('ANGLE', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('EXP', PrimitiveTypes.PtReal,
+              MakeArg('POW', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('FRAC', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('INT', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('LN', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('ODD', PrimitiveTypes.PtBoolean,
+              MakeArg('X', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction1('ROUND', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('SIN', PrimitiveTypes.PtReal,
+              MakeArg('ANGLE', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('SQR_i', PrimitiveTypes.PtInteger,
+              MakeArg('NUM', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction1('SQR_r', PrimitiveTypes.PtReal,
+              MakeArg('NUM', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('SQRT', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
+  AddFunction(MakeFunction1('TRUNC', PrimitiveTypes.PtReal,
+              MakeArg('X', PrimitiveTypes.PtReal)));
 
   { Memory subroutines }
   AddPseudoFn('DISPOSE', TpfDispose);
@@ -82,10 +117,10 @@ begin
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
   AddFunction(MakeFunction1('PARAMSTR', PrimitiveTypes.PtString,
               MakeArg('I', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeProcedure0('RANDOMIZE'));
   AddFunction(MakeFunction0('RANDOM_n', PrimitiveTypes.PtReal));
   AddFunction(MakeFunction1('RANDOM_i', PrimitiveTypes.PtInteger,
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeProcedure0('RANDOMIZE'));
 
   { Mark everything as initialized and used }
   Def := Defs.Latest;

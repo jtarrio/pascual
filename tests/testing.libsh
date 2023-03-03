@@ -35,7 +35,7 @@ do_compile() {
   then
     do_compile_with_fpc "$outfile"
   else
-    "$PC" - -Wnone -o - | "$CC" -x c -I"$PINCDIR" -L"$PLIBDIR" - -o "$outfile" -lpascual
+    "$PC" - -Wnone -o - | "$CC" -x c -I"$PINCDIR" -L"$PLIBDIR" - -o "$outfile" -lpascual -lm
   fi
   echo "$outfile"
 }

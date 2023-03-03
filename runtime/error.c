@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const char* RtErrorMsgs[] = {"Unknown error", "Out of bounds"};
+static const char* RtErrorMsgs[] = {"Unknown error", "Out of bounds", "Math error"};
 
 void rt_error(RtError err) {
   if ((err < 0) || (err >= sizeof(RtErrorMsgs))) err = 0;

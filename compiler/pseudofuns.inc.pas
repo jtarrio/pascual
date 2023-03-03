@@ -5,6 +5,55 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
+function _Pf_Fun_Overload(NamePrefix : string; TypePtr : TPsTypePtr) : string;
+begin
+  TypePtr := GetFundamentalType(TypePtr);
+  if IsBooleanType(TypePtr) then Result := NamePrefix + '_b'
+  else if IsIntegerType(TypePtr) then Result := NamePrefix + '_i'
+  else if IsRealType(TypePtr) then Result := NamePrefix + '_r'
+  else if IsCharType(TypePtr) then Result := NamePrefix + '_c'
+  else if IsStringType(TypePtr) then Result := NamePrefix + '_s'
+  else CompileError('Type ' + TypeName(TypePtr) + ' is not representable for ' +
+    'overload of ' + NamePrefix)
+end;
+
+function _Pf_Overload_Parse(FnExpr : TExpression;
+                            NamePrefix : string) : TExpression;
+var 
+  Arg : TExpression;
+  Args : TExFunctionArgs;
+  FnPtr : TPsFnPtr;
+begin
+  DisposeExpr(FnExpr);
+  Arg := nil;
+  if Lexer.Token.Id = TkLparen then
+  begin
+    WantTokenAndRead(TkLparen);
+    if Lexer.Token.Id <> TkRparen then Arg := PsExpression;
+    WantTokenAndRead(TkRparen);
+  end;
+  if Arg = nil then
+  begin
+    FnPtr := FindNameOfClass(NamePrefix + '_n', TncFunction, {Required=}true)^.
+             FnPtr;
+    Args.Size := 0;
+    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+  end
+  else
+  begin
+    FnPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
+             TncFunction, {Required=}true)^.FnPtr;
+    Args.Size := 1;
+    Args.Values[1] := Arg;
+    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+  end
+end;
+
+function PfAbs_Parse(FnExpr : TExpression) : TExpression;
+begin
+  Result := _Pf_Overload_Parse(FnExpr, 'ABS')
+end;
+
 function PfConcat_Parse(FnExpr : TExpression) : TExpression;
 var Operand : TExpression;
 begin
@@ -115,7 +164,7 @@ begin
 end;
 
 function PfRandom_Parse(FnExpr : TExpression) : TExpression;
-var
+var 
   Arg : TExpression;
   Args : TExFunctionArgs;
   FnPtr : TPsFnPtr;
@@ -130,7 +179,7 @@ begin
   end;
   if Arg = nil then
   begin
-    FnPtr := FindNameOfClass('RANDOM', TncFunction, {Required=}true)^.FnPtr;
+    FnPtr := FindNameOfClass('RANDOM_n', TncFunction, {Required=}true)^.FnPtr;
     Args.Size := 0;
     Result := ExFunctionCall(ExFnRef(FnPtr), Args);
   end
@@ -189,6 +238,11 @@ begin
     end;
     WantTokenAndRead(TkRparen)
   end
+end;
+
+function PfSqr_Parse(FnExpr : TExpression) : TExpression;
+begin
+  Result := _Pf_Overload_Parse(FnExpr, 'SQR')
 end;
 
 function PfStr_Parse(FnExpr : TExpression) : TExpression;
@@ -328,6 +382,7 @@ end;
 function Pf_Parse(Fn : TExpression) : TExpression;
 begin
   case Fn^.PseudoFn of 
+    TpfAbs : Result := PfAbs_Parse(Fn);
     TpfConcat : Result := PfConcat_Parse(Fn);
     TpfDispose : Result := PfDispose_Parse(Fn);
     TpfNew : Result := PfNew_Parse(Fn);
@@ -336,6 +391,7 @@ begin
     TpfRandom : Result := PfRandom_Parse(Fn);
     TpfRead : Result := PfRead_Parse(Fn);
     TpfReadln : Result := PfRead_Parse(Fn);
+    TpfSqr : Result := PfSqr_Parse(Fn);
     TpfStr : Result := PfStr_Parse(Fn);
     TpfSucc : Result := PfSucc_Parse(Fn);
     TpfVal : Result := PfVal_Parse(Fn);
@@ -348,6 +404,7 @@ end;
 function Pf_DescribeName(Fn : TExpression) : string;
 begin
   case Fn^.PseudoFn of 
+    TpfAbs: Result := 'ABS';
     TpfConcat: Result := 'CONCAT';
     TpfDispose: Result := 'DISPOSE';
     TpfNew: Result := 'NEW';
@@ -356,6 +413,7 @@ begin
     TpfRandom : Result := 'RANDOM';
     TpfRead: Result := 'READ';
     TpfReadln: Result := 'READLN';
+    TpfSqr: Result := 'SQR';
     TpfStr: Result := 'STR';
     TpfSucc: Result := 'SUCC';
     TpfVal: Result := 'VAL';
@@ -386,4 +444,3 @@ begin
       else InternalError('Cannot describe pseudofun')
     end
 end;
-
