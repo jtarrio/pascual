@@ -13,11 +13,26 @@ extern PFile STDERR;
 
 int IORESULT();
 
+void CHDIR(const PString* dir);
+void MKDIR(const PString* dir);
+void RMDIR(const PString* dir);
+void GETDIR(int drive, PString* dir);
+
 void ASSIGN(PFile* file, const PString* name);
 void CLOSE(PFile* file);
 void RESET(PFile* file);
 void REWRITE(PFile* file);
 int EOF(PFile* file);
+int EOLN(PFile* file);
+int SEEKEOF(PFile* file);
+int SEEKEOLN(PFile* file);
+int FILEPOS(const PFile* file);
+int FILESIZE(const PFile* file);
+void SEEK(PFile* file, int pos);
+void FLUSH(PFile* file);
+
+void ERASE(PFile* file);
+void RENAME(PFile* file, const PString* name);
 
 void READLN(PFile* file);
 void READ_i(PFile* file, int* num);

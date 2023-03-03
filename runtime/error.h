@@ -4,11 +4,13 @@
 typedef enum { reUnknown, reOutOfBounds, reMath } RtError;
 typedef enum {
   ieUnknown,
+  ieIoError,
   ieFileNotFound,
   ieAccessDenied,
   ieFileNotOpen,
   ieReadError,
-  ieWriteError
+  ieWriteError,
+  ieNotADirectory
 } IoError;
 
 void rt_error(RtError err);

@@ -2,16 +2,37 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "error.h"
 #include "string.h"
 
 static IoError error_code;
-static PFile* error_file;
+static const PFile* error_file;
 
-static inline void set_ioresult(PFile* file, IoError error) {
+static inline void set_ioresult(const PFile* file, IoError error) {
   error_code = error;
   error_file = file;
+}
+
+static IoError ioerror_from_errno(void) {
+  switch (errno) {
+    case EIO:
+      return ieIoError;
+    case ENOENT:
+      return ieFileNotFound;
+    case EACCES:
+      return ieAccessDenied;
+    case EBADF:
+      return ieFileNotOpen;
+    case ENOTDIR:
+      return ieNotADirectory;
+    default:
+      return ieUnknown;
+  }
 }
 
 static inline void check_ioresult() {
@@ -26,7 +47,32 @@ int IORESULT() {
   return ret;
 }
 
-static inline int is_open(PFile* file) {
+void CHDIR(const PString* dir) {
+  check_ioresult();
+  if (!chdir(pchar_of_str(dir))) set_ioresult(NULL, ioerror_from_errno());
+}
+
+void MKDIR(const PString* dir) {
+  check_ioresult();
+  if (!mkdir(pchar_of_str(dir), 0755)) set_ioresult(NULL, ioerror_from_errno());
+}
+
+void RMDIR(const PString* dir) {
+  check_ioresult();
+  if (!rmdir(pchar_of_str(dir))) set_ioresult(NULL, ioerror_from_errno());
+}
+
+void GETDIR(int drive, PString* dir) {
+  char buf[256];
+  size_t buf_size = 256;
+  check_ioresult();
+  if (getcwd(buf, buf_size) == NULL)
+    set_ioresult(NULL, ioerror_from_errno());
+  else
+    *dir = str_of_pchar(buf);
+}
+
+static inline int is_open(const PFile* file) {
   if (file->file != NULL) return 1;
   set_ioresult(file, ieFileNotOpen);
   return 0;
@@ -52,6 +98,97 @@ int EOF(PFile* file) {
   if (feof(file->file)) return 1;
   ungetc(ch, file->file);
   return 0;
+}
+
+int SEEKEOF(PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return 1;
+  clearerr(file->file);
+  int ch;
+  do {
+    ch = fgetc(file->file);
+    if (feof(file->file)) return 1;
+  } while (ch == ' ' || ch == '\t');
+  ungetc(ch, file->file);
+  return 0;
+}
+
+int EOLN(PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return 1;
+  clearerr(file->file);
+  int ch = fgetc(file->file);
+  if (feof(file->file)) return 1;
+  ungetc(ch, file->file);
+  return ch == '\n';
+}
+
+int SEEKEOLN(PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return 1;
+  clearerr(file->file);
+  int ch;
+  do {
+    ch = fgetc(file->file);
+    if (feof(file->file)) return 1;
+  } while (ch == ' ' || ch == '\t');
+  ungetc(ch, file->file);
+  return ch == '\n';
+}
+
+int FILEPOS(const PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return 0;
+  int pos = ftell(file->file);
+  if (pos < 0) set_ioresult(file, ioerror_from_errno());
+  return pos;
+}
+
+int FILESIZE(const PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return 0;
+  long prev = ftell(file->file);
+  if (prev < 0) goto filesize_error;
+  if (fseek(file->file, 0, SEEK_END) < 0) goto filesize_error;
+  long size = ftell(file->file);
+  if (size < 0) goto filesize_error;
+  if (fseek(file->file, prev, SEEK_SET) < 0) goto filesize_error;
+  return size;
+
+filesize_error:
+  set_ioresult(file, ioerror_from_errno());
+  return 0;
+}
+
+void SEEK(PFile* file, int pos) {
+  check_ioresult();
+  if (!is_open(file)) return;
+  if (fseek(file->file, pos, SEEK_SET) < 0)
+    set_ioresult(file, ioerror_from_errno());
+}
+
+void FLUSH(PFile* file) {
+  check_ioresult();
+  if (!is_open(file)) return;
+  if (fflush(file->file) < 0) set_ioresult(file, ioerror_from_errno());
+}
+
+void ERASE(PFile* file) {
+  check_ioresult();
+  if (unlink(pchar_of_str(&file->name)) < 0)
+    set_ioresult(file, ioerror_from_errno());
+}
+
+void RENAME(PFile* file, const PString* name) {
+  char old_name[256];
+  char new_name[256];
+  check_ioresult();
+  strcpy(old_name, pchar_of_str(&file->name));
+  strcpy(new_name, pchar_of_str(name));
+  if (rename(old_name, new_name) < 0)
+    set_ioresult(file, ioerror_from_errno());
+  else
+    file->name = *name;
 }
 
 static inline void open_file(PFile* file, const char* mode) {

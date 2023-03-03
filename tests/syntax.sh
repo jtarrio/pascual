@@ -661,8 +661,8 @@ testwriteln 'a : real' 'a:10:5' | will_be_valid
 testread() {
   echo "program foo; var $1; begin read($2) end."
 }
-testread 'a : integer' a | will_be_valid
-testread 'a : real' a | will_be_valid
+testread 'a : integer' a | is_valid
+testread 'a : real' a | is_valid
 testread 'a : char' a | is_valid
 testread 'a : string' a | is_valid
 testread 'a : string; b : string' 'a, b' | is_valid
@@ -673,8 +673,8 @@ testreadln() {
 }
 testreadln 'a : integer' '' | is_valid
 testreadln 'a : integer' 'input' | is_valid
-testreadln 'a : integer' a | will_be_valid
-testreadln 'a : real' a | will_be_valid
+testreadln 'a : integer' a | is_valid
+testreadln 'a : real' a | is_valid
 testreadln 'a : char' a | is_valid
 testreadln 'a : string' a | is_valid
 testreadln 'a : string; b : string' 'a, b' | is_valid

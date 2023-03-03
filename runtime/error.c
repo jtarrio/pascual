@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const char* RtErrorMsgs[] = {"Unknown error", "Out of bounds", "Math error"};
+static const char* RtErrorMsgs[] = {"Unknown error", "Out of bounds",
+                                    "Math error"};
 
 void rt_error(RtError err) {
   if ((err < 0) || (err >= sizeof(RtErrorMsgs))) err = 0;
@@ -11,9 +12,9 @@ void rt_error(RtError err) {
   abort();
 }
 
-static const char* IoErrorMsgs[] = {"Unknown error", "File not found",
-                                    "Access denied", "File not open",
-                                    "Read error",    "Write error"};
+static const char* IoErrorMsgs[] = {
+    "Unknown error", "I/O error",  "File not found", "Access denied",
+    "File not open", "Read error", "Write error",    "Not a directory"};
 
 void io_error(IoError err, const char* msg) {
   if ((err < 0) || (err >= sizeof(IoErrorMsgs))) err = 0;

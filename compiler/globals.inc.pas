@@ -79,10 +79,42 @@ begin
               MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeFunction1('EOF', PrimitiveTypes.PtBoolean,
               MakeVarArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeFunction1('EOLN', PrimitiveTypes.PtBoolean,
+              MakeVarArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeFunction1('FILEPOS', PrimitiveTypes.PtInteger,
+              MakeConstArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeFunction1('FILESIZE', PrimitiveTypes.PtInteger,
+              MakeConstArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeProcedure1('FLUSH', 
+              MakeConstArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeFunction0('IORESULT', PrimitiveTypes.PtInteger));
   AddFunction(MakeProcedure1('RESET',
               MakeVarArg('F', PrimitiveTypes.PtText)));
   AddFunction(MakeProcedure1('REWRITE',
               MakeVarArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeProcedure2('SEEK',
+              MakeVarArg('F', PrimitiveTypes.PtText),
+              MakeArg('POS', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction1('SEEKEOF', PrimitiveTypes.PtBoolean,
+              MakeVarArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeFunction1('SEEKEOLN', PrimitiveTypes.PtBoolean,
+              MakeVarArg('F', PrimitiveTypes.PtText)));
+
+  { File and directory subroutines }
+  AddFunction(MakeProcedure1('CHDIR',
+              MakeConstArg('DIR', PrimitiveTypes.PtString)));
+  AddFunction(MakeProcedure1('ERASE',
+              MakeVarArg('F', PrimitiveTypes.PtText)));
+  AddFunction(MakeProcedure2('GETDIR',
+              MakeArg('DRIVE', PrimitiveTypes.PtInteger),
+              MakeVarArg('DIR', PrimitiveTypes.PtString)));
+  AddFunction(MakeProcedure1('MKDIR',
+              MakeConstArg('DIR', PrimitiveTypes.PtString)));
+  AddFunction(MakeProcedure2('RENAME',
+              MakeVarArg('F', PrimitiveTypes.PtText),
+              MakeConstArg('NAME', PrimitiveTypes.PtString)));
+  AddFunction(MakeProcedure1('RMDIR',
+              MakeConstArg('DIR', PrimitiveTypes.PtString)));
 
   { Character and String subroutines }
   AddPseudoFn('CONCAT', TpfConcat);
