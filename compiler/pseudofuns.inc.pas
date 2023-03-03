@@ -164,32 +164,8 @@ begin
 end;
 
 function PfRandom_Parse(FnExpr : TExpression) : TExpression;
-var 
-  Arg : TExpression;
-  Args : TExFunctionArgs;
-  FnPtr : TPsFnPtr;
 begin
-  DisposeExpr(FnExpr);
-  Arg := nil;
-  if Lexer.Token.Id = TkLparen then
-  begin
-    WantTokenAndRead(TkLparen);
-    if Lexer.Token.Id <> TkRparen then Arg := PsExpression;
-    WantTokenAndRead(TkRparen);
-  end;
-  if Arg = nil then
-  begin
-    FnPtr := FindNameOfClass('RANDOM_n', TncFunction, {Required=}true)^.FnPtr;
-    Args.Size := 0;
-    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
-  end
-  else
-  begin
-    FnPtr := FindNameOfClass('RANDOM_i', TncFunction, {Required=}true)^.FnPtr;
-    Args.Size := 1;
-    Args.Values[1] := Arg;
-    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
-  end
+  Result := _Pf_Overload_Parse(FnExpr, 'RANDOM')
 end;
 
 function PfRead_Parse(FnExpr : TExpression) : TExpression;
