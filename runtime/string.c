@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "error.h"
+#include "number.h"
 
 void ClampStringBounds(const PString* src, int* pos, int* len) {
   if (*pos < 1 || *pos > 255) rt_error(reOutOfBounds);
@@ -144,13 +145,9 @@ void STR_b(int val, PString* dst) {
     *dst = str_make(5, "FALSE");
 }
 
-void STR_i(int num, PString* dst) {
-  dst->len = snprintf(dst->value, 255, "%d", num);
-}
+void STR_i(int num, PString* dst) { int_to_str(num, dst); }
 
-void STR_r(double num, PString* dst) {
-  dst->len = snprintf(dst->value, 255, "%g", num);
-}
+void STR_r(double num, PString* dst) { real_to_str(num, dst); }
 
 void STR_c(unsigned char chr, PString* dst) {
   dst->len = 1;
@@ -178,101 +175,11 @@ void VAL_b(const PString* str, int* dst, int* code) {
 }
 
 void VAL_i(const PString* str, int* dst, int* code) {
-  int neg = 0;
-  *code = 0;
-  *dst = 0;
-  if (str->len > 1 && str->value[0] == '$') {
-    for (int pos = 1; pos < str->len && *code == 0; ++pos) {
-      char chr = str->value[pos];
-      if (chr >= '0' && chr <= '9')
-        *dst = *dst * 16 + chr - '0';
-      else if (chr >= 'a' && chr <= 'f')
-        *dst = *dst * 16 + chr - 'a' + 10;
-      else if (chr >= 'A' && chr <= 'F')
-        *dst = *dst * 16 + chr - 'A' + 10;
-      else
-        *code = pos + 1;
-    }
-    return;
-  }
-
-  for (int pos = 0; pos < str->len && *code == 0; ++pos) {
-    char chr = str->value[pos];
-    if (chr == '-' && pos == 0)
-      neg = 1;
-    else if (chr == '+' && pos == 0)
-      neg = 0;
-    else if (chr >= '0' && chr <= '9')
-      *dst = *dst * 10 + chr - '0';
-    else {
-      *code = pos + 1;
-      return;
-    }
-  }
-  if (neg) *dst = -*dst;
+  *dst = str_to_int(str, code);
 }
 
 void VAL_r(const PString* str, double* dst, int* code) {
-  double value = 0.0;
-  double divisor = 1.0;
-  int scale = 0;
-  int neg = 0;
-  int neg_scale = 0;
-  int last = 0;
-  enum {
-    IntPart,
-    FracDot,
-    FracPart,
-    ScaleDot,
-    ScaleSign,
-    ScalePart
-  } state = IntPart;
-
-  *code = 0;
-  for (int pos = 0; pos < str->len && *code == 0; ++pos) {
-    char chr = str->value[pos];
-    if (chr == '-' && pos == 0)
-      neg = 1;
-    else if (chr == '+' && pos == 0)
-      neg = 0;
-    else if (chr == '.' && state == IntPart)
-      state = FracDot;
-    else if ((chr == 'e' || chr == 'E') &&
-             (state == IntPart || state == FracPart))
-      state = ScaleDot;
-    else if (chr == '-' && state == ScaleDot) {
-      neg_scale = 1;
-      state = ScaleSign;
-    } else if (chr == '+' && state == ScaleDot) {
-      neg_scale = 0;
-      state = ScaleSign;
-    } else if (chr >= '0' && chr <= '9') {
-      if (state == FracDot) state = FracPart;
-      if (state == IntPart || state == FracPart) value = value * 10 + chr - '0';
-      if (state == FracPart) divisor = divisor * 10;
-      if (state == ScaleDot) state = ScalePart;
-      if (state == ScaleSign) state = ScalePart;
-      if (state == ScalePart) scale = scale * 10 + chr - '0';
-      last = pos + 1;
-    } else {
-      *code = last + 1;
-      return;
-    }
-  }
-  if (state != IntPart && state != FracPart && state != ScalePart) {
-    *code = last + 1;
-    return;
-  }
-
-  if (neg) value = -value;
-  value = value / divisor;
-  for (int i = 0; i < scale; ++i) {
-    if (neg_scale)
-      value = value / 10;
-    else
-      value = value * 10;
-  }
-  *dst = value;
+  *dst = str_to_real(str, code);
 }
 
 void VAL_e(const PString* str, void* dst, int num_names, const char** names,
