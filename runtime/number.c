@@ -41,8 +41,9 @@ void int_to_str(int num, PString* str) {
 }
 
 double str_to_real(const PString* str, int* stop) {
-  double value = 0.0;
-  double divisor = 1.0;
+  const long kMaxMantissa = (1L << 53) - 1;
+  long mantissa = 0;
+  int divisor = 0;
   int scale = 0;
   int neg = 0;
   int neg_scale = 0;
@@ -76,30 +77,45 @@ double str_to_real(const PString* str, int* stop) {
       state = ScaleSign;
     } else if (chr >= '0' && chr <= '9') {
       if (state == FracDot) state = FracPart;
-      if (state == IntPart || state == FracPart) value = value * 10 + chr - '0';
-      if (state == FracPart) divisor = divisor * 10;
+      if (state == IntPart) {
+        if (mantissa < kMaxMantissa)
+          mantissa = mantissa * 10 + chr - '0';
+        else
+          --divisor;
+      }
+      if (state == FracPart) {
+        if (mantissa < kMaxMantissa) {
+          mantissa = mantissa * 10 + chr - '0';
+          ++divisor;
+        }
+      }
       if (state == ScaleDot) state = ScalePart;
       if (state == ScaleSign) state = ScalePart;
       if (state == ScalePart) scale = scale * 10 + chr - '0';
       last = pos + 1;
     } else {
       *stop = last + 1;
-      return value;
+      return 0;
     }
   }
   if (state != IntPart && state != FracPart && state != ScalePart) {
     *stop = last + 1;
-    return value;
+    return 0;
   }
 
-  if (neg) value = -value;
-  value = value / divisor;
-  for (int i = 0; i < scale; ++i) {
-    if (neg_scale)
-      value = value / 10;
-    else
-      value = value * 10;
+  double value = mantissa;
+  scale -= divisor;
+  while (scale > 22) {
+    if (neg_scale) value = value / 1e22;
+    else value = value * 1e22;
+    scale -= 22;
   }
+  while (scale > 0) {
+    if (neg_scale) value = value / 10;
+    else value = value * 10;
+    --scale;
+  }
+  if (neg) value = -value;
   return value;
 }
 
