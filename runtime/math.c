@@ -50,8 +50,8 @@ double FRAC(double x) { return x - trunc(x); }
 
 double INT(double x) { return trunc(x); }
 
-double ROUND(double x) { return round(x); }
+int ROUND(double x) { return round(x); }
 
-double TRUNC(double x) { return floor(x); }
+int TRUNC(double x) { return floor(x); }
 
 int ODD(int x) { return x % 2; }

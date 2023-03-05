@@ -50,7 +50,7 @@ begin
               MakeArg('X', PrimitiveTypes.PtReal)));
   AddFunction(MakeFunction1('ODD', PrimitiveTypes.PtBoolean,
               MakeArg('X', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('ROUND', PrimitiveTypes.PtReal,
+  AddFunction(MakeFunction1('ROUND', PrimitiveTypes.PtInteger,
               MakeArg('X', PrimitiveTypes.PtReal)));
   AddFunction(MakeFunction1('SIN', PrimitiveTypes.PtReal,
               MakeArg('ANGLE', PrimitiveTypes.PtReal)));
@@ -60,7 +60,7 @@ begin
               MakeArg('NUM', PrimitiveTypes.PtReal)));
   AddFunction(MakeFunction1('SQRT', PrimitiveTypes.PtReal,
               MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('TRUNC', PrimitiveTypes.PtReal,
+  AddFunction(MakeFunction1('TRUNC', PrimitiveTypes.PtInteger,
               MakeArg('X', PrimitiveTypes.PtReal)));
 
   { Memory subroutines }

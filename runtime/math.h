@@ -18,8 +18,8 @@ double ARCTAN(double tan);
 
 double FRAC(double x);
 double INT(double x);
-double ROUND(double x);
-double TRUNC(double x);
+int ROUND(double x);
+int TRUNC(double x);
 
 int ODD(int x);
 
