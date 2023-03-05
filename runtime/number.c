@@ -129,5 +129,5 @@ double str_to_real(const PString* str, int* stop) {
 }
 
 void real_to_str(double num, PString* str) {
-  str->len = snprintf(str->value, 255, "%g", num);
+  str->len = snprintf(str->value, 255, "%#18.10E", num);
 }
