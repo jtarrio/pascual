@@ -1,5 +1,7 @@
 #include "number.h"
 
+#include "string.h"
+
 int str_to_int(const PString* str, int* stop) {
   int neg = 0;
   int value = 0;
@@ -103,16 +105,23 @@ double str_to_real(const PString* str, int* stop) {
     return 0;
   }
 
-  double value = mantissa;
+  if (neg_scale) scale = -scale;
   scale -= divisor;
-  while (scale > 22) {
-    if (neg_scale) value = value / 1e22;
-    else value = value * 1e22;
+  neg_scale = scale < 0;
+  if (neg_scale) scale = -scale;
+  double value = mantissa;
+  while (scale >= 22) {
+    if (neg_scale)
+      value = value / 1e22;
+    else
+      value = value * 1e22;
     scale -= 22;
   }
   while (scale > 0) {
-    if (neg_scale) value = value / 10;
-    else value = value * 10;
+    if (neg_scale)
+      value = value / 10;
+    else
+      value = value * 10;
     --scale;
   }
   if (neg) value = -value;
