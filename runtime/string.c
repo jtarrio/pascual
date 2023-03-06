@@ -145,9 +145,9 @@ void STR_b(int val, PString* dst) {
     *dst = str_make(5, "FALSE");
 }
 
-void STR_i(int num, PString* dst) { int_to_str(num, dst); }
+void STR_i(int num, PString* dst) { int_to_str(num, dst, -1); }
 
-void STR_r(double num, PString* dst) { real_to_str(num, dst); }
+void STR_r(double num, PString* dst) { real_to_str(num, dst, -1, -1); }
 
 void STR_c(unsigned char chr, PString* dst) {
   dst->len = 1;

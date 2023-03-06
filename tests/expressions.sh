@@ -171,19 +171,19 @@ testvar integer '1' 'Succ(a)' integer | outputs 2
 testvar integer '2' 'Succ(a)' integer | outputs 3
 
 # Real
-testimm '0.0' real | outputs '  0.0000000000E+00'
-testimm '1.1' real | outputs '  1.1000000000E+00'
-testimm '-1.1' real | outputs ' -1.1000000000E+00'
-testimm '12345678901.0' real | outputs '  1.2345678901E+10'
-testimm '0.12345678901' real | outputs '  1.2345678901E-01'
-testimm '3.1415926536e23' real | outputs '  3.1415926536E+23'
-testimm '-2.7182818285e-23' real | outputs ' -2.7182818285E-23'
-testimm '6.6 + 2.2' real | outputs '  8.8000000000E+00'
-testimm '6.6 - 2.2' real | outputs '  4.4000000000E+00'
-testimm '6.6 * 2.2' real | outputs '  1.4520000000E+01'
-testimm '6.6 / 2.2' real | outputs '  3.0000000000E+00'
-testimm '3.3 + 2' real | outputs '  5.3000000000E+00'
-testimm '3 + 2.2' real | outputs '  5.2000000000E+00'
+testimm '0.0' real | outputs ' 0.00000000000000E+000'
+testimm '1.1' real | outputs ' 1.10000000000000E+000'
+testimm '-1.1' real | outputs '-1.10000000000000E+000'
+testimm '123456789012345.0' real | outputs ' 1.23456789012345E+014'
+testimm '0.123456789012345' real | outputs ' 1.23456789012345E-001'
+testimm '3.14159265358979e23' real | outputs ' 3.14159265358979E+023'
+testimm '-2.71828182845905e-23' real | outputs '-2.71828182845905E-023'
+testimm '6.6 + 2.2' real | outputs ' 8.80000000000000E+000'
+testimm '6.6 - 2.2' real | outputs ' 4.40000000000000E+000'
+testimm '6.6 * 2.2' real | outputs ' 1.45200000000000E+001'
+testimm '6.6 / 2.2' real | outputs ' 3.00000000000000E+000'
+testimm '3.3 + 2' real | outputs ' 5.30000000000000E+000'
+testimm '3 + 2.2' real | outputs ' 5.20000000000000E+000'
 testimm "2.2 = 1.1" boolean | outputs FALSE
 testimm "2.2 > 1.1" boolean | outputs TRUE
 testimm "2.2 < 1.1" boolean | outputs FALSE
@@ -197,19 +197,19 @@ testimm "2.2 >= 2.2" boolean | outputs TRUE
 testimm "2.2 <= 2.2" boolean | outputs TRUE
 testimm "2.2 <> 2.2" boolean | outputs FALSE
 
-testvar real '0.0' 'a' real | outputs '  0.0000000000E+00'
-testvar real '1.1' 'a' real | outputs '  1.1000000000E+00'
-testvar real '-1.1' 'a' real | outputs ' -1.1000000000E+00'
-testvar real '12345678901.0' 'a' real | outputs '  1.2345678901E+10'
-testvar real '0.12345678901' 'a' real | outputs '  1.2345678901E-01'
-testvar real '3.1415926536e23' 'a' real | outputs '  3.1415926536E+23'
-testvar real '-2.7182818285e-23' 'a' real | outputs ' -2.7182818285E-23'
-testvar real '6.6' '2.2' 'a + b' real | outputs '  8.8000000000E+00'
-testvar real '6.6' '2.2' 'a - b' real | outputs '  4.4000000000E+00'
-testvar real '6.6' '2.2' 'a * b' real | outputs '  1.4520000000E+01'
-testvar real '6.6' '2.2' 'a / b' real | outputs '  3.0000000000E+00'
-testvar real '3.3' '2' 'a + b' real | outputs '  5.3000000000E+00'
-testvar real '3' '2.2' 'a + b' real | outputs '  5.2000000000E+00'
+testvar real '0.0' 'a' real | outputs ' 0.00000000000000E+000'
+testvar real '1.1' 'a' real | outputs ' 1.10000000000000E+000'
+testvar real '-1.1' 'a' real | outputs '-1.10000000000000E+000'
+testvar real '123456789012345.0' 'a' real | outputs ' 1.23456789012345E+014'
+testvar real '0.123456789012345' 'a' real | outputs ' 1.23456789012345E-001'
+testvar real '3.14159265358979e23' 'a' real | outputs ' 3.14159265358979E+023'
+testvar real '-2.71828182845905e-23' 'a' real | outputs '-2.71828182845905E-023'
+testvar real '6.6' '2.2' 'a + b' real | outputs ' 8.80000000000000E+000'
+testvar real '6.6' '2.2' 'a - b' real | outputs ' 4.40000000000000E+000'
+testvar real '6.6' '2.2' 'a * b' real | outputs ' 1.45200000000000E+001'
+testvar real '6.6' '2.2' 'a / b' real | outputs ' 3.00000000000000E+000'
+testvar real '3.3' '2' 'a + b' real | outputs ' 5.30000000000000E+000'
+testvar real '3' '2.2' 'a + b' real | outputs ' 5.20000000000000E+000'
 testvar real '2.2' '1.1' 'a = b' boolean | outputs FALSE
 testvar real '2.2' '1.1' 'a > b' boolean | outputs TRUE
 testvar real '2.2' '1.1' 'a < b' boolean | outputs FALSE
