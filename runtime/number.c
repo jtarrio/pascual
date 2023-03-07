@@ -41,9 +41,10 @@ PInteger str_to_integer(const PString* str, PInteger* stop) {
 void integer_to_str(PInteger num, PString* str, PInteger width) {
   PBoolean neg = num < 0;
   if (neg) num = -num;
-  PInteger divisor = 10;
-  int digits = 0;
-  while (divisor <= num) {
+  int digits = 1;
+  PInteger divisor = 1;
+  PInteger numDiv10 = num / 10;
+  while (numDiv10 >= divisor) {
     divisor *= 10;
     ++digits;
   }
@@ -56,10 +57,10 @@ void integer_to_str(PInteger num, PString* str, PInteger width) {
   }
   if (neg) str->value[pos++] = '-';
   do {
-    divisor /= 10;
     str->value[pos++] = '0' + num / divisor;
     num %= divisor;
-  } while (divisor > 1);
+    divisor /= 10;
+  } while (divisor > 0);
   str->len = pos;
 }
 
