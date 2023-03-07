@@ -117,10 +117,10 @@ void PROCEDURESANDFUNCTIONS() {
 
 void CONVERSIONS() {
   PString A;
-  int B;
-  int C;
+  PInteger B;
+  PBoolean C;
   enum enum1 { ONE, TWO, THREE } D;
-  int X;
+  PInteger X;
   const char* enumvalues1[] = { "ONE", "TWO", "THREE" };
   WRITE_s(&OUTPUT, str_make(53, "You can use Str() to convert several types to string."));
   WRITELN(&OUTPUT);

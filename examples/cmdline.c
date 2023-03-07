@@ -1,15 +1,15 @@
 /* Program: CMDLINE */
 #include "pascual.h"
 
-int I;
+PInteger I;
 
 void pascual_main() {
   WRITE_s(&OUTPUT, str_make(17, "This program is: "));
   WRITE_s(&OUTPUT, PARAMSTR(0));
   WRITELN(&OUTPUT);
   do {
-    int first = 1;
-    int last = PARAMCOUNT();
+    PInteger first = 1;
+    PInteger last = PARAMCOUNT();
     if (first <= last) {
       I = first;
       while (1) {

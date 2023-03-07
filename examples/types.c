@@ -2,19 +2,19 @@
 #include "pascual.h"
 
 void BASICTYPES() {
-  int B;
-  int I;
-  double R;
-  unsigned char C;
+  PBoolean B;
+  PInteger I;
+  PReal R;
+  PChar C;
   PString S;
   B = 1;
   B = 0;
   I = 12345678;
   I = -12345678;
   I = 51966;
-  R = 6.02e+23;
-  R = 1e-10;
-  R = -42;
+  R =  6.02000000000000E+023;
+  R =  1.00000000000000E-010;
+  R = -4.20000000000000E+001;
   C = 'a';
   C = 'Z';
   S = str_make(12, "Hello, world");
@@ -49,7 +49,7 @@ void ENUMERATEDTYPES() {
 }
 
 void SUBRANGES() {
-  typedef int FIRSTHUNDRED;
+  typedef PInteger FIRSTHUNDRED;
   typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
   typedef enum enum1 REDS;
   typedef enum enum1 BLACKS;
@@ -57,7 +57,7 @@ void SUBRANGES() {
   FIRSTHUNDRED NUM;
   REDS REDSUIT;
   BLACKS BLACKSUIT;
-  unsigned char LETTER;
+  PChar LETTER;
   NUM = 27;
   REDSUIT = HEARTS;
   BLACKSUIT = SPADES;
@@ -70,36 +70,36 @@ void ARRAYS() {
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   const char* enumvalues2[] = { "KING", "QUEEN", "BISHOP", "KNIGHT", "ROOK", "PAWN" };
   PString NAMES[12];
-  int TEMPERATURECOUNTS[201];
-  int CHARACTERCOUNTS[256];
-  int LETTERCOUNTS[26];
-  int SUITCOUNTS[4];
-  int BOOLEANCOUNTS[2];
+  PInteger TEMPERATURECOUNTS[201];
+  PInteger CHARACTERCOUNTS[256];
+  PInteger LETTERCOUNTS[26];
+  PInteger SUITCOUNTS[4];
+  PInteger BOOLEANCOUNTS[2];
   PIECE CHESSBOARD[8][8];
   PIECE OTHERCHESSBOARD[8][8];
-  double MASHUP[13][26][2];
+  PReal MASHUP[13][13][13];
   NAMES[0] = str_make(4, "Mark");
-  SUITCOUNTS[DIAMONDS] = 3;
+  SUITCOUNTS[1] = 3;
   CHESSBOARD[2][1] = PAWN;
   CHESSBOARD[2][1] = PAWN;
-  MASHUP[1][9][1] = 3.1416;
-  MASHUP[1][9][1] = 3.1416;
+  MASHUP[1][9][1] =  3.14160000000000E+000;
+  MASHUP[1][9][1] =  3.14160000000000E+000;
 }
 
 void RECORDS() {
   typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   typedef struct record1 {
-    int A;
-    double B;
-    double C;
+    PInteger A;
+    PReal B;
+    PReal C;
     PString D;
   } R;
   R ONE;
   R TWO;
   struct record2 {
-    int A;
-    double B;
+    PInteger A;
+    PReal B;
     SUITS C;
     union {
       struct {
@@ -107,31 +107,31 @@ void RECORDS() {
       };
       struct {
         PString E;
-        int F;
+        PInteger F;
       };
       struct {
-        int G;
+        PBoolean G;
       };
     };
   } THREE;
   struct record3 {
-    int A;
-    double B;
+    PInteger A;
+    PReal B;
     union {
       struct {
         PString D;
       };
       struct {
         PString E;
-        int F;
+        PInteger F;
       };
       struct {
-        int G;
+        PBoolean G;
       };
     };
   } FOUR;
   ONE.A = 123;
-  ONE.B = 12.34;
+  ONE.B =  1.23400000000000E+001;
   TWO = ONE;
   THREE.D = str_make(16, "These are hearts");
 }

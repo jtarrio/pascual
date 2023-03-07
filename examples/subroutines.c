@@ -6,14 +6,14 @@ void SAYHELLO() {
   WRITELN(&OUTPUT);
 }
 
-void SAY(PString WHAT, int EXCLAMATION) {
+void SAY(PString WHAT, PBoolean EXCLAMATION) {
   WRITE_s(&OUTPUT, WHAT);
   if (EXCLAMATION) WRITE_c(&OUTPUT, '!');
   WRITELN(&OUTPUT);
 }
 
-void SWAP(int *A, int *B) {
-  int C;
+void SWAP(PInteger *A, PInteger *B) {
+  PInteger C;
   C = *A;
   *A = *B;
   *B = C;
@@ -24,29 +24,29 @@ void SAYCONSTREF(const PString *WHAT) {
   WRITELN(&OUTPUT);
 }
 
-int ADD(int A, int B) {
-  int RESULT;
+PInteger ADD(PInteger A, PInteger B) {
+  PInteger RESULT;
   RESULT = A + B;
   return RESULT;
 }
 
-int MULTIPLY(int A, int B) {
-  int RESULT;
+PInteger MULTIPLY(PInteger A, PInteger B) {
+  PInteger RESULT;
   RESULT = A;
   RESULT = RESULT * B;
   return RESULT;
 }
 
-int FIB(int N) {
-  int RESULT;
+PInteger FIB(PInteger N) {
+  PInteger RESULT;
   if (N <= 1) RESULT = 1;
   else RESULT = FIB(N - 1) + FIB(N - 2);
   return RESULT;
 }
 
-void SECOND(PString NAME, int LEVEL);
+void SECOND(PString NAME, PInteger LEVEL);
 
-void FIRST(PString NAME, int LEVEL) {
+void FIRST(PString NAME, PInteger LEVEL) {
   WRITE_s(&OUTPUT, str_make(6, "First "));
   WRITE_i(&OUTPUT, LEVEL);
   WRITE_c(&OUTPUT, ' ');
@@ -55,7 +55,7 @@ void FIRST(PString NAME, int LEVEL) {
   if (LEVEL > 1) SECOND(NAME, LEVEL - 1);
 }
 
-void SECOND(PString NAME, int LEVEL) {
+void SECOND(PString NAME, PInteger LEVEL) {
   WRITE_s(&OUTPUT, str_make(7, "Second "));
   WRITE_i(&OUTPUT, LEVEL);
   WRITE_c(&OUTPUT, ' ');
@@ -64,8 +64,8 @@ void SECOND(PString NAME, int LEVEL) {
   if (LEVEL > 1) FIRST(NAME, LEVEL - 1);
 }
 
-int X;
-int Y;
+PInteger X;
+PInteger Y;
 
 void pascual_main() {
   SAYHELLO();

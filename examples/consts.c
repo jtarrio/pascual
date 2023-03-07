@@ -1,10 +1,10 @@
 /* Program: CONSTS */
 #include "pascual.h"
 
-int ANARRAY[30];
+PInteger ANARRAY[30];
 const PString BCD = str_make(3, "bcd");
-const int TYPEDINT = 789;
-const double TYPEDREAL = 6.02e+23;
+const PInteger TYPEDINT = 789;
+const PReal TYPEDREAL =  6.02000000000000E+023;
 
 void pascual_main() {
   WRITE_s(&OUTPUT, str_make(3, "abc"));

@@ -3,7 +3,7 @@
 
 void SETSYNTAX() {
   PSet16 S;
-  int I;
+  PInteger I;
   S = (PSet16) { 0, 0 };
   S = (PSet16) { 84, 5 };
   S = (PSet16) { 31, 0 };
@@ -12,7 +12,7 @@ void SETSYNTAX() {
 }
 
 void BELONGSTOASET() {
-  unsigned char CH;
+  PChar CH;
   CH = '9';
   WRITE_b(&OUTPUT, 'a' <= CH && CH <= 'z');
   WRITELN(&OUTPUT);
@@ -47,9 +47,9 @@ void OPERATIONS() {
   WRITELN(&OUTPUT);
   WRITE_b(&OUTPUT, !set_equals(S1.bits, S2.bits, 32));
   WRITELN(&OUTPUT);
-  WRITE_b(&OUTPUT, set_issubset(S1.bits, S2.bits, 32));
+  WRITE_b(&OUTPUT, set_issuperset(S1.bits, S2.bits, 32));
   WRITELN(&OUTPUT);
-  WRITE_b(&OUTPUT, set_issubset(S2.bits, S1.bits, 32));
+  WRITE_b(&OUTPUT, set_issuperset(S2.bits, S1.bits, 32));
   WRITELN(&OUTPUT);
 }
 
@@ -57,7 +57,7 @@ void MATERIALIZEDSETS() {
   PSet16 SR;
   PSet256 SC;
   PSet8 SB;
-  int I;
+  PInteger I;
   SR = (PSet16) { 226, 0 };
   WRITE_b(&OUTPUT, set_in(3, 0, SR.bits));
   WRITELN(&OUTPUT);

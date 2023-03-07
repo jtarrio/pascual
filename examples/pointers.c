@@ -3,13 +3,13 @@
 
 typedef PString *STRINGP;
 typedef struct record1 {
-  int A;
-  int B;
+  PInteger A;
+  PBoolean B;
 } MYRECORD;
 typedef MYRECORD *MYRECORDP;
 typedef struct record2 *NODEP;
 typedef struct record2 {
-  int VALUE;
+  PInteger VALUE;
   struct record2 *PREV;
   struct record2 *NEXT;
 } NODE;
@@ -17,9 +17,9 @@ typedef struct record2 {
 PString *MYSTR;
 MYRECORD *MYREC;
 NODE *ROOTNODE;
-int *MYINT;
+PInteger *MYINT;
 
-void ADDNODE(int VALUE) {
+void ADDNODE(PInteger VALUE) {
   NODE *PREVROOT;
   PREVROOT = ROOTNODE;
   ROOTNODE = malloc(sizeof(NODE));
@@ -32,7 +32,7 @@ void ADDNODE(int VALUE) {
   }
 }
 
-NODE *FINDNODE(int COUNT) {
+NODE *FINDNODE(PInteger COUNT) {
   NODE *RESULT;
   NODE *NODE;
   NODE = ROOTNODE;
@@ -67,7 +67,7 @@ void pascual_main() {
   WRITE_b(&OUTPUT, MYREC->B);
   WRITELN(&OUTPUT);
   free(MYREC);
-  MYINT = malloc(sizeof(int));
+  MYINT = malloc(sizeof(PInteger));
   *MYINT = 42;
   WRITE_i(&OUTPUT, *MYINT);
   WRITELN(&OUTPUT);

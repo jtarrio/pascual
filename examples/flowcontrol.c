@@ -65,7 +65,7 @@ void SHOWIF() {
 }
 
 void SHOWREPEATUNTIL() {
-  int I;
+  PInteger I;
   I = 0;
   do {
     I = I + 1;
@@ -85,7 +85,7 @@ void SHOWREPEATUNTIL() {
 }
 
 void SHOWWHILE() {
-  int I;
+  PInteger I;
   I = 0;
   while (I != 5) I = I + 1;
   I = 0;
@@ -98,10 +98,10 @@ void SHOWWHILE() {
 }
 
 void SHOWFOR() {
-  int I;
+  PInteger I;
   do {
-    int first = 1;
-    int last = 10;
+    PInteger first = 1;
+    PInteger last = 10;
     if (first <= last) {
       I = first;
       while (1) {
@@ -113,8 +113,8 @@ void SHOWFOR() {
     }
   } while(0);
   do {
-    int first = 10;
-    int last = 1;
+    PInteger first = 10;
+    PInteger last = 1;
     if (first >= last) {
       I = first;
       while (1) {
@@ -126,8 +126,8 @@ void SHOWFOR() {
     }
   } while(0);
   do {
-    int first = 1;
-    int last = 10;
+    PInteger first = 1;
+    PInteger last = 10;
     if (first <= last) {
       I = first;
       while (1) {
@@ -143,8 +143,8 @@ void SHOWFOR() {
   } while(0);
   I = 10;
   do {
-    int first = 1;
-    int last = I;
+    PInteger first = 1;
+    PInteger last = I;
     if (first <= last) {
       I = first;
       while (1) {
@@ -157,8 +157,8 @@ void SHOWFOR() {
   } while(0);
   I = 0;
   do {
-    int first = 20;
-    int last = 10;
+    PInteger first = 20;
+    PInteger last = 10;
     if (first <= last) {
       I = first;
       while (1) {
@@ -175,7 +175,7 @@ void SHOWFOR() {
 }
 
 void SHOWCASE() {
-  unsigned char I;
+  PChar I;
   I = 'b';
   switch (I) {
     case 'a':
