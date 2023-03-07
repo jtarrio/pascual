@@ -182,8 +182,8 @@ void VAL_r(const PString* str, double* dst, PInteger* code) {
   *dst = str_to_real(str, code);
 }
 
-void VAL_e(const PString* str, void* dst, PInteger num_names, const char** names,
-           PInteger* code) {
+void VAL_e(const PString* str, void* dst, PInteger num_names,
+           const char** names, PInteger* code) {
   *code = 0;
   for (POrdinal e = 0; e < num_names; ++e) {
     PBoolean matches = 1;
