@@ -2,9 +2,9 @@
 
 #include "string.h"
 
-int str_to_int(const PString* str, int* stop) {
-  int neg = 0;
-  int value = 0;
+PInteger str_to_integer(const PString* str, PInteger* stop) {
+  PBoolean neg = 0;
+  PInteger value = 0;
   *stop = 0;
   if (str->len > 1 && str->value[0] == '$') {
     for (int pos = 1; pos < str->len && *stop == 0; ++pos) {
@@ -38,10 +38,10 @@ int str_to_int(const PString* str, int* stop) {
   return value;
 }
 
-void int_to_str(int num, PString* str, int width) {
-  int neg = num < 0;
+void integer_to_str(PInteger num, PString* str, PInteger width) {
+  PBoolean neg = num < 0;
   if (neg) num = -num;
-  int divisor = 10;
+  PInteger divisor = 10;
   int digits = 0;
   while (divisor <= num) {
     divisor *= 10;
@@ -49,9 +49,9 @@ void int_to_str(int num, PString* str, int width) {
   }
   if (neg) ++digits;
   if (width < digits) width = digits;
-  int spaces = width - digits;
-  int pos = 0;
-  for (int i = 0; i < spaces; ++i) {
+  PInteger spaces = width - digits;
+  PInteger pos = 0;
+  for (PInteger i = 0; i < spaces; ++i) {
     str->value[pos++] = ' ';
   }
   if (neg) str->value[pos++] = '-';
@@ -63,13 +63,13 @@ void int_to_str(int num, PString* str, int width) {
   str->len = pos;
 }
 
-double str_to_real(const PString* str, int* stop) {
+PReal str_to_real(const PString* str, PInteger* stop) {
   const unsigned long kMaxMantissa = ~9ul / 10;
   unsigned long mantissa = 0;
   int divisor = 0;
   int scale = 0;
-  int neg = 0;
-  int neg_scale = 0;
+  PBoolean neg = 0;
+  PBoolean neg_scale = 0;
   int last = 0;
   enum {
     IntPart,
@@ -126,7 +126,7 @@ double str_to_real(const PString* str, int* stop) {
     return 0;
   }
 
-  double value = mantissa;
+  PReal value = mantissa;
   if (neg_scale) scale = -scale;
   scale -= divisor;
   while (scale >= 22) {
@@ -269,13 +269,13 @@ double str_to_real(const PString* str, int* stop) {
   return value;
 }
 
-void real_to_str(double num, PString* str, int width, int precision) {
+void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
   if (width < 0) width = 22;
   if (precision < 0) precision = 14;
   if (precision + 8 > width) precision = width - 8;
-  int spaces = width - precision - 8;
+  PInteger spaces = width - precision - 8;
   int exp = 0;
-  int neg = num < 0;
+  PBoolean neg = num < 0;
   if (neg) num = -num;
   if (num != 0) {
     exp = 15;
@@ -428,7 +428,7 @@ void real_to_str(double num, PString* str, int width, int precision) {
   divisor /= 10;
   if (precision > 0) {
     str->value[pos++] = '.';
-    for (int i = 0; i < precision; ++i) {
+    for (PInteger i = 0; i < precision; ++i) {
       str->value[pos++] = '0' + mantissa / divisor;
       mantissa = mantissa % divisor;
       divisor /= 10;

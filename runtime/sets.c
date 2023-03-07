@@ -21,32 +21,33 @@ void set_intersection(const unsigned char* a, const unsigned char* b,
   }
 }
 
-int set_equals(const unsigned char* a, const unsigned char* b, int bytes) {
-  int equals = 1;
+PBoolean set_equals(const unsigned char* a, const unsigned char* b, int bytes) {
+  PBoolean equals = 1;
   for (int i = 0; i < bytes && equals; ++i) {
     equals = equals && a[i] == b[i];
   }
   return equals;
 }
 
-int set_issuperset(const unsigned char* big, const unsigned char* small,
-                 int bytes) {
-  int issuperset = 1;
+PBoolean set_issuperset(const unsigned char* big, const unsigned char* small,
+                        int bytes) {
+  PBoolean issuperset = 1;
   for (int i = 0; i < bytes; ++i) {
     issuperset = issuperset && (small[i] & ~big[i]) == 0;
   }
   return issuperset;
 }
 
-int set_in(int ordinal, int lowboundbyte, const unsigned char* bits) {
+PBoolean set_in(POrdinal ordinal, int lowboundbyte, const unsigned char* bits) {
   int bytenum = (ordinal / 8) - lowboundbyte;
   int bitnum = ordinal % 8;
   return (bits[bytenum] & (1 << bitnum)) != 0;
 }
 
-void set_set(int first, int last, int lowboundbyte, unsigned char* bits) {
+void set_set(POrdinal first, POrdinal last, int lowboundbyte,
+             unsigned char* bits) {
   if (first > last) return;
-  for (int i = first; i <= last; ++i) {
+  for (POrdinal i = first; i <= last; ++i) {
     int bytenum = (i / 8) - lowboundbyte;
     int bitnum = i % 8;
     bits[bytenum] = bits[bytenum] | (1 << bitnum);

@@ -1,17 +1,18 @@
 #include "types.h"
+
 #include "error.h"
 
-int subrange(int value, int low, int high) {
+PInteger subrange(PInteger value, PInteger low, PInteger high) {
   if (value < low || value > high) rt_error(reOutOfBounds);
   return value;
 }
 
-int pred(int value, int low, int high) {
+PInteger pred(PInteger value, PInteger low, PInteger high) {
   if (value == low) rt_error(reOutOfBounds);
   return value - 1;
 }
 
-int succ(int value, int low, int high) {
+PInteger succ(PInteger value, PInteger low, PInteger high) {
   if (value == high) rt_error(reOutOfBounds);
   return value + 1;
 }

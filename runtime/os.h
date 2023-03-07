@@ -3,10 +3,10 @@
 
 #include "types.h"
 
-void HALT(int code);
+void HALT(PInteger code);
 
-int PARAMCOUNT();
-PString PARAMSTR(int i);
+PInteger PARAMCOUNT();
+PString PARAMSTR(PInteger i);
 
 void InitOs(int argc, const char** argv);
 

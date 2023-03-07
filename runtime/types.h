@@ -4,12 +4,19 @@
 #include <limits.h>
 #include <stdio.h>
 
+typedef int POrdinal;
+
+typedef int PBoolean;
+typedef int PInteger;
+typedef double PReal;
+typedef unsigned char PChar;
+
 typedef struct {
   union {
-    unsigned char chr[256];
+    PChar chr[256];
     struct __attribute__((__packed__)) {
-      unsigned char len;
-      unsigned char value[255];
+      PChar len;
+      PChar value[255];
     };
   };
 } PString;
@@ -21,7 +28,7 @@ typedef struct {
 
 #define DEF_SET_BITS(b)                        \
   typedef struct __attribute__((__packed__)) { \
-    unsigned char bits[b / 8];                  \
+    unsigned char bits[b / 8];                 \
   } PSet##b
 DEF_SET_BITS(8);
 DEF_SET_BITS(16);
@@ -57,8 +64,8 @@ DEF_SET_BITS(248);
 DEF_SET_BITS(256);
 #undef DEF_SET_BITS
 
-int subrange(int value, int low, int high);
-int pred(int value, int low, int high);
-int succ(int value, int low, int high);
+PInteger subrange(PInteger value, PInteger low, PInteger high);
+PInteger pred(PInteger value, PInteger low, PInteger high);
+PInteger succ(PInteger value, PInteger low, PInteger high);
 
 #endif  // __PASCUAL_TYPES_H

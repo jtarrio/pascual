@@ -4,14 +4,14 @@
 
 #include "string.h"
 
-void HALT(int code) { exit(code); }
+void HALT(PInteger code) { exit(code); }
 
-static int param_count;
+static PInteger param_count;
 static const char** param_str;
 
-int PARAMCOUNT() { return param_count; }
+PInteger PARAMCOUNT() { return param_count; }
 
-PString PARAMSTR(int i) {
+PString PARAMSTR(PInteger i) {
   if ((i < 0) || (i > param_count)) return (PString){.len = 0};
   return str_of_pchar(param_str[i]);
 }

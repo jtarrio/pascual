@@ -1,26 +1,28 @@
 #ifndef __PASCUAL_MATH_H
 #define __PASCUAL_MATH_H
 
+#include "types.h"
+
 void RANDOMIZE(void);
-double RANDOM_n(void);
-int RANDOM_i(int num);
+PReal RANDOM_n(void);
+PInteger RANDOM_i(PInteger num);
 
-int ABS_i(int num);
-double ABS_r(double num);
-int SQR_i(int num);
-double SQR_r(double num);
-double SIN(double angle);
-double COS(double angle);
-double EXP(double pow);
-double LN(double x);
-double SQRT(double x);
-double ARCTAN(double tan);
+PInteger ABS_i(PInteger num);
+PReal ABS_r(PReal num);
+PInteger SQR_i(PInteger num);
+PReal SQR_r(PReal num);
+PReal SIN(PReal angle);
+PReal COS(PReal angle);
+PReal EXP(PReal pow);
+PReal LN(PReal x);
+PReal SQRT(PReal x);
+PReal ARCTAN(PReal tan);
 
-double FRAC(double x);
-double INT(double x);
-int ROUND(double x);
-int TRUNC(double x);
+PReal FRAC(PReal x);
+PReal INT(PReal x);
+PInteger ROUND(PReal x);
+PInteger TRUNC(PReal x);
 
-int ODD(int x);
+PBoolean ODD(PInteger x);
 
 #endif  // __PASCUAL_MATH_H
