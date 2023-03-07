@@ -6137,10 +6137,10 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
     OUTTYPEREFERENCE(TYPEPTR->POINTEDTYPEPTR);
     WRITE_c(&CODEGEN.OUTPUT, '*');
   }
-  else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE_s(&CODEGEN.OUTPUT, str_make(3, "int"));
-  else if (TYPEPTR->CLS == TTCINTEGER) WRITE_s(&CODEGEN.OUTPUT, str_make(3, "int"));
-  else if (TYPEPTR->CLS == TTCREAL) WRITE_s(&CODEGEN.OUTPUT, str_make(6, "double"));
-  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(13, "unsigned char"));
+  else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PBoolean"));
+  else if (TYPEPTR->CLS == TTCINTEGER) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PInteger"));
+  else if (TYPEPTR->CLS == TTCREAL) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PReal"));
+  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PChar"));
   else if (TYPEPTR->CLS == TTCSTRING) WRITE_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
   else if (TYPEPTR->CLS == TTCTEXT) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PFile"));
   else if (TYPEPTR->CLS == TTCENUM) {
@@ -6283,19 +6283,19 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCBOOLEAN) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "int "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PBoolean "));
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCINTEGER) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "int "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PInteger "));
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCREAL) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "double "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PReal "));
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCCHAR) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(14, "unsigned char "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PChar "));
     WRITE_s(&CODEGEN.OUTPUT, NAME);
   }
   else if (TYPEPTR->CLS == TTCSTRING) {
