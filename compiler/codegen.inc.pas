@@ -744,10 +744,10 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*')
   end
-  else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'int')
-  else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'int')
-  else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'double')
-  else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'unsigned char')
+  else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
+  else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'PInteger')
+  else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
+  else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'PChar')
   else if TypePtr^.Cls = TtcString then write(Codegen.Output, 'PString')
   else if TypePtr^.Cls = TtcText then write(Codegen.Output, 'PFile')
   else if TypePtr^.Cls = TtcEnum then
@@ -881,13 +881,13 @@ begin
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
          write(Codegen.Output, TypePtr^.Name, ' ', Name)
   else if TypePtr^.Cls = TtcBoolean then
-         write(Codegen.Output, 'int ', Name)
+         write(Codegen.Output, 'PBoolean ', Name)
   else if TypePtr^.Cls = TtcInteger then
-         write(Codegen.Output, 'int ', Name)
+         write(Codegen.Output, 'PInteger ', Name)
   else if TypePtr^.Cls = TtcReal then
-         write(Codegen.Output, 'double ', Name)
+         write(Codegen.Output, 'PReal ', Name)
   else if TypePtr^.Cls = TtcChar then
-         write(Codegen.Output, 'unsigned char ', Name)
+         write(Codegen.Output, 'PChar ', Name)
   else if TypePtr^.Cls = TtcString then
          write(Codegen.Output, 'PString ', Name)
   else if TypePtr^.Cls = TtcText then
