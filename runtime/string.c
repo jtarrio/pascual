@@ -62,14 +62,14 @@ PInteger POS(const PString* needle, const PString* haystack) {
   return 0;
 }
 
-unsigned char UPCASE(unsigned char src) {
+PChar UPCASE(PChar src) {
   if ((src >= 'a') && (src <= 'z')) return src - ('a' - 'A');
   return src;
 }
 
-unsigned char CHR(PInteger pos) { return pos; }
+PChar CHR(PInteger pos) { return pos; }
 
-PInteger ORD(unsigned char chr) { return chr; }
+PInteger ORD(PChar chr) { return chr; }
 
 PString str_of_pchar(const char* str) {
   PString ret;
@@ -85,7 +85,7 @@ const char* pchar_of_str(const PString* str) {
   return buffer;
 }
 
-PString cat_cc(unsigned char a, unsigned char b) {
+PString cat_cc(PChar a, PChar b) {
   PString ret;
   ret.len = 2;
   ret.value[0] = a;
@@ -93,14 +93,14 @@ PString cat_cc(unsigned char a, unsigned char b) {
   return ret;
 }
 
-PString cat_cs(unsigned char a, PString b) {
+PString cat_cs(PChar a, PString b) {
   memmove(b.value + 1, b.value, 254);
   b.value[0] = a;
   if (b.len < 255) ++b.len;
   return b;
 }
 
-PString cat_sc(PString a, unsigned char b) {
+PString cat_sc(PString a, PChar b) {
   if (a.len < 255) {
     a.value[a.len] = b;
     ++a.len;
@@ -116,15 +116,15 @@ PString cat_ss(PString a, PString b) {
   return a;
 }
 
-PInteger cmp_cc(unsigned char a, unsigned char b) { return a - b; }
+PInteger cmp_cc(PChar a, PChar b) { return a - b; }
 
-PInteger cmp_cs(unsigned char a, PString b) {
+PInteger cmp_cs(PChar a, PString b) {
   int c = cmp_cc(a, b.value[0]);
   if (c != 0) return c;
   return 1 - b.len;
 }
 
-PInteger cmp_sc(PString a, unsigned char b) {
+PInteger cmp_sc(PString a, PChar b) {
   if (a.len == 0) return -1;
   if (a.len == 1) return cmp_cc(a.value[0], b);
   return 1;
@@ -149,7 +149,7 @@ void STR_i(PInteger num, PString* dst) { integer_to_str(num, dst, -1); }
 
 void STR_r(double num, PString* dst) { real_to_str(num, dst, -1, -1); }
 
-void STR_c(unsigned char chr, PString* dst) {
+void STR_c(PChar chr, PString* dst) {
   dst->len = 1;
   dst->value[0] = chr;
 }
