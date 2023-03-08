@@ -188,6 +188,7 @@ type
   end;
   TPsFunction = record
     Name : string;
+    ExternalName : string;
     ArgCount : integer;
     Args : array[1..MaxFnArgs] of TPsVariable;
     ReturnTypePtr : TPsTypePtr;

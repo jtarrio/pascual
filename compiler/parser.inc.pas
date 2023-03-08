@@ -522,6 +522,7 @@ begin
   Def := EmptyFunction();
   WantTokenAndRead(TkProcedure);
   Def.Name := GetTokenValueAndRead(TkIdentifier);
+  Def.ExternalName := Def.Name;
   WantToken2(TkLparen, TkSemicolon);
   if Lexer.Token.Id = TkLparen then PsArguments(Def);
   WantTokenAndRead(TkSemicolon);
@@ -548,6 +549,7 @@ begin
   Def := EmptyFunction();
   WantTokenAndRead(TkFunction);
   Def.Name := GetTokenValueAndRead(TkIdentifier);
+  Def.ExternalName := Def.Name;
   if (Lexer.Token.Id = TkSemicolon) and HasForwardDeclaration(Def.Name) then
     Def.ReturnTypePtr := nil
   else

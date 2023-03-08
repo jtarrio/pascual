@@ -725,6 +725,7 @@ end;
 function EmptyFunction : TPsFunction;
 begin
   Result.Name := '';
+  Result.ExternalName := '';
   Result.ArgCount := 0;
   Result.ReturnTypePtr := nil;
   Result.IsDeclaration := false;
@@ -958,6 +959,7 @@ function MakeProcedure0(Name : string) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ArgCount := 0
 end;
 
@@ -965,6 +967,7 @@ function MakeProcedure1(Name : string; Arg : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ArgCount := 1;
   Result.Args[1] := Arg
 end;
@@ -973,6 +976,7 @@ function MakeProcedure2(Name : string; Arg1, Arg2 : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ArgCount := 2;
   Result.Args[1] := Arg1;
   Result.Args[2] := Arg2
@@ -983,6 +987,7 @@ function MakeProcedure3(Name : string;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ArgCount := 3;
   Result.Args[1] := Arg1;
   Result.Args[2] := Arg2;
@@ -993,6 +998,7 @@ function MakeFunction0(Name : string; RetTypePtr : TPsTypePtr) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr
 end;
 
@@ -1001,6 +1007,7 @@ function MakeFunction1(Name : string; RetTypePtr : TPsTypePtr;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
   Result.ArgCount := 1;
   Result.Args[1] := Arg
@@ -1011,6 +1018,7 @@ function MakeFunction2(Name : string; RetTypePtr : TPsTypePtr;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
   Result.ArgCount := 2;
   Result.Args[1] := Arg1;
@@ -1022,6 +1030,7 @@ function MakeFunction3(Name : string; RetTypePtr : TPsTypePtr;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
+  Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
   Result.ArgCount := 3;
   Result.Args[1] := Arg1;

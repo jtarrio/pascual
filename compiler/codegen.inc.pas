@@ -689,7 +689,7 @@ begin
                     OutExpression(Expr^.StringIndex);
                     write(Codegen.Output, ']')
                   end;
-    XcFnRef: write(Codegen.Output, Expr^.FnPtr^.Name);
+    XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
@@ -990,7 +990,7 @@ var
   Pos : integer;
 begin
   _OutIndent;
-  OutNameAndType(Def.Name, Def.ReturnTypePtr);
+  OutNameAndType(Def.ExternalName, Def.ReturnTypePtr);
   write(Codegen.Output, '(');
   for Pos := 1 to Def.ArgCount do
   begin
