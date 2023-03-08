@@ -6499,7 +6499,16 @@ void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
       OUTEXPRESSION(WRITEARG->ARG);
       WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
       WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"));
+      _OUTNEWLINE();
+    }
+    else if (ISREALTYPE(TYPEPTR)) {
+      _OUTINDENT();
+      WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_r("));
+      _OUTADDRESS(DST);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      OUTEXPRESSION(WRITEARG->ARG);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1);"));
       _OUTNEWLINE();
     }
     else {
@@ -6510,7 +6519,7 @@ void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
       _OUTADDRESS(DST);
       WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
       OUTEXPRESSION(WRITEARG->ARG);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"));
       _OUTNEWLINE();
     }
     WRITEARG = WRITEARG->NEXT;
@@ -6536,7 +6545,7 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
     OUTEXPRESSION(SRC);
     WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
     WRITE_i(&CODEGEN.OUTPUT, SRC->TYPEPTR->ENUMPTR->ID);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ", -1, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "));
     _OUTADDRESS(DST);
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
     _OUTNEWLINE();
@@ -6545,7 +6554,7 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
     _OUTINDENT();
     WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_r("));
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(10, ", -1, -1, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1, "));
     _OUTADDRESS(DST);
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
     _OUTNEWLINE();
@@ -6556,7 +6565,7 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
     WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(SRC->TYPEPTR));
     WRITE_c(&CODEGEN.OUTPUT, '(');
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ", -1, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "));
     _OUTADDRESS(DST);
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
     _OUTNEWLINE();
