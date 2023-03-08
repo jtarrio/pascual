@@ -1107,7 +1107,17 @@ begin
       _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ');');
+      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ', 0);');
+      _OutNewline
+    end
+    else if IsRealType(TypePtr) then
+    begin
+      _OutIndent;
+      write(Codegen.Output, 'WRITE_r(');
+      _OutAddress(Dst);
+      write(Codegen.Output, ', ');
+      OutExpression(WriteArg^.Arg);
+      write(Codegen.output, ', 0, -1);');
       _OutNewline
     end
     else
@@ -1117,7 +1127,7 @@ begin
       _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.output, ');');
+      write(Codegen.output, ', 0);');
       _OutNewline
     end;
     WriteArg := WriteArg^.Next
@@ -1143,7 +1153,7 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_e(');
     OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', -1, ');
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', 0, ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1153,7 +1163,7 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_r(');
     OutExpression(Src);
-    write(Codegen.Output, ', -1, -1, ');
+    write(Codegen.Output, ', 0, -1, ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1163,7 +1173,7 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
     OutExpression(Src);
-    write(Codegen.Output, ', -1, ');
+    write(Codegen.Output, ', 0, ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline

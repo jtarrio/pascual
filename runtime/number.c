@@ -273,7 +273,7 @@ PReal str_to_real(const PString* str, PInteger* stop) {
 
 void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
   if (width > 255) width = 255;
-  if (width < 0) width = 22;
+  if (width <= 0) width = 22;
   if (precision < 0) precision = 14;
   if (precision > 0 && precision + 8 > width) precision = width - 8;
   if (precision == 0 && precision + 7 > width) precision = width - 7;
