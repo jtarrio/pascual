@@ -13,16 +13,16 @@ var
   ReadArg, NextReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg : ^TExWriteArgs;
 begin
-  if Call.Arg1 <> nil then DisposeExpr(Call.Arg1);
-  if Call.Arg2 <> nil then DisposeExpr(Call.Arg2);
-  if Call.Arg3 <> nil then DisposeExpr(Call.Arg3);
+  if Call.Arg1 <> nil then ExDispose(Call.Arg1);
+  if Call.Arg2 <> nil then ExDispose(Call.Arg2);
+  if Call.Arg3 <> nil then ExDispose(Call.Arg3);
   if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     ReadArg := Call.ReadArgs;
     while ReadArg <> nil do
     begin
       NextReadArg := ReadArg^.Next;
-      DisposeExpr(ReadArg^.Arg);
+      ExDispose(ReadArg^.Arg);
       dispose(ReadArg);
       ReadArg := NextReadArg
     end
@@ -33,7 +33,7 @@ begin
     while WriteArg <> nil do
     begin
       NextWriteArg := WriteArg^.Next;
-      DisposeExpr(WriteArg^.Arg);
+      ExDispose(WriteArg^.Arg);
       dispose(WriteArg);
       WriteArg := NextWriteArg
     end
@@ -60,56 +60,56 @@ begin
   while Bounds <> nil do
   begin
     Next := Bounds^.Next;
-    DisposeExpr(Bounds^.First);
-    if Bounds^.Last <> nil then DisposeExpr(Bounds^.Last);
+    ExDispose(Bounds^.First);
+    if Bounds^.Last <> nil then ExDispose(Bounds^.Last);
     dispose(Bounds);
     Bounds := Next
   end
 end;
 
-procedure DisposeExpr;
+procedure ExDispose;
 var Pos : integer;
 begin
   case Expr^.Cls of 
     XcImmediate : _DisposeImmediate(Expr^.Immediate);
-    XcToString : DisposeExpr(Expr^.ToStrParent);
-    XcToReal : DisposeExpr(Expr^.ToRealParent);
+    XcToString : ExDispose(Expr^.ToStrParent);
+    XcToReal : ExDispose(Expr^.ToRealParent);
     XcWithTmpVar :
                    begin
-                     DisposeExpr(Expr^.TmpVar);
-                     DisposeExpr(Expr^.TmpVarValue);
-                     DisposeExpr(Expr^.TmpVarChild);
+                     ExDispose(Expr^.TmpVar);
+                     ExDispose(Expr^.TmpVarValue);
+                     ExDispose(Expr^.TmpVarChild);
                    end;
-    XcSubrange : DisposeExpr(Expr^.SubrangeParent);
+    XcSubrange : ExDispose(Expr^.SubrangeParent);
     XcSet :
             begin
-              DisposeExpr(Expr^.SetBase);
+              ExDispose(Expr^.SetBase);
               _DisposeBounds(Expr^.SetBounds);
             end;
-    XcField : DisposeExpr(Expr^.RecExpr);
+    XcField : ExDispose(Expr^.RecExpr);
     XcArray :
               begin
-                DisposeExpr(Expr^.ArrayExpr);
-                DisposeExpr(Expr^.ArrayIndex);
+                ExDispose(Expr^.ArrayExpr);
+                ExDispose(Expr^.ArrayIndex);
               end;
-    XcPointer : DisposeExpr(Expr^.PointerExpr);
+    XcPointer : ExDispose(Expr^.PointerExpr);
     XcStringChar :
                    begin
-                     DisposeExpr(Expr^.StringExpr);
-                     DisposeExpr(Expr^.StringIndex);
+                     ExDispose(Expr^.StringExpr);
+                     ExDispose(Expr^.StringIndex);
                    end;
     XcFnCall :
                begin
-                 DisposeExpr(Expr^.FnExpr);
+                 ExDispose(Expr^.FnExpr);
                  for Pos := 1 to Expr^.CallArgs.Size do
-                   DisposeExpr(Expr^.CallArgs.Values[Pos]);
+                   ExDispose(Expr^.CallArgs.Values[Pos]);
                end;
     XcPseudoFnCall : _DisposePseudoCallExpr(Expr^.PseudoFnCall);
-    XcUnaryOp : DisposeExpr(Expr^.Unary.Parent);
+    XcUnaryOp : ExDispose(Expr^.Unary.Parent);
     XcBinaryOp :
                  begin
-                   DisposeExpr(Expr^.Binary.Left);
-                   DisposeExpr(Expr^.Binary.Right);
+                   ExDispose(Expr^.Binary.Left);
+                   ExDispose(Expr^.Binary.Right);
                  end;
   end;
   dispose(Expr);
@@ -121,9 +121,9 @@ var
   WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
 begin
   Copy.PseudoFn := Call.PseudoFn;
-  if Call.Arg1 <> nil then Copy.Arg1 := CopyExpr(Call.Arg1);
-  if Call.Arg2 <> nil then Copy.Arg2 := CopyExpr(Call.Arg2);
-  if Call.Arg3 <> nil then Copy.Arg3 := CopyExpr(Call.Arg3);
+  if Call.Arg1 <> nil then Copy.Arg1 := ExCopy(Call.Arg1);
+  if Call.Arg2 <> nil then Copy.Arg2 := ExCopy(Call.Arg2);
+  if Call.Arg3 <> nil then Copy.Arg3 := ExCopy(Call.Arg3);
   if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     ReadArg := Call.ReadArgs;
@@ -142,7 +142,7 @@ begin
         CopyReadArg := CopyReadArg^.Next;
       end;
       CopyReadArg^.Next := nil;
-      CopyReadArg^.Arg := CopyExpr(ReadArg^.Arg);
+      CopyReadArg^.Arg := ExCopy(ReadArg^.Arg);
       ReadArg := NextReadArg
     end
   end
@@ -164,7 +164,7 @@ begin
         CopyWriteArg := CopyWriteArg^.Next;
       end;
       CopyWriteArg^.Next := nil;
-      CopyWriteArg^.Arg := CopyExpr(WriteArg^.Arg);
+      CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
       WriteArg := NextWriteArg
     end
   end
@@ -209,15 +209,15 @@ begin
       new(Dst^.Next);
       Dst := Dst^.Next
     end;
-    Dst^.First := CopyExpr(Src^.First);
-    if Src^.Last <> nil then Dst^.Last := CopyExpr(Src^.Last)
+    Dst^.First := ExCopy(Src^.First);
+    if Src^.Last <> nil then Dst^.Last := ExCopy(Src^.Last)
     else Dst^.Last := nil;
     Dst^.Next := nil;
     Src := Src^.Next
   end
 end;
 
-function CopyExpr;
+function ExCopy;
 var 
   Copy : TExpression;
   Pos : integer;
@@ -228,44 +228,44 @@ begin
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
     XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
-    XcToString: Copy^.ToStrParent := CopyExpr(Expr^.ToStrParent);
-    XcToReal: Copy^.ToRealParent := CopyExpr(Expr^.ToRealParent);
+    XcToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
+    XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
     XcWithTmpVar :
                    begin
-                     Copy^.TmpVar := CopyExpr(Expr^.TmpVar);
-                     Copy^.TmpVarValue := CopyExpr(Expr^.TmpVarValue);
-                     Copy^.TmpVarChild := CopyExpr(Expr^.TmpVarChild);
+                     Copy^.TmpVar := ExCopy(Expr^.TmpVar);
+                     Copy^.TmpVarValue := ExCopy(Expr^.TmpVarValue);
+                     Copy^.TmpVarChild := ExCopy(Expr^.TmpVarChild);
                    end;
-    XcSubrange : Copy^.SubrangeParent := CopyExpr(Expr^.SubrangeParent);
+    XcSubrange : Copy^.SubrangeParent := ExCopy(Expr^.SubrangeParent);
     XcSet :
             begin
-              Copy^.SetBase := CopyExpr(Expr^.SetBase);
+              Copy^.SetBase := ExCopy(Expr^.SetBase);
               Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
             end;
     XcVariable: Copy^.VarPtr := Expr^.VarPtr;
     XcField:
              begin
-               Copy^.RecExpr := CopyExpr(Expr^.RecExpr);
+               Copy^.RecExpr := ExCopy(Expr^.RecExpr);
                Copy^.RecFieldNum := Expr^.RecFieldNum
              end;
     XcArray:
              begin
-               Copy^.ArrayExpr := CopyExpr(Expr^.ArrayExpr);
-               Copy^.ArrayIndex := CopyExpr(Expr^.ArrayIndex)
+               Copy^.ArrayExpr := ExCopy(Expr^.ArrayExpr);
+               Copy^.ArrayIndex := ExCopy(Expr^.ArrayIndex)
              end;
-    XcPointer: Copy^.PointerExpr := CopyExpr(Expr^.PointerExpr);
+    XcPointer: Copy^.PointerExpr := ExCopy(Expr^.PointerExpr);
     XcStringChar:
                   begin
-                    Copy^.StringExpr := CopyExpr(Expr^.StringExpr);
-                    Copy^.StringIndex := CopyExpr(Expr^.StringIndex)
+                    Copy^.StringExpr := ExCopy(Expr^.StringExpr);
+                    Copy^.StringIndex := ExCopy(Expr^.StringIndex)
                   end;
     XcFnRef: Copy^.FnPtr := Expr^.FnPtr;
     XcFnCall:
               begin
-                Copy^.FnExpr := CopyExpr(Expr^.FnExpr);
+                Copy^.FnExpr := ExCopy(Expr^.FnExpr);
                 Copy^.CallArgs.Size := Expr^.CallArgs.Size;
                 for Pos := 1 to Expr^.CallArgs.Size do
-                  Copy^.CallArgs.Values[Pos] := CopyExpr(Expr^.CallArgs
+                  Copy^.CallArgs.Values[Pos] := ExCopy(Expr^.CallArgs
                                                 .Values[Pos])
               end;
     XcPseudoFnRef: Copy^.PseudoFn := Expr^.PseudoFn;
@@ -273,18 +273,18 @@ begin
                                         Copy^.PseudoFnCall);
     XcUnaryOp:
                begin
-                 Copy^.Unary.Parent := CopyExpr(Expr^.Unary.Parent);
+                 Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
                  Copy^.Unary.Op := Expr^.Unary.Op
                end;
     XcBinaryOp:
                 begin
-                  Copy^.Binary.Left := CopyExpr(Expr^.Binary.Left);
-                  Copy^.Binary.Right := CopyExpr(Expr^.Binary.Right);
+                  Copy^.Binary.Left := ExCopy(Expr^.Binary.Left);
+                  Copy^.Binary.Right := ExCopy(Expr^.Binary.Right);
                   Copy^.Binary.Op := Expr^.Binary.Op
                 end;
     else InternalError('Cannot copy expression: ' + ExDescribe(Expr))
   end;
-  CopyExpr := Copy
+  ExCopy := Copy
 end;
 
 function _DescribeImmSetInternal(Bounds : TExSetImmBounds;
@@ -696,14 +696,14 @@ begin
     ImmSet := SetExpr^.SetBase;
     ExprSet := SetExpr
   end;
-  if ExIsImmediate(First) and (Last = nil) then Last := CopyExpr(First);
+  if ExIsImmediate(First) and (Last = nil) then Last := ExCopy(First);
   if ExIsImmediate(First) and ExIsImmediate(Last) then
   begin
     with ImmSet^.Immediate do
       SetBounds := ExSetAddBounds(SetBounds,
                    ExGetOrdinal(First), ExGetOrdinal(Last));
-    DisposeExpr(First);
-    DisposeExpr(Last)
+    ExDispose(First);
+    ExDispose(Last)
   end
   else
   begin
@@ -794,8 +794,8 @@ var TmpExpr : TExpression;
 begin
   while Expr^.Cls = XcSubrange do
   begin
-    TmpExpr := CopyExpr(Expr^.SubrangeParent);
-    DisposeExpr(Expr);
+    TmpExpr := ExCopy(Expr^.SubrangeParent);
+    ExDispose(Expr);
     Expr := TmpExpr;
   end;
   Expr^.TypePtr := GetFundamentalType(Expr^.TypePtr);
@@ -908,7 +908,7 @@ begin
           Result := ExWithTmpVar(ExVariable(AddTmpVariable(
                     'tmp', FnExpr^.FnPtr^.Args[Pos].TypePtr)),
                     FnCall^.CallArgs.Values[Pos], Result);
-          FnCall^.CallArgs.Values[Pos] := CopyExpr(Result^.TmpVar)
+          FnCall^.CallArgs.Values[Pos] := ExCopy(Result^.TmpVar)
         end
         else
           CompileError('Pass-by-reference argument must be assignable: ' +
@@ -975,8 +975,8 @@ begin
     OldBds := OldBds^.Next
   end;
   Result := ExSetConstant(NewBds, Left^.TypePtr);
-  DisposeExpr(Left);
-  DisposeExpr(Right)
+  ExDispose(Left);
+  ExDispose(Right)
 end;
 
 function _ExSetDifference(Left, Right : TExpression) : TExpression;
@@ -1034,8 +1034,8 @@ begin
     LtBds := LtBds^.Next
   end;
   Result := ExSetConstant(NewBds, Left^.TypePtr);
-  DisposeExpr(Left);
-  DisposeExpr(Right)
+  ExDispose(Left);
+  ExDispose(Right)
 end;
 
 function _ExSetIntersection(Left, Right : TExpression) : TExpression;
@@ -1090,8 +1090,8 @@ begin
     else LtBds := LtBds^.Next
   end;
   Result := ExSetConstant(NewBds, Left^.TypePtr);
-  DisposeExpr(Left);
-  DisposeExpr(Right)
+  ExDispose(Left);
+  ExDispose(Right)
 end;
 
 function _ExSetEquals(Left, Right : TExpression;
@@ -1113,8 +1113,8 @@ begin
   Equals := Equals and (LtBds = nil) and (RtBds = nil);
   if Negate then Equals := not Equals;
   Result := ExBooleanConstant(Equals);
-  DisposeExpr(Left);
-  DisposeExpr(Right)
+  ExDispose(Left);
+  ExDispose(Right)
 end;
 
 function _ExSetSubset(Left, Right : TExpression) : TExpression;
@@ -1143,8 +1143,8 @@ begin
   end;
   Subset := Subset and (RtBds = nil);
   Result := ExBooleanConstant(Subset);
-  DisposeExpr(Left);
-  DisposeExpr(Right)
+  ExDispose(Left);
+  ExDispose(Right)
 end;
 
 function _ExSetIn(Needle, Haystack : TExpression) : TExpression;
@@ -1188,15 +1188,15 @@ begin
     while ImmBounds <> nil do
     begin
       if ImmBounds^.First = ImmBounds^.Last then
-        Cond := ExBinaryOp(CopyExpr(Wanted),
+        Cond := ExBinaryOp(ExCopy(Wanted),
                 ExGetAntiOrdinal(ImmBounds^.First, ElemType),
                 TkEquals)
       else
         Cond := ExBinaryOp(
                 ExBinaryOp(ExGetAntiOrdinal(ImmBounds^.First, ElemType),
-                CopyExpr(Wanted),
+                ExCopy(Wanted),
                 TkLessOrEquals),
-                ExBinaryOp(CopyExpr(Wanted),
+                ExBinaryOp(ExCopy(Wanted),
                 ExGetAntiOrdinal(ImmBounds^.Last, ElemType),
                 TkLessOrEquals),
                 TkAnd);
@@ -1210,15 +1210,15 @@ begin
     while ExprBounds <> nil do
     begin
       if ExprBounds^.Last = nil then
-        Cond := ExBinaryOp(CopyExpr(Wanted), CopyExpr(ExprBounds^.First),
+        Cond := ExBinaryOp(ExCopy(Wanted), ExCopy(ExprBounds^.First),
                 TkEquals)
       else
         Cond := ExBinaryOp(
-                ExBinaryOp(CopyExpr(ExprBounds^.First),
-                CopyExpr(Wanted),
+                ExBinaryOp(ExCopy(ExprBounds^.First),
+                ExCopy(Wanted),
                 TkLessOrEquals),
-                ExBinaryOp(CopyExpr(Wanted),
-                CopyExpr(ExprBounds^.Last),
+                ExBinaryOp(ExCopy(Wanted),
+                ExCopy(ExprBounds^.Last),
                 TkLessOrEquals),
                 TkAnd);
       Result := ExBinaryOp(Result, Cond, TkOr);
@@ -1229,8 +1229,8 @@ begin
   begin
     Result := ExWithTmpVar(Wanted, Needle, Result);
   end
-  else DisposeExpr(Needle);
-  DisposeExpr(Haystack)
+  else ExDispose(Needle);
+  ExDispose(Haystack)
 end;
 
 function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
@@ -1388,7 +1388,7 @@ var Lt, Rt : boolean;
 begin
   Lt := Left^.Immediate.BooleanVal;
   Rt := Right^.Immediate.BooleanVal;
-  DisposeExpr(Right);
+  ExDispose(Right);
   case Op of 
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
@@ -1414,7 +1414,7 @@ var
 begin
   Lt := Left^.Immediate.IntegerVal;
   Rt := Right^.Immediate.IntegerVal;
-  DisposeExpr(Right);
+  ExDispose(Right);
   case Op of 
     TkPlus : Lt := Lt + Rt;
     TkMinus : Lt := Lt - Rt;
@@ -1463,7 +1463,7 @@ begin
   Lt := Left^.Immediate.RealVal;
   Right := ExCoerce(Right, PrimitiveTypes.PtReal);
   Rt := Right^.Immediate.RealVal;
-  DisposeExpr(Right);
+  ExDispose(Right);
   case Op of 
     TkPlus : Lt := Lt + Rt;
     TkMinus : Lt := Lt - Rt;
@@ -1506,7 +1506,7 @@ begin
   else Lt := Left^.Immediate.StringVal;
   if ExIsImmediateOfClass(Right, XicChar) then Rt := Right^.Immediate.CharVal
   else Rt := Right^.Immediate.StringVal;
-  DisposeExpr(Right);
+  ExDispose(Right);
   if Op = TkPlus then
   begin
     Left^.Immediate.Cls := XicString;
@@ -1546,7 +1546,7 @@ var
 begin
   Lt := Left^.Immediate.EnumOrdinal;
   Rt := Right^.Immediate.EnumOrdinal;
-  DisposeExpr(Right);
+  ExDispose(Right);
   case Op of 
     TkEquals : Bo := Lt = Rt;
     TkNotEquals : Bo := Lt <> Rt;
@@ -1768,12 +1768,12 @@ begin
   case Use of 
     UseLeft :
               begin
-                DisposeExpr(Right);
+                ExDispose(Right);
                 Result := true
               end;
     UseRight :
                begin
-                 DisposeExpr(Left);
+                 ExDispose(Left);
                  Left := Right;
                  Result := true
                end;

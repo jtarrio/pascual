@@ -269,15 +269,15 @@ begin
   while Bounds <> nil do
   begin
     write(Codegen.Output, 'set_set(');
-    First := PfOrd(ExCoerce(CopyExpr(Bounds^.First), ElementTypePtr));
-    if Bounds^.Last = nil then Last := CopyExpr(First)
-    else Last := PfOrd(ExCoerce(CopyExpr(Bounds^.Last), ElementTypePtr));
+    First := PfOrd(ExCoerce(ExCopy(Bounds^.First), ElementTypePtr));
+    if Bounds^.Last = nil then Last := ExCopy(First)
+    else Last := PfOrd(ExCoerce(ExCopy(Bounds^.Last), ElementTypePtr));
     OutExpression(First);
     write(Codegen.Output, ', ');
     OutExpression(Last);
     write(Codegen.Output, ', ', LowBoundByte, ', dst.bits); ');
-    DisposeExpr(First);
-    DisposeExpr(Last);
+    ExDispose(First);
+    ExDispose(Last);
     Bounds := Bounds^.Next
   end;
   write(Codegen.Output, 'dst; })')
@@ -310,11 +310,11 @@ var LowBound : integer;
   Size : TExpression;
 begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
-  Size := ExBinaryOp(PfOrd(CopyExpr(Index)),
+  Size := ExBinaryOp(PfOrd(ExCopy(Index)),
           ExIntegerConstant(LowBound),
           TkMinus);
   OutExpression(Size);
-  DisposeExpr(Size)
+  ExDispose(Size)
 end;
 
 procedure _OutAddress(Expr : TExpression);
@@ -1195,7 +1195,7 @@ begin
     write(Codegen.Output, ', ');
     TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
     OutExpression(TmpExpr);
-    DisposeExpr(TmpExpr);
+    ExDispose(TmpExpr);
     write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id, ', ');
     _OutAddress(Code);
     write(Codegen.Output, ');');
@@ -1256,19 +1256,19 @@ var TmpExpr : TExpression;
 begin
   if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    TmpExpr := ExBinaryOp(CopyExpr(Expr^.PseudoFnCall.Arg1),
+    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
                ExIntegerConstant(1), TkMinus);
     OutExpression(TmpExpr);
-    DisposeExpr(TmpExpr)
+    ExDispose(TmpExpr)
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     if not Options.CheckBounds then
     begin
-      TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkMinus);
       OutExpression(TmpExpr);
-      DisposeExpr(TmpExpr)
+      ExDispose(TmpExpr)
     end
     else
     begin
@@ -1288,19 +1288,19 @@ var TmpExpr : TExpression;
 begin
   if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    TmpExpr := ExBinaryOp(CopyExpr(Expr^.PseudoFnCall.Arg1),
+    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
                ExIntegerConstant(1), TkPlus);
     OutExpression(TmpExpr);
-    DisposeExpr(TmpExpr)
+    ExDispose(TmpExpr)
   end
   else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     if not Options.CheckBounds then
     begin
-      TmpExpr := ExBinaryOp(PfOrd(CopyExpr(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
                  ExIntegerConstant(1), TkPlus);
       OutExpression(TmpExpr);
-      DisposeExpr(TmpExpr)
+      ExDispose(TmpExpr)
     end
     else
     begin
@@ -1429,9 +1429,9 @@ var TmpExpr : TExpression;
 begin
   OutEndSameLine;
   write(Codegen.Output, ' while (');
-  TmpExpr := ExUnaryOp(CopyExpr(Expr), TkNot);
+  TmpExpr := ExUnaryOp(ExCopy(Expr), TkNot);
   OutExpression(TmpExpr);
-  DisposeExpr(TmpExpr);
+  ExDispose(TmpExpr);
   write(Codegen.Output, ');');
   _OutNewline
 end;

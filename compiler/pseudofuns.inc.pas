@@ -24,7 +24,7 @@ var
   Args : TExFunctionArgs;
   FnPtr : TPsFnPtr;
 begin
-  DisposeExpr(FnExpr);
+  ExDispose(FnExpr);
   Arg := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -57,7 +57,7 @@ end;
 function PfConcat_Parse(FnExpr : TExpression) : TExpression;
 var Operand : TExpression;
 begin
-  DisposeExpr(FnExpr);
+  ExDispose(FnExpr);
   Result := nil;
   WantTokenAndRead(TkLparen);
   repeat
@@ -95,7 +95,7 @@ end;
 
 function PfOrd_Parse(FnExpr : TExpression) : TExpression;
 begin
-  DisposeExpr(FnExpr);
+  ExDispose(FnExpr);
   Result := PfOrd(_Pf_Unary_Parse)
 end;
 
@@ -107,7 +107,7 @@ begin
   if ExIsImmediate(Arg) then
   begin
     Imm := Arg^.Immediate;
-    DisposeExpr(Arg);
+    ExDispose(Arg);
     case Imm.Cls of 
       XicBoolean : if Imm.BooleanVal then Result := ExIntegerConstant(1)
                    else Result := ExIntegerConstant(0);
@@ -127,7 +127,7 @@ end;
 
 function PfPred_Parse(FnExpr : TExpression) : TExpression;
 begin
-  DisposeExpr(FnExpr);
+  ExDispose(FnExpr);
   Result := PfPred(_Pf_Unary_Parse)
 end;
 
@@ -152,7 +152,7 @@ begin
                  Result := ExEnumConstant(Pred(Imm.EnumOrdinal), Arg^.TypePtr);
       else CompileError('Invalid type for PRED')
     end;
-    DisposeExpr(Arg);
+    ExDispose(Arg);
     if OutOfBounds then CompileError('Out of bounds in PRED')
   end
   else
@@ -187,7 +187,7 @@ begin
       OutVar := PsExpression;
       if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypePtr) then
       begin
-        DisposeExpr(Result^.PseudoFnCall.Arg1);
+        ExDispose(Result^.PseudoFnCall.Arg1);
         Result^.PseudoFnCall.Arg1 := OutVar
       end
       else
@@ -244,7 +244,7 @@ end;
 
 function PfSucc_Parse(FnExpr : TExpression) : TExpression;
 begin
-  DisposeExpr(FnExpr);
+  ExDispose(FnExpr);
   Result := PfSucc(_Pf_Unary_Parse)
 end;
 
@@ -269,7 +269,7 @@ begin
                  Result := ExEnumConstant(Succ(Imm.EnumOrdinal), Arg^.TypePtr);
       else CompileError('Invalid type for SUCC')
     end;
-    DisposeExpr(Arg);
+    ExDispose(Arg);
     if OutOfBounds then CompileError('Out of bounds in SUCC')
   end
   else
@@ -329,7 +329,7 @@ begin
       OutExpr := PsExpression;
       if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypePtr) then
       begin
-        DisposeExpr(Result^.PseudoFnCall.Arg1);
+        ExDispose(Result^.PseudoFnCall.Arg1);
         Result^.PseudoFnCall.Arg1 := OutExpr
       end
       else

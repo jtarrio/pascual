@@ -147,7 +147,7 @@ begin
       CaseLabel := ExCoerce(PsExpression, TagType);
       if not ExIsImmediate(CaseLabel) then
         CompileError('The label of the case statement is not immediate');
-      DisposeExpr(CaseLabel);
+      ExDispose(CaseLabel);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
     until Lexer.Token.Id = TkColon;
@@ -262,8 +262,8 @@ begin
 
   if Typ.RangeDef.First > Typ.RangeDef.Last then
     CompileError('The bounds of a subrange must be in ascending order');
-  DisposeExpr(First);
-  DisposeExpr(Last)
+  ExDispose(First);
+  ExDispose(Last)
 end;
 
 function PsSetType : TPsTypePtr;
@@ -375,7 +375,7 @@ begin
   begin
     Expr := ExCoerce(PsImmediate, TypePtr);
     OutExpression(Expr);
-    DisposeExpr(Expr)
+    ExDispose(Expr)
   end
 end;
 
@@ -685,7 +685,7 @@ begin
     if Found.Cls = TncVariable then
       Expr := ExVariable(Found.VarPtr)
     else if Found.Cls = TncConstant then
-           Expr := CopyExpr(Found.ConstPtr^.Value)
+           Expr := ExCopy(Found.ConstPtr^.Value)
     else if Found.Cls = TncFunction then
            Expr := ExFnRef(Found.FnPtr)
     else if Found.Cls = TncEnumVal then
@@ -965,7 +965,7 @@ begin
       CompileError('Cannot assign a value to a function');
     ResultVarPtr := FindNameOfClass('RESULT',
                     TncVariable, {Required=}true)^.VarPtr;
-    DisposeExpr(Lhs);
+    ExDispose(Lhs);
     Lhs := ExVariable(ResultVarPtr);
   end;
 
@@ -980,8 +980,8 @@ begin
   end;
   ExMarkInitialized(Lhs);
   OutAssign(Lhs, Rhs);
-  DisposeExpr(Lhs);
-  DisposeExpr(Rhs)
+  ExDispose(Lhs);
+  ExDispose(Rhs)
 end;
 
 procedure PsStatementSequence;
@@ -1036,7 +1036,7 @@ begin
            CompileError('Invalid statement' +
                         ' (maybe you wrote ''='' instead of '':=''?)')
     else CompileError('Invalid statement');
-    DisposeExpr(OrigLhs);
+    ExDispose(OrigLhs);
     if UsesTmpVars then
     begin
       OutSequenceEnd;
@@ -1051,7 +1051,7 @@ begin
   WantTokenAndRead(TkIf);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutIf(Cond);
-  DisposeExpr(Cond);
+  ExDispose(Cond);
   WantTokenAndRead(TkThen);
   if Lexer.Token.Id = TkElse then OutEmptyStatement
   else PsStatement;
@@ -1076,7 +1076,7 @@ begin
   if not IsOrdinalType(CaseTypePtr) then
     CompileError('The index of the case statement is not ordinal');
   OutCaseBegin(CasePtr);
-  DisposeExpr(CasePtr);
+  ExDispose(CasePtr);
   WantTokenAndRead(TkOf);
   repeat
     CaseLabel := ExCoerce(PsExpression, CaseTypePtr);
@@ -1084,7 +1084,7 @@ begin
       CompileError('The label of the case statement is not immediate');
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
-    DisposeExpr(CaseLabel);
+    ExDispose(CaseLabel);
     PsStatement;
     OutCaseStatementEnd;
     WantToken3(TkSemicolon, TkElse, TkEnd);
@@ -1116,7 +1116,7 @@ begin
   WantTokenAndRead(TkUntil);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutRepeatEnd(Cond);
-  DisposeExpr(Cond)
+  ExDispose(Cond)
 end;
 
 procedure PsWhileStatement;
@@ -1125,7 +1125,7 @@ begin
   WantTokenAndRead(TkWhile);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutWhileBegin(Cond);
-  DisposeExpr(Cond);
+  ExDispose(Cond);
   WantTokenAndRead(TkDo);
   PsStatement;
   OutWhileEnd
@@ -1159,9 +1159,9 @@ begin
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;
   OutForEnd(Iter, Ascending);
-  DisposeExpr(Iter);
-  DisposeExpr(First);
-  DisposeExpr(Last)
+  ExDispose(Iter);
+  ExDispose(First);
+  ExDispose(Last)
 end;
 
 procedure PsWithStatement;
@@ -1177,7 +1177,7 @@ begin
     Base := PsExpression;
     VarPtr := AddWithVar(Base);
     OutDeclareAndAssign(VarPtr, Base);
-    DisposeExpr(Base);
+    ExDispose(Base);
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);

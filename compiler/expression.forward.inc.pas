@@ -1,7 +1,7 @@
-procedure DisposeExpr(var Expr : TExpression);
+procedure ExDispose(var Expr : TExpression);
 forward;
 
-function CopyExpr(Expr : TExpression) : TExpression;
+function ExCopy(Expr : TExpression) : TExpression;
 forward;
 
 function ExDescribe(Expr : TExpression) : string;
