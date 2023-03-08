@@ -647,8 +647,7 @@ begin
     if (Lexer.Token.Id = TkComma) and not IsArrayType(Arr^.TypePtr)
        and not IsStringyType(Arr^.TypePtr) then
       CompileError('Array element is not an array or string: ' +
-                   DescribeExpr(Arr, 10) +
-      '; it has type ' + TypeName(Arr^.TypePtr));
+                   ExDescribe(Arr) + '; it has type ' + TypeName(Arr^.TypePtr));
     SkipToken(TkComma)
   until Lexer.Token.Id = TkRbracket;
   WantTokenAndRead(TkRbracket);
@@ -975,9 +974,9 @@ begin
   begin
     if Lhs^.IsFunctionResult then
       CompileError('Cannot assign to the result of a function: ' +
-                   DescribeExpr(Lhs, 5))
+                   ExDescribe(Lhs))
     else
-      CompileError('Cannot assign to a constant:' + DescribeExpr(Lhs, 5));
+      CompileError('Cannot assign to a constant:' + ExDescribe(Lhs));
   end;
   ExMarkInitialized(Lhs);
   OutAssign(Lhs, Rhs);

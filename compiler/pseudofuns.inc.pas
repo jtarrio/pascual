@@ -373,7 +373,7 @@ begin
     TpfVal : Result := PfVal_Parse(Fn);
     TpfWrite : Result := PfWrite_Parse(Fn);
     TpfWriteln : Result := PfWrite_Parse(Fn);
-    else InternalError('Unimplemented special function ' + DescribeExpr(Fn, 5))
+    else InternalError('Unimplemented special function ' + ExDescribe(Fn))
   end
 end;
 
@@ -399,22 +399,22 @@ begin
   end
 end;
 
-function Pf_DescribeCall(Expr : TExpression; Levels : integer) : string;
+function Pf_DescribeCall(Expr : TExpression) : string;
 begin
   with Expr^.PseudoFnCall do
     case PseudoFn of 
-      TpfDispose: Result := 'DISPOSE(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfNew: Result := 'NEW(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfOrd: Result := 'ORD(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfPred: Result := 'PRED(' + DescribeExpr(Arg1, Levels - 1) + ')';
+      TpfDispose: Result := 'DISPOSE(' + ExDescribe(Arg1) + ')';
+      TpfNew: Result := 'NEW(' + ExDescribe(Arg1) + ')';
+      TpfOrd: Result := 'ORD(' + ExDescribe(Arg1) + ')';
+      TpfPred: Result := 'PRED(' + ExDescribe(Arg1) + ')';
       TpfRead: Result := 'READ(...)';
       TpfReadln: Result := 'READLN(...)';
-      TpfStr: Result := 'STR(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
-                        DescribeExpr(Arg2, Levels - 1) + ')';
-      TpfSucc: Result := 'SUCC(' + DescribeExpr(Arg1, Levels - 1) + ')';
-      TpfVal: Result := 'VAL(' + DescribeExpr(Arg1, Levels - 1) + ', ' +
-                        DescribeExpr(Arg2, Levels - 1) + ', ' +
-                        DescribeExpr(Arg3, Levels - 1) + ')';
+      TpfStr: Result := 'STR(' + ExDescribe(Arg1) + ', ' +
+                        ExDescribe(Arg2) + ')';
+      TpfSucc: Result := 'SUCC(' + ExDescribe(Arg1) + ')';
+      TpfVal: Result := 'VAL(' + ExDescribe(Arg1) + ', ' +
+                        ExDescribe(Arg2) + ', ' +
+                        ExDescribe(Arg3) + ')';
       TpfWrite: Result := 'WRITE(...)';
       TpfWriteln: Result := 'WRITELN(...)';
       else InternalError('Cannot describe pseudofun')

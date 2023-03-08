@@ -610,7 +610,7 @@ end;
 
 function _AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
 begin
-  Result := DescribeExpr(ExGetAntiOrdinal(Ordinal, TypePtr), 100);
+  Result := ExDescribe(ExGetAntiOrdinal(Ordinal, TypePtr));
 end;
 
 function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;

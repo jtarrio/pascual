@@ -4,7 +4,7 @@ forward;
 function CopyExpr(Expr : TExpression) : TExpression;
 forward;
 
-function DescribeExpr(Expr : TExpression; Levels : integer) : string;
+function ExDescribe(Expr : TExpression) : string;
 forward;
 
 procedure ExMarkInitialized(Lhs : TExpression);

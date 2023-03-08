@@ -157,7 +157,7 @@ begin
     TkMoreOrEquals : if IsSetLeft and IsSetRight then Result := 1
                      else Result := 6;
     else InternalError('Unknown precedence for operator in ' +
-                       DescribeExpr(Expr, 5))
+                       ExDescribe(Expr))
   end
 end;
 
@@ -182,7 +182,7 @@ begin
     XcPseudoFnCall : Result := 1;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
-    else InternalError('Unknown precedence for ' + DescribeExpr(Expr, 5))
+    else InternalError('Unknown precedence for ' + ExDescribe(Expr))
   end
 end;
 
@@ -232,7 +232,7 @@ begin
   while Bounds <> nil do
   begin
     if (Bounds^.First < LowBound) or (Bounds^.Last > HighBound) then
-      CompileError('Set ' + DescribeExpr(Expr, 1) + ' contains elements ' +
+      CompileError('Set ' + ExDescribe(Expr) + ' contains elements ' +
       'that are out of bounds for ' + TypeName(Expr^.TypePtr));
     for Pos := Bounds^.First to Bounds^.Last do
     begin
@@ -424,8 +424,7 @@ begin
     TpfVal : _OutVal(Expr);
     TpfWrite : _OutWrite(Expr);
     TpfWriteln : _OutWrite(Expr);
-    else InternalError('Unimplemented special function ' +
-                       DescribeExpr(Expr, 5))
+    else InternalError('Unimplemented special function ' + ExDescribe(Expr))
   end
 end;
 
