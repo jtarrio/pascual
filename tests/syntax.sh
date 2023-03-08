@@ -641,8 +641,8 @@ testwrite 'a : string' a | is_valid
 testwrite 'a : string; b : string' 'a, b' | is_valid
 testwrite 'a : string' 'output, a' | is_valid
 testwrite 'a : string; b : string' 'output, a, b' | is_valid
-testwrite 'a : integer' 'a:10' | will_be_valid
-testwrite 'a : real' 'a:10:5' | will_be_valid
+testwrite 'a : integer' 'a:10' | is_valid
+testwrite 'a : real' 'a:10:5' | is_valid
 testwriteln() {
   echo "program foo; var $1; begin writeln($2) end."
 }
@@ -656,8 +656,8 @@ testwriteln 'a : string' a | is_valid
 testwriteln 'a : string; b : string' 'a, b' | is_valid
 testwriteln 'a : string' 'output, a' | is_valid
 testwriteln 'a : string; b : string' 'output, a, b' | is_valid
-testwriteln 'a : integer' 'a:10' | will_be_valid
-testwriteln 'a : real' 'a:10:5' | will_be_valid
+testwriteln 'a : integer' 'a:10' | is_valid
+testwriteln 'a : real' 'a:10:5' | is_valid
 testread() {
   echo "program foo; var $1; begin read($2) end."
 }

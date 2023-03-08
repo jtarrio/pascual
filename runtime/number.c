@@ -276,8 +276,8 @@ void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
   if (width <= 0) width = 22;
   if (precision < 0) precision = 14;
   if (precision > 0 && precision + 8 > width) precision = width - 8;
-  if (precision == 0 && precision + 7 > width) precision = width - 7;
-  PInteger spaces = width - precision - 8;
+  if (precision < 0) precision = 0;
+  PInteger spaces = precision == 0 ? width - 7 : width - precision - 8;
   int exp = 0;
   PBoolean neg = num < 0;
   if (neg) num = -num;
@@ -421,11 +421,11 @@ void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
   }
   unsigned long mantissa = num;
   if (precision < 15) {
-    int rounder = 1;
+    unsigned long rounder = 1;
     for (int i = precision; i < 15; ++i) {
       rounder *= 10;
     }
-    int rem = mantissa % rounder;
+    unsigned long rem = mantissa % rounder;
     if (rem >= rounder / 2) mantissa += rounder - rem;
   }
   int pos = 0;

@@ -67,12 +67,15 @@ type
   end;
   TExWriteArgs = record
     Arg : TExpression;
+    Width : TExpression;
+    Prec : TExpression;
     Next : ^TExWriteArgs
   end;
   TExPseudoFnCall = record
     Arg1 : TExpression;
     Arg2 : TExpression;
     Arg3 : TExpression;
+    Arg4 : TExpression;
     case PseudoFn : TPsPseudoFn of 
       TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
       TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);

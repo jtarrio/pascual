@@ -155,7 +155,7 @@ void STR_b(PBoolean val, PInteger width, PString* dst) {
   const PString kFalseValue = str_make(5, "FALSE");
   const PString* copy_from = val ? &kTrueValue : &kFalseValue;
   if (width < copy_from->len) width = copy_from->len;
-  int spaces = copy_from->len - width;
+  int spaces = width - copy_from->len;
   for (int i = 0; i < spaces; ++i) {
     dst->value[i] = ' ';
   }

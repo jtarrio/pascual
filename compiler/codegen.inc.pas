@@ -252,7 +252,7 @@ begin
 end;
 
 procedure _OutExSet(Expr : TExpression);
-var
+var 
   ElementTypePtr : TPsTypePtr;
   Bounds : TExSetExprBounds;
   First, Last : TExpression;
@@ -1106,7 +1106,10 @@ begin
       _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ', 0);');
+      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ', ');
+      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
+      else write(Codegen.Output, '0');
+      write(Codegen.Output, ');');
       _OutNewline
     end
     else if IsRealType(TypePtr) then
@@ -1116,7 +1119,13 @@ begin
       _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.output, ', 0, -1);');
+      write(Codegen.output, ', ');
+      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
+      else write(Codegen.Output, '0');
+      write(Codegen.output, ', ');
+      if WriteArg^.Prec <> nil then OutExpression(WriteArg^.Prec)
+      else write(Codegen.Output, '-1');
+      write(Codegen.output, ');');
       _OutNewline
     end
     else
@@ -1126,7 +1135,10 @@ begin
       _OutAddress(Dst);
       write(Codegen.Output, ', ');
       OutExpression(WriteArg^.Arg);
-      write(Codegen.output, ', 0);');
+      write(Codegen.output, ', ');
+      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
+      else write(Codegen.Output, '0');
+      write(Codegen.output, ');');
       _OutNewline
     end;
     WriteArg := WriteArg^.Next
@@ -1143,16 +1155,21 @@ begin
 end;
 
 procedure _OutStr(Expr : TExpression);
-var Src, Dst : TExpression;
+var Src, Dst, Width, Prec : TExpression;
 begin
   Src := Expr^.PseudoFnCall.Arg1;
   Dst := Expr^.PseudoFnCall.Arg2;
+  Width := Expr^.PseudoFnCall.Arg3;
+  Prec := Expr^.PseudoFnCall.Arg4;
   if IsEnumType(Src^.TypePtr) then
   begin
     _OutIndent;
     write(Codegen.Output, 'STR_e(');
     OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', 0, ');
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', ');
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    write(Codegen.Output, ', ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1162,7 +1179,13 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_r(');
     OutExpression(Src);
-    write(Codegen.Output, ', 0, -1, ');
+    write(Codegen.Output, ', ');
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    write(Codegen.Output, ', ');
+    if Prec <> nil then OutExpression(Prec)
+    else write(Codegen.Output, '-1');
+    write(Codegen.Output, ', ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1172,7 +1195,10 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
     OutExpression(Src);
-    write(Codegen.Output, ', 0, ');
+    write(Codegen.Output, ', ');
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    write(Codegen.Output, ', ');
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline

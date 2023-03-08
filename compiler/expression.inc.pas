@@ -16,7 +16,8 @@ begin
   if Call.Arg1 <> nil then ExDispose(Call.Arg1);
   if Call.Arg2 <> nil then ExDispose(Call.Arg2);
   if Call.Arg3 <> nil then ExDispose(Call.Arg3);
-  if Call.PseudoFn in [TpfWrite, TpfWriteln] then
+  if Call.Arg4 <> nil then ExDispose(Call.Arg4);
+  if Call.PseudoFn in [TpfRead, TpfReadln] then
   begin
     ReadArg := Call.ReadArgs;
     while ReadArg <> nil do
@@ -27,13 +28,15 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if Call.PseudoFn in [TpfRead, TpfReadln] then
+  else if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     WriteArg := Call.WriteArgs;
     while WriteArg <> nil do
     begin
       NextWriteArg := WriteArg^.Next;
       ExDispose(WriteArg^.Arg);
+      if WriteArg^.Width <> nil then ExDispose(WriteArg^.Width);
+      if WriteArg^.Prec <> nil then ExDispose(WriteArg^.Prec);
       dispose(WriteArg);
       WriteArg := NextWriteArg
     end
@@ -124,7 +127,8 @@ begin
   if Call.Arg1 <> nil then Copy.Arg1 := ExCopy(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := ExCopy(Call.Arg2);
   if Call.Arg3 <> nil then Copy.Arg3 := ExCopy(Call.Arg3);
-  if Call.PseudoFn in [TpfWrite, TpfWriteln] then
+  if Call.Arg4 <> nil then Copy.Arg4 := ExCopy(Call.Arg4);
+  if Call.PseudoFn in [TpfRead, TpfReadln] then
   begin
     ReadArg := Call.ReadArgs;
     CopyReadArg := nil;
@@ -146,7 +150,7 @@ begin
       ReadArg := NextReadArg
     end
   end
-  else if Call.PseudoFn in [TpfRead, TpfReadln] then
+  else if Call.PseudoFn in [TpfWrite, TpfWriteln] then
   begin
     WriteArg := Call.WriteArgs;
     CopyWriteArg := nil;
@@ -165,6 +169,10 @@ begin
       end;
       CopyWriteArg^.Next := nil;
       CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
+      if WriteArg^.Width <> nil then
+      CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
+      if WriteArg^.Prec <> nil then
+      CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
       WriteArg := NextWriteArg
     end
   end
@@ -937,6 +945,7 @@ begin
   Expr^.PseudoFnCall.Arg1 := nil;
   Expr^.PseudoFnCall.Arg2 := nil;
   Expr^.PseudoFnCall.Arg3 := nil;
+  Expr^.PseudoFnCall.Arg4 := nil;
   Expr^.PseudoFnCall.ReadArgs := nil;
   Expr^.PseudoFnCall.WriteArgs := nil;
   Result := Expr

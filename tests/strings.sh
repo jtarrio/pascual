@@ -144,6 +144,23 @@ teststr real 9.1e-31 | outputs ' 9.10000000000000E-031'
 teststr real -2.718 | outputs '-2.71800000000000E+000'
 teststr '(One, Two, Three)' 'Two' | outputs 'TWO'
 
+teststrw() {
+  echo "program foo; var s : string; const v : $1 = $2; begin
+        Str(v:$3, s); write(s) end."
+}
+teststrw boolean true 10 | outputs '      TRUE'
+teststrw boolean true 2 | outputs 'TRUE'
+teststrw integer 42 10 | outputs '        42'
+teststrw integer 42 1 | outputs '42'
+teststrw integer -42 10 | outputs '       -42'
+teststrw integer -42 2 | outputs '-42'
+teststrw real 3.1416 10 | outputs ' 3.14E+000'
+teststrw real 3.1416 2 | outputs ' 3E+000'
+teststrw real -2.718 10 | outputs '-2.72E+000'
+teststrw real -2.718 2 | outputs '-3E+000'
+teststrw '(One, Two, Three)' 'Two' 10 | outputs '       TWO'
+teststrw '(One, Two, Three)' 'Two' 2 | outputs 'TWO'
+
 # Val
 testval() {
   echo "program foo; const s : string = '$1'; var v : $2; c : integer; begin

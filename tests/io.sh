@@ -36,6 +36,26 @@ testout "write('foo', 'bar', 123)" | outputs 'foobar123'
 testout "writeln('foo', 'bar', 123)" | outputs 'foobar123
 '
 
+testout "write(true:10)" | outputs '      TRUE'
+testout "write(true:2)" | outputs 'TRUE'
+testout "write(false:10)" | outputs '     FALSE'
+testout "write(false:2)" | outputs 'FALSE'
+testout "write(1234:10)" | outputs '      1234'
+testout "write(1234:2)" | outputs '1234'
+testout "write(12.34:20)" | outputs ' 1.234000000000E+001'
+testout "write(12.34:10)" | outputs ' 1.23E+001'
+testout "write(12.34:2)" | outputs ' 1E+001'
+testout "write(12.34:20:5)" | outputs '        1.23400E+001'
+testout "write(12.34:10:5)" | outputs ' 1.23E+001'
+testout "write(12.34:2:5)" | outputs ' 1E+001'
+testout "write(12.34:20:0)" | outputs '              1E+001'
+testout "write(12.34:10:0)" | outputs '    1E+001'
+testout "write(12.34:2:0)" | outputs ' 1E+001'
+testout "write('c':10)" | outputs '         c'
+testout "write('c':2)" | outputs ' c'
+testout "write('hello':10)" | outputs '     hello'
+testout "write('hello':2)" | outputs 'hello'
+
 # Input
 teststdio() {
   echo "program foo; var i : $1; begin $2 end."

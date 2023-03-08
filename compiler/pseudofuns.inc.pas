@@ -224,9 +224,28 @@ end;
 function PfStr_Parse(FnExpr : TExpression) : TExpression;
 var 
   Src, Dest : TExpression;
+  Width, Prec : TExpression;
 begin
+  Width := nil;
+  Prec := nil;
   WantTokenAndRead(TkLparen);
   Src := ExOutrange(PsExpression);
+  if Lexer.Token.Id = TkColon then
+  begin
+    WantTokenAndRead(TkColon);
+    Width := PsExpression;
+    if not IsIntegerType(Width^.TypePtr) then
+      CompileError('Width parameter is not integer; found ' +
+                   TypeName(Width^.TypePtr));
+    if IsRealType(Src^.TypePtr) and (Lexer.Token.Id = TkColon) then
+    begin
+      WantTokenAndRead(TkColon);
+      Prec := PsExpression;
+      if not IsIntegerType(Prec^.TypePtr) then
+        CompileError('Precision parameter is not integer; found ' +
+                     TypeName(Prec^.TypePtr))
+    end
+  end;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
@@ -239,7 +258,9 @@ begin
   ExMarkInitialized(Dest);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Src;
-  Result^.PseudoFnCall.Arg2 := Dest
+  Result^.PseudoFnCall.Arg2 := Dest;
+  Result^.PseudoFnCall.Arg3 := Width;
+  Result^.PseudoFnCall.Arg4 := Prec
 end;
 
 function PfSucc_Parse(FnExpr : TExpression) : TExpression;
@@ -344,8 +365,27 @@ begin
           new(WriteArg^.Next);
           WriteArg := WriteArg^.Next;
         end;
-        WriteArg^.Next := nil;
         WriteArg^.Arg := OutExpr;
+        WriteArg^.Width := nil;
+        WriteArg^.Prec := nil;
+        WriteArg^.Next := nil;
+        if Lexer.Token.Id = TkColon then
+        begin
+          WantTokenAndRead(TkColon);
+          WriteArg^.Width := PsExpression;
+          if not IsIntegerType(WriteArg^.Width^.TypePtr) then
+            CompileError('Width parameter must be an integer; found ' +
+                         TypeName(WriteArg^.Width^.TypePtr));
+          if IsRealType(WriteArg^.Arg^.TypePtr)
+             and (Lexer.Token.Id = TkColon) then
+          begin
+            WantTokenAndRead(TkColon);
+            WriteArg^.Prec := PsExpression;
+            if not IsIntegerType(WriteArg^.Prec^.TypePtr) then
+              CompileError('Precision parameter must be an integer; found ' +
+                           TypeName(WriteArg^.Prec^.TypePtr));
+          end
+        end
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
@@ -409,8 +449,18 @@ begin
       TpfPred: Result := 'PRED(' + ExDescribe(Arg1) + ')';
       TpfRead: Result := 'READ(...)';
       TpfReadln: Result := 'READLN(...)';
-      TpfStr: Result := 'STR(' + ExDescribe(Arg1) + ', ' +
-                        ExDescribe(Arg2) + ')';
+      TpfStr:
+              if Arg3 = nil then
+                Result := 'STR(' + ExDescribe(Arg1) + ', ' +
+                          ExDescribe(Arg2) + ')'
+              else if Arg4 = nil then
+                     Result := 'STR(' + ExDescribe(Arg1) + ':' +
+                               ExDescribe(Arg3) + ', ' +
+                               ExDescribe(Arg2) + ')'
+              else Result := 'STR(' + ExDescribe(Arg1) + ':' +
+                             ExDescribe(Arg3) + ':' +
+                             ExDescribe(Arg4) + ', ' +
+                             ExDescribe(Arg2) + ')';
       TpfSucc: Result := 'SUCC(' + ExDescribe(Arg1) + ')';
       TpfVal: Result := 'VAL(' + ExDescribe(Arg1) + ', ' +
                         ExDescribe(Arg2) + ', ' +
