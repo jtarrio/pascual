@@ -49,6 +49,7 @@ void integer_to_str(PInteger num, PString* str, PInteger width) {
     ++digits;
   }
   if (neg) ++digits;
+  if (width > 255) width = 255;
   if (width < digits) width = digits;
   PInteger spaces = width - digits;
   PInteger pos = 0;
@@ -271,9 +272,11 @@ PReal str_to_real(const PString* str, PInteger* stop) {
 }
 
 void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
+  if (width > 255) width = 255;
   if (width < 0) width = 22;
   if (precision < 0) precision = 14;
-  if (precision + 8 > width) precision = width - 8;
+  if (precision > 0 && precision + 8 > width) precision = width - 8;
+  if (precision == 0 && precision + 7 > width) precision = width - 7;
   PInteger spaces = width - precision - 8;
   int exp = 0;
   PBoolean neg = num < 0;
@@ -417,7 +420,14 @@ void real_to_str(PReal num, PString* str, PInteger width, PInteger precision) {
     }
   }
   unsigned long mantissa = num;
-  if (mantissa % 10 >= 5) mantissa += 10;
+  if (precision < 15) {
+    int rounder = 1;
+    for (int i = precision; i < 15; ++i) {
+      rounder *= 10;
+    }
+    int rem = mantissa % rounder;
+    if (rem >= rounder / 2) mantissa += rounder - rem;
+  }
   int pos = 0;
   for (int i = 0; i < spaces; ++i) {
     str->value[pos++] = ' ';

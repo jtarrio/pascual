@@ -13,7 +13,7 @@ PInteger PARAMCOUNT() { return param_count; }
 
 PString PARAMSTR(PInteger i) {
   if ((i < 0) || (i > param_count)) return (PString){.len = 0};
-  return str_of_pchar(param_str[i]);
+  return str_of_pchar(param_str[i], 0);
 }
 
 void InitOs(int argc, const char** argv) {

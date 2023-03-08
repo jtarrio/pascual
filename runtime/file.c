@@ -69,7 +69,7 @@ void GETDIR(PInteger drive, PString* dir) {
   if (getcwd(buf, buf_size) == NULL)
     set_ioresult(NULL, ioerror_from_errno());
   else
-    *dir = str_of_pchar(buf);
+    *dir = str_of_pchar(buf, 0);
 }
 
 static inline PBoolean is_open(const PFile* file) {
@@ -307,19 +307,19 @@ void WRITELN(PFile* file) {
 
 void WRITE_b(PFile* file, PBoolean val) {
   PString str;
-  STR_b(val, &str);
+  STR_b(val, -1, &str);
   WRITE_s(file, str);
 }
 
 void WRITE_i(PFile* file, PInteger num) {
   PString str;
-  STR_i(num, &str);
+  STR_i(num, -1, &str);
   WRITE_s(file, str);
 }
 
 void WRITE_r(PFile* file, PReal num) {
   PString str;
-  STR_r(num, &str);
+  STR_r(num, -1, -1, &str);
   WRITE_s(file, str);
 }
 
@@ -341,7 +341,7 @@ void WRITE_s(PFile* file, PString str) {
 
 void WRITE_e(PFile* file, POrdinal value, const char** names) {
   PString str;
-  STR_e(value, names, &str);
+  STR_e(value, names, -1, &str);
   WRITE_s(file, str);
 }
 

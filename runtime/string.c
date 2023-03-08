@@ -71,10 +71,22 @@ PChar CHR(PInteger pos) { return pos; }
 
 PInteger ORD(PChar chr) { return chr; }
 
-PString str_of_pchar(const char* str) {
+PString str_of_pchar(const char* str, PInteger width) {
   PString ret;
-  ret.len = strnlen(str, 255);
-  memcpy(ret.value, str, ret.len);
+  int length = 0;
+  for (length = 0; length < 255; ++length) {
+    if (str[length] == 0) break;
+  }
+  if (width > 255) width = 255;
+  int spaces = width - length;
+  if (spaces < 0) spaces = 0;
+  for (int i = 0; i < spaces; ++i) {
+    ret.value[i] = ' ';
+  }
+  for (int i = 0; i < length; ++i) {
+    ret.value[i + spaces] = str[i];
+  }
+  ret.len = spaces + length;
   return ret;
 }
 
@@ -138,26 +150,31 @@ PInteger cmp_ss(PString a, PString b) {
   return a.len - b.len;
 }
 
-void STR_b(PBoolean val, PString* dst) {
-  if (val)
-    *dst = str_make(4, "TRUE");
-  else
-    *dst = str_make(5, "FALSE");
+void STR_b(PBoolean val, PInteger width, PString* dst) {
+  const PString kTrueValue = str_make(4, "TRUE");
+  const PString kFalseValue = str_make(5, "FALSE");
+  const PString* copy_from = val ? &kTrueValue : &kFalseValue;
+  if (width < copy_from->len) width = copy_from->len;
+  int spaces = copy_from->len - width;
+  for (int i = 0; i < spaces; ++i) {
+    dst->value[i] = ' ';
+  }
+  for (int i = 0; i < copy_from->len; ++i) {
+    dst->value[i + spaces] = copy_from->value[i];
+  }
+  dst->len = width;
 }
 
-void STR_i(PInteger num, PString* dst) { integer_to_str(num, dst, -1); }
-
-void STR_r(double num, PString* dst) { real_to_str(num, dst, -1, -1); }
-
-void STR_c(PChar chr, PString* dst) {
-  dst->len = 1;
-  dst->value[0] = chr;
+void STR_i(PInteger num, PInteger width, PString* dst) {
+  integer_to_str(num, dst, width);
 }
 
-void STR_s(PString str, PString* dst) { *dst = str; }
+void STR_r(double num, PInteger width, PInteger precision, PString* dst) {
+  real_to_str(num, dst, width, precision);
+}
 
-void STR_e(POrdinal value, const char** names, PString* dst) {
-  *dst = str_of_pchar(names[value]);
+void STR_e(POrdinal value, const char** names, PInteger width, PString* dst) {
+  *dst = str_of_pchar(names[value], width);
 }
 
 void VAL_b(const PString* str, PBoolean* dst, PInteger* code) {

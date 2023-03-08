@@ -370,7 +370,7 @@ struct record31 {
 PString LXTOKENNAME(TLXTOKENID ID) {
   PString RESULT;
   PString NAME;
-  STR_e(ID, enumvalues1, &NAME);
+  STR_e(ID, enumvalues1, -1, &NAME);
   RESULT = NAME;
   return RESULT;
 }
@@ -379,8 +379,8 @@ PString LXPOSSTR(TLXPOS POS) {
   PString RESULT;
   PString ROW;
   PString COL;
-  STR_i(POS.ROW, &ROW);
-  STR_i(POS.COL, &COL);
+  STR_i(POS.ROW, -1, &ROW);
+  STR_i(POS.COL, -1, &COL);
   RESULT = cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "row "), ROW), str_make(5, " col ")), COL), str_make(4, " in ")), LEXER.INPUT.NAME);
   return RESULT;
 }
@@ -1339,7 +1339,7 @@ PString UNPARSECHAR(PChar CHR) {
   PString CHNUM;
   if (CHR == '\'') RESULT = str_make(4, "''''");
   else if (CHR < ' ') {
-    STR_i((int)CHR, &CHNUM);
+    STR_i((int)CHR, -1, &CHNUM);
     RESULT = cat_cs('#', CHNUM);
   }
   else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
@@ -1365,7 +1365,7 @@ PString UNPARSESTRING(PString ST) {
               QUOTED = 0;
               RESULT = cat_sc(RESULT, '\'');
             }
-            STR_i((int)ST.chr[POS], &CHNUM);
+            STR_i((int)ST.chr[POS], -1, &CHNUM);
             RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
           }
           else {
@@ -1455,7 +1455,7 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, PBoolean USEORIGINAL) {
   }
   else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
   else {
-    STR_e(TYP.CLS, enumvalues5, &RET);
+    STR_e(TYP.CLS, enumvalues5, -1, &RET);
     COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
   }
   return RESULT;
@@ -1643,7 +1643,7 @@ TPSVARIABLE *ADDWITHVAR(TEXPRESSIONOBJ *BASE) {
   TPSVARIABLE *TMPVARPTR;
   TPSWITHVAR *WITHVARPTR;
   if (!ISRECORDTYPE(BASE->TYPEPTR)) COMPILEERROR(str_make(31, "'With' variable is not a record"));
-  STR_i(DEFCOUNTER(TCTTMPVAR), &TMPVARNUM);
+  STR_i(DEFCOUNTER(TCTTMPVAR), -1, &TMPVARNUM);
   TMPVAR.NAME = cat_ss(str_make(4, "with"), TMPVARNUM);
   TMPVAR.TYPEPTR = BASE->TYPEPTR;
   TMPVAR.ISCONSTANT = 0;
@@ -1702,7 +1702,7 @@ TPSVARIABLE MAKEVARIABLE(PString NAME, TPSTYPE *TYPEPTR) {
 TPSVARIABLE *ADDTMPVARIABLE(PString PREFIX, TPSTYPE *TYPEPTR) {
   TPSVARIABLE *RESULT;
   PString VARNUM;
-  STR_i(DEFCOUNTER(TCTTMPVAR), &VARNUM);
+  STR_i(DEFCOUNTER(TCTTMPVAR), -1, &VARNUM);
   RESULT = ADDVARIABLE(MAKEVARIABLE(cat_ss(PREFIX, VARNUM), TYPEPTR));
   return RESULT;
 }
@@ -2224,13 +2224,13 @@ PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
         RESULT = str_make(3, "nil");
         break;
       case XICBOOLEAN:
-        STR_b(with1->BOOLEANVAL, &RESULT);
+        STR_b(with1->BOOLEANVAL, -1, &RESULT);
         break;
       case XICINTEGER:
-        STR_i(with1->INTEGERVAL, &RESULT);
+        STR_i(with1->INTEGERVAL, -1, &RESULT);
         break;
       case XICREAL:
-        STR_r(with1->REALVAL, &RESULT);
+        STR_r(with1->REALVAL, -1, -1, &RESULT);
         break;
       case XICCHAR:
         RESULT = UNPARSECHAR(with1->CHARVAL);
@@ -6536,7 +6536,16 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
     OUTEXPRESSION(SRC);
     WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
     WRITE_i(&CODEGEN.OUTPUT, SRC->TYPEPTR->ENUMPTR->ID);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ", -1, "));
+    _OUTADDRESS(DST);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    _OUTNEWLINE();
+  }
+  else if (ISREALTYPE(SRC->TYPEPTR)) {
+    _OUTINDENT();
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_r("));
+    OUTEXPRESSION(SRC);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(10, ", -1, -1, "));
     _OUTADDRESS(DST);
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
     _OUTNEWLINE();
@@ -6547,7 +6556,7 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
     WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(SRC->TYPEPTR));
     WRITE_c(&CODEGEN.OUTPUT, '(');
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ", -1, "));
     _OUTADDRESS(DST);
     WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
     _OUTNEWLINE();

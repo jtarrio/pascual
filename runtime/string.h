@@ -15,7 +15,7 @@ PInteger ORD(PChar chr);
 #define str_make(l, s) \
   (PString) { .len = l, .value = s }
 #define str_of(c) str_make(1, {c})
-PString str_of_pchar(const char* str);
+PString str_of_pchar(const char* str, PInteger width);
 const char* pchar_of_str(const PString* str);
 
 PString cat_cc(PChar a, PChar b);
@@ -28,10 +28,10 @@ PInteger cmp_cs(PChar a, PString b);
 PInteger cmp_sc(PString a, PChar b);
 PInteger cmp_ss(PString a, PString b);
 
-void STR_b(PBoolean val, PString* dst);
-void STR_i(PInteger num, PString* dst);
-void STR_r(double num, PString* dst);
-void STR_e(POrdinal value, const char** names, PString* dst);
+void STR_b(PBoolean val, PInteger width, PString* dst);
+void STR_i(PInteger num, PInteger width, PString* dst);
+void STR_r(double num, PInteger width, PInteger precision, PString* dst);
+void STR_e(POrdinal value, const char** names, PInteger width, PString* dst);
 
 void VAL_b(const PString* str, PBoolean* dst, PInteger* code);
 void VAL_i(const PString* str, PInteger* dst, PInteger* code);
