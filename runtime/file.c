@@ -305,44 +305,46 @@ void WRITELN(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_b(PFile* file, PBoolean val, ...) {
+void WRITE_b(PFile* file, PBoolean val, PInteger width) {
   PString str;
-  STR_b(val, -1, &str);
-  WRITE_s(file, str);
+  STR_b(val, width, &str);
+  WRITE_s(file, str, 0);
 }
 
-void WRITE_i(PFile* file, PInteger num, ...) {
+void WRITE_i(PFile* file, PInteger num, PInteger width) {
   PString str;
-  STR_i(num, -1, &str);
-  WRITE_s(file, str);
+  STR_i(num, width, &str);
+  WRITE_s(file, str, 0);
 }
 
-void WRITE_r(PFile* file, PReal num, ...) {
+void WRITE_r(PFile* file, PReal num, PInteger width, PInteger precision) {
   PString str;
-  STR_r(num, -1, -1, &str);
-  WRITE_s(file, str);
+  STR_r(num, width, precision, &str);
+  WRITE_s(file, str, 0);
 }
 
-void WRITE_c(PFile* file, PChar chr, ...) {
+void WRITE_c(PFile* file, PChar chr, PInteger width) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
+  for (int i = 0; i < width - 1; ++i) fputc(' ', file->file);
   fputc(chr, file->file);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_s(PFile* file, PString str, ...) {
+void WRITE_s(PFile* file, PString str, PInteger width) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
+  for (int i = 0; i < width - str.len; ++i) fputc(' ', file->file);
   for (int pos = 0; pos < str.len; ++pos) fputc(str.value[pos], file->file);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_e(PFile* file, POrdinal value, const char** names, ...) {
+void WRITE_e(PFile* file, POrdinal value, const char** names, PInteger width) {
   PString str;
-  STR_e(value, names, -1, &str);
-  WRITE_s(file, str);
+  STR_e(value, names, width, &str);
+  WRITE_s(file, str, 0);
 }
 
 PFile INPUT = {};
