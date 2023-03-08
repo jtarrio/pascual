@@ -370,7 +370,7 @@ struct record31 {
 PString LXTOKENNAME(TLXTOKENID ID) {
   PString RESULT;
   PString NAME;
-  STR_e(ID, enumvalues1, -1, &NAME);
+  STR_e(ID, enumvalues1, 0, &NAME);
   RESULT = NAME;
   return RESULT;
 }
@@ -379,8 +379,8 @@ PString LXPOSSTR(TLXPOS POS) {
   PString RESULT;
   PString ROW;
   PString COL;
-  STR_i(POS.ROW, -1, &ROW);
-  STR_i(POS.COL, -1, &COL);
+  STR_i(POS.ROW, 0, &ROW);
+  STR_i(POS.COL, 0, &COL);
   RESULT = cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "row "), ROW), str_make(5, " col ")), COL), str_make(4, " in ")), LEXER.INPUT.NAME);
   return RESULT;
 }
@@ -1339,7 +1339,7 @@ PString UNPARSECHAR(PChar CHR) {
   PString CHNUM;
   if (CHR == '\'') RESULT = str_make(4, "''''");
   else if (CHR < ' ') {
-    STR_i((int)CHR, -1, &CHNUM);
+    STR_i((int)CHR, 0, &CHNUM);
     RESULT = cat_cs('#', CHNUM);
   }
   else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
@@ -1365,7 +1365,7 @@ PString UNPARSESTRING(PString ST) {
               QUOTED = 0;
               RESULT = cat_sc(RESULT, '\'');
             }
-            STR_i((int)ST.chr[POS], -1, &CHNUM);
+            STR_i((int)ST.chr[POS], 0, &CHNUM);
             RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
           }
           else {
@@ -1455,7 +1455,7 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, PBoolean USEORIGINAL) {
   }
   else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
   else {
-    STR_e(TYP.CLS, enumvalues5, -1, &RET);
+    STR_e(TYP.CLS, enumvalues5, 0, &RET);
     COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
   }
   return RESULT;
@@ -1643,7 +1643,7 @@ TPSVARIABLE *ADDWITHVAR(TEXPRESSIONOBJ *BASE) {
   TPSVARIABLE *TMPVARPTR;
   TPSWITHVAR *WITHVARPTR;
   if (!ISRECORDTYPE(BASE->TYPEPTR)) COMPILEERROR(str_make(31, "'With' variable is not a record"));
-  STR_i(DEFCOUNTER(TCTTMPVAR), -1, &TMPVARNUM);
+  STR_i(DEFCOUNTER(TCTTMPVAR), 0, &TMPVARNUM);
   TMPVAR.NAME = cat_ss(str_make(4, "with"), TMPVARNUM);
   TMPVAR.TYPEPTR = BASE->TYPEPTR;
   TMPVAR.ISCONSTANT = 0;
@@ -1702,7 +1702,7 @@ TPSVARIABLE MAKEVARIABLE(PString NAME, TPSTYPE *TYPEPTR) {
 TPSVARIABLE *ADDTMPVARIABLE(PString PREFIX, TPSTYPE *TYPEPTR) {
   TPSVARIABLE *RESULT;
   PString VARNUM;
-  STR_i(DEFCOUNTER(TCTTMPVAR), -1, &VARNUM);
+  STR_i(DEFCOUNTER(TCTTMPVAR), 0, &VARNUM);
   RESULT = ADDVARIABLE(MAKEVARIABLE(cat_ss(PREFIX, VARNUM), TYPEPTR));
   return RESULT;
 }
@@ -2224,13 +2224,13 @@ PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
         RESULT = str_make(3, "nil");
         break;
       case XICBOOLEAN:
-        STR_b(with1->BOOLEANVAL, -1, &RESULT);
+        STR_b(with1->BOOLEANVAL, 0, &RESULT);
         break;
       case XICINTEGER:
-        STR_i(with1->INTEGERVAL, -1, &RESULT);
+        STR_i(with1->INTEGERVAL, 0, &RESULT);
         break;
       case XICREAL:
-        STR_r(with1->REALVAL, -1, -1, &RESULT);
+        STR_r(with1->REALVAL, 0, -1, &RESULT);
         break;
       case XICCHAR:
         RESULT = UNPARSECHAR(with1->CHARVAL);
@@ -5185,7 +5185,7 @@ void _OUTINDENT() {
     if (first <= last) {
       CT = first;
       while (1) {
-        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "  "));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "  "), 0);
         if (CT == last) break;
         ++CT;
       }
@@ -5196,7 +5196,7 @@ void _OUTINDENT() {
 
 void OUTBEGIN() {
   CODEGEN.ISMULTISTATEMENT = 1;
-  WRITE_c(&CODEGEN.OUTPUT, '{');
+  WRITE_c(&CODEGEN.OUTPUT, '{', 0);
   _OUTNEWLINE();
   CODEGEN.INDENT = CODEGEN.INDENT + 1;
 }
@@ -5204,14 +5204,14 @@ void OUTBEGIN() {
 void OUTEND() {
   CODEGEN.INDENT = CODEGEN.INDENT - 1;
   _OUTINDENT();
-  WRITE_c(&CODEGEN.OUTPUT, '}');
+  WRITE_c(&CODEGEN.OUTPUT, '}', 0);
   _OUTNEWLINE();
 }
 
 void OUTENDSAMELINE() {
   CODEGEN.INDENT = CODEGEN.INDENT - 1;
   _OUTINDENT();
-  WRITE_c(&CODEGEN.OUTPUT, '}');
+  WRITE_c(&CODEGEN.OUTPUT, '}', 0);
 }
 
 void _OUTESCAPEDCHAR(PChar CH) {
@@ -5221,26 +5221,26 @@ void _OUTESCAPEDCHAR(PChar CH) {
   CODE = (int)CH;
   N1 = CODE / 16;
   N2 = CODE % 16;
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\x"));
-  if (N1 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 48));
-  else WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 87));
-  if (N2 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 48));
-  else WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 87));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\x"), 0);
+  if (N1 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 48), 0);
+  else WRITE_c(&CODEGEN.OUTPUT, CHR(N1 + 87), 0);
+  if (N2 < 10) WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 48), 0);
+  else WRITE_c(&CODEGEN.OUTPUT, CHR(N2 + 87), 0);
 }
 
 void _OUTCHAR(PChar CHR) {
-  WRITE_c(&CODEGEN.OUTPUT, '\'');
-  if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\'"));
-  else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
-  else if (' ' <= CHR && CHR <= '~') WRITE_c(&CODEGEN.OUTPUT, CHR);
+  WRITE_c(&CODEGEN.OUTPUT, '\'', 0);
+  if (CHR == '\'') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\'"), 0);
+  else if (CHR == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"), 0);
+  else if (' ' <= CHR && CHR <= '~') WRITE_c(&CODEGEN.OUTPUT, CHR, 0);
   else _OUTESCAPEDCHAR(CHR);
-  WRITE_c(&CODEGEN.OUTPUT, '\'');
+  WRITE_c(&CODEGEN.OUTPUT, '\'', 0);
 }
 
 void _OUTCSTRING(PString *STR) {
   PInteger POS;
   PChar CH;
-  WRITE_c(&CODEGEN.OUTPUT, '"');
+  WRITE_c(&CODEGEN.OUTPUT, '"', 0);
   do {
     PInteger first = 1;
     PInteger last = LENGTH(STR);
@@ -5251,12 +5251,12 @@ void _OUTCSTRING(PString *STR) {
           CH = (*STR).chr[POS];
           if (CH < ' ' || CH > '~') {
             _OUTESCAPEDCHAR(CH);
-            if (POS < LENGTH(STR) && LXISHEXDIGIT((*STR).chr[POS + 1])) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\"\""));
+            if (POS < LENGTH(STR) && LXISHEXDIGIT((*STR).chr[POS + 1])) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\"\""), 0);
           }
           else {
-            if (CH == '"') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\""));
-            else if (CH == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"));
-            else WRITE_c(&CODEGEN.OUTPUT, CH);
+            if (CH == '"') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\""), 0);
+            else if (CH == '\\') WRITE_s(&CODEGEN.OUTPUT, str_make(2, "\\\\"), 0);
+            else WRITE_c(&CODEGEN.OUTPUT, CH, 0);
           }
         }
         if (POS == last) break;
@@ -5264,21 +5264,21 @@ void _OUTCSTRING(PString *STR) {
       }
     }
   } while(0);
-  WRITE_c(&CODEGEN.OUTPUT, '"');
+  WRITE_c(&CODEGEN.OUTPUT, '"', 0);
 }
 
 void _OUTSTRING(PString *STR) {
   if (LENGTH(STR) == 1) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("), 0);
     _OUTCHAR((*STR).chr[1]);
-    WRITE_c(&CODEGEN.OUTPUT, ')');
+    WRITE_c(&CODEGEN.OUTPUT, ')', 0);
   }
   else {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "str_make("));
-    WRITE_i(&CODEGEN.OUTPUT, LENGTH(STR));
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "str_make("), 0);
+    WRITE_i(&CODEGEN.OUTPUT, LENGTH(STR), 0);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTCSTRING(STR);
-    WRITE_c(&CODEGEN.OUTPUT, ')');
+    WRITE_c(&CODEGEN.OUTPUT, ')', 0);
   }
 }
 
@@ -5424,9 +5424,9 @@ PInteger _PRECEDENCE(TEXPRESSIONOBJ *EXPR) {
 void _OUTEXPRESSIONPARENSPREC(TEXPRESSIONOBJ *EXPR, PInteger PREC) {
   PBoolean USEPARENS;
   USEPARENS = _PRECEDENCE(EXPR) > PREC;
-  if (USEPARENS) WRITE_c(&CODEGEN.OUTPUT, '(');
+  if (USEPARENS) WRITE_c(&CODEGEN.OUTPUT, '(', 0);
   OUTEXPRESSION(EXPR);
-  if (USEPARENS) WRITE_c(&CODEGEN.OUTPUT, ')');
+  if (USEPARENS) WRITE_c(&CODEGEN.OUTPUT, ')', 0);
 }
 
 void _OUTEXPRESSIONPARENS(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
@@ -5440,8 +5440,8 @@ void _OUTEXPRESSIONPARENSEXTRA(TEXPRESSIONOBJ *EXPR, TEXPRESSIONOBJ *REF) {
 void _OUTSETTYPENAME(TPSTYPE *TYPEPTR) {
   PInteger NUMBYTES;
   NUMBYTES = GETTYPEHIGHBOUND(TYPEPTR->ELEMENTTYPEPTR) / 8 - GETTYPELOWBOUND(TYPEPTR->ELEMENTTYPEPTR) / 8 + 1;
-  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "PSet"));
-  WRITE_i(&CODEGEN.OUTPUT, 8 * NUMBYTES);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "PSet"), 0);
+  WRITE_i(&CODEGEN.OUTPUT, 8 * NUMBYTES, 0);
 }
 
 void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
@@ -5493,9 +5493,9 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
     } while(0);
     BOUNDS = BOUNDS->NEXT;
   }
-  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(PSet"));
-  WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(4, ") { "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(PSet"), 0);
+  WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8, 0);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, ") { "), 0);
   do {
     PInteger first = 1;
     PInteger last = SETSIZE;
@@ -5503,15 +5503,15 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
       POS = first;
       while (1) {
         {
-          if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          WRITE_i(&CODEGEN.OUTPUT, SETELEMS[subrange(POS, 1, 32) - 1]);
+          if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+          WRITE_i(&CODEGEN.OUTPUT, SETELEMS[subrange(POS, 1, 32) - 1], 0);
         }
         if (POS == last) break;
         ++POS;
       }
     }
   } while(0);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"), 0);
 }
 
 void _OUTEXSET(TEXPRESSIONOBJ *EXPR) {
@@ -5522,28 +5522,28 @@ void _OUTEXSET(TEXPRESSIONOBJ *EXPR) {
   PInteger LOWBOUNDBYTE;
   ELEMENTTYPEPTR = EXPR->TYPEPTR->ELEMENTTYPEPTR;
   LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMENTTYPEPTR) / 8;
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "({ "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "({ "), 0);
   _OUTSETTYPENAME(EXPR->TYPEPTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(7, " dst = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(7, " dst = "), 0);
   _OUTSETIMMEDIATE(EXPR->SETBASE);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "; "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "; "), 0);
   BOUNDS = EXPR->SETBOUNDS;
   while (BOUNDS != (void*)0) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "set_set("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "set_set("), 0);
     FIRST = PFORD(EXCOERCE(COPYEXPR(BOUNDS->FIRST), ELEMENTTYPEPTR));
     if (BOUNDS->LAST == (void*)0) LAST = COPYEXPR(FIRST);
     else LAST = PFORD(EXCOERCE(COPYEXPR(BOUNDS->LAST), ELEMENTTYPEPTR));
     OUTEXPRESSION(FIRST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     OUTEXPRESSION(LAST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-    WRITE_i(&CODEGEN.OUTPUT, LOWBOUNDBYTE);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(13, ", dst.bits); "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+    WRITE_i(&CODEGEN.OUTPUT, LOWBOUNDBYTE, 0);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(13, ", dst.bits); "), 0);
     DISPOSEEXPR(&FIRST);
     DISPOSEEXPR(&LAST);
     BOUNDS = BOUNDS->NEXT;
   }
-  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "dst; })"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "dst; })"), 0);
 }
 
 void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
@@ -5551,17 +5551,17 @@ void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
     TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
     switch (with1->CLS) {
       case XICNIL:
-        WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(void*)0"), 0);
         break;
       case XICBOOLEAN:
-        if (with1->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1');
-        else WRITE_c(&CODEGEN.OUTPUT, '0');
+        if (with1->BOOLEANVAL) WRITE_c(&CODEGEN.OUTPUT, '1', 0);
+        else WRITE_c(&CODEGEN.OUTPUT, '0', 0);
         break;
       case XICINTEGER:
-        WRITE_i(&CODEGEN.OUTPUT, with1->INTEGERVAL);
+        WRITE_i(&CODEGEN.OUTPUT, with1->INTEGERVAL, 0);
         break;
       case XICREAL:
-        WRITE_r(&CODEGEN.OUTPUT, with1->REALVAL);
+        WRITE_r(&CODEGEN.OUTPUT, with1->REALVAL, 0, -1);
         break;
       case XICCHAR:
         _OUTCHAR(with1->CHARVAL);
@@ -5570,7 +5570,7 @@ void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
         _OUTSTRING(&with1->STRINGVAL);
         break;
       case XICENUM:
-        WRITE_s(&CODEGEN.OUTPUT, with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)]);
+        WRITE_s(&CODEGEN.OUTPUT, with1->ENUMPTR->VALUES[subrange(with1->ENUMORDINAL, 0, 127)], 0);
         break;
       case XICSET:
         _OUTSETIMMEDIATE(EXPR);
@@ -5582,9 +5582,9 @@ void _OUTEXIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
 }
 
 void _OUTBOUNDS(TPSTYPE *TYPEPTR) {
-  WRITE_i(&CODEGEN.OUTPUT, GETTYPELOWBOUND(TYPEPTR));
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-  WRITE_i(&CODEGEN.OUTPUT, GETTYPEHIGHBOUND(TYPEPTR));
+  WRITE_i(&CODEGEN.OUTPUT, GETTYPELOWBOUND(TYPEPTR), 0);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+  WRITE_i(&CODEGEN.OUTPUT, GETTYPEHIGHBOUND(TYPEPTR), 0);
 }
 
 void _OUTARRAYINDEX(TEXPRESSIONOBJ *INDEX, TPSTYPE *TYPEPTR) {
@@ -5598,9 +5598,9 @@ void _OUTARRAYINDEX(TEXPRESSIONOBJ *INDEX, TPSTYPE *TYPEPTR) {
 
 void _OUTADDRESS(TEXPRESSIONOBJ *EXPR) {
   if (EXPR->CLS == XCPOINTER) OUTEXPRESSION(EXPR->POINTEREXPR);
-  else if (EXPR->CLS == XCVARIABLE && EXPR->VARPTR->ISREFERENCE) WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME);
+  else if (EXPR->CLS == XCVARIABLE && EXPR->VARPTR->ISREFERENCE) WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME, 0);
   else {
-    WRITE_c(&CODEGEN.OUTPUT, '&');
+    WRITE_c(&CODEGEN.OUTPUT, '&', 0);
     _OUTEXPRESSIONPARENSPREC(EXPR, 2);
   }
 }
@@ -5608,20 +5608,20 @@ void _OUTADDRESS(TEXPRESSIONOBJ *EXPR) {
 void _OUTEXSUBRANGE(TEXPRESSIONOBJ *EXPR) {
   if (!OPTIONS.CHECKBOUNDS) OUTEXPRESSION(EXPR->SUBRANGEPARENT);
   else {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "subrange("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "subrange("), 0);
     OUTEXPRESSION(EXPR->SUBRANGEPARENT);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTBOUNDS(EXPR->TYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, ')');
+    WRITE_c(&CODEGEN.OUTPUT, ')', 0);
   }
 }
 
 void _OUTEXVARIABLE(TEXPRESSIONOBJ *EXPR) {
   if (EXPR->VARPTR->ISREFERENCE) {
-    WRITE_c(&CODEGEN.OUTPUT, '*');
-    WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME);
+    WRITE_c(&CODEGEN.OUTPUT, '*', 0);
+    WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME, 0);
   }
-  else WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME);
+  else WRITE_s(&CODEGEN.OUTPUT, EXPR->VARPTR->NAME, 0);
 }
 
 void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
@@ -5630,17 +5630,17 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
     {
       if (with1->CLS == XCPOINTER) {
         _OUTEXPRESSIONPARENS(with1->POINTEREXPR, EXPR);
-        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"), 0);
       }
       else if (with1->CLS == XCVARIABLE && with1->VARPTR->ISREFERENCE) {
-        WRITE_s(&CODEGEN.OUTPUT, with1->VARPTR->NAME);
-        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"));
+        WRITE_s(&CODEGEN.OUTPUT, with1->VARPTR->NAME, 0);
+        WRITE_s(&CODEGEN.OUTPUT, str_make(2, "->"), 0);
       }
       else {
         _OUTEXPRESSIONPARENS(EXPR->RECEXPR, EXPR);
-        WRITE_c(&CODEGEN.OUTPUT, '.');
+        WRITE_c(&CODEGEN.OUTPUT, '.', 0);
       }
-      WRITE_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      WRITE_s(&CODEGEN.OUTPUT, EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME, 0);
     }
   }
 }
@@ -5648,7 +5648,7 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
 void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
   PInteger POS;
   _OUTEXPRESSIONPARENS(EXPR->FNEXPR, EXPR);
-  WRITE_c(&CODEGEN.OUTPUT, '(');
+  WRITE_c(&CODEGEN.OUTPUT, '(', 0);
   do {
     PInteger first = 1;
     PInteger last = EXPR->CALLARGS.SIZE;
@@ -5656,7 +5656,7 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
       POS = first;
       while (1) {
         {
-          if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+          if (POS != 1) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
           if (EXPR->FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
             if (!EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]->ISASSIGNABLE) COMPILEERROR(str_make(45, "Pass-by-reference argument must be assignable"));
             _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
@@ -5668,7 +5668,7 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
       }
     }
   } while(0);
-  WRITE_c(&CODEGEN.OUTPUT, ')');
+  WRITE_c(&CODEGEN.OUTPUT, ')', 0);
 }
 
 void _OUTDISPOSE(TEXPRESSIONOBJ *EXPR);
@@ -5723,9 +5723,9 @@ void _OUTEXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
 }
 
 void _OUTEXUNARYOP(TEXPRESSIONOBJ *EXPR) {
-  if (EXPR->UNARY.OP == TKMINUS) WRITE_c(&CODEGEN.OUTPUT, '-');
-  else if (EXPR->UNARY.OP == TKNOT && ISBOOLEANTYPE(EXPR->TYPEPTR)) WRITE_c(&CODEGEN.OUTPUT, '!');
-  else if (EXPR->UNARY.OP == TKNOT && ISINTEGERTYPE(EXPR->TYPEPTR)) WRITE_c(&CODEGEN.OUTPUT, '~');
+  if (EXPR->UNARY.OP == TKMINUS) WRITE_c(&CODEGEN.OUTPUT, '-', 0);
+  else if (EXPR->UNARY.OP == TKNOT && ISBOOLEANTYPE(EXPR->TYPEPTR)) WRITE_c(&CODEGEN.OUTPUT, '!', 0);
+  else if (EXPR->UNARY.OP == TKNOT && ISINTEGERTYPE(EXPR->TYPEPTR)) WRITE_c(&CODEGEN.OUTPUT, '~', 0);
   _OUTEXPRESSIONPARENS(EXPR->UNARY.PARENT, EXPR);
 }
 
@@ -5836,65 +5836,65 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
   ELEMTYPEPTR = RIGHT->TYPEPTR->ELEMENTTYPEPTR;
   if (OP == TKLESSOREQUALS) _OUTEXSETOPERATION(RIGHT, LEFT, TKMOREOREQUALS);
   else if (OP == TKNOTEQUALS) {
-    WRITE_c(&CODEGEN.OUTPUT, '!');
+    WRITE_c(&CODEGEN.OUTPUT, '!', 0);
     _OUTEXSETOPERATION(LEFT, RIGHT, TKEQUALS);
   }
   else if (OP == TKIN) {
     LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
-    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "set_in("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "set_in("), 0);
     OUTEXPRESSION(LEFT);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-    WRITE_i(&CODEGEN.OUTPUT, LOWBOUNDBYTE);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+    WRITE_i(&CODEGEN.OUTPUT, LOWBOUNDBYTE, 0);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ".bits)"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, ".bits)"), 0);
   }
   else {
     LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
     HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
     SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
     if (OP == TKEQUALS) {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(11, "set_equals("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(11, "set_equals("), 0);
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "), 0);
       _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
-      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
-      WRITE_c(&CODEGEN.OUTPUT, ')');
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "), 0);
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE, 0);
+      WRITE_c(&CODEGEN.OUTPUT, ')', 0);
     }
     else if (OP == TKMOREOREQUALS) {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(15, "set_issuperset("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(15, "set_issuperset("), 0);
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "), 0);
       _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
-      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
-      WRITE_c(&CODEGEN.OUTPUT, ')');
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "), 0);
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE, 0);
+      WRITE_c(&CODEGEN.OUTPUT, ')', 0);
     }
     else {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, "({ PSet"));
-      WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(6, " dst; "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, "({ PSet"), 0);
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE * 8, 0);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(6, " dst; "), 0);
       switch (OP) {
         case TKPLUS:
-          WRITE_s(&CODEGEN.OUTPUT, str_make(10, "set_union("));
+          WRITE_s(&CODEGEN.OUTPUT, str_make(10, "set_union("), 0);
           break;
         case TKMINUS:
-          WRITE_s(&CODEGEN.OUTPUT, str_make(15, "set_difference("));
+          WRITE_s(&CODEGEN.OUTPUT, str_make(15, "set_difference("), 0);
           break;
         case TKASTERISK:
-          WRITE_s(&CODEGEN.OUTPUT, str_make(17, "set_intersection("));
+          WRITE_s(&CODEGEN.OUTPUT, str_make(17, "set_intersection("), 0);
           break;
         default:
           INTERNALERROR(cat_ss(str_make(44, "Materialized set operation not implemented: "), LXTOKENNAME(OP)));
           break;
       }
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(7, ".bits, "), 0);
       _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(17, ".bits, dst.bits, "));
-      WRITE_i(&CODEGEN.OUTPUT, SETSIZE);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(10, "); dst; })"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(17, ".bits, dst.bits, "), 0);
+      WRITE_i(&CODEGEN.OUTPUT, SETSIZE, 0);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(10, "); dst; })"), 0);
     }
   }
 }
@@ -5908,14 +5908,14 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
       if (ISBOOLEANTYPE(with1->LEFT->TYPEPTR) && ISBOOLEANTYPE(with1->RIGHT->TYPEPTR)) {
         _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
         if (_ISLOGICALORBITWISEOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETLOGICALOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else if (_ISRELATIONALOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
@@ -5923,19 +5923,19 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
       else if (ISNUMERICTYPE(with1->LEFT->TYPEPTR) && ISNUMERICTYPE(with1->RIGHT->TYPEPTR)) {
         _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
         if (_ISARITHMETICOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETARITHMETICOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else if (_ISLOGICALORBITWISEOP(with1->OP) || _ISBITWISEOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETBITWISEOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else if (_ISRELATIONALOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
@@ -5946,37 +5946,37 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
         if (ISCHARTYPE(with1->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
         if (with1->OP == TKPLUS) {
-          WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"));
-          WRITE_c(&CODEGEN.OUTPUT, LTYPE);
-          WRITE_c(&CODEGEN.OUTPUT, RTYPE);
-          WRITE_c(&CODEGEN.OUTPUT, '(');
+          WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cat_"), 0);
+          WRITE_c(&CODEGEN.OUTPUT, LTYPE, 0);
+          WRITE_c(&CODEGEN.OUTPUT, RTYPE, 0);
+          WRITE_c(&CODEGEN.OUTPUT, '(', 0);
           OUTEXPRESSION(with1->LEFT);
-          WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+          WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
           OUTEXPRESSION(with1->RIGHT);
-          WRITE_c(&CODEGEN.OUTPUT, ')');
+          WRITE_c(&CODEGEN.OUTPUT, ')', 0);
         }
         else if (ISCHARTYPE(with1->LEFT->TYPEPTR) && ISCHARTYPE(with1->RIGHT->TYPEPTR)) {
           _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
           if (_ISRELATIONALOP(with1->OP)) {
-            WRITE_c(&CODEGEN.OUTPUT, ' ');
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-            WRITE_c(&CODEGEN.OUTPUT, ' ');
+            WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP), 0);
+            WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
           }
           else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
           _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
         }
         else {
-          WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"));
-          WRITE_c(&CODEGEN.OUTPUT, LTYPE);
-          WRITE_c(&CODEGEN.OUTPUT, RTYPE);
-          WRITE_c(&CODEGEN.OUTPUT, '(');
+          WRITE_s(&CODEGEN.OUTPUT, str_make(4, "cmp_"), 0);
+          WRITE_c(&CODEGEN.OUTPUT, LTYPE, 0);
+          WRITE_c(&CODEGEN.OUTPUT, RTYPE, 0);
+          WRITE_c(&CODEGEN.OUTPUT, '(', 0);
           OUTEXPRESSION(with1->LEFT);
-          WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+          WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
           OUTEXPRESSION(with1->RIGHT);
           if (_ISRELATIONALOP(with1->OP)) {
-            WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
-            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-            WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"));
+            WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "), 0);
+            WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP), 0);
+            WRITE_s(&CODEGEN.OUTPUT, str_make(2, " 0"), 0);
           }
           else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         }
@@ -5985,9 +5985,9 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
       else {
         _OUTEXPRESSIONPARENS(with1->LEFT, EXPR);
         if (_ISRELATIONALOP(with1->OP)) {
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
-          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP));
-          WRITE_c(&CODEGEN.OUTPUT, ' ');
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+          WRITE_s(&CODEGEN.OUTPUT, _GETRELATIONALOP(with1->OP), 0);
+          WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
         }
         else COMPILEERROR(cat_ss(str_make(22, "Not a valid operator: "), LXTOKENNAME(with1->OP)));
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
@@ -5997,16 +5997,16 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
 }
 
 void _OUTEXWITHTMPVAR(TEXPRESSIONOBJ *EXPR) {
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "({ "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "({ "), 0);
   while (EXPR->CLS == XCWITHTMPVAR) {
     OUTVARIABLEDECLARATION(*EXPR->TMPVAR->VARPTR);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
     OUTEXPRESSION(EXPR->TMPVARVALUE);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, "; "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, "; "), 0);
     EXPR = EXPR->TMPVARCHILD;
   }
   OUTEXPRESSION(EXPR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "; })"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "; })"), 0);
 }
 
 void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
@@ -6016,14 +6016,14 @@ void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
       break;
     case XCTOSTRING:
       {
-        WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(7, "str_of("), 0);
         OUTEXPRESSION(EXPR->TOSTRPARENT);
-        WRITE_c(&CODEGEN.OUTPUT, ')');
+        WRITE_c(&CODEGEN.OUTPUT, ')', 0);
       }
       break;
     case XCTOREAL:
       {
-        WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(double)"));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(8, "(double)"), 0);
         OUTEXPRESSION(EXPR->TOREALPARENT);
       }
       break;
@@ -6045,27 +6045,27 @@ void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
     case XCARRAY:
       {
         _OUTEXPRESSIONPARENS(EXPR->ARRAYEXPR, EXPR);
-        WRITE_c(&CODEGEN.OUTPUT, '[');
+        WRITE_c(&CODEGEN.OUTPUT, '[', 0);
         _OUTARRAYINDEX(EXPR->ARRAYINDEX, EXPR->ARRAYEXPR->TYPEPTR);
-        WRITE_c(&CODEGEN.OUTPUT, ']');
+        WRITE_c(&CODEGEN.OUTPUT, ']', 0);
       }
       break;
     case XCPOINTER:
       {
-        WRITE_c(&CODEGEN.OUTPUT, '*');
+        WRITE_c(&CODEGEN.OUTPUT, '*', 0);
         _OUTEXPRESSIONPARENS(EXPR->POINTEREXPR, EXPR);
       }
       break;
     case XCSTRINGCHAR:
       {
         _OUTEXPRESSIONPARENS(EXPR->STRINGEXPR, EXPR);
-        WRITE_s(&CODEGEN.OUTPUT, str_make(5, ".chr["));
+        WRITE_s(&CODEGEN.OUTPUT, str_make(5, ".chr["), 0);
         OUTEXPRESSION(EXPR->STRINGINDEX);
-        WRITE_c(&CODEGEN.OUTPUT, ']');
+        WRITE_c(&CODEGEN.OUTPUT, ']', 0);
       }
       break;
     case XCFNREF:
-      WRITE_s(&CODEGEN.OUTPUT, EXPR->FNPTR->NAME);
+      WRITE_s(&CODEGEN.OUTPUT, EXPR->FNPTR->NAME, 0);
       break;
     case XCFNCALL:
       _OUTEXFUNCTIONCALL(EXPR);
@@ -6088,9 +6088,9 @@ void OUTENUMVALUES(TPSENUMDEF *ENUMPTR) {
   PInteger POSINENUM;
   _OUTBLANKLINE(TOTENUMVAL);
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(22, "const char* enumvalues"));
-  WRITE_i(&CODEGEN.OUTPUT, ENUMPTR->ID);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "[] = { "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(22, "const char* enumvalues"), 0);
+  WRITE_i(&CODEGEN.OUTPUT, ENUMPTR->ID, 0);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "[] = { "), 0);
   do {
     PInteger first = 0;
     PInteger last = ENUMPTR->SIZE - 1;
@@ -6098,17 +6098,17 @@ void OUTENUMVALUES(TPSENUMDEF *ENUMPTR) {
       POSINENUM = first;
       while (1) {
         {
-          if (POSINENUM != 0) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-          WRITE_c(&CODEGEN.OUTPUT, '"');
-          WRITE_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POSINENUM, 0, 127)]);
-          WRITE_c(&CODEGEN.OUTPUT, '"');
+          if (POSINENUM != 0) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+          WRITE_c(&CODEGEN.OUTPUT, '"', 0);
+          WRITE_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POSINENUM, 0, 127)], 0);
+          WRITE_c(&CODEGEN.OUTPUT, '"', 0);
         }
         if (POSINENUM == last) break;
         ++POSINENUM;
       }
     }
   } while(0);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " };"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " };"), 0);
   _OUTNEWLINE();
 }
 
@@ -6132,36 +6132,36 @@ PString OUTVARIABLENAME(PString NAME, PBoolean ISREFERENCE) {
 }
 
 void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
-  if (TYPEPTR == (void*)0) WRITE_s(&CODEGEN.OUTPUT, str_make(4, "void"));
+  if (TYPEPTR == (void*)0) WRITE_s(&CODEGEN.OUTPUT, str_make(4, "void"), 0);
   else if (TYPEPTR->CLS == TTCPOINTER) {
     OUTTYPEREFERENCE(TYPEPTR->POINTEDTYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, '*');
+    WRITE_c(&CODEGEN.OUTPUT, '*', 0);
   }
-  else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PBoolean"));
-  else if (TYPEPTR->CLS == TTCINTEGER) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PInteger"));
-  else if (TYPEPTR->CLS == TTCREAL) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PReal"));
-  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PChar"));
-  else if (TYPEPTR->CLS == TTCSTRING) WRITE_s(&CODEGEN.OUTPUT, str_make(7, "PString"));
-  else if (TYPEPTR->CLS == TTCTEXT) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PFile"));
+  else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PBoolean"), 0);
+  else if (TYPEPTR->CLS == TTCINTEGER) WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PInteger"), 0);
+  else if (TYPEPTR->CLS == TTCREAL) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PReal"), 0);
+  else if (TYPEPTR->CLS == TTCCHAR) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PChar"), 0);
+  else if (TYPEPTR->CLS == TTCSTRING) WRITE_s(&CODEGEN.OUTPUT, str_make(7, "PString"), 0);
+  else if (TYPEPTR->CLS == TTCTEXT) WRITE_s(&CODEGEN.OUTPUT, str_make(5, "PFile"), 0);
   else if (TYPEPTR->CLS == TTCENUM) {
-    if (TYPEPTR->ENUMPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME);
+    if (TYPEPTR->ENUMPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME, 0);
     else {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"));
-      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"), 0);
+      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID, 0);
     }
   }
   else if (TYPEPTR->CLS == TTCRANGE) OUTTYPEREFERENCE(GETFUNDAMENTALTYPE(TYPEPTR));
   else if (TYPEPTR->CLS == TTCSET) _OUTSETTYPENAME(TYPEPTR);
   else if (TYPEPTR->CLS == TTCRECORD) {
-    if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME);
+    if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME, 0);
     else {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
-      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->RECPTR->ID);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(13, "struct record"), 0);
+      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->RECPTR->ID, 0);
     }
   }
   else if (TYPEPTR->CLS == TTCARRAY) {
     OUTTYPEREFERENCE(TYPEPTR->ARRAYDEF.VALUETYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, '*');
+    WRITE_c(&CODEGEN.OUTPUT, '*', 0);
   }
   else COMPILEERROR(cat_ss(str_make(30, "Error writing type reference: "), TYPENAME(TYPEPTR)));
 }
@@ -6172,10 +6172,10 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
   PInteger POS;
   PInteger NUMVARIANT;
   NUMVARIANT = 0;
-  WRITE_s(&CODEGEN.OUTPUT, str_make(13, "struct record"));
-  WRITE_i(&CODEGEN.OUTPUT, RECPTR->ID);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(13, "struct record"), 0);
+  WRITE_i(&CODEGEN.OUTPUT, RECPTR->ID, 0);
   if (!RECPTR->HASBEENDEFINED) {
-    WRITE_c(&CODEGEN.OUTPUT, ' ');
+    WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
     OUTBEGIN();
     do {
       PInteger first = 1;
@@ -6188,21 +6188,21 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
               NUMVARIANT = NUMVARIANT + 1;
               if (NUMVARIANT == 1) {
                 _OUTINDENT();
-                WRITE_s(&CODEGEN.OUTPUT, str_make(6, "union "));
+                WRITE_s(&CODEGEN.OUTPUT, str_make(6, "union "), 0);
                 OUTBEGIN();
               }
               else {
                 OUTENDSAMELINE();
-                WRITE_c(&CODEGEN.OUTPUT, ';');
+                WRITE_c(&CODEGEN.OUTPUT, ';', 0);
                 _OUTNEWLINE();
               }
               _OUTINDENT();
-              WRITE_s(&CODEGEN.OUTPUT, str_make(7, "struct "));
+              WRITE_s(&CODEGEN.OUTPUT, str_make(7, "struct "), 0);
               OUTBEGIN();
             }
             _OUTINDENT();
             OUTNAMEANDTYPE(RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR);
-            WRITE_c(&CODEGEN.OUTPUT, ';');
+            WRITE_c(&CODEGEN.OUTPUT, ';', 0);
             _OUTNEWLINE();
           }
           if (POS == last) break;
@@ -6212,25 +6212,25 @@ void OUTNAMEANDRECORD(PString NAME, TPSRECORDDEF *RECPTR) {
     } while(0);
     if (NUMVARIANT > 0) {
       OUTENDSAMELINE();
-      WRITE_c(&CODEGEN.OUTPUT, ';');
+      WRITE_c(&CODEGEN.OUTPUT, ';', 0);
       _OUTNEWLINE();
       OUTENDSAMELINE();
-      WRITE_c(&CODEGEN.OUTPUT, ';');
+      WRITE_c(&CODEGEN.OUTPUT, ';', 0);
       _OUTNEWLINE();
     }
     OUTENDSAMELINE();
     RECPTR->HASBEENDEFINED = 1;
   }
-  WRITE_c(&CODEGEN.OUTPUT, ' ');
-  WRITE_s(&CODEGEN.OUTPUT, NAME);
+  WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+  WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
 }
 
 void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMPTR) {
   PInteger POS;
-  WRITE_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"));
-  WRITE_i(&CODEGEN.OUTPUT, ENUMPTR->ID);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(9, "enum enum"), 0);
+  WRITE_i(&CODEGEN.OUTPUT, ENUMPTR->ID, 0);
   if (!ENUMPTR->HASBEENDEFINED) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(3, " { "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(3, " { "), 0);
     do {
       PInteger first = 0;
       PInteger last = ENUMPTR->SIZE - 1;
@@ -6238,19 +6238,19 @@ void OUTNAMEANDENUM(PString NAME, TPSENUMDEF *ENUMPTR) {
         POS = first;
         while (1) {
           {
-            if (POS > 0) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
-            WRITE_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POS, 0, 127)]);
+            if (POS > 0) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
+            WRITE_s(&CODEGEN.OUTPUT, ENUMPTR->VALUES[subrange(POS, 0, 127)], 0);
           }
           if (POS == last) break;
           ++POS;
         }
       }
     } while(0);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"), 0);
     ENUMPTR->HASBEENDEFINED = 1;
   }
-  WRITE_c(&CODEGEN.OUTPUT, ' ');
-  WRITE_s(&CODEGEN.OUTPUT, NAME);
+  WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+  WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
 }
 
 void OUTNAMEANDARRAY(PString NAME, TPSTYPE *TYPEPTR) {
@@ -6260,58 +6260,58 @@ void OUTNAMEANDARRAY(PString NAME, TPSTYPE *TYPEPTR) {
   OUTNAMEANDTYPE(NAME, THETYPE);
   THETYPE = TYPEPTR;
   while (ISARRAYTYPE(THETYPE)) {
-    WRITE_c(&CODEGEN.OUTPUT, '[');
-    WRITE_i(&CODEGEN.OUTPUT, GETBOUNDEDTYPESIZE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR));
-    WRITE_c(&CODEGEN.OUTPUT, ']');
+    WRITE_c(&CODEGEN.OUTPUT, '[', 0);
+    WRITE_i(&CODEGEN.OUTPUT, GETBOUNDEDTYPESIZE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR), 0);
+    WRITE_c(&CODEGEN.OUTPUT, ']', 0);
     THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
   }
 }
 
 void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
   if (TYPEPTR == (void*)0) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "void "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "void "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCPOINTER) {
     OUTTYPEREFERENCE(TYPEPTR->POINTEDTYPEPTR);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, " *"));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, " *"), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->ALIASFOR != (void*)0 && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) {
-    WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME);
-    WRITE_c(&CODEGEN.OUTPUT, ' ');
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, TYPEPTR->NAME, 0);
+    WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCBOOLEAN) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PBoolean "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PBoolean "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCINTEGER) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PInteger "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, "PInteger "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCREAL) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PReal "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PReal "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCCHAR) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PChar "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PChar "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCSTRING) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PString "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "PString "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCTEXT) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PFile "));
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "PFile "), 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCENUM) OUTNAMEANDENUM(NAME, TYPEPTR->ENUMPTR);
   else if (TYPEPTR->CLS == TTCRANGE) OUTNAMEANDTYPE(NAME, GETFUNDAMENTALTYPE(TYPEPTR));
   else if (TYPEPTR->CLS == TTCSET) {
     _OUTSETTYPENAME(TYPEPTR);
-    WRITE_c(&CODEGEN.OUTPUT, ' ');
-    WRITE_s(&CODEGEN.OUTPUT, NAME);
+    WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
+    WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
   }
   else if (TYPEPTR->CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYPEPTR->RECPTR);
   else if (TYPEPTR->CLS == TTCARRAY) OUTNAMEANDARRAY(NAME, TYPEPTR);
@@ -6324,9 +6324,9 @@ void OUTTYPEDEFINITION(TPSTYPE *TYPEPTR) {
   _OUTINDENT();
   NAME = TYPEPTR->NAME;
   if (TYPEPTR->ALIASFOR == (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(5, "Type "), NAME), str_make(16, " is not an alias")));
-  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "typedef "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "typedef "), 0);
   OUTNAMEANDTYPE(NAME, TYPEPTR->ALIASFOR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
@@ -6343,19 +6343,19 @@ void OUTTYPEDEFINITIONSFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
 }
 
 void OUTCONSTANTARRAYBEGIN() {
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "{ "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, "{ "), 0);
 }
 
 void OUTCONSTANTARRAYSEPARATOR() {
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
 }
 
 void OUTCONSTANTARRAYEND() {
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, " }"), 0);
 }
 
 void OUTVARIABLEDECLARATION(TPSVARIABLE VARDEF) {
-  if (VARDEF.ISCONSTANT) WRITE_s(&CODEGEN.OUTPUT, str_make(6, "const "));
+  if (VARDEF.ISCONSTANT) WRITE_s(&CODEGEN.OUTPUT, str_make(6, "const "), 0);
   OUTNAMEANDTYPE(OUTVARIABLENAME(VARDEF.NAME, VARDEF.ISREFERENCE), VARDEF.TYPEPTR);
 }
 
@@ -6363,7 +6363,7 @@ void OUTVARIABLEDEFINITION(TPSVARIABLE *VARPTR) {
   _OUTBLANKLINE(TOTVAR);
   _OUTINDENT();
   OUTVARIABLEDECLARATION(*VARPTR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
@@ -6371,11 +6371,11 @@ void OUTCONSTANTDEFINITIONBEGIN(TPSVARIABLE *VARPTR) {
   _OUTBLANKLINE(TOTVAR);
   _OUTINDENT();
   OUTVARIABLEDECLARATION(*VARPTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
 }
 
 void OUTCONSTANTDEFINITIONEND() {
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
@@ -6383,7 +6383,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
   PInteger POS;
   _OUTINDENT();
   OUTNAMEANDTYPE(DEF.NAME, DEF.RETURNTYPEPTR);
-  WRITE_c(&CODEGEN.OUTPUT, '(');
+  WRITE_c(&CODEGEN.OUTPUT, '(', 0);
   do {
     PInteger first = 1;
     PInteger last = DEF.ARGCOUNT;
@@ -6392,45 +6392,45 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
       while (1) {
         {
           OUTVARIABLEDECLARATION(DEF.ARGS[subrange(POS, 1, 8) - 1]);
-          if (POS != DEF.ARGCOUNT) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+          if (POS != DEF.ARGCOUNT) WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
         }
         if (POS == last) break;
         ++POS;
       }
     }
   } while(0);
-  WRITE_c(&CODEGEN.OUTPUT, ')');
+  WRITE_c(&CODEGEN.OUTPUT, ')', 0);
 }
 
 void OUTFUNCTIONDECLARATION(TPSFUNCTION *FNPTR) {
   _OUTBLANKLINE(TOTFUNDEC);
   OUTFUNCTIONPROTOTYPE(*FNPTR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
 void OUTFUNCTIONDEFINITION(TPSFUNCTION *FNPTR) {
   _OUTBLANKLINE(TOTFUNDEF);
   OUTFUNCTIONPROTOTYPE(*FNPTR);
-  WRITE_c(&CODEGEN.OUTPUT, ' ');
+  WRITE_c(&CODEGEN.OUTPUT, ' ', 0);
   OUTBEGIN();
 }
 
 void OUTFUNCTIONEND(TPSFUNCTION *FNPTR) {
   if (FNPTR->RETURNTYPEPTR != (void*)0) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(14, "return RESULT;"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(14, "return RESULT;"), 0);
     _OUTNEWLINE();
   }
   OUTEND();
 }
 
 void OUTPROGRAMHEADING(PString NAME) {
-  WRITE_s(&CODEGEN.OUTPUT, str_make(12, "/* Program: "));
-  WRITE_s(&CODEGEN.OUTPUT, NAME);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " */"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(12, "/* Program: "), 0);
+  WRITE_s(&CODEGEN.OUTPUT, NAME, 0);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " */"), 0);
   _OUTNEWLINE();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(20, "#include \"pascual.h\""));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(20, "#include \"pascual.h\""), 0);
   _OUTNEWLINE();
 }
 
@@ -6458,21 +6458,21 @@ void _OUTREAD(TEXPRESSIONOBJ *EXPR) {
   if (BRACES) OUTBEGIN();
   while (READARG != (void*)0) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "READ_"));
-    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(READARG->ARG->TYPEPTR));
-    WRITE_c(&CODEGEN.OUTPUT, '(');
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "READ_"), 0);
+    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(READARG->ARG->TYPEPTR), 0);
+    WRITE_c(&CODEGEN.OUTPUT, '(', 0);
     _OUTADDRESS(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTADDRESS(READARG->ARG);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
     READARG = READARG->NEXT;
   }
   if (LINEFEED) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "READLN("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(7, "READLN("), 0);
     _OUTADDRESS(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
   if (BRACES) OUTEND();
@@ -6493,42 +6493,42 @@ void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
     TYPEPTR = GETFUNDAMENTALTYPE(WRITEARG->ARG->TYPEPTR);
     if (ISENUMTYPE(TYPEPTR)) {
       _OUTINDENT();
-      WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_e("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_e("), 0);
       _OUTADDRESS(DST);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
       OUTEXPRESSION(WRITEARG->ARG);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
-      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"), 0);
+      WRITE_i(&CODEGEN.OUTPUT, TYPEPTR->ENUMPTR->ID, 0);
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"), 0);
       _OUTNEWLINE();
     }
     else if (ISREALTYPE(TYPEPTR)) {
       _OUTINDENT();
-      WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_r("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITE_r("), 0);
       _OUTADDRESS(DST);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
       OUTEXPRESSION(WRITEARG->ARG);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1);"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1);"), 0);
       _OUTNEWLINE();
     }
     else {
       _OUTINDENT();
-      WRITE_s(&CODEGEN.OUTPUT, str_make(6, "WRITE_"));
-      WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(TYPEPTR));
-      WRITE_c(&CODEGEN.OUTPUT, '(');
+      WRITE_s(&CODEGEN.OUTPUT, str_make(6, "WRITE_"), 0);
+      WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(TYPEPTR), 0);
+      WRITE_c(&CODEGEN.OUTPUT, '(', 0);
       _OUTADDRESS(DST);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
       OUTEXPRESSION(WRITEARG->ARG);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0);"), 0);
       _OUTNEWLINE();
     }
     WRITEARG = WRITEARG->NEXT;
   }
   if (LINEFEED) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITELN("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(8, "WRITELN("), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
   if (BRACES) OUTEND();
@@ -6541,33 +6541,33 @@ void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
   DST = EXPR->PSEUDOFNCALL.ARG2;
   if (ISENUMTYPE(SRC->TYPEPTR)) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_e("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_e("), 0);
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
-    WRITE_i(&CODEGEN.OUTPUT, SRC->TYPEPTR->ENUMPTR->ID);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"), 0);
+    WRITE_i(&CODEGEN.OUTPUT, SRC->TYPEPTR->ENUMPTR->ID, 0);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
   else if (ISREALTYPE(SRC->TYPEPTR)) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_r("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "STR_r("), 0);
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(9, ", 0, -1, "), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
   else {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "STR_"));
-    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(SRC->TYPEPTR));
-    WRITE_c(&CODEGEN.OUTPUT, '(');
+    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "STR_"), 0);
+    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(SRC->TYPEPTR), 0);
+    WRITE_c(&CODEGEN.OUTPUT, '(', 0);
     OUTEXPRESSION(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, ", 0, "), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
 }
@@ -6582,32 +6582,32 @@ void _OUTVAL(TEXPRESSIONOBJ *EXPR) {
   CODE = EXPR->PSEUDOFNCALL.ARG3;
   if (ISENUMTYPE(DST->TYPEPTR)) {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "VAL_e("));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(6, "VAL_e("), 0);
     _OUTADDRESS(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     TMPEXPR = EXINTEGERCONSTANT(DST->TYPEPTR->ENUMPTR->SIZE);
     OUTEXPRESSION(TMPEXPR);
     DISPOSEEXPR(&TMPEXPR);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"));
-    WRITE_i(&CODEGEN.OUTPUT, DST->TYPEPTR->ENUMPTR->ID);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(12, ", enumvalues"), 0);
+    WRITE_i(&CODEGEN.OUTPUT, DST->TYPEPTR->ENUMPTR->ID, 0);
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTADDRESS(CODE);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
   else {
     _OUTINDENT();
-    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "VAL_"));
-    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(DST->TYPEPTR));
-    WRITE_c(&CODEGEN.OUTPUT, '(');
+    WRITE_s(&CODEGEN.OUTPUT, str_make(4, "VAL_"), 0);
+    WRITE_c(&CODEGEN.OUTPUT, SHORTTYPENAME(DST->TYPEPTR), 0);
+    WRITE_c(&CODEGEN.OUTPUT, '(', 0);
     _OUTADDRESS(SRC);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTADDRESS(DST);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
     _OUTADDRESS(CODE);
-    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
     _OUTNEWLINE();
   }
 }
@@ -6617,9 +6617,9 @@ void _OUTNEW(TEXPRESSIONOBJ *EXPR) {
   PTR = EXPR->PSEUDOFNCALL.ARG1;
   _OUTINDENT();
   OUTEXPRESSION(PTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(17, " = malloc(sizeof("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(17, " = malloc(sizeof("), 0);
   OUTTYPEREFERENCE(PTR->TYPEPTR->POINTEDTYPEPTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "));"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "));"), 0);
   _OUTNEWLINE();
 }
 
@@ -6627,15 +6627,15 @@ void _OUTDISPOSE(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *PTR;
   PTR = EXPR->PSEUDOFNCALL.ARG1;
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "free("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "free("), 0);
   OUTEXPRESSION(PTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
   _OUTNEWLINE();
 }
 
 void _OUTORD(TEXPRESSIONOBJ *EXPR) {
   if (ISCHARTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
-    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(int)"));
+    WRITE_s(&CODEGEN.OUTPUT, str_make(5, "(int)"), 0);
     _OUTEXPRESSIONPARENSPREC(EXPR->PSEUDOFNCALL.ARG1, 2);
   }
   else if (ISORDINALTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
@@ -6656,11 +6656,11 @@ void _OUTPRED(TEXPRESSIONOBJ *EXPR) {
       DISPOSEEXPR(&TMPEXPR);
     }
     else {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(5, "pred("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, "pred("), 0);
       OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
       _OUTBOUNDS(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR);
-      WRITE_c(&CODEGEN.OUTPUT, ')');
+      WRITE_c(&CODEGEN.OUTPUT, ')', 0);
     }
   }
   else COMPILEERROR(cat_ss(str_make(30, "Expected an ordinal type, got "), TYPENAME(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)));
@@ -6680,11 +6680,11 @@ void _OUTSUCC(TEXPRESSIONOBJ *EXPR) {
       DISPOSEEXPR(&TMPEXPR);
     }
     else {
-      WRITE_s(&CODEGEN.OUTPUT, str_make(5, "succ("));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(5, "succ("), 0);
       OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
-      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "));
+      WRITE_s(&CODEGEN.OUTPUT, str_make(2, ", "), 0);
       _OUTBOUNDS(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR);
-      WRITE_c(&CODEGEN.OUTPUT, ')');
+      WRITE_c(&CODEGEN.OUTPUT, ')', 0);
     }
   }
   else COMPILEERROR(cat_ss(str_make(30, "Expected an ordinal type, got "), TYPENAME(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)));
@@ -6693,33 +6693,33 @@ void _OUTSUCC(TEXPRESSIONOBJ *EXPR) {
 void OUTASSIGN(TEXPRESSIONOBJ *LHS, TEXPRESSIONOBJ *RHS) {
   _OUTINDENT();
   OUTEXPRESSION(LHS);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
   OUTEXPRESSION(RHS);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
 void OUTDECLAREANDASSIGN(TPSVARIABLE *VARPTR, TEXPRESSIONOBJ *RHS) {
   _OUTINDENT();
   OUTVARIABLEDECLARATION(*VARPTR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
   if (VARPTR->ISREFERENCE) _OUTADDRESS(RHS);
   else OUTEXPRESSION(RHS);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
 void OUTIF(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "if ("), 0);
   OUTEXPRESSION(EXPR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "), 0);
   CODEGEN.ISMULTISTATEMENT = 0;
 }
 
 void OUTELSE() {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "else "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "else "), 0);
   CODEGEN.ISMULTISTATEMENT = 0;
 }
 
@@ -6738,38 +6738,38 @@ void OUTSEQUENCEEND() {
 
 void OUTCASEBEGIN(TEXPRESSIONOBJ *CASEINDEX) {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "switch ("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "switch ("), 0);
   OUTEXPRESSION(CASEINDEX);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "), 0);
   OUTBEGIN();
 }
 
 void OUTCASESTATEMENTBEGIN(TEXPRESSIONOBJ *CASELABEL) {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "case "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(5, "case "), 0);
   OUTEXPRESSION(CASELABEL);
-  WRITE_c(&CODEGEN.OUTPUT, ':');
+  WRITE_c(&CODEGEN.OUTPUT, ':', 0);
   CODEGEN.INDENT = CODEGEN.INDENT + 1;
   _OUTNEWLINE();
 }
 
 void OUTCASESTATEMENTEND() {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(6, "break;"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(6, "break;"), 0);
   CODEGEN.INDENT = CODEGEN.INDENT - 1;
   _OUTNEWLINE();
 }
 
 void OUTCASEELSEBEGIN() {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "default:"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(8, "default:"), 0);
   CODEGEN.INDENT = CODEGEN.INDENT + 1;
   _OUTNEWLINE();
 }
 
 void OUTCASEELSEEND() {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(6, "break;"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(6, "break;"), 0);
   CODEGEN.INDENT = CODEGEN.INDENT - 1;
   _OUTNEWLINE();
 }
@@ -6780,26 +6780,26 @@ void OUTCASEEND() {
 
 void OUTREPEATBEGIN() {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "do "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "do "), 0);
   OUTBEGIN();
 }
 
 void OUTREPEATEND(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *TMPEXPR;
   OUTENDSAMELINE();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(8, " while ("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(8, " while ("), 0);
   TMPEXPR = EXUNARYOP(COPYEXPR(EXPR), TKNOT);
   OUTEXPRESSION(TMPEXPR);
   DISPOSEEXPR(&TMPEXPR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ");"), 0);
   _OUTNEWLINE();
 }
 
 void OUTWHILEBEGIN(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "while ("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(7, "while ("), 0);
   OUTEXPRESSION(EXPR);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(2, ") "), 0);
   CODEGEN.ISMULTISTATEMENT = 0;
 }
 
@@ -6816,58 +6816,58 @@ void OUTFORBEGIN(TEXPRESSIONOBJ *ITER, TEXPRESSIONOBJ *FIRSTEXPR, TEXPRESSIONOBJ
   FIRST = MAKEVARIABLE(str_make(5, "first"), LIMITTYPE);
   LAST = MAKEVARIABLE(str_make(4, "last"), LIMITTYPE);
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "do "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, "do "), 0);
   OUTBEGIN();
   _OUTINDENT();
   OUTVARIABLEDECLARATION(FIRST);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
   OUTEXPRESSION(FIRSTEXPR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
   _OUTINDENT();
   OUTVARIABLEDECLARATION(LAST);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(3, " = "), 0);
   OUTEXPRESSION(LASTEXPR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(10, "if (first "));
-  if (ASCENDING) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "<="));
-  else WRITE_s(&CODEGEN.OUTPUT, str_make(2, ">="));
-  WRITE_s(&CODEGEN.OUTPUT, str_make(7, " last) "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(10, "if (first "), 0);
+  if (ASCENDING) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "<="), 0);
+  else WRITE_s(&CODEGEN.OUTPUT, str_make(2, ">="), 0);
+  WRITE_s(&CODEGEN.OUTPUT, str_make(7, " last) "), 0);
   OUTBEGIN();
   _OUTINDENT();
   OUTEXPRESSION(ITER);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(9, " = first;"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(9, " = first;"), 0);
   _OUTNEWLINE();
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(10, "while (1) "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(10, "while (1) "), 0);
   OUTBEGIN();
 }
 
 void OUTFOREND(TEXPRESSIONOBJ *ITER, PBoolean ASCENDING) {
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "if ("));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(4, "if ("), 0);
   OUTEXPRESSION(ITER);
-  WRITE_s(&CODEGEN.OUTPUT, str_make(16, " == last) break;"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(16, " == last) break;"), 0);
   _OUTNEWLINE();
   _OUTINDENT();
-  if (ASCENDING) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "++"));
-  else WRITE_s(&CODEGEN.OUTPUT, str_make(2, "--"));
+  if (ASCENDING) WRITE_s(&CODEGEN.OUTPUT, str_make(2, "++"), 0);
+  else WRITE_s(&CODEGEN.OUTPUT, str_make(2, "--"), 0);
   OUTEXPRESSION(ITER);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
   OUTEND();
   OUTEND();
   OUTENDSAMELINE();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(10, " while(0);"));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(10, " while(0);"), 0);
   _OUTNEWLINE();
 }
 
 void OUTPROCEDURECALL(TEXPRESSIONOBJ *EXPR) {
   _OUTINDENT();
   OUTEXPRESSION(EXPR);
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
@@ -6877,14 +6877,14 @@ void OUTPSEUDOPROCCALL(TEXPRESSIONOBJ *EXPR) {
 
 void OUTEMPTYSTATEMENT() {
   _OUTINDENT();
-  WRITE_c(&CODEGEN.OUTPUT, ';');
+  WRITE_c(&CODEGEN.OUTPUT, ';', 0);
   _OUTNEWLINE();
 }
 
 void OUTPROGRAMBEGIN() {
   _OUTBLANKLINE(TOTFUNDEF);
   _OUTINDENT();
-  WRITE_s(&CODEGEN.OUTPUT, str_make(20, "void pascual_main() "));
+  WRITE_s(&CODEGEN.OUTPUT, str_make(20, "void pascual_main() "), 0);
   OUTBEGIN();
 }
 
@@ -7415,48 +7415,48 @@ PString PF_DESCRIBECALL(TEXPRESSIONOBJ *EXPR, PInteger LEVELS) {
 }
 
 void COMPILEERROR(PString MSG) {
-  WRITE_s(&STDERR, MSG);
-  WRITE_s(&STDERR, LXWHERESTR());
+  WRITE_s(&STDERR, MSG, 0);
+  WRITE_s(&STDERR, LXWHERESTR(), 0);
   WRITELN(&STDERR);
   HALT(1);
 }
 
 void INTERNALERROR(PString MSG) {
-  WRITE_s(&STDERR, str_make(17, "Internal error : "));
-  WRITE_s(&STDERR, MSG);
-  WRITE_s(&STDERR, LXWHERESTR());
+  WRITE_s(&STDERR, str_make(17, "Internal error : "), 0);
+  WRITE_s(&STDERR, MSG, 0);
+  WRITE_s(&STDERR, LXWHERESTR(), 0);
   WRITELN(&STDERR);
   HALT(1);
 }
 
 void COMPILEWARNING(PString MSG) {
   if (!OPTIONS.SUPPRESSWARNINGS) {
-    WRITE_s(&STDERR, str_make(9, "Warning: "));
-    WRITE_s(&STDERR, MSG);
-    WRITE_s(&STDERR, LXWHERESTR());
+    WRITE_s(&STDERR, str_make(9, "Warning: "), 0);
+    WRITE_s(&STDERR, MSG, 0);
+    WRITE_s(&STDERR, LXWHERESTR(), 0);
     WRITELN(&STDERR);
   }
 }
 
 void USAGE(PString MSG) {
   if (cmp_ss(MSG, str_make(0, "")) != 0) {
-    WRITE_s(&OUTPUT, MSG);
+    WRITE_s(&OUTPUT, MSG, 0);
     WRITELN(&OUTPUT);
     WRITELN(&OUTPUT);
   }
-  WRITE_s(&OUTPUT, str_make(6, "Usage:"));
+  WRITE_s(&OUTPUT, str_make(6, "Usage:"), 0);
   WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, PARAMSTR(0));
-  WRITE_s(&OUTPUT, str_make(33, " input.pas [-o output.c] [-Wnone]"));
-  WRITELN(&OUTPUT);
-  WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "));
-  WRITE_s(&OUTPUT, str_make(26, "stdin/stdout will be used."));
+  WRITE_s(&OUTPUT, PARAMSTR(0), 0);
+  WRITE_s(&OUTPUT, str_make(33, " input.pas [-o output.c] [-Wnone]"), 0);
   WRITELN(&OUTPUT);
   WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, str_make(8, "Options:"));
+  WRITE_s(&OUTPUT, str_make(48, "If you specify \"-\" as the input or output file, "), 0);
+  WRITE_s(&OUTPUT, str_make(26, "stdin/stdout will be used."), 0);
   WRITELN(&OUTPUT);
-  WRITE_s(&OUTPUT, str_make(46, "   -Wnone    :- Suppress all warning messages."));
+  WRITELN(&OUTPUT);
+  WRITE_s(&OUTPUT, str_make(8, "Options:"), 0);
+  WRITELN(&OUTPUT);
+  WRITE_s(&OUTPUT, str_make(46, "   -Wnone    :- Suppress all warning messages."), 0);
   WRITELN(&OUTPUT);
   HALT(0);
 }
