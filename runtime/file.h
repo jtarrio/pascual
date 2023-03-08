@@ -41,12 +41,12 @@ void READ_c(PFile* file, PChar* chr);
 void READ_s(PFile* file, PString* str);
 
 void WRITELN(PFile* file);
-void WRITE_b(PFile* file, PBoolean val);
-void WRITE_i(PFile* file, PInteger num);
-void WRITE_r(PFile* file, PReal num);
-void WRITE_c(PFile* file, PChar chr);
-void WRITE_s(PFile* file, PString str);
-void WRITE_e(PFile* file, POrdinal value, const char** names);
+void WRITE_b(PFile* file, PBoolean val, ...);
+void WRITE_i(PFile* file, PInteger num, ...);
+void WRITE_r(PFile* file, PReal num, ...);
+void WRITE_c(PFile* file, PChar chr, ...);
+void WRITE_s(PFile* file, PString str, ...);
+void WRITE_e(PFile* file, POrdinal value, const char** names, ...);
 
 void InitFile();
 

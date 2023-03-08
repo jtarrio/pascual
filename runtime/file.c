@@ -305,25 +305,25 @@ void WRITELN(PFile* file) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_b(PFile* file, PBoolean val) {
+void WRITE_b(PFile* file, PBoolean val, ...) {
   PString str;
   STR_b(val, -1, &str);
   WRITE_s(file, str);
 }
 
-void WRITE_i(PFile* file, PInteger num) {
+void WRITE_i(PFile* file, PInteger num, ...) {
   PString str;
   STR_i(num, -1, &str);
   WRITE_s(file, str);
 }
 
-void WRITE_r(PFile* file, PReal num) {
+void WRITE_r(PFile* file, PReal num, ...) {
   PString str;
   STR_r(num, -1, -1, &str);
   WRITE_s(file, str);
 }
 
-void WRITE_c(PFile* file, PChar chr) {
+void WRITE_c(PFile* file, PChar chr, ...) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -331,7 +331,7 @@ void WRITE_c(PFile* file, PChar chr) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_s(PFile* file, PString str) {
+void WRITE_s(PFile* file, PString str, ...) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -339,7 +339,7 @@ void WRITE_s(PFile* file, PString str) {
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
-void WRITE_e(PFile* file, POrdinal value, const char** names) {
+void WRITE_e(PFile* file, POrdinal value, const char** names, ...) {
   PString str;
   STR_e(value, names, -1, &str);
   WRITE_s(file, str);
