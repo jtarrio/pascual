@@ -100,6 +100,26 @@ begin
 end;
 
 procedure LxGetIdentifier;
+const 
+  NK = 39;
+  Keywords : array[1..NK] of string = ('AND', 'ARRAY', 'BEGIN', 'CASE', 'CONST',
+                                       'DIV', 'DO', 'DOWNTO', 'ELSE', 'END',
+                                       'FILE', 'FOR', 'FORWARD', 'FUNCTION',
+                                       'GOTO', 'IF', 'IN', 'LABEL', 'MOD',
+                                       'NIL', 'NOT', 'OF', 'OR', 'PACKED',
+                                       'PROCEDURE', 'PROGRAM', 'RECORD',
+                                       'REPEAT', 'SET', 'SHL', 'SHR', 'THEN',
+                                       'TO', 'TYPE', 'UNTIL', 'VAR', 'WHILE',
+                                       'WITH', 'XOR' );
+  Tokens : array[1..NK] of TLxTokenId = (TkAnd, TkArray, TkBegin, TkCase,
+                                         TkConst, TkDiv, TkDo, TkDownto, TkElse,
+                                         TkEnd, TkFile, TkFor, TkForward,
+                                         TkFunction, TkGoto, TkIf, TkIn,
+                                         TkLabel, TkMod, TkNil, TkNot, TkOf,
+                                         TkOr, TkPacked, TkProcedure, TkProgram,
+                                         TkRecord, TkRepeat, TkSet, TkShl,
+                                         TkShr, TkThen, TkTo, TkType, TkUntil,
+                                         TkVar, TkWhile, TkWith, TkXor);
 var 
   Chr : char;
   Pos : integer;
@@ -117,45 +137,12 @@ begin
   for Pos := 1 to Length(Lexer.Token.Value) do
     Lexer.Token.Value[Pos] := UpCase(Lexer.Token.Value[Pos]);
 
-  if Lexer.Token.Value = 'AND' then Lexer.Token.Id := TkAnd
-  else if Lexer.Token.Value = 'ARRAY' then Lexer.Token.Id := TkArray
-  else if Lexer.Token.Value = 'BEGIN' then Lexer.Token.Id := TkBegin
-  else if Lexer.Token.Value = 'CASE' then Lexer.Token.Id := TkCase
-  else if Lexer.Token.Value = 'CONST' then Lexer.Token.Id := TkConst
-  else if Lexer.Token.Value = 'DIV' then Lexer.Token.Id := TkDiv
-  else if Lexer.Token.Value = 'DO' then Lexer.Token.Id := TkDo
-  else if Lexer.Token.Value = 'DOWNTO' then Lexer.Token.Id := TkDownto
-  else if Lexer.Token.Value = 'ELSE' then Lexer.Token.Id := TkElse
-  else if Lexer.Token.Value = 'END' then Lexer.Token.Id := TkEnd
-  else if Lexer.Token.Value = 'FILE' then Lexer.Token.Id := TkFile
-  else if Lexer.Token.Value = 'FOR' then Lexer.Token.Id := TkFor
-  else if Lexer.Token.Value = 'FORWARD' then Lexer.Token.Id := TkForward
-  else if Lexer.Token.Value = 'FUNCTION' then Lexer.Token.Id := TkFunction
-  else if Lexer.Token.Value = 'GOTO' then Lexer.Token.Id := TkGoto
-  else if Lexer.Token.Value = 'IF' then Lexer.Token.Id := TkIf
-  else if Lexer.Token.Value = 'IN' then Lexer.Token.Id := TkIn
-  else if Lexer.Token.Value = 'LABEL' then Lexer.Token.Id := TkLabel
-  else if Lexer.Token.Value = 'MOD' then Lexer.Token.Id := TkMod
-  else if Lexer.Token.Value = 'NIL' then Lexer.Token.Id := TkNil
-  else if Lexer.Token.Value = 'NOT' then Lexer.Token.Id := TkNot
-  else if Lexer.Token.Value = 'OF' then Lexer.Token.Id := TkOf
-  else if Lexer.Token.Value = 'OR' then Lexer.Token.Id := TkOr
-  else if Lexer.Token.Value = 'PACKED' then Lexer.Token.Id := TkPacked
-  else if Lexer.Token.Value = 'PROCEDURE' then Lexer.Token.Id := TkProcedure
-  else if Lexer.Token.Value = 'PROGRAM' then Lexer.Token.Id := TkProgram
-  else if Lexer.Token.Value = 'RECORD' then Lexer.Token.Id := TkRecord
-  else if Lexer.Token.Value = 'REPEAT' then Lexer.Token.Id := TkRepeat
-  else if Lexer.Token.Value = 'SET' then Lexer.Token.Id := TkSet
-  else if Lexer.Token.Value = 'SHL' then Lexer.Token.Id := TkShl
-  else if Lexer.Token.Value = 'SHR' then Lexer.Token.Id := TkShr
-  else if Lexer.Token.Value = 'THEN' then Lexer.Token.Id := TkThen
-  else if Lexer.Token.Value = 'TO' then Lexer.Token.Id := TkTo
-  else if Lexer.Token.Value = 'TYPE' then Lexer.Token.Id := TkType
-  else if Lexer.Token.Value = 'UNTIL' then Lexer.Token.Id := TkUntil
-  else if Lexer.Token.Value = 'VAR' then Lexer.Token.Id := TkVar
-  else if Lexer.Token.Value = 'WHILE' then Lexer.Token.Id := TkWhile
-  else if Lexer.Token.Value = 'WITH' then Lexer.Token.Id := TkWith
-  else if Lexer.Token.Value = 'XOR' then Lexer.Token.Id := TkXor
+  Pos := 1;
+  while (Pos <= NK) and (Lexer.Token.Id = TkIdentifier) do
+  begin
+    if Lexer.Token.Value = Keywords[Pos] then Lexer.Token.Id := Tokens[Pos];
+    Pos := Pos + 1
+  end
 end;
 
 procedure LxGetNumber;
