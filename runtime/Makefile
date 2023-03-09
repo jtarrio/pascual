@@ -1,5 +1,7 @@
 all: libpascual.a
 
+CFLAGS=-Os
+
 error.o: error.h error.c
 file.o: file.h file.c types.h string.h
 math.o: math.h math.c
