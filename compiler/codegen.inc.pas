@@ -574,7 +574,7 @@ begin
         write(Codegen.Output, ' ', _GetLogicalOp(Op), ' ')
       else if _IsRelationalOp(Op) then
              write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
-      else CompileError('Not a valid operator: ' + LxTokenName(Op));
+      else ErrorInvalidOperator(Expr, Op);
       _OutExpressionParensExtra(Right, Expr)
     end
     else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
@@ -586,7 +586,7 @@ begin
              write(Codegen.Output, ' ', _GetBitwiseOp(Op), ' ')
       else if _IsRelationalOp(Op) then
              write(Codegen.Output, ' ' , _GetRelationalOp(Op), ' ')
-      else CompileError('Not a valid operator: ' + LxTokenName(Op));
+      else ErrorInvalidOperator(Expr, Op);
       _OutExpressionParensExtra(Right, Expr)
     end
     else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
@@ -608,7 +608,7 @@ begin
         _OutExpressionParens(Left, Expr);
         if _IsRelationalOp(Op) then
           write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ')
-        else CompileError('Not a valid operator: ' + LxTokenName(Op));
+        else ErrorInvalidOperator(Expr, Op);
         _OutExpressionParensExtra(Right, Expr)
       end
       else
@@ -619,7 +619,7 @@ begin
         OutExpression(Right);
         if _IsRelationalOp(Op) then
           write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
-        else CompileError('Not a valid operator: ' + LxTokenName(Op))
+        else ErrorInvalidOperator(Expr, Op)
       end
     end
     else if IsSetType(Right^.TypePtr) then _OutExSetOperation(Left, Right, Op)
@@ -628,7 +628,7 @@ begin
       _OutExpressionParens(Left, Expr);
       if _IsRelationalOp(Op) then
         write(Codegen.Output, ' ', _GetRelationalOp(Op), ' ')
-      else CompileError('Not a valid operator: ' + LxTokenName(Op));
+      else ErrorInvalidOperator(Expr, Op);
       _OutExpressionParensExtra(Right, Expr)
     end
   end
@@ -773,7 +773,7 @@ begin
     write(Codegen.Output, '*')
   end
   else
-    CompileError('Error writing type reference: ' + TypeName(TypePtr))
+    InternalError('Error writing type reference: ' + TypeName(TypePtr))
 end;
 
 procedure OutNameAndType(Name : string; TypePtr : TPsTypePtr);
@@ -904,8 +904,8 @@ begin
          OutNameAndRecord(Name, TypePtr^.RecPtr)
   else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)
   else
-    CompileError('Error writing name and type: ' + Name + ', ' +
-                 TypeName(TypePtr))
+    InternalError('Error writing name and type: ' + Name + ', ' +
+                  TypeName(TypePtr))
 end;
 
 procedure OutTypeDefinition(TypePtr : TPsTypePtr);
@@ -916,7 +916,7 @@ begin
   _OutIndent;
   Name := TypePtr^.Name;
   if TypePtr^.AliasFor = nil then
-    CompileError('Type ' + Name + ' is not an alias');
+    InternalError('Type ' + Name + ' is not an alias');
   write(Codegen.Output, 'typedef ');
   OutNameAndType(Name, TypePtr^.AliasFor);
   write(Codegen.Output, ';');

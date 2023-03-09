@@ -170,9 +170,9 @@ begin
       CopyWriteArg^.Next := nil;
       CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
       if WriteArg^.Width <> nil then
-      CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
+        CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
       if WriteArg^.Prec <> nil then
-      CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
+        CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
       WriteArg := NextWriteArg
     end
   end
@@ -1250,18 +1250,15 @@ function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
 begin
   if Op in [TkMinus, TkPlus] then
   begin
-    if not IsNumericType(Parent^.TypePtr) then
-      CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
-      TypeName(Parent^.TypePtr))
+    if not IsNumericType(Parent^.TypePtr) then ErrorInvalidOperator(Parent, Op)
   end
   else if Op = TkNot then
   begin
     if not IsBooleanType(Parent^.TypePtr)
        and not IsIntegerType(Parent^.TypePtr) then
-      CompileError('Invalid type for ' + LxTokenName(Op) + ': ' +
-      TypeName(Parent^.TypePtr))
+      ErrorInvalidOperator(Parent, Op)
   end
-  else CompileError('Invalid unary operator: ' + LxTokenName(Op));
+  else ErrorInvalidOperator(Parent, Op);
 
   if ExIsImmediate(Parent) then ExUnaryOp := _ExUnOpImm(Parent, Op)
   else ExUnaryOp := _ExUnOpCmp(Parent, Op)
@@ -1387,9 +1384,7 @@ begin
            Result := _ExBinOpSetImm(Left, Right, Op)
     else Result := _ExBinOpSetCmp(Left, Right, Op)
   end
-  else
-    CompileError('Type mismatch for operator ' + LxTokenName(Op) + ': ' +
-    TypeName(Left^.TypePtr) + ' and ' + TypeName(Right^.TypePtr))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpBoolImm;
@@ -1397,7 +1392,6 @@ var Lt, Rt : boolean;
 begin
   Lt := Left^.Immediate.BooleanVal;
   Rt := Right^.Immediate.BooleanVal;
-  ExDispose(Right);
   case Op of 
     TkAnd : Lt := Lt and Rt;
     TkOr : Lt := Lt or Rt;
@@ -1408,11 +1402,12 @@ begin
     TkMorethan : Lt := Lt > Rt;
     TkLessOrEquals : Lt := Lt <= Rt;
     TkMoreOrEquals : Lt := Lt >= Rt;
-    else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
+    else ErrorInvalidOperator2(Left, Right, Op)
   end;
   Left^.Immediate.BooleanVal := Lt;
   Left^.TypePtr := PrimitiveTypes.PtBoolean;
   Left^.IsAssignable := false;
+  ExDispose(Right);
   Result := Left
 end;
 
@@ -1423,7 +1418,6 @@ var
 begin
   Lt := Left^.Immediate.IntegerVal;
   Rt := Right^.Immediate.IntegerVal;
-  ExDispose(Right);
   case Op of 
     TkPlus : Lt := Lt + Rt;
     TkMinus : Lt := Lt - Rt;
@@ -1445,7 +1439,7 @@ begin
         TkMorethan : Bo := Lt > Rt;
         TkLessOrEquals : Bo := Lt <= Rt;
         TkMoreOrEquals : Bo := Lt >= Rt;
-        else CompileError('Invalid integer operator: ' + LxTokenName(Op))
+        else ErrorInvalidOperator2(Left, Right, Op)
       end
     end
   end;
@@ -1460,6 +1454,7 @@ begin
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
   Left^.IsAssignable := false;
+  ExDispose(Right);
   Result := Left
 end;
 
@@ -1472,7 +1467,6 @@ begin
   Lt := Left^.Immediate.RealVal;
   Right := ExCoerce(Right, PrimitiveTypes.PtReal);
   Rt := Right^.Immediate.RealVal;
-  ExDispose(Right);
   case Op of 
     TkPlus : Lt := Lt + Rt;
     TkMinus : Lt := Lt - Rt;
@@ -1488,7 +1482,7 @@ begin
         TkMorethan : Bo := Lt > Rt;
         TkLessOrEquals : Bo := Lt <= Rt;
         TkMoreOrEquals : Bo := Lt >= Rt;
-        else CompileError('Invalid real operator: ' + LxTokenName(Op))
+        else ErrorInvalidOperator2(Left, Right, Op)
       end
     end
   end;
@@ -1503,6 +1497,7 @@ begin
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
   Left^.IsAssignable := false;
+  ExDispose(Right);
   Result := Left
 end;
 
@@ -1515,7 +1510,6 @@ begin
   else Lt := Left^.Immediate.StringVal;
   if ExIsImmediateOfClass(Right, XicChar) then Rt := Right^.Immediate.CharVal
   else Rt := Right^.Immediate.StringVal;
-  ExDispose(Right);
   if Op = TkPlus then
   begin
     Left^.Immediate.Cls := XicString;
@@ -1531,7 +1525,7 @@ begin
       TkMorethan : Bo := Lt > Rt;
       TkLessOrEquals : Bo := Lt <= Rt;
       TkMoreOrEquals : Bo := Lt >= Rt;
-      else CompileError('Invalid string operator: ' + LxTokenName(Op))
+      else ErrorInvalidOperator2(Left, Right, Op)
     end;
   end;
   if ExIsImmediateOfClass(Left, XicString) then
@@ -1545,6 +1539,7 @@ begin
     Left^.TypePtr := PrimitiveTypes.PtBoolean
   end;
   Left^.IsAssignable := false;
+  ExDispose(Right);
   Result := Left
 end;
 
@@ -1555,7 +1550,6 @@ var
 begin
   Lt := Left^.Immediate.EnumOrdinal;
   Rt := Right^.Immediate.EnumOrdinal;
-  ExDispose(Right);
   case Op of 
     TkEquals : Bo := Lt = Rt;
     TkNotEquals : Bo := Lt <> Rt;
@@ -1563,12 +1557,13 @@ begin
     TkMorethan : Bo := Lt > Rt;
     TkLessOrEquals : Bo := Lt <= Rt;
     TkMoreOrEquals : Bo := Lt >= Rt;
-    else CompileError('Invalid integer operator: ' + LxTokenName(Op))
+    else ErrorInvalidOperator2(Left, Right, Op)
   end;
   Left^.Immediate.Cls := XicBoolean;
   Left^.Immediate.BooleanVal := Bo;
   Left^.TypePtr := PrimitiveTypes.PtBoolean;
   Left^.IsAssignable := false;
+  ExDispose(Right);
   Result := Left
 end;
 
@@ -1583,10 +1578,10 @@ begin
       TkNotEquals: Result := _ExSetEquals(Left, Right, true);
       TkMoreOrEquals: Result := _ExSetSubset(Left, Right);
       TkLessOrEquals: Result := _ExSetSubset(Right, Left);
-      else CompileError('Invalid set operator: ' + LxTokenName(Op))
+      else ErrorInvalidOperator2(Left, Right, Op)
     end
   else if Op = TkIn then Result := _ExSetIn(Left, Right)
-  else CompileError('Invalid set operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpBoolCmp;
@@ -1603,7 +1598,7 @@ begin
     Result^.IsFunctionResult := Left^.IsFunctionResult
                                 or Right^.IsFunctionResult
   end
-  else CompileError('Invalid boolean operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpIntCmp;
@@ -1620,7 +1615,7 @@ begin
   else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
           TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid integer operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpNumCmp;
@@ -1636,7 +1631,7 @@ begin
   else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
           TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid real operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpStrCmp;
@@ -1652,7 +1647,7 @@ begin
   else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
           TkMoreOrEquals] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid string operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpEnumCmp;
@@ -1666,7 +1661,7 @@ begin
   if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
      TkMoreOrEquals] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid enum operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpPtrCmp;
@@ -1679,7 +1674,7 @@ begin
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
   if Op in [TkEquals, TkNotEquals] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
-  else CompileError('Invalid string operator: ' + LxTokenName(Op))
+  else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpSetCmp;

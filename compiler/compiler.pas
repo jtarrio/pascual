@@ -17,6 +17,7 @@ forward;
 {$I pseudofuns.forward.inc.pas}
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
+{$I errors.inc.pas}
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
 {$I parser.inc.pas}
