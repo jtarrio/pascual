@@ -552,8 +552,7 @@ end;
 
 function ExEnumConstant(Ordinal : integer; TypePtr : TPsTypePtr) : TExpression;
 begin
-  if not IsEnumType(TypePtr) then
-    CompileError('Not an enumeration type: ' + TypeName(TypePtr));
+  EnsureEnumType(TypePtr);
   if (Ordinal < 0) or (Ordinal > TypePtr^.EnumPtr^.Size - 1) then
     CompileError('Invalid value for ' + TypeName(TypePtr));
   Result := _ExImmediate(XicEnum);
@@ -567,8 +566,7 @@ function ExSetConstant(Bounds : TExSetImmBounds;
 var ElementType : TPsTypePtr;
 begin
   ElementType := TypePtr^.ElementTypePtr;
-  if (ElementType <> nil) and not IsOrdinalType(ElementType) then
-    CompileError('Not an ordinal type: ' + TypeName(ElementType));
+  if ElementType <> nil then EnsureOrdinalType(ElementType);
   Result := _ExImmediate(XicSet);
   Result^.Immediate.SetBounds := Bounds;
   Result^.Immediate.SetOfTypePtr := ElementType;
@@ -687,12 +685,13 @@ begin
     SetExpr^.TypePtr^.ElementTypePtr := ElementTypePtr
   end;
   if not IsSameType(GetFundamentalType(First^.TypePtr), ElementTypePtr) then
-    CompileError('Cannot add an element of type ' + TypeName(First^.TypePtr) +
-    ' to ' + TypeName(SetExpr^.TypePtr));
-  if (Last <> nil) and not IsSameType(GetFundamentalType(Last^.TypePtr),
-     ElementTypePtr) and not IsSameType(First^.TypePtr, Last^.TypePtr) then
-    CompileError('Cannot add an element of type ' + TypeName(Last^.TypePtr) +
-    ' to ' + TypeName(SetExpr^.TypePtr));
+    ErrorForExpr('Cannot add element to set ' +
+                         ErrorDescribeExpr(SetExpr), First);
+  if (Last <> nil)
+     and not IsSameType(GetFundamentalType(Last^.TypePtr), ElementTypePtr)
+     and not IsSameType(First^.TypePtr, Last^.TypePtr) then
+    ErrorForExpr('Cannot add element to set ' +
+                         ErrorDescribeExpr(SetExpr), Last);
 
   if ExIsImmediate(SetExpr) then
   begin
@@ -735,6 +734,7 @@ end;
 function ExToString(Parent : TExpression) : TExpression;
 var Str : string;
 begin
+  EnsureStringyExpr(Parent);
   if IsCharType(Parent^.TypePtr) then
   begin
     if ExIsImmediate(Parent) then
@@ -753,10 +753,7 @@ begin
       Result^.IsFunctionResult := Parent^.IsFunctionResult
     end
   end
-  else if IsStringType(Parent^.TypePtr) then Result := Parent
-  else
-    CompileError('Cannot convert value of type ' + TypeName(Parent^.TypePtr) +
-    ' to string: ' + ExDescribe(Parent))
+  else  Result := Parent
 end;
 
 function ExToReal(Parent : TExpression) : TExpression;
@@ -821,9 +818,7 @@ end;
 function ExFieldAccess(Parent : TExpression; FieldNum : integer)
 : TExpression;
 begin
-  if not IsRecordType(Parent^.TypePtr) then
-    CompileError('Cannot access field of non-record value of type ' +
-                 TypeName(Parent^.TypePtr));
+  EnsureRecordExpr(Parent);
   if (FieldNum < 1)
      or (FieldNum > Parent^.TypePtr^.RecPtr^.Size) then
     CompileError('Invalid field for type ' + TypeName(Parent^.TypePtr));
@@ -838,9 +833,7 @@ end;
 
 function ExArrayAccess(Parent, Subscript : TExpression) : TExpression;
 begin
-  if not IsArrayType(Parent^.TypePtr) then
-    CompileError('Cannot access subscript of non-array value of type ' +
-                 TypeName(Parent^.TypePtr) + ': ' + ExDescribe(Parent));
+  EnsureArrayExpr(Parent);
   Result := _NewExpr(XcArray);
   Result^.ArrayExpr := Parent;
   Result^.ArrayIndex := ExCoerce(Subscript,
@@ -852,9 +845,7 @@ end;
 
 function ExPointerAccess(Parent : TExpression) : TExpression;
 begin
-  if not IsPointerType(Parent^.TypePtr) then
-    CompileError('Cannot dereference non-pointer value of type ' +
-                 TypeName(Parent^.TypePtr) + ': ' + ExDescribe(Parent));
+  EnsurePointerExpr(Parent);
   Result := _NewExpr(XcPointer);
   Result^.PointerExpr := Parent;
   Result^.TypePtr := Parent^.TypePtr^.PointedTypePtr;
@@ -864,12 +855,8 @@ end;
 
 function ExStringChar(Parent, Subscript : TExpression) : TExpression;
 begin
-  if not IsStringyType(Parent^.TypePtr) then
-    CompileError('Cannot access subscript of non-string value of type ' +
-                 TypeName(Parent^.TypePtr) + ': ' + ExDescribe(Parent));
-  if not IsIntegerType(Subscript^.TypePtr) then
-    CompileError('Invalid type for subscript of string: ' +
-                 TypeName(Subscript^.TypePtr) + ': ' + ExDescribe(Subscript));
+  EnsureStringyExpr(Parent);
+  EnsureIntegerExpr(Subscript);
   Result := _NewExpr(XcStringChar);
   Result^.ArrayExpr := ExToString(Parent);
   Result^.ArrayIndex := Subscript;
@@ -1865,8 +1852,8 @@ begin
   else Outcome := Reject;
 
   case Outcome of 
-    Reject : CompileError('Type mismatch: ' + TypeName(Expr^.TypePtr) +
-             ' cannot be assigned to ' + TypeName(TypePtr));
+    Reject : ErrorForExpr('Cannot treat set as ' + TypeName(TypePtr),
+             Expr);
     Replace :
               begin
                 Expr^.TypePtr := TypePtr;
@@ -1902,8 +1889,7 @@ begin
     ExCoerce := _ExCoerceSet(Expr, TypePtr)
   end
   else
-    CompileError('Type mismatch: expected ' + TypeName(TypePtr) +
-    ', got ' + TypeName(Expr^.TypePtr) + ' in ' + ExDescribe(Expr))
+    ErrorForExpr('Cannot treat value as ' + TypeName(TypePtr), Expr)
 end;
 
 procedure ExMarkInitialized(Lhs : TExpression);

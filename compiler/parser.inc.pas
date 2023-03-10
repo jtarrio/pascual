@@ -137,8 +137,7 @@ begin
   end
   else
     TagType := FindNameOfClass(Tag.Name, TncType, {Required=}true)^.TypePtr;
-  if not IsOrdinalType(TagType) then
-    CompileError('The index of the case statement is not ordinal');
+  EnsureOrdinalType(TagType);
   WantTokenAndRead(TkOf);
   repeat
     Rec.NumVariants := Rec.NumVariants + 1;
@@ -207,7 +206,8 @@ begin
     TypePtr^.ArrayDef.IndexTypePtr := PsTypeDenoter;
     TypePtr^.ArrayDef.IndexTypePtr^.WasUsed := true;
     if not IsBoundedType(TypePtr^.ArrayDef.IndexTypePtr) then
-      CompileError('Array indices must belong to a bounded ordinal type');
+      ErrorForType('Array indices must belong to a bounded ordinal type',
+                       TypePtr^.ArrayDef.IndexTypePtr);
     WantToken2(TkComma, TkRbracket);
     if Lexer.Token.Id = TkComma then
     begin
@@ -249,10 +249,9 @@ begin
   First := PsImmediate;
   WantTokenAndRead(TkRange);
   Last := PsImmediate;
+  EnsureOrdinalExpr(First);
   if not IsSameType(First^.TypePtr, Last^.TypePtr) then
-    CompileError('The bounds of a subrange must belong to the same type');
-  if not IsOrdinalType(First^.TypePtr) then
-    CompileError('The bounds of a subrange must belong to an ordinal type');
+    ErrorForExpr('Expected ' + TypeName(First^.TypePtr), Last);
 
   Typ := TypeOfClass(TtcRange);
   Typ.RangeDef.First := ExGetOrdinal(First);
@@ -277,9 +276,11 @@ begin
   Result := AddType(Typ);
 
   if not IsBoundedType(Typ.ElementTypePtr) then
-    CompileError('Set element types must be bounded ordinal types');
+    ErrorForType('Set element types must be bounded ordinal types',
+                     Typ.ElementTypePtr);
   if GetBoundedTypeSize(Typ.ElementTypePtr) > 256 then
-    CompileError('Set element types may not contain more than 256 values')
+    ErrorForType('Set element types may not contain more than 256 values',
+                     Typ.ElementTypePtr)
 end;
 
 function PsTypeDenoter;
@@ -646,8 +647,7 @@ begin
     WantToken2(TkComma, TkRbracket);
     if (Lexer.Token.Id = TkComma) and not IsArrayType(Arr^.TypePtr)
        and not IsStringyType(Arr^.TypePtr) then
-      CompileError('Array element is not an array or string: ' +
-                   ExDescribe(Arr) + '; it has type ' + TypeName(Arr^.TypePtr));
+      ErrorForExpr('Expected an array or a string', Arr);
     SkipToken(TkComma)
   until Lexer.Token.Id = TkRbracket;
   WantTokenAndRead(TkRbracket);
@@ -841,17 +841,14 @@ begin
   while Lexer.Token.Id <> TkRbracket do
   begin
     First := PsExpression;
-    if not IsOrdinalType(First^.TypePtr) then
-      CompileError('Set elements must belong to ordinal types, got ' +
-                   TypeName(First^.TypePtr));
+    EnsureOrdinalExpr(First);
     if Lexer.Token.Id = TkRange then
     begin
       WantTokenAndRead(TkRange);
       Last := PsExpression;
       if not IsSameType(First^.TypePtr, Last^.TypePtr) then
-        CompileError('Set element range boundaries must belong to the same ' +
-                     'type, got ' + TypeName(First^.TypePtr) + ' and ' +
-        TypeName(Last^.TypePtr))
+        ErrorForExpr('Set element range bounds must belong' +
+                             ' to the same type', Last)
     end
     else
       Last := nil;
@@ -1073,15 +1070,12 @@ begin
   WantTokenAndRead(TkCase);
   CasePtr := PsExpression;
   CaseTypePtr := CasePtr^.TypePtr;
-  if not IsOrdinalType(CaseTypePtr) then
-    CompileError('The index of the case statement is not ordinal');
+  EnsureOrdinalExpr(CasePtr);
   OutCaseBegin(CasePtr);
   ExDispose(CasePtr);
   WantTokenAndRead(TkOf);
   repeat
-    CaseLabel := ExCoerce(PsExpression, CaseTypePtr);
-    if not ExIsImmediate(CaseLabel) then
-      CompileError('The label of the case statement is not immediate');
+    CaseLabel := ExCoerce(PsImmediate, CaseTypePtr);
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
     ExDispose(CaseLabel);
@@ -1138,12 +1132,10 @@ var
 begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
-  if not Iter^.IsAssignable then
-    CompileError('Iterator variable must be assignable');
   if Iter^.IsFunctionResult then
-    CompileError('Iterator must not be the result of a function');
-  if not IsOrdinalType(Iter^.TypePtr) then
-    CompileError('Type of iterator is not ordinal: ' + TypeName(Iter^.TypePtr));
+    ErrorForExpr('Iterator must not be the result of a function', Iter);
+  EnsureAssignableExpr(Iter);
+  EnsureOrdinalExpr(Iter);
   if Iter^.Cls = XcVariable then
   begin
     Iter^.VarPtr^.WasInitialized := true;

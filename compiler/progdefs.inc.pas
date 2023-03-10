@@ -106,9 +106,6 @@ begin
   dispose(Def)
 end;
 
-function TypeName(TypePtr : TPsTypePtr) : string;
-forward;
-
 procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
@@ -512,7 +509,7 @@ begin
     TtcChar : Result := 0;
     TtcEnum : Result := 0;
     TtcRange : Result := TypePtr^.RangeDef.First;
-    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+    else ErrorForType('Expected bounded type', TypePtr)
   end
 end;
 
@@ -523,7 +520,7 @@ begin
     TtcChar : Result := 255;
     TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
     TtcRange : Result := TypePtr^.RangeDef.Last;
-    else CompileError('Type is not bounded: ' + TypeName(TypePtr))
+    else ErrorForType('Expected bounded type', TypePtr)
   end
 end;
 
@@ -809,8 +806,7 @@ var
   Pos : integer;
   Ret : integer;
 begin
-  if TypePtr^.Cls <> TtcRecord then
-    CompileError('Not a record: ' + TypeName(TypePtr));
+  EnsureRecordType(TypePtr);
   with TypePtr^.RecPtr^ do
   begin
     Ret := 0;
@@ -863,8 +859,7 @@ var
   TmpVarPtr : TPsVarPtr;
   WithVarPtr : TPsWithVarPtr;
 begin
-  if not IsRecordType(Base^.TypePtr) then
-    CompileError('''With'' variable is not a record');
+  EnsureRecordExpr(Base);
 
   Str(DefCounter(TctTmpVar), TmpVarNum);
   TmpVar.Name := 'with' + TmpVarNum;

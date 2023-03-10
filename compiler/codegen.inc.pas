@@ -381,8 +381,7 @@ begin
     if Pos <> 1 then write(Codegen.Output, ', ');
     if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      if not Expr^.CallArgs.Values[Pos]^.IsAssignable then
-        CompileError('Pass-by-reference argument must be assignable');
+      EnsureAssignableExpr(Expr^.CallArgs.Values[Pos]);
       _OutAddress(Expr^.CallArgs.Values[Pos])
     end
     else
@@ -1266,20 +1265,19 @@ end;
 
 procedure _OutOrd(Expr : TExpression);
 begin
+  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
   if IsCharType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     write(Codegen.Output, '(int)');
     _OutExpressionParensPrec(Expr^.PseudoFnCall.Arg1, 2)
   end
-  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
-         OutExpression(Expr^.PseudoFnCall.Arg1)
-  else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
+  else OutExpression(Expr^.PseudoFnCall.Arg1)
 end;
 
 procedure _OutPred(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
+  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
   if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
@@ -1287,7 +1285,7 @@ begin
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
-  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  else
   begin
     if not Options.CheckBounds then
     begin
@@ -1305,13 +1303,12 @@ begin
       write(Codegen.Output, ')')
     end
   end
-  else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
 end;
 
 procedure _OutSucc(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
+  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
   if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
     TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
@@ -1319,7 +1316,7 @@ begin
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
-  else if IsOrdinalType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  else
   begin
     if not Options.CheckBounds then
     begin
@@ -1337,8 +1334,6 @@ begin
       write(Codegen.Output, ')')
     end
   end
-  else CompileError('Expected an ordinal type, got ' +
-                    TypeName(Expr^.PseudoFnCall.Arg1^.TypePtr))
 end;
 
 procedure OutAssign;

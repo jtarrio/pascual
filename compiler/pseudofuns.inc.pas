@@ -62,8 +62,7 @@ begin
   WantTokenAndRead(TkLparen);
   repeat
     Operand := PSExpression;
-    if not IsStringyType(Operand^.TypePtr) then
-      CompileError('Argument for CONCAT is not a string');
+    EnsureStringyExpr(Operand);
     if Result = nil then Result := Operand
     else Result := ExBinaryOp(Result, Operand, TkPlus);
     WantToken2(TkComma, TkRparen);
@@ -76,8 +75,8 @@ function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
   Ptr := _Pf_Unary_Parse;
-  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypePtr) then
-    CompileError('Argument for DISPOSE is not a pointer');
+  EnsureAssignableExpr(Ptr);
+  EnsurePointerExpr(Ptr);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Ptr
 end;
@@ -86,8 +85,8 @@ function PfNew_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
   Ptr := _Pf_Unary_Parse;
-  if not Ptr^.IsAssignable or not IsPointerType(Ptr^.TypePtr) then
-    CompileError('Argument for NEW is not a pointer');
+  EnsureAssignableExpr(Ptr);
+  EnsurePointerExpr(Ptr);
   ExMarkInitialized(Ptr);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Ptr
@@ -100,22 +99,20 @@ begin
 end;
 
 function PfOrd(Arg : TExpression) : TExpression;
-var Imm : TExImmediate;
 begin
-  if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument for ORD does not have an ordinal type');
+  EnsureOrdinalExpr(Arg);
   if ExIsImmediate(Arg) then
   begin
-    Imm := Arg^.Immediate;
-    ExDispose(Arg);
-    case Imm.Cls of 
-      XicBoolean : if Imm.BooleanVal then Result := ExIntegerConstant(1)
-                   else Result := ExIntegerConstant(0);
-      XicInteger: Result := ExIntegerConstant(Imm.IntegerVal);
-      XicChar: Result := ExIntegerConstant(Ord(Imm.CharVal));
-      XicEnum: Result := ExIntegerConstant(Imm.EnumOrdinal);
-      else CompileError('Invalid type for ORD')
-    end
+    with Arg^.Immediate do
+      case Cls of 
+        XicBoolean : if BooleanVal then Result := ExIntegerConstant(1)
+                     else Result := ExIntegerConstant(0);
+        XicInteger: Result := ExIntegerConstant(IntegerVal);
+        XicChar: Result := ExIntegerConstant(Ord(CharVal));
+        XicEnum: Result := ExIntegerConstant(EnumOrdinal);
+        else ErrorForExpr('Expected an ordinal', Arg)
+      end;
+    ExDispose(Arg)
   end
   else
   begin
@@ -132,28 +129,28 @@ begin
 end;
 
 function PfPred(Arg : TExpression) : TExpression;
-var 
-  Imm : TExImmediate;
-  OutOfBounds : boolean;
+var OutOfBounds : boolean;
 begin
-  if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument for PRED does not have an ordinal type');
+  EnsureOrdinalExpr(Arg);
   if ExIsImmediate(Arg) then
   begin
-    Imm := Arg^.Immediate;
     OutOfBounds := false;
-    case Imm.Cls of 
-      XicBoolean : if Imm.BooleanVal then Result := ExBooleanConstant(false)
-                   else OutOfBounds := true;
-      XicInteger: Result := ExIntegerConstant(Imm.IntegerVal - 1);
-      XicChar: if Ord(Imm.CharVal) > 0 then
-                 Result := ExCharConstant(Pred(Imm.CharVal));
-      XicEnum: if Imm.EnumOrdinal > 0 then
-                 Result := ExEnumConstant(Pred(Imm.EnumOrdinal), Arg^.TypePtr);
-      else CompileError('Invalid type for PRED')
-    end;
-    ExDispose(Arg);
-    if OutOfBounds then CompileError('Out of bounds in PRED')
+    with Arg^.Immediate do
+      case Cls of 
+        XicBoolean : if BooleanVal then Result := ExBooleanConstant(false)
+                     else OutOfBounds := true;
+        XicInteger: Result := ExIntegerConstant(IntegerVal - 1);
+        XicChar: if Ord(CharVal) > 0 then
+                   Result := ExCharConstant(Pred(CharVal))
+                 else OutOfBounds := true;
+        XicEnum: if EnumOrdinal > 0 then
+                   Result := ExEnumConstant(Pred(EnumOrdinal), Arg^.TypePtr)
+                 else OutOfBounds := true;
+        else ErrorForExpr('Expected an ordinal', Arg)
+      end;
+    if OutOfBounds then
+      ErrorForExpr('Predecessor for argument would be out of bounds', Arg);
+    ExDispose(Arg)
   end
   else
   begin
@@ -192,8 +189,7 @@ begin
       end
       else
       begin
-        if not OutVar^.IsAssignable then
-          CompileError('Invalid argument for READ');
+        EnsureAssignableExpr(OutVar);
         if ReadArg = nil then
         begin
           new(Result^.PseudoFnCall.ReadArgs);
@@ -234,27 +230,22 @@ begin
   begin
     WantTokenAndRead(TkColon);
     Width := PsExpression;
-    if not IsIntegerType(Width^.TypePtr) then
-      CompileError('Width parameter is not integer; found ' +
-                   TypeName(Width^.TypePtr));
+    EnsureIntegerExpr(Width);
     if IsRealType(Src^.TypePtr) and (Lexer.Token.Id = TkColon) then
     begin
       WantTokenAndRead(TkColon);
       Prec := PsExpression;
-      if not IsIntegerType(Prec^.TypePtr) then
-        CompileError('Precision parameter is not integer; found ' +
-                     TypeName(Prec^.TypePtr))
+      EnsureIntegerExpr(Prec)
     end
   end;
   WantTokenAndRead(TkComma);
   Dest := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not Dest^.IsAssignable or not IsStringType(Dest^.TypePtr) then
-    CompileError('Second argument for STR is not a string variable');
+  EnsureAssignableExpr(Dest);
+  EnsureStringExpr(Dest);
   if not IsBooleanType(Src^.TypePtr) and not IsIntegerType(Src^.TypePtr)
      and not IsRealType(Src^.TypePtr) and not IsEnumType(Src^.TypePtr) then
-    CompileError('First argument for STR has an invalid type: ' +
-                 TypeName(Src^.TypePtr));
+    ErrorForExpr('Invalid type for source of STR', Src);
   ExMarkInitialized(Dest);
   Result := ExPseudoFnCall(FnExpr);
   Result^.PseudoFnCall.Arg1 := Src;
@@ -270,28 +261,28 @@ begin
 end;
 
 function PfSucc(Arg : TExpression) : TExpression;
-var 
-  Imm : TExImmediate;
-  OutOfBounds : boolean;
+var OutOfBounds : boolean;
 begin
-  if not IsOrdinalType(Arg^.TypePtr) then
-    CompileError('Argument for SUCC does not have an ordinal type');
+  EnsureOrdinalExpr(Arg);
   if ExIsImmediate(Arg) then
   begin
-    Imm := Arg^.Immediate;
     OutOfBounds := false;
-    case Imm.Cls of 
-      XicBoolean : if not Imm.BooleanVal then Result := ExBooleanConstant(true)
-                   else OutOfBounds := true;
-      XicInteger: Result := ExIntegerConstant(Imm.IntegerVal + 1);
-      XicChar: if Ord(Imm.CharVal) < 255 then
-                 Result := ExCharConstant(Succ(Imm.CharVal));
-      XicEnum: if Imm.EnumOrdinal < Imm.EnumPtr^.Size - 1 then
-                 Result := ExEnumConstant(Succ(Imm.EnumOrdinal), Arg^.TypePtr);
-      else CompileError('Invalid type for SUCC')
-    end;
-    ExDispose(Arg);
-    if OutOfBounds then CompileError('Out of bounds in SUCC')
+    with Arg^.Immediate do
+      case Cls of 
+        XicBoolean : if not BooleanVal then Result := ExBooleanConstant(true)
+                     else OutOfBounds := true;
+        XicInteger: Result := ExIntegerConstant(IntegerVal + 1);
+        XicChar: if Ord(CharVal) < 255 then
+                   Result := ExCharConstant(Succ(CharVal))
+                 else OutOfBounds := true;
+        XicEnum: if EnumOrdinal < EnumPtr^.Size - 1 then
+                   Result := ExEnumConstant(Succ(EnumOrdinal), Arg^.TypePtr)
+                 else OutOfBounds := true;
+        else ErrorForExpr('Expected an ordinal', Arg)
+      end;
+    if OutOfBounds then
+      ErrorForExpr('Successor for argument would be out of bounds', Arg);
+    ExDispose(Arg)
   end
   else
   begin
@@ -312,16 +303,13 @@ begin
   WantTokenAndRead(TkComma);
   Code := PsExpression;
   WantTokenAndRead(TkRparen);
-  if not IsStringType(Src^.TypePtr) then
-    CompileError('First argument for VAL is not a string variable');
-  if not Dest^.IsAssignable then
-    CompileError('Second argument for VAL is not a variable');
+  EnsureStringExpr(Src);
+  EnsureAssignableExpr(Dest);
   if not IsBooleanType(Dest^.TypePtr) and not IsIntegerType(Dest^.TypePtr)
      and not IsRealType(Dest^.TypePtr) and not IsEnumType(Dest^.TypePtr) then
-    CompileError('Second argument for VAL has an invalid type: ' +
-                 TypeName(Dest^.TypePtr));
-  if not Code^.IsAssignable or not IsIntegerType(Code^.TypePtr) then
-    CompileError('Third argument for VAL is not an integer variable');
+    ErrorForExpr('Invalid type for target of VAL', Dest);
+  EnsureAssignableExpr(Code);
+  EnsureIntegerExpr(Code);
   ExMarkInitialized(Dest);
   ExMarkInitialized(Code);
   Result := ExPseudoFnCall(FnExpr);
@@ -329,7 +317,6 @@ begin
   Result^.PseudoFnCall.Arg2 := Dest;
   Result^.PseudoFnCall.Arg3 := Code;
 end;
-
 
 function PfWrite_Parse(FnExpr : TExpression) : TExpression;
 var 
@@ -373,17 +360,13 @@ begin
         begin
           WantTokenAndRead(TkColon);
           WriteArg^.Width := PsExpression;
-          if not IsIntegerType(WriteArg^.Width^.TypePtr) then
-            CompileError('Width parameter must be an integer; found ' +
-                         TypeName(WriteArg^.Width^.TypePtr));
+          EnsureIntegerExpr(WriteArg^.Width);
           if IsRealType(WriteArg^.Arg^.TypePtr)
              and (Lexer.Token.Id = TkColon) then
           begin
             WantTokenAndRead(TkColon);
             WriteArg^.Prec := PsExpression;
-            if not IsIntegerType(WriteArg^.Prec^.TypePtr) then
-              CompileError('Precision parameter must be an integer; found ' +
-                           TypeName(WriteArg^.Prec^.TypePtr));
+            EnsureIntegerExpr(WriteArg^.Prec);
           end
         end
       end;
