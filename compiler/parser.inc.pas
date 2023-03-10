@@ -205,7 +205,7 @@ begin
     TypePtr^.ArrayDef.IndexTypePtr^.WasUsed := true;
     if not IsBoundedType(TypePtr^.ArrayDef.IndexTypePtr) then
       ErrorForType('Array indices must belong to a bounded ordinal type',
-                       TypePtr^.ArrayDef.IndexTypePtr);
+                   TypePtr^.ArrayDef.IndexTypePtr);
     WantToken2(TkComma, TkRbracket);
     if Lexer.Token.Id = TkComma then
     begin
@@ -275,10 +275,10 @@ begin
 
   if not IsBoundedType(Typ.ElementTypePtr) then
     ErrorForType('Set element types must be bounded ordinal types',
-                     Typ.ElementTypePtr);
+                 Typ.ElementTypePtr);
   if GetBoundedTypeSize(Typ.ElementTypePtr) > 256 then
     ErrorForType('Set element types may not contain more than 256 values',
-                     Typ.ElementTypePtr)
+                 Typ.ElementTypePtr)
 end;
 
 function PsTypeDenoter;
@@ -846,7 +846,7 @@ begin
       Last := PsExpression;
       if not IsSameType(First^.TypePtr, Last^.TypePtr) then
         ErrorForExpr('Set element range bounds must belong' +
-                             ' to the same type', Last)
+                     ' to the same type', Last)
     end
     else
       Last := nil;
@@ -1026,6 +1026,9 @@ begin
     end;
     if Lhs^.Cls = XcFnCall then OutProcedureCall(Lhs)
     else if Lhs^.Cls = XcPseudoFnCall then OutPseudoProcCall(Lhs)
+    else if Lexer.Token.Id = TkEquals then
+           CompileError('Invalid statement' +
+                        ' (maybe you wrote ''='' instead of '':=''?)')
     else CompileError('Invalid statement');
     ExDispose(OrigLhs);
     if UsesTmpVars then
