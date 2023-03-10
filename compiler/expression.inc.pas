@@ -879,7 +879,7 @@ var
   FnCall : TExpression;
 begin
   if FnExpr^.Cls <> XcFnRef then
-    CompileError('Cannot call non-function');
+    ErrorForExpr('Cannot call non-function', FnExpr);
   if Args.Size <> FnExpr^.FnPtr^.ArgCount then
     CompileError('Wrong number of arguments in call to ' + FnExpr^.FnPtr^.Name);
   FnExpr^.FnPtr^.WasUsed := true;
@@ -1775,15 +1775,14 @@ end;
 function ExGetOrdinal(Expr : TExpression) : integer;
 begin
   if not ExIsImmediate(Expr) then
-    CompileError('Expression is not immediate: ' + ExDescribe(Expr));
+    ErrorForExpr('Expected an immediate value', Expr);
   with Expr^.Immediate do
     case Cls of 
       XicBoolean : Result := Ord(BooleanVal);
       XicInteger : Result := IntegerVal;
       XicChar : Result := Ord(CharVal);
       XicEnum : Result := EnumOrdinal;
-      else CompileError('Expression does not belong to an ordinal type: ' +
-                        ExDescribe(Expr))
+      else ErrorForExpr('Expected an ordinal', Expr)
     end
 end;
 

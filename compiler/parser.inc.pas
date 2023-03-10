@@ -63,6 +63,15 @@ end;
 function PsExpression : TExpression;
 forward;
 
+function PsImmediate : TExpression;
+var Expr : TExpression;
+begin
+  Expr := PsExpression;
+  if not ExIsImmediate(Expr) then
+    ErrorForExpr('Expected an immediate expression', Expr);
+  PsImmediate := Expr
+end;
+
 function PsEnumeratedType : TPsTypePtr;
 var 
   Typ : TPsType;
@@ -143,9 +152,7 @@ begin
     Rec.NumVariants := Rec.NumVariants + 1;
     Rec.VariantBounds[Rec.NumVariants] := Rec.Size + 1;
     repeat
-      CaseLabel := ExCoerce(PsExpression, TagType);
-      if not ExIsImmediate(CaseLabel) then
-        CompileError('The label of the case statement is not immediate');
+      CaseLabel := ExCoerce(PsImmediate, TagType);
       ExDispose(CaseLabel);
       WantToken2(TkComma, TkColon);
       SkipToken(TkComma)
@@ -177,15 +184,6 @@ begin
   Typ := TypeOfClass(TtcRecord);
   Typ.RecPtr := NewRecord(Rec);
   PsRecordType := AddType(Typ);
-end;
-
-function PsImmediate : TExpression;
-var Expr : TExpression;
-begin
-  Expr := PsExpression;
-  if not ExIsImmediate(Expr) then
-    CompileError('Expected an immediate expression');
-  PsImmediate := Expr
 end;
 
 function PsArrayType : TPsTypePtr;
@@ -959,7 +957,7 @@ begin
   if Lhs^.Cls = XcFnRef then
   begin
     if Lhs^.FnPtr <> Defs.CurrentFn then
-      CompileError('Cannot assign a value to a function');
+      ErrorForExpr('Cannot assign a value to a function', Lhs);
     ResultVarPtr := FindNameOfClass('RESULT',
                     TncVariable, {Required=}true)^.VarPtr;
     ExDispose(Lhs);
@@ -970,10 +968,9 @@ begin
   if not Lhs^.IsAssignable then
   begin
     if Lhs^.IsFunctionResult then
-      CompileError('Cannot assign to the result of a function: ' +
-                   ExDescribe(Lhs))
+      ErrorForExpr('Cannot assign to the result of a function', Lhs)
     else
-      CompileError('Cannot assign to a constant:' + ExDescribe(Lhs));
+      ErrorForExpr('Cannot assign to a constant', Lhs);
   end;
   ExMarkInitialized(Lhs);
   OutAssign(Lhs, Rhs);
@@ -1029,9 +1026,6 @@ begin
     end;
     if Lhs^.Cls = XcFnCall then OutProcedureCall(Lhs)
     else if Lhs^.Cls = XcPseudoFnCall then OutPseudoProcCall(Lhs)
-    else if Lhs^.Cls = XcBinaryOp then
-           CompileError('Invalid statement' +
-                        ' (maybe you wrote ''='' instead of '':=''?)')
     else CompileError('Invalid statement');
     ExDispose(OrigLhs);
     if UsesTmpVars then

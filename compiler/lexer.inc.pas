@@ -301,7 +301,7 @@ begin
            ')' : LxGetSymbol(TkRparen, 1);
            '{' : LxGetComment;
            else
-             CompileError('Could not parse [' + Lexer.Line)
+             CompileError('Could not parse [' + Lexer.Line + ']')
       end
   end
 end;
