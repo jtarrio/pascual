@@ -40,7 +40,8 @@ echo "program foo;
       end;
       begin
         i := 1;
-        write(Fun(i), ' ', i)
+        write(Fun(i));
+        write(' ', i)
       end." | outputs '15 1'
 # Arguments can be passed by reference
 echo "program foo;
@@ -52,7 +53,8 @@ echo "program foo;
       end;
       begin
         i := 1;
-        write(Fun(i), ' ', i)
+        write(Fun(i));
+        write(' ', i)
       end." | outputs '15 10'
 echo "program foo;
       var i, j : integer;
@@ -64,7 +66,8 @@ echo "program foo;
       end;
       begin
         i := 1; j := 2;
-        write(Swap(i, j), ' ', i, ' ', j)
+        write(Swap(i, j));
+        write(' ', i, ' ', j)
       end." | outputs 'FALSE 2 1'
 # Arguments can be passed by const reference
 echo "program foo;

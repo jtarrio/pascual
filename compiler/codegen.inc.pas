@@ -13,6 +13,11 @@ var
 procedure OutVariableDeclaration(VarDef : TPsVariable);
 forward;
 
+procedure _OutComma;
+begin
+  write(Codegen.Output, ', ')
+end;
+
 procedure _OutNewline;
 begin
   writeln(Codegen.Output);
@@ -117,7 +122,8 @@ begin
   end
   else
   begin
-    write(Codegen.Output, 'str_make(', Length(Str), ', ');
+    write(Codegen.Output, 'str_make(', Length(Str));
+    _OutComma;
     _OutCstring(Str);
     write(Codegen.Output, ')')
   end
@@ -245,7 +251,7 @@ begin
   write(Codegen.Output, '(PSet', SetSize * 8, ') { ');
   for Pos := 1 to SetSize do
   begin
-    if Pos <> 1 then write(Codegen.Output, ', ');
+    if Pos <> 1 then _OutComma;
     write(Codegen.Output, SetElems[Pos]);
   end;
   write(Codegen.Output, ' }');
@@ -273,9 +279,10 @@ begin
     if Bounds^.Last = nil then Last := ExCopy(First)
     else Last := PfOrd(ExCoerce(ExCopy(Bounds^.Last), ElementTypePtr));
     OutExpression(First);
-    write(Codegen.Output, ', ');
+    _OutComma;
     OutExpression(Last);
-    write(Codegen.Output, ', ', LowBoundByte, ', dst.bits); ');
+    _OutComma;
+    write(Codegen.Output, LowBoundByte, ', dst.bits); ');
     ExDispose(First);
     ExDispose(Last);
     Bounds := Bounds^.Next
@@ -301,8 +308,9 @@ end;
 
 procedure _OutBounds(TypePtr : TPsTypePtr);
 begin
-  write(Codegen.Output, GetTypeLowBound(TypePtr), ', ',
-  GetTypeHighBound(TypePtr))
+  write(Codegen.Output, GetTypeLowBound(TypePtr));
+  _OutComma;
+  write(Codegen.Output, GetTypeHighBound(TypePtr))
 end;
 
 procedure _OutArrayIndex(Index : TExpression; TypePtr : TPsTypePtr);
@@ -336,7 +344,7 @@ begin
   begin
     write(Codegen.Output, 'subrange(');
     OutExpression(Expr^.SubrangeParent);
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutBounds(Expr^.TypePtr);
     write(Codegen.Output, ')')
   end
@@ -378,7 +386,7 @@ begin
   write(Codegen.Output, '(');
   for Pos := 1 to Expr^.CallArgs.Size do
   begin
-    if Pos <> 1 then write(Codegen.Output, ', ');
+    if Pos <> 1 then _OutComma;
     if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
       EnsureAssignableExpr(Expr^.CallArgs.Values[Pos]);
@@ -517,7 +525,9 @@ begin
     LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
     write(Codegen.Output, 'set_in(');
     OutExpression(Left);
-    write(Codegen.Output, ', ', LowBoundByte, ', ');
+    _OutComma;
+    write(Codegen.Output, LowBoundByte);
+    _OutComma;
     _OutExpressionParensPrec(Right, 1);
     write(Codegen.Output, '.bits)')
   end
@@ -598,7 +608,7 @@ begin
       begin
         write(Codegen.Output, 'cat_', Ltype, Rtype, '(');
         OutExpression(Left);
-        write(Codegen.Output, ', ');
+        _OutComma;
         OutExpression(Right);
         write(Codegen.Output, ')')
       end
@@ -614,7 +624,7 @@ begin
       begin
         write(Codegen.Output, 'cmp_', Ltype, Rtype, '(');
         OutExpression(Left);
-        write(Codegen.Output, ', ');
+        _OutComma;
         OutExpression(Right);
         if _IsRelationalOp(Op) then
           write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
@@ -704,7 +714,7 @@ begin
   write(Codegen.Output, 'const char* enumvalues', EnumPtr^.Id, '[] = { ');
   for PosInEnum := 0 to EnumPtr^.Size - 1 do
   begin
-    if PosInEnum <> 0 then write(Codegen.Output, ', ');
+    if PosInEnum <> 0 then _OutComma;
     write(Codegen.Output, '"', EnumPtr^.Values[PosInEnum], '"')
   end;
   write(Codegen.Output, ' };');
@@ -842,7 +852,7 @@ begin
     for Pos := 0 to EnumPtr^.Size - 1 do
     begin
       if Pos > 0 then
-        write(Codegen.Output, ', ');
+        _OutComma;
       write(Codegen.Output, EnumPtr^.Values[Pos])
     end;
     write(Codegen.Output, ' }');
@@ -945,7 +955,7 @@ end;
 
 procedure OutConstantArraySeparator;
 begin
-  write(Codegen.Output, ', ')
+  _OutComma
 end;
 
 procedure OutConstantArrayEnd;
@@ -994,7 +1004,7 @@ begin
   begin
     OutVariableDeclaration(def.Args[Pos]);
     if Pos <> Def.ArgCount then
-      write(Codegen.Output, ', ')
+      _OutComma
   end;
   write(Codegen.Output, ')')
 end;
@@ -1051,34 +1061,39 @@ var
   Src : TExpression;
   ReadArg : ^TExReadArgs;
   Linefeed : boolean;
-  Braces : boolean;
+  TypePtr : TPsTypePtr;
 begin
   Src := Expr^.PseudoFnCall.Arg1;
   Linefeed := Expr^.PseudoFnCall.PseudoFn = TpfReadln;
   ReadArg := Expr^.PseudoFnCall.ReadArgs;
-  Braces := (not Codegen.IsMultiStatement) and (ReadArg <> nil)
-            and ((ReadArg^.Next <> nil) or Linefeed);
-  if Braces then OutBegin;
+  _OutIndent;
+  write(Codegen.Output, 'READ(');
+  _OutAddress(Src);
+  if ReadArg = nil then
+  begin
+    write(Codegen.Output, ', RwpEnd');
+    if Linefeed then write(Codegen.Output, ' | RwpLn')
+  end;
   while ReadArg <> nil do
   begin
-    _OutIndent;
-    write(Codegen.Output, 'READ_', ShortTypeName(ReadArg^.Arg^.TypePtr), '(');
-    _OutAddress(Src);
-    write(Codegen.Output,', ');
+    TypePtr := GetFundamentalType(ReadArg^.Arg^.TypePtr);
+    case TypePtr^.Cls of 
+      TtcInteger: write(Codegen.Output, ', RwpInt');
+      TtcReal: write(Codegen.Output, ', RwpReal');
+      TtcChar: write(Codegen.Output, ', RwpChar');
+      TtcString: write(Codegen.Output, ', RwpString');
+    end;
+    if ReadArg^.Next = nil then
+    begin
+      if Linefeed then write(Codegen.Output, ' | RwpLn');
+      write(Codegen.Output, ' | RwpEnd')
+    end;
+    _OutComma;
     _OutAddress(ReadArg^.Arg);
-    write(Codegen.Output, ');');
-    _OutNewline;
     ReadArg := ReadArg^.Next
   end;
-  if Linefeed then
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'READLN(');
-    _OutAddress(Src);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end;
-  if Braces then OutEnd
+  write(Codegen.Output, ');');
+  _OutNewline
 end;
 
 procedure _OutWrite(Expr : TExpression);
@@ -1086,71 +1101,56 @@ var
   Dst : TExpression;
   WriteArg : ^TExWriteArgs;
   Linefeed : boolean;
-  Braces : boolean;
   TypePtr : TPsTypePtr;
 begin
   Dst := Expr^.PseudoFnCall.Arg1;
   Linefeed := Expr^.PseudoFnCall.PseudoFn = TpfWriteln;
   WriteArg := Expr^.PseudoFnCall.WriteArgs;
-  Braces := (not Codegen.IsMultiStatement) and (WriteArg <> nil)
-            and ((WriteArg^.Next <> nil) or Linefeed);
-  if Braces then OutBegin;
+  _OutIndent;
+  write(Codegen.Output, 'WRITE(');
+  _OutAddress(Dst);
+  if WriteArg = nil then
+  begin
+    write(Codegen.Output, ', RwpEnd');
+    if Linefeed then write(Codegen.Output, ' | RwpLn')
+  end;
   while WriteArg <> nil do
   begin
     TypePtr := GetFundamentalType(WriteArg^.Arg^.TypePtr);
-    if IsEnumType(TypePtr) then
-    begin
-      _OutIndent;
-      write(Codegen.Output, 'WRITE_e(');
-      _OutAddress(Dst);
-      write(Codegen.Output, ', ');
-      OutExpression(WriteArg^.Arg);
-      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id, ', ');
-      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
-      else write(Codegen.Output, '0');
-      write(Codegen.Output, ');');
-      _OutNewline
-    end
-    else if IsRealType(TypePtr) then
-    begin
-      _OutIndent;
-      write(Codegen.Output, 'WRITE_r(');
-      _OutAddress(Dst);
-      write(Codegen.Output, ', ');
-      OutExpression(WriteArg^.Arg);
-      write(Codegen.output, ', ');
-      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
-      else write(Codegen.Output, '0');
-      write(Codegen.output, ', ');
-      if WriteArg^.Prec <> nil then OutExpression(WriteArg^.Prec)
-      else write(Codegen.Output, '-1');
-      write(Codegen.output, ');');
-      _OutNewline
-    end
-    else
-    begin
-      _OutIndent;
-      write(Codegen.Output, 'WRITE_', ShortTypeName(TypePtr), '(');
-      _OutAddress(Dst);
-      write(Codegen.Output, ', ');
-      OutExpression(WriteArg^.Arg);
-      write(Codegen.output, ', ');
-      if WriteArg^.Width <> nil then OutExpression(WriteArg^.Width)
-      else write(Codegen.Output, '0');
-      write(Codegen.output, ');');
-      _OutNewline
+    case TypePtr^.Cls of 
+      TtcBoolean: write(Codegen.Output, ', RwpBool');
+      TtcInteger: write(Codegen.Output, ', RwpInt');
+      TtcReal: write(Codegen.Output, ', RwpReal');
+      TtcChar: write(Codegen.Output, ', RwpChar');
+      TtcString: write(Codegen.Output, ', RwpString');
+      TtcEnum: write(Codegen.Output, ', RwpEnum');
     end;
+    if WriteArg^.Width <> nil then write(Codegen.Output, ' | RwpWidth');
+    if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then
+      write(Codegen.Output, ' | RwpPrec');
+    if WriteArg^.Next = nil then
+    begin
+      if Linefeed then write(Codegen.Output, ' | RwpLn');
+      write(Codegen.Output, ' | RwpEnd')
+    end;
+    if WriteArg^.Width <> nil then
+    begin
+      _OutComma;
+      OutExpression(WriteArg^.Width)
+    end;
+    if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then
+    begin
+      _OutComma;
+      OutExpression(WriteArg^.Prec)
+    end;
+    _OutComma;
+    OutExpression(WriteArg^.Arg);
+    if IsEnumType(TypePtr) then
+      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
     WriteArg := WriteArg^.Next
   end;
-  if Linefeed then
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'WRITELN(');
-    _OutAddress(Dst);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end;
-  if Braces then OutEnd
+  write(Codegen.Output, ');');
+  _OutNewline
 end;
 
 procedure _OutStr(Expr : TExpression);
@@ -1165,10 +1165,11 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_e(');
     OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id, ', ');
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id);
+    _OutComma;
     if Width <> nil then OutExpression(Width)
     else write(Codegen.Output, '0');
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1178,13 +1179,13 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_r(');
     OutExpression(Src);
-    write(Codegen.Output, ', ');
+    _OutComma;
     if Width <> nil then OutExpression(Width)
     else write(Codegen.Output, '0');
-    write(Codegen.Output, ', ');
+    _OutComma;
     if Prec <> nil then OutExpression(Prec)
     else write(Codegen.Output, '-1');
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1194,10 +1195,10 @@ begin
     _OutIndent;
     write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
     OutExpression(Src);
-    write(Codegen.Output, ', ');
+    _OutComma;
     if Width <> nil then OutExpression(Width)
     else write(Codegen.Output, '0');
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Dst);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1215,13 +1216,14 @@ begin
     _OutIndent;
     write(Codegen.Output, 'VAL_e(');
     _OutAddress(Src);
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Dst);
-    write(Codegen.Output, ', ');
+    _OutComma;
     TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
     OutExpression(TmpExpr);
     ExDispose(TmpExpr);
-    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id, ', ');
+    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id);
+    _OutComma;
     _OutAddress(Code);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1231,9 +1233,9 @@ begin
     _OutIndent;
     write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(');
     _OutAddress(Src);
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Dst);
-    write(Codegen.Output, ', ');
+    _OutComma;
     _OutAddress(Code);
     write(Codegen.Output, ');');
     _OutNewline
@@ -1298,7 +1300,7 @@ begin
     begin
       write(Codegen.Output, 'pred(');
       OutExpression(Expr^.PseudoFnCall.Arg1);
-      write(Codegen.Output, ', ');
+      _OutComma;
       _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
       write(Codegen.Output, ')')
     end
@@ -1329,7 +1331,7 @@ begin
     begin
       write(Codegen.Output, 'succ(');
       OutExpression(Expr^.PseudoFnCall.Arg1);
-      write(Codegen.Output, ', ');
+      _OutComma;
       _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
       write(Codegen.Output, ')')
     end

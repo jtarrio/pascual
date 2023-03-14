@@ -1,6 +1,7 @@
 #include "file.h"
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -345,6 +346,67 @@ void WRITE_e(PFile* file, POrdinal value, const char** names, PInteger width) {
   PString str;
   STR_e(value, names, width, &str);
   WRITE_s(file, str, 0);
+}
+
+void READ(PFile* file, ...) {
+  enum ReadWriteParamType paramtype;
+  va_list args;
+  va_start(args, file);
+  do {
+    paramtype = va_arg(args, enum ReadWriteParamType);
+    switch (paramtype & 0x0f) {
+      case RwpInt:
+        READ_i(file, va_arg(args, PInteger*));
+        break;
+      case RwpReal:
+        READ_r(file, va_arg(args, PReal*));
+        break;
+      case RwpChar:
+        READ_c(file, va_arg(args, PChar*));
+        break;
+      case RwpString:
+        READ_s(file, va_arg(args, PString*));
+        break;
+    }
+    if (paramtype & RwpLn) READLN(file);
+  } while ((paramtype & RwpEnd) == 0);
+  va_end(args);
+}
+
+void WRITE(PFile* file, ...) {
+  enum ReadWriteParamType paramtype;
+  va_list args;
+  va_start(args, file);
+  do {
+    paramtype = va_arg(args, enum ReadWriteParamType);
+    int width = paramtype & RwpWidth ? va_arg(args, int) : 0;
+    int prec = paramtype & RwpPrec ? va_arg(args, int) : -1;
+    switch (paramtype & 0x0f) {
+      case RwpBool:
+        WRITE_b(file, va_arg(args, PBoolean), width);
+        break;
+      case RwpInt:
+        WRITE_i(file, va_arg(args, PInteger), width);
+        break;
+      case RwpReal:
+        WRITE_r(file, va_arg(args, PReal), width, prec);
+        break;
+      case RwpChar:
+        WRITE_c(file, va_arg(args, int), width);
+        break;
+      case RwpString:
+        WRITE_s(file, va_arg(args, PString), width);
+        break;
+      case RwpEnum: {
+        POrdinal ordinal = va_arg(args, POrdinal);
+        const char** enumvalues = va_arg(args, const char**);
+        WRITE_e(file, ordinal, enumvalues, width);
+        break;
+      }
+    }
+    if (paramtype & RwpLn) WRITELN(file);
+  } while ((paramtype & RwpEnd) == 0);
+  va_end(args);
 }
 
 PFile INPUT = {};

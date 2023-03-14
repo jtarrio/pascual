@@ -48,6 +48,21 @@ void WRITE_c(PFile* file, PChar chr, PInteger width);
 void WRITE_s(PFile* file, PString str, PInteger width);
 void WRITE_e(PFile* file, POrdinal value, const char** names, PInteger width);
 
+enum ReadWriteParamType {
+  RwpBool = 0x01,
+  RwpInt = 0x02,
+  RwpReal = 0x03,
+  RwpChar = 0x04,
+  RwpString = 0x05,
+  RwpEnum = 0x06,
+  RwpWidth = 0x10,
+  RwpPrec = 0x20,
+  RwpLn = 0x40,
+  RwpEnd = 0x80,
+};
+void READ(PFile* file, ...);
+void WRITE(PFile* file, ...);
+
 void InitFile();
 
 #endif  // __PASCUAL_FILE_H
