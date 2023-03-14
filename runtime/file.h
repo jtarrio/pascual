@@ -34,20 +34,6 @@ void FLUSH(PFile* file);
 void ERASE(PFile* file);
 void RENAME(PFile* file, const PString* name);
 
-void READLN(PFile* file);
-void READ_i(PFile* file, PInteger* num);
-void READ_r(PFile* file, PReal* num);
-void READ_c(PFile* file, PChar* chr);
-void READ_s(PFile* file, PString* str);
-
-void WRITELN(PFile* file);
-void WRITE_b(PFile* file, PBoolean val, PInteger width);
-void WRITE_i(PFile* file, PInteger num, PInteger width);
-void WRITE_r(PFile* file, PReal num, PInteger width, PInteger precision);
-void WRITE_c(PFile* file, PChar chr, PInteger width);
-void WRITE_s(PFile* file, PString str, PInteger width);
-void WRITE_e(PFile* file, POrdinal value, const char** names, PInteger width);
-
 enum ReadWriteParamType {
   RwpBool = 0x01,
   RwpInt = 0x02,

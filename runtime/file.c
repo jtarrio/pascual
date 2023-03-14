@@ -206,7 +206,7 @@ void RESET(PFile* file) { open_file(file, "r"); }
 
 void REWRITE(PFile* file) { open_file(file, "w"); }
 
-void READLN(PFile* file) {
+static void readln(PFile* file) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -247,25 +247,7 @@ static PBoolean read_token(PFile* file, PString* str) {
   return 1;
 }
 
-void READ_i(PFile* file, PInteger* num) {
-  PString str;
-  PInteger code;
-  if (read_token(file, &str)) {
-    VAL_i(&str, num, &code);
-    if (code != 0) set_ioresult(file, ieReadError);
-  }
-}
-
-void READ_r(PFile* file, PReal* num) {
-  PString str;
-  PInteger code;
-  if (read_token(file, &str)) {
-    VAL_r(&str, num, &code);
-    if (code != 0) set_ioresult(file, ieReadError);
-  }
-}
-
-void READ_c(PFile* file, PChar* chr) {
+static void read_char(PFile* file, PChar* chr) {
   int ch = 0;
   check_ioresult();
   if (!is_open(file)) return;
@@ -279,7 +261,7 @@ void READ_c(PFile* file, PChar* chr) {
     *chr = ch;
 }
 
-void READ_s(PFile* file, PString* str) {
+static void read_str(PFile* file, PString* str) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
@@ -298,57 +280,9 @@ void READ_s(PFile* file, PString* str) {
   if (ferror(file->file)) set_ioresult(file, ieReadError);
 }
 
-void WRITELN(PFile* file) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  fputc('\n', file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
-}
-
-void WRITE_b(PFile* file, PBoolean val, PInteger width) {
-  PString str;
-  STR_b(val, width, &str);
-  WRITE_s(file, str, 0);
-}
-
-void WRITE_i(PFile* file, PInteger num, PInteger width) {
-  PString str;
-  STR_i(num, width, &str);
-  WRITE_s(file, str, 0);
-}
-
-void WRITE_r(PFile* file, PReal num, PInteger width, PInteger precision) {
-  PString str;
-  STR_r(num, width, precision, &str);
-  WRITE_s(file, str, 0);
-}
-
-void WRITE_c(PFile* file, PChar chr, PInteger width) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  for (int i = 0; i < width - 1; ++i) fputc(' ', file->file);
-  fputc(chr, file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
-}
-
-void WRITE_s(PFile* file, PString str, PInteger width) {
-  check_ioresult();
-  if (!is_open(file)) return;
-  clearerr(file->file);
-  for (int i = 0; i < width - str.len; ++i) fputc(' ', file->file);
-  for (int pos = 0; pos < str.len; ++pos) fputc(str.value[pos], file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
-}
-
-void WRITE_e(PFile* file, POrdinal value, const char** names, PInteger width) {
-  PString str;
-  STR_e(value, names, width, &str);
-  WRITE_s(file, str, 0);
-}
-
 void READ(PFile* file, ...) {
+  PString str;
+  int code = 0;
   enum ReadWriteParamType paramtype;
   va_list args;
   va_start(args, file);
@@ -356,55 +290,74 @@ void READ(PFile* file, ...) {
     paramtype = va_arg(args, enum ReadWriteParamType);
     switch (paramtype & 0x0f) {
       case RwpInt:
-        READ_i(file, va_arg(args, PInteger*));
+        if (read_token(file, &str)) {
+          VAL_i(&str, va_arg(args, PInteger*), &code);
+          if (code != 0) set_ioresult(file, ieReadError);
+        }
         break;
       case RwpReal:
-        READ_r(file, va_arg(args, PReal*));
+        if (read_token(file, &str)) {
+          VAL_r(&str, va_arg(args, PReal*), &code);
+          if (code != 0) set_ioresult(file, ieReadError);
+        }
         break;
       case RwpChar:
-        READ_c(file, va_arg(args, PChar*));
+        read_char(file, va_arg(args, PChar*));
         break;
       case RwpString:
-        READ_s(file, va_arg(args, PString*));
+        read_str(file, va_arg(args, PString*));
         break;
     }
-    if (paramtype & RwpLn) READLN(file);
+    if (paramtype & RwpLn) readln(file);
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
 }
 
+static void writestr(PFile* file, const PString* str, int width, int linefeed) {
+  check_ioresult();
+  if (!is_open(file)) return;
+  clearerr(file->file);
+  for (int i = 0; i < width - str->len; ++i) fputc(' ', file->file);
+  for (int pos = 0; pos < str->len; ++pos) fputc(str->value[pos], file->file);
+  if (linefeed) fputc('\n', file->file);
+  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+}
+
 void WRITE(PFile* file, ...) {
+  PString str;
   enum ReadWriteParamType paramtype;
   va_list args;
   va_start(args, file);
   do {
+    str.len = 0;
     paramtype = va_arg(args, enum ReadWriteParamType);
     int width = paramtype & RwpWidth ? va_arg(args, int) : 0;
     int prec = paramtype & RwpPrec ? va_arg(args, int) : -1;
     switch (paramtype & 0x0f) {
       case RwpBool:
-        WRITE_b(file, va_arg(args, PBoolean), width);
+        STR_b(va_arg(args, PBoolean), 0, &str);
         break;
       case RwpInt:
-        WRITE_i(file, va_arg(args, PInteger), width);
+        STR_i(va_arg(args, PInteger), width, &str);
         break;
       case RwpReal:
-        WRITE_r(file, va_arg(args, PReal), width, prec);
+        STR_r(va_arg(args, PReal), width, prec, &str);
         break;
       case RwpChar:
-        WRITE_c(file, va_arg(args, int), width);
+        str.value[0] = va_arg(args, int);
+        str.len = 1;
         break;
       case RwpString:
-        WRITE_s(file, va_arg(args, PString), width);
+        str = va_arg(args, PString);
         break;
       case RwpEnum: {
         POrdinal ordinal = va_arg(args, POrdinal);
         const char** enumvalues = va_arg(args, const char**);
-        WRITE_e(file, ordinal, enumvalues, width);
+        STR_e(ordinal, enumvalues, 0, &str);
         break;
       }
     }
-    if (paramtype & RwpLn) WRITELN(file);
+    writestr(file, &str, width, paramtype & RwpLn);
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
 }
