@@ -784,8 +784,8 @@ begin
   Result^.TmpVarValue := Value;
   Result^.TmpVarChild := Child;
   Result^.TypePtr := Child^.TypePtr;
-  Result^.IsAssignable := true;
-  Result^.IsFunctionResult := false;
+  Result^.IsAssignable := Child^.IsAssignable;
+  Result^.IsFunctionResult := Child^.IsFunctionResult;
   TmpVar^.VarPtr^.WasInitialized := true;
   TmpVar^.VarPtr^.WasUsed := true
 end;
