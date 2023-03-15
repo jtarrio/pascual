@@ -4,6 +4,8 @@
 #include <limits.h>
 #include <stdio.h>
 
+#define PNil ((void*)0)
+
 typedef int POrdinal;
 
 typedef int PBoolean;

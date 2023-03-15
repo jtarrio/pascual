@@ -214,7 +214,7 @@ begin
   _CloseScope({Temporary=}true)
 end;
 
-function _FindName(Name : string; Required : boolean;
+function _FindName(const Name : string; Required : boolean;
                    FromLocalScope : boolean) : TPsNamePtr;
 var 
   Def : TPsDefPtr;
@@ -250,30 +250,32 @@ begin
   _CheckNameClass := NamePtr
 end;
 
-function FindNameInLocalScope(Name : string; Required : boolean) : TPsNamePtr;
+function FindNameInLocalScope(const Name : string;
+                              Required : boolean) : TPsNamePtr;
 begin
   FindNameInLocalScope := _FindName(Name, Required, {FromLocalScope=}true)
 end;
 
-function FindNameOfClassInLocalScope(Name : string; Cls : TPsNameClass;
+function FindNameOfClassInLocalScope(const Name : string; Cls : TPsNameClass;
                                      Required : boolean) : TPsNamePtr;
 begin
   FindNameOfClassInLocalScope := _CheckNameClass(
                                  FindNameInLocalScope(Name, Required), Cls)
 end;
 
-function FindName(Name : string; Required : boolean) : TPsNamePtr;
+function FindName(const Name : string; Required : boolean) : TPsNamePtr;
 begin
   FindName := _FindName(Name, Required, {FromLocalScope=}false)
 end;
 
-function FindNameOfClass(Name : string; Cls : TPsNameClass; Required : boolean)
+function FindNameOfClass(const Name : string; Cls : TPsNameClass;
+                         Required : boolean)
 : TPsNamePtr;
 begin
   FindNameOfClass := _CheckNameClass(FindName(Name, Required), Cls)
 end;
 
-function _AddName(Name : string; Cls : TPsNameClass) : TPsNamePtr;
+function _AddName(const Name : string; Cls : TPsNameClass) : TPsNamePtr;
 var 
   Pos : TPsNamePtr;
 begin
@@ -285,7 +287,7 @@ begin
   _AddName := Pos
 end;
 
-function AddTypeName(Name : string; Idx : TPsTypePtr) : TPsNamePtr;
+function AddTypeName(const Name : string; Idx : TPsTypePtr) : TPsNamePtr;
 var 
   Def : TPsNamePtr;
 begin
@@ -294,7 +296,7 @@ begin
   AddTypeName := Def
 end;
 
-function AddVariableName(Name : string; Idx : TPsVarPtr) : TPsNamePtr;
+function AddVariableName(const Name : string; Idx : TPsVarPtr) : TPsNamePtr;
 var 
   Def : TPsNamePtr;
 begin
@@ -303,7 +305,7 @@ begin
   AddVariableName := Def
 end;
 
-function AddConstantName(Name : string; Idx : TPsConstPtr) : TPsNamePtr;
+function AddConstantName(const Name : string; Idx : TPsConstPtr) : TPsNamePtr;
 var 
   Def : TPsNamePtr;
 begin
@@ -312,7 +314,7 @@ begin
   Result := Def
 end;
 
-function AddFunctionName(Name : string; Idx : TPsFnPtr) : TPsNamePtr;
+function AddFunctionName(const Name : string; Idx : TPsFnPtr) : TPsNamePtr;
 var 
   Def : TPsNamePtr;
 begin
@@ -331,7 +333,7 @@ begin
   AddEnumValName := Def
 end;
 
-function AddPseudoFn(Name : string; Fn : TPsPseudoFn) : TPsNamePtr;
+function AddPseudoFn(const Name : string; Fn : TPsPseudoFn) : TPsNamePtr;
 var Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncPseudoFn);
@@ -469,7 +471,7 @@ begin
   IsPointeryType := IsPointerType(TypePtr) or IsNilType(TypePtr)
 end;
 
-function PointerUnknownType(TargetName : string) : TPsType;
+function PointerUnknownType(const TargetName : string) : TPsType;
 var 
   Typ : TPsType;
 begin
@@ -570,7 +572,7 @@ begin
   else Result := '''' + Chr + ''''
 end;
 
-function UnparseString(St : string) : string;
+function UnparseString(const St : string) : string;
 var 
   Pos : integer;
   ChNum : string;
@@ -746,7 +748,7 @@ begin
   IsSameFunctionDefinition := Same
 end;
 
-function HasForwardDeclaration(Name : string) : boolean;
+function HasForwardDeclaration(const Name : string) : boolean;
 var 
   NamePtr : TPsNamePtr;
 begin
@@ -800,7 +802,8 @@ begin
   AddFunction := FnPtr;
 end;
 
-function FindField(TypePtr : TPsTypePtr; Name : string; Required : boolean)
+function FindField(TypePtr : TPsTypePtr; const Name : string;
+                   Required : boolean)
 : integer;
 var 
   Pos : integer;
@@ -821,7 +824,7 @@ begin
   FindField := Ret
 end;
 
-function FindFieldType(TypePtr : TPsTypePtr; Name : string;
+function FindFieldType(TypePtr : TPsTypePtr; const Name : string;
                        Required : boolean) : TPsTypePtr;
 var 
   Pos : integer;
@@ -831,7 +834,7 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function FindWithVar(Name : string) : TPsWithVarPtr;
+function FindWithVar(const Name : string) : TPsWithVarPtr;
 var 
   Ret : TPsWithVarPtr;
   Def : TPsDefPtr;
@@ -874,7 +877,7 @@ begin
   AddWithVar := TmpVarPtr
 end;
 
-function MakeType(Name : string; Cls : TPsTypeClass) : TPsType;
+function MakeType(const Name : string; Cls : TPsTypeClass) : TPsType;
 var 
   Typ : TPsType;
 begin
@@ -884,7 +887,7 @@ begin
   MakeType := Typ
 end;
 
-function MakeConstant(Name : string; Value : TExpression)
+function MakeConstant(const Name : string; Value : TExpression)
 : TPsConstant;
 var 
   Constant : TPsConstant;
@@ -894,7 +897,7 @@ begin
   MakeConstant := Constant
 end;
 
-function MakeTypedConstant(Name : string; TypePtr : TPsTypePtr)
+function MakeTypedConstant(const Name : string; TypePtr : TPsTypePtr)
 : TPsVariable;
 var 
   VarDef : TPsVariable;
@@ -907,7 +910,7 @@ begin
   MakeTypedConstant := VarDef
 end;
 
-function MakeVariable(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeVariable(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
@@ -917,14 +920,15 @@ begin
   Result.WasUsed := false
 end;
 
-function AddTmpVariable(Prefix : string; TypePtr : TPsTypePtr) : TPsVarPtr;
+function AddTmpVariable(const Prefix : string;
+                        TypePtr : TPsTypePtr) : TPsVarPtr;
 var VarNum : string;
 begin
   Str(DefCounter(TctTmpVar), VarNum);
   Result := AddVariable(MakeVariable(Prefix + VarNum, TypePtr))
 end;
 
-function _MakeArg(Name : string; TypePtr : TPsTypePtr;
+function _MakeArg(const Name : string; TypePtr : TPsTypePtr;
                   IsRef, IsConst : boolean) : TPsVariable;
 begin
   Result.Name := Name;
@@ -935,22 +939,22 @@ begin
   Result.WasUsed := false
 end;
 
-function MakeArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
 begin
   MakeArg := _MakeArg(Name, TypePtr, false, false)
 end;
 
-function MakeVarArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeVarArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
 begin
   MakeVarArg := _MakeArg(Name, TypePtr, true, false)
 end;
 
-function MakeConstArg(Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeConstArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
 begin
   MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
 
-function MakeProcedure0(Name : string) : TPsFunction;
+function MakeProcedure0(const Name : string) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -958,7 +962,7 @@ begin
   Result.ArgCount := 0
 end;
 
-function MakeProcedure1(Name : string; Arg : TPsVariable) : TPsFunction;
+function MakeProcedure1(const Name : string; Arg : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -967,7 +971,8 @@ begin
   Result.Args[1] := Arg
 end;
 
-function MakeProcedure2(Name : string; Arg1, Arg2 : TPsVariable) : TPsFunction;
+function MakeProcedure2(const Name : string;
+                        Arg1, Arg2 : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -977,7 +982,7 @@ begin
   Result.Args[2] := Arg2
 end;
 
-function MakeProcedure3(Name : string;
+function MakeProcedure3(const Name : string;
                         Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
@@ -989,7 +994,8 @@ begin
   Result.Args[3] := Arg3
 end;
 
-function MakeFunction0(Name : string; RetTypePtr : TPsTypePtr) : TPsFunction;
+function MakeFunction0(const Name : string;
+                       RetTypePtr : TPsTypePtr) : TPsFunction;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -997,7 +1003,7 @@ begin
   Result.ReturnTypePtr := RetTypePtr
 end;
 
-function MakeFunction1(Name : string; RetTypePtr : TPsTypePtr;
+function MakeFunction1(const Name : string; RetTypePtr : TPsTypePtr;
                        Arg : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
@@ -1008,7 +1014,7 @@ begin
   Result.Args[1] := Arg
 end;
 
-function MakeFunction2(Name : string; RetTypePtr : TPsTypePtr;
+function MakeFunction2(const Name : string; RetTypePtr : TPsTypePtr;
                        Arg1, Arg2 : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;
@@ -1020,7 +1026,7 @@ begin
   Result.Args[2] := Arg2
 end;
 
-function MakeFunction3(Name : string; RetTypePtr : TPsTypePtr;
+function MakeFunction3(const Name : string; RetTypePtr : TPsTypePtr;
                        Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
 begin
   Result := EmptyFunction;

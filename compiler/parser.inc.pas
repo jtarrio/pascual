@@ -342,7 +342,7 @@ begin
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
-procedure PsConstant(Name : string);
+procedure PsConstant(const Name : string);
 var Constant : TPsConstant;
 begin
   WantTokenAndRead(TkEquals);
@@ -378,7 +378,7 @@ begin
   end
 end;
 
-procedure PsTypedConstant(Name : string);
+procedure PsTypedConstant(const Name : string);
 var 
   TypePtr : TPsTypePtr;
 begin
@@ -731,7 +731,7 @@ begin
                     TkLessOrEquals, TkMoreOrEquals, TkIn]
 end;
 
-function ParseString(Pstr : string) : string;
+function ParseString(const Pstr : string) : string;
 var 
   State : (None, QuotedStr, Hash, NumCharDec, NumCharHex, NumCharReady,
            Caret, Error, Done);
@@ -817,14 +817,14 @@ begin
     Result := Result + Chr(ChNum);
 end;
 
-function ParseInt(Pstr : string) : integer;
+function ParseInt(const Pstr : string) : integer;
 var Code : integer;
 begin
   Val(Pstr, Result, Code);
   if Code <> 0 then CompileError('Could not parse integer: ' + Pstr)
 end;
 
-function ParseReal(Pstr : string) : real;
+function ParseReal(const Pstr : string) : real;
 var Code : integer;
 begin
   Val(Pstr, Result, Code);
@@ -1205,7 +1205,7 @@ begin
   WantTokenAndRead(TkEnd)
 end;
 
-procedure ExecuteDirective(Dir : string);
+procedure ExecuteDirective(const Dir : string);
 begin
   if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
     LxInclude(Copy(Dir, 4, 255))

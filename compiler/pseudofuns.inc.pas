@@ -5,7 +5,7 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
-function _Pf_Fun_Overload(NamePrefix : string; TypePtr : TPsTypePtr) : string;
+function _Pf_Fun_Overload(const NamePrefix : string; TypePtr : TPsTypePtr) : string;
 begin
   TypePtr := GetFundamentalType(TypePtr);
   if IsBooleanType(TypePtr) then Result := NamePrefix + '_b'

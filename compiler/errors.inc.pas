@@ -15,12 +15,12 @@ begin
   ErrorDescribeExpr(Left) + ' and ' + ErrorDescribeExpr(Right))
 end;
 
-procedure ErrorForType(Msg : string; Got : TPsTypePtr);
+procedure ErrorForType(const Msg : string; Got : TPsTypePtr);
 begin
   CompileError(Msg + '; got ' + TypeName(Got))
 end;
 
-procedure ErrorForExpr(Msg : string; Got : TExpression);
+procedure ErrorForExpr(const Msg : string; Got : TExpression);
 begin
   CompileError(Msg + '; got ' + ErrorDescribeExpr(Got))
 end;

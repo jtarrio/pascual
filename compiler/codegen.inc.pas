@@ -87,7 +87,7 @@ begin
   write(Codegen.Output, '''')
 end;
 
-procedure _OutCstring(var Str : string);
+procedure _OutCstring(const Str : string);
 var 
   Pos : integer;
   Ch : char;
@@ -112,7 +112,7 @@ begin
   write(Codegen.Output, '"')
 end;
 
-procedure _OutString(var Str : string);
+procedure _OutString(const Str : string);
 begin
   if Length(Str) = 1 then
   begin
@@ -294,7 +294,7 @@ procedure _OutExImmediate(Expr : TExpression);
 begin
   with Expr^.Immediate do
     case Cls of 
-      XicNil : write(Codegen.Output, '(void*)0');
+      XicNil : write(Codegen.Output, 'PNil');
       XicBoolean : if BooleanVal then write(Codegen.Output, '1')
                    else write(Codegen.Output, '0');
       XicInteger : write(Codegen.Output, IntegerVal);
@@ -821,10 +821,10 @@ begin
     InternalError('Error writing type reference: ' + TypeName(TypePtr))
 end;
 
-procedure OutNameAndType(Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
 forward;
 
-procedure OutNameAndRecord(Name : string; RecPtr : TPsRecPtr);
+procedure OutNameAndRecord(const Name : string; RecPtr : TPsRecPtr);
 var 
   Pos : integer;
   NumVariant : integer;
@@ -877,7 +877,7 @@ begin
   write(Codegen.Output, ' ', Name)
 end;
 
-procedure OutNameAndEnum(Name : string; EnumPtr : TPsEnumPtr);
+procedure OutNameAndEnum(const Name : string; EnumPtr : TPsEnumPtr);
 var 
   Pos : integer;
 begin
@@ -897,7 +897,7 @@ begin
   write(Codegen.Output, ' ', Name)
 end;
 
-procedure OutNameAndArray(Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndArray(const Name : string; TypePtr : TPsTypePtr);
 var 
   TheType : TPsTypePtr;
 begin
@@ -914,7 +914,7 @@ begin
   end
 end;
 
-procedure OutNameAndType(Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
 begin
   if TypePtr = nil then write(Codegen.Output, 'void ', Name)
   else if TypePtr^.Cls = TtcPointer then
