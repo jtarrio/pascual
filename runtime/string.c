@@ -1,5 +1,6 @@
 #include "string.h"
 
+#include <stdarg.h>
 #include <string.h>
 
 #include "error.h"
@@ -95,6 +96,35 @@ const char* pchar_of_str(const PString* str) {
   memcpy(buffer, str->value, str->len);
   buffer[str->len] = 0;
   return buffer;
+}
+
+PString CONCAT(enum ConcatParamType paramtype, ...) {
+  int end = 0;
+  PString ret;
+  ret.len = 0;
+  va_list args;
+  va_start(args, paramtype);
+  do {
+    end = paramtype & CpEnd;
+    if (ret.len == 255) break;
+    switch (paramtype & 0x0f) {
+      case CpChar:
+        ret.value[ret.len] = va_arg(args, int);
+        ++ret.len;
+        break;
+      case CpString: {
+        PString b = va_arg(args, PString);
+        int cp = b.len;
+        if (cp > (255 - ret.len)) cp = 255 - ret.len;
+        memcpy(ret.value + ret.len, b.value, cp);
+        ret.len += cp;
+        break;
+      }
+    }
+    paramtype = va_arg(args, enum ConcatParamType);
+  } while (!end);
+  va_end(args);
+  return ret;
 }
 
 PString cat_cc(PChar a, PChar b) {

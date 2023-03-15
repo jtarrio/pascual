@@ -18,6 +18,9 @@ PInteger ORD(PChar chr);
 PString str_of_pchar(const char* str, PInteger width);
 const char* pchar_of_str(const PString* str);
 
+enum ConcatParamType { CpChar = 0x01, CpString = 0x02, CpEnd = 0x80 };
+PString CONCAT(enum ConcatParamType paramtype, ...);
+
 PString cat_cc(PChar a, PChar b);
 PString cat_cs(PChar a, PString b);
 PString cat_sc(PString a, PChar b);

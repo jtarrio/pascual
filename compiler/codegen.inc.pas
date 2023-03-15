@@ -571,6 +571,25 @@ begin
   end
 end;
 
+procedure _OutConcatArgs(Expr : TExpression; Last : boolean);
+begin
+  if not IsStringyType(Expr^.TypePtr) then
+    InternalError('Expected a stringy type for ' + ExDescribe(Expr))
+  else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> TkPlus) then
+  begin
+    if Last then write(Codegen.Output, 'CpEnd | ');
+    if IsCharType(Expr^.TypePtr) then write(Codegen.Output, 'CpChar, ')
+    else write(Codegen.Output, 'CpString, ');
+    OutExpression(Expr);
+    if not Last then _OutComma
+  end
+  else
+  begin
+    _OutConcatArgs(Expr^.Binary.Left, {Last=}false);
+    _OutConcatArgs(Expr^.Binary.Right, Last)
+  end
+end;
+
 procedure _OutExBinaryOp(Expr : TExpression);
 var Ltype, Rtype : char;
 begin
@@ -606,10 +625,8 @@ begin
       else Rtype := 's';
       if Op = TkPlus then
       begin
-        write(Codegen.Output, 'cat_', Ltype, Rtype, '(');
-        OutExpression(Left);
-        _OutComma;
-        OutExpression(Right);
+        write(Codegen.Output, 'CONCAT(');
+        _OutConcatArgs(Expr, {Last=}true);
         write(Codegen.Output, ')')
       end
       else if IsCharType(Left^.TypePtr) and IsCharType(Right^.TypePtr) then
