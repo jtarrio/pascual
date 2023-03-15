@@ -780,12 +780,6 @@ begin
   end
 end;
 
-function OutVariableName(Name : string; IsReference : boolean) : string;
-begin
-  if IsReference then OutVariableName := '*' + Name
-  else OutVariableName := Name
-end;
-
 procedure OutTypeReference(TypePtr : TPsTypePtr);
 begin
   if TypePtr = nil then write(Codegen.Output, 'void')
@@ -1006,10 +1000,18 @@ begin
 end;
 
 procedure OutVariableDeclaration(VarDef : TPsVariable);
+var Name : string;
 begin
-  if VarDef.IsConstant then write(Codegen.Output, 'const ');
-  OutNameAndType(OutVariableName(VarDef.Name, VarDef.IsReference),
-  VarDef.TypePtr)
+  Name := VarDef.Name;
+  if VarDef.IsConstant then
+  begin
+    if VarDef.IsReference and IsPointerType(VarDef.TypePtr) then
+      Name := ' const ' + Name
+    else
+      write(Codegen.Output, 'const ')
+  end;
+  if VarDef.IsReference then Name := '*' + Name;
+  OutNameAndType(Name, VarDef.TypePtr)
 end;
 
 procedure OutVariableDefinition;
