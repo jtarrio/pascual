@@ -4,19 +4,14 @@
 PInteger I;
 
 void pascual_main() {
-  WRITE_s(&OUTPUT, str_make(17, "This program is: "));
-  WRITE_s(&OUTPUT, PARAMSTR(0));
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 17, "This program is: ", RwpString | RwpLn | RwpEnd, PARAMSTR(0));
   do {
     PInteger first = 1;
     PInteger last = PARAMCOUNT();
     if (first <= last) {
       I = first;
       while (1) {
-        WRITE_i(&OUTPUT, I);
-        WRITE_s(&OUTPUT, str_make(2, ": "));
-        WRITE_s(&OUTPUT, PARAMSTR(I));
-        WRITELN(&OUTPUT);
+        WRITE(&OUTPUT, RwpInt, I, RwpLenPtr, 2, ": ", RwpString | RwpLn | RwpEnd, PARAMSTR(I));
         if (I == last) break;
         ++I;
       }

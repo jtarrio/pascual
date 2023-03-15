@@ -25,7 +25,7 @@ void ADDNODE(PInteger VALUE) {
   ROOTNODE = malloc(sizeof(NODE));
   ROOTNODE->VALUE = VALUE;
   ROOTNODE->NEXT = PREVROOT;
-  if (PREVROOT == (void*)0) ROOTNODE->PREV = (void*)0;
+  if (PREVROOT == PNil) ROOTNODE->PREV = PNil;
   else {
     ROOTNODE->PREV = PREVROOT->PREV;
     PREVROOT->PREV = ROOTNODE;
@@ -36,8 +36,8 @@ NODE *FINDNODE(PInteger COUNT) {
   NODE *RESULT;
   NODE *NODE;
   NODE = ROOTNODE;
-  while (COUNT > 1 && NODE != (void*)0) {
-    if (NODE != (void*)0) NODE = NODE->NEXT;
+  while (COUNT > 1 && NODE != PNil) {
+    if (NODE != PNil) NODE = NODE->NEXT;
     COUNT = COUNT - 1;
   }
   RESULT = NODE;
@@ -46,7 +46,7 @@ NODE *FINDNODE(PInteger COUNT) {
 
 void DISPOSELIST() {
   NODE *NEXT;
-  while (ROOTNODE != (void*)0) {
+  while (ROOTNODE != PNil) {
     NEXT = ROOTNODE->NEXT;
     free(ROOTNODE);
     ROOTNODE = NEXT;
@@ -56,27 +56,21 @@ void DISPOSELIST() {
 void pascual_main() {
   MYSTR = malloc(sizeof(PString));
   *MYSTR = str_make(3, "foo");
-  WRITE_s(&OUTPUT, *MYSTR);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, MYSTR);
   free(MYSTR);
   MYREC = malloc(sizeof(MYRECORD));
   MYREC->A = 123;
   MYREC->B = 1;
-  WRITE_i(&OUTPUT, MYREC->A);
-  WRITE_c(&OUTPUT, ' ');
-  WRITE_b(&OUTPUT, MYREC->B);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpInt, MYREC->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYREC->B);
   free(MYREC);
   MYINT = malloc(sizeof(PInteger));
   *MYINT = 42;
-  WRITE_i(&OUTPUT, *MYINT);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINT);
   free(MYINT);
-  ROOTNODE = (void*)0;
+  ROOTNODE = PNil;
   ADDNODE(123);
   ADDNODE(456);
   ADDNODE(789);
-  WRITE_i(&OUTPUT, FINDNODE(2)->VALUE);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, FINDNODE(2)->VALUE);
   DISPOSELIST();
 }

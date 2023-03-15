@@ -2,14 +2,13 @@
 #include "pascual.h"
 
 void SAYHELLO() {
-  WRITE_s(&OUTPUT, str_make(6, "Hello!"));
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 6, "Hello!");
 }
 
 void SAY(PString WHAT, PBoolean EXCLAMATION) {
-  WRITE_s(&OUTPUT, WHAT);
-  if (EXCLAMATION) WRITE_c(&OUTPUT, '!');
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpStringPtr | RwpEnd, &WHAT);
+  if (EXCLAMATION) WRITE(&OUTPUT, RwpChar | RwpEnd, '!');
+  WRITE(&OUTPUT, RwpEnd | RwpLn);
 }
 
 void SWAP(PInteger *A, PInteger *B) {
@@ -20,8 +19,7 @@ void SWAP(PInteger *A, PInteger *B) {
 }
 
 void SAYCONSTREF(const PString *WHAT) {
-  WRITE_s(&OUTPUT, *WHAT);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, WHAT);
 }
 
 PInteger ADD(PInteger A, PInteger B) {
@@ -47,20 +45,12 @@ PInteger FIB(PInteger N) {
 void SECOND(PString NAME, PInteger LEVEL);
 
 void FIRST(PString NAME, PInteger LEVEL) {
-  WRITE_s(&OUTPUT, str_make(6, "First "));
-  WRITE_i(&OUTPUT, LEVEL);
-  WRITE_c(&OUTPUT, ' ');
-  WRITE_s(&OUTPUT, NAME);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 6, "First ", RwpInt, LEVEL, RwpChar, ' ', RwpStringPtr | RwpLn | RwpEnd, &NAME);
   if (LEVEL > 1) SECOND(NAME, LEVEL - 1);
 }
 
 void SECOND(PString NAME, PInteger LEVEL) {
-  WRITE_s(&OUTPUT, str_make(7, "Second "));
-  WRITE_i(&OUTPUT, LEVEL);
-  WRITE_c(&OUTPUT, ' ');
-  WRITE_s(&OUTPUT, NAME);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 7, "Second ", RwpInt, LEVEL, RwpChar, ' ', RwpStringPtr | RwpLn | RwpEnd, &NAME);
   if (LEVEL > 1) FIRST(NAME, LEVEL - 1);
 }
 
@@ -73,23 +63,14 @@ void pascual_main() {
   SAY(str_make(4, "Hola"), 1);
   X = 1;
   Y = 2;
-  WRITE_s(&OUTPUT, str_make(2, "x="));
-  WRITE_i(&OUTPUT, X);
-  WRITE_s(&OUTPUT, str_make(3, " y="));
-  WRITE_i(&OUTPUT, Y);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 2, "x=", RwpInt, X, RwpLenPtr, 3, " y=", RwpInt | RwpLn | RwpEnd, Y);
   SWAP(&X, &Y);
-  WRITE_s(&OUTPUT, str_make(2, "x="));
-  WRITE_i(&OUTPUT, X);
-  WRITE_s(&OUTPUT, str_make(3, " y="));
-  WRITE_i(&OUTPUT, Y);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 2, "x=", RwpInt, X, RwpLenPtr, 3, " y=", RwpInt | RwpLn | RwpEnd, Y);
   {
     PString tmp1 = str_make(5, "Hello");
     SAYCONSTREF(&tmp1);
   }
   X = ADD(Y, 3);
   X = ADD(Y, MULTIPLY(X, 2));
-  WRITE_i(&OUTPUT, FIB(10));
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, FIB(10));
 }

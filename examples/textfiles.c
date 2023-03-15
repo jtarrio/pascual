@@ -7,10 +7,8 @@ PFile OUTFILE;
 void COPYFILE(PFile *FILEIN, PFile *FILEOUT) {
   PString LINE;
   while (!EOF(FILEIN)) {
-    READ_s(FILEIN, &LINE);
-    READLN(FILEIN);
-    WRITE_s(FILEOUT, LINE);
-    WRITELN(FILEOUT);
+    READ(FILEIN, RwpString | RwpLn | RwpEnd, &LINE);
+    WRITE(FILEOUT, RwpStringPtr | RwpLn | RwpEnd, &LINE);
   }
   CLOSE(FILEIN);
   CLOSE(FILEOUT);

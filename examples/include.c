@@ -2,8 +2,7 @@
 #include "pascual.h"
 
 void DISPLAY() {
-  WRITE_s(&OUTPUT, str_make(11, "In included"));
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 11, "In included");
 }
 
 void pascual_main() {

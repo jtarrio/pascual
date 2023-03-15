@@ -2,66 +2,29 @@
 #include "pascual.h"
 
 void SHOWIF() {
-  if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "true"));
-    WRITELN(&OUTPUT);
-  }
-  else {
-    WRITE_s(&OUTPUT, str_make(5, "false"));
-    WRITELN(&OUTPUT);
-  }
-  if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "true"));
-    WRITELN(&OUTPUT);
-  }
+  if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
+  else WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
+  if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
   if (1) ;
-  else {
-    WRITE_s(&OUTPUT, str_make(5, "false"));
-    WRITELN(&OUTPUT);
-  }
+  else WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
   if (1) ;
   if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "true"));
-    WRITELN(&OUTPUT);
-    WRITE_s(&OUTPUT, str_make(8, "true dat"));
-    WRITELN(&OUTPUT);
+    WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
+    WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 8, "true dat");
   }
   else {
-    WRITE_s(&OUTPUT, str_make(5, "false"));
-    WRITELN(&OUTPUT);
-    WRITE_s(&OUTPUT, str_make(9, "no really"));
-    WRITELN(&OUTPUT);
+    WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
+    WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 9, "no really");
   }
+  if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
+  else if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "true2");
+  else WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
   if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "true"));
-    WRITELN(&OUTPUT);
+    if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
+    else WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
   }
-  else if (1) {
-    WRITE_s(&OUTPUT, str_make(5, "true2"));
-    WRITELN(&OUTPUT);
-  }
-  else {
-    WRITE_s(&OUTPUT, str_make(5, "false"));
-    WRITELN(&OUTPUT);
-  }
-  if (1) {
-    if (1) {
-      WRITE_s(&OUTPUT, str_make(4, "true"));
-      WRITELN(&OUTPUT);
-    }
-    else {
-      WRITE_s(&OUTPUT, str_make(5, "false"));
-      WRITELN(&OUTPUT);
-    }
-  }
-  if (1) if (1) {
-    WRITE_s(&OUTPUT, str_make(4, "true"));
-    WRITELN(&OUTPUT);
-  }
-  else {
-    WRITE_s(&OUTPUT, str_make(5, "false"));
-    WRITELN(&OUTPUT);
-  }
+  if (1) if (1) WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 4, "true");
+  else WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "false");
 }
 
 void SHOWREPEATUNTIL() {
@@ -73,8 +36,7 @@ void SHOWREPEATUNTIL() {
   I = 0;
   do {
     I = I + 1;
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
+    WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
   } while (!(I == 5));
   I = 10;
   do {
@@ -91,8 +53,7 @@ void SHOWWHILE() {
   I = 0;
   while (I != 5) {
     I = I + 1;
-    WRITE_i(&OUTPUT, I);
-    WRITELN(&OUTPUT);
+    WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
   }
   while (0) ;
 }
@@ -105,8 +66,7 @@ void SHOWFOR() {
     if (first <= last) {
       I = first;
       while (1) {
-        WRITE_i(&OUTPUT, I);
-        WRITELN(&OUTPUT);
+        WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
         if (I == last) break;
         ++I;
       }
@@ -118,8 +78,7 @@ void SHOWFOR() {
     if (first >= last) {
       I = first;
       while (1) {
-        WRITE_i(&OUTPUT, I);
-        WRITELN(&OUTPUT);
+        WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
         if (I == last) break;
         --I;
       }
@@ -132,9 +91,8 @@ void SHOWFOR() {
       I = first;
       while (1) {
         {
-          WRITE_s(&OUTPUT, str_make(14, "The number is "));
-          WRITE_i(&OUTPUT, I);
-          WRITELN(&OUTPUT);
+          WRITE(&OUTPUT, RwpLenPtr | RwpEnd, 14, "The number is ");
+          WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
         }
         if (I == last) break;
         ++I;
@@ -148,8 +106,7 @@ void SHOWFOR() {
     if (first <= last) {
       I = first;
       while (1) {
-        WRITE_i(&OUTPUT, I);
-        WRITELN(&OUTPUT);
+        WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
         if (I == last) break;
         ++I;
       }
@@ -162,16 +119,13 @@ void SHOWFOR() {
     if (first <= last) {
       I = first;
       while (1) {
-        WRITE_i(&OUTPUT, I);
-        WRITELN(&OUTPUT);
+        WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, I);
         if (I == last) break;
         ++I;
       }
     }
   } while(0);
-  WRITE_s(&OUTPUT, str_make(29, "The value of i is 0, not 20: "));
-  WRITE_i(&OUTPUT, I);
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr, 29, "The value of i is 0, not 20: ", RwpInt | RwpLn | RwpEnd, I);
 }
 
 void SHOWCASE() {
@@ -179,32 +133,26 @@ void SHOWCASE() {
   I = 'b';
   switch (I) {
     case 'a':
-      WRITE_c(&OUTPUT, 'a');
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpChar | RwpLn | RwpEnd, 'a');
       break;
     case 'b':
-      WRITE_c(&OUTPUT, 'b');
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpChar | RwpLn | RwpEnd, 'b');
       break;
     case 'c':
-      WRITE_c(&OUTPUT, 'c');
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpChar | RwpLn | RwpEnd, 'c');
       break;
     default:
       break;
   }
   switch (I) {
     case 'd':
-      WRITE_c(&OUTPUT, 'd');
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpChar | RwpLn | RwpEnd, 'd');
       break;
     case 'e':
-      WRITE_c(&OUTPUT, 'e');
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpChar | RwpLn | RwpEnd, 'e');
       break;
     default:
-      WRITE_s(&OUTPUT, str_make(5, "other"));
-      WRITELN(&OUTPUT);
+      WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 5, "other");
       break;
   }
 }

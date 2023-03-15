@@ -4,11 +4,7 @@
 PString NAME;
 
 void pascual_main() {
-  WRITE_s(&OUTPUT, str_make(19, "What is your name? "));
-  READ_s(&INPUT, &NAME);
-  READLN(&INPUT);
-  WRITE_s(&OUTPUT, str_make(7, "Hello, "));
-  WRITE_s(&OUTPUT, NAME);
-  WRITE_c(&OUTPUT, '!');
-  WRITELN(&OUTPUT);
+  WRITE(&OUTPUT, RwpLenPtr | RwpEnd, 19, "What is your name? ");
+  READ(&INPUT, RwpString | RwpLn | RwpEnd, &NAME);
+  WRITE(&OUTPUT, RwpLenPtr, 7, "Hello, ", RwpStringPtr, &NAME, RwpChar | RwpLn | RwpEnd, '!');
 }
