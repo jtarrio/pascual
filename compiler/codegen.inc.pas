@@ -379,6 +379,27 @@ begin
   end
 end;
 
+procedure _OutExStringChar(Expr : TExpression);
+begin
+  with Expr^.StringExpr^ do
+  begin
+    if Cls = XcPointer then
+    begin
+      _OutExpressionParens(PointerExpr, Expr);
+      write(Codegen.Output, '->chr[')
+    end
+    else if (Cls = XcVariable) and VarPtr^.IsReference then
+           write(Codegen.Output, VarPtr^.Name, '->chr[')
+    else
+    begin
+      _OutExpressionParens(Expr^.StringExpr, Expr);
+      write(Codegen.Output, '.chr[')
+    end;
+    OutExpression(Expr^.StringIndex);
+    write(Codegen.Output, ']')
+  end
+end;
+
 procedure _OutExFunctionCall(Expr : TExpression);
 var Pos : integer;
 begin
@@ -732,13 +753,7 @@ begin
                  write(Codegen.Output, '*');
                  _OutExpressionParens(Expr^.PointerExpr, Expr)
                end;
-    XcStringChar:
-                  begin
-                    _OutExpressionParens(Expr^.StringExpr, Expr);
-                    write(Codegen.Output, '.chr[');
-                    OutExpression(Expr^.StringIndex);
-                    write(Codegen.Output, ']')
-                  end;
+    XcStringChar: _OutExStringChar(Expr);
     XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
