@@ -5942,6 +5942,35 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
   }
 }
 
+void _OUTCONCATARGS(TEXPRESSIONOBJ *EXPR, PBoolean LAST) {
+  if (!ISSTRINGYTYPE(EXPR->TYPEPTR)) INTERNALERROR(cat_ss(str_make(28, "Expected a stringy type for "), EXDESCRIBE(EXPR)));
+  else if (EXPR->CLS != XCBINARYOP || EXPR->BINARY.OP != TKPLUS) {
+    if (LAST) WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(8, "CpEnd | "));
+    if (EXISIMMEDIATE(EXPR) && ISSTRINGTYPE(EXPR->TYPEPTR)) {
+      WRITE(&CODEGEN.OUTPUT, RwpString, str_make(10, "CpLenPtr, "), RwpInt | RwpEnd, LENGTH(&EXPR->IMMEDIATE.STRINGVAL));
+      _OUTCOMMA();
+      _OUTCSTRING(&EXPR->IMMEDIATE.STRINGVAL);
+    }
+    else if (ISCHARTYPE(EXPR->TYPEPTR)) {
+      WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(8, "CpChar, "));
+      OUTEXPRESSION(EXPR);
+    }
+    else if (EXPR->ISASSIGNABLE) {
+      WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(13, "CpStringPtr, "));
+      _OUTADDRESS(EXPR);
+    }
+    else {
+      WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(10, "CpString, "));
+      OUTEXPRESSION(EXPR);
+    }
+    if (!LAST) _OUTCOMMA();
+  }
+  else {
+    _OUTCONCATARGS(EXPR->BINARY.LEFT, 0);
+    _OUTCONCATARGS(EXPR->BINARY.RIGHT, LAST);
+  }
+}
+
 void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
   PChar LTYPE;
   PChar RTYPE;
@@ -5969,10 +5998,8 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
         if (ISCHARTYPE(with1->RIGHT->TYPEPTR)) RTYPE = 'c';
         else RTYPE = 's';
         if (with1->OP == TKPLUS) {
-          WRITE(&CODEGEN.OUTPUT, RwpString, str_make(4, "cat_"), RwpChar, LTYPE, RwpChar, RTYPE, RwpChar | RwpEnd, '(');
-          OUTEXPRESSION(with1->LEFT);
-          _OUTCOMMA();
-          OUTEXPRESSION(with1->RIGHT);
+          WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(7, "CONCAT("));
+          _OUTCONCATARGS(EXPR, 1);
           WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ')');
         }
         else if (ISCHARTYPE(with1->LEFT->TYPEPTR) && ISCHARTYPE(with1->RIGHT->TYPEPTR)) {
