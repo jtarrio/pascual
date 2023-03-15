@@ -566,7 +566,7 @@ void LXGETIDENTIFIER() {
   } while(0);
   POS = 1;
   while (POS <= 39 && LEXER.TOKEN.ID == TKIDENTIFIER) {
-    if (cmp_ss(LEXER.TOKEN.VALUE, KEYWORDS[subrange(POS, 1, 39) - 1]) == 0) LEXER.TOKEN.ID = TOKENS[subrange(POS, 1, 39) - 1];
+    if (cmp_str(CoEq, CpStringPtr, &LEXER.TOKEN.VALUE, CpString, KEYWORDS[subrange(POS, 1, 39) - 1])) LEXER.TOKEN.ID = TOKENS[subrange(POS, 1, 39) - 1];
     POS = POS + 1;
   }
 }
@@ -648,7 +648,7 @@ void LXGETCOMMENT() {
   else DELIMITERLENGTH = 2;
   LXGETSYMBOL(TKCOMMENT, DELIMITERLENGTH);
   do {
-    while (cmp_ss(LEXER.LINE, str_make(0, "")) == 0) {
+    while (cmp_str(CoEq, CpStringPtr, &LEXER.LINE, CpLenPtr, 0, "")) {
       COMMENT = CONCAT(CpStringPtr, &COMMENT, CpEnd | CpChar, ' ');
       READ(&LEXER.INPUT.SRC, RwpString | RwpLn | RwpEnd, &LEXER.LINE);
       LEXER.INPUT.POS.ROW = LEXER.INPUT.POS.ROW + 1;
@@ -677,12 +677,12 @@ void LXREADTOKEN() {
     CHR = LEXER.LINE.chr[1];
     if (LENGTH(&LEXER.LINE) >= 2) PFX = CONCAT(CpChar, LEXER.LINE.chr[1], CpEnd | CpChar, LEXER.LINE.chr[2]);
     else PFX = str_make(0, "");
-    if (cmp_ss(PFX, str_make(2, "<>")) == 0) LXGETSYMBOL(TKNOTEQUALS, 2);
-    else if (cmp_ss(PFX, str_make(2, "<=")) == 0) LXGETSYMBOL(TKLESSOREQUALS, 2);
-    else if (cmp_ss(PFX, str_make(2, ">=")) == 0) LXGETSYMBOL(TKMOREOREQUALS, 2);
-    else if (cmp_ss(PFX, str_make(2, ":=")) == 0) LXGETSYMBOL(TKASSIGN, 2);
-    else if (cmp_ss(PFX, str_make(2, "..")) == 0) LXGETSYMBOL(TKRANGE, 2);
-    else if (cmp_ss(PFX, str_make(2, "(*")) == 0) LXGETCOMMENT();
+    if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "<>")) LXGETSYMBOL(TKNOTEQUALS, 2);
+    else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "<=")) LXGETSYMBOL(TKLESSOREQUALS, 2);
+    else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, ">=")) LXGETSYMBOL(TKMOREOREQUALS, 2);
+    else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, ":=")) LXGETSYMBOL(TKASSIGN, 2);
+    else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "..")) LXGETSYMBOL(TKRANGE, 2);
+    else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "(*")) LXGETCOMMENT();
     else if (LXISIDENTIFIERFIRST(CHR)) LXGETIDENTIFIER();
     else if (LXISDIGIT(CHR)) LXGETNUMBER();
     else switch (CHR) {
@@ -942,7 +942,7 @@ void _CHECKUNUSEDSYMBOLS(TPSDEFENTRY *DEF) {
       }
       break;
     case TDCTYPE:
-      if (cmp_ss(DEF->TYPEPTR->NAME, str_make(0, "")) != 0 && !DEF->TYPEPTR->WASUSED) COMPILEWARNING(CONCAT(CpLenPtr, 5, "Type ", CpString, TYPENAME(DEF->TYPEPTR), CpEnd | CpLenPtr, 13, " was not used"));
+      if (cmp_str(CoNotEq, CpStringPtr, &DEF->TYPEPTR->NAME, CpLenPtr, 0, "") && !DEF->TYPEPTR->WASUSED) COMPILEWARNING(CONCAT(CpLenPtr, 5, "Type ", CpString, TYPENAME(DEF->TYPEPTR), CpEnd | CpLenPtr, 13, " was not used"));
       break;
     default:
       break;
@@ -1015,7 +1015,7 @@ TPSNAME *_FINDNAME(PString NAME, PBoolean REQUIRED, PBoolean FROMLOCALSCOPE) {
   RET = (void*)0;
   DEF = DEFS.LATEST;
   while (RET == (void*)0 && DEF != (void*)0 && (!FROMLOCALSCOPE || DEF->CLS != TDCSCOPEBOUNDARY)) {
-    if (DEF->CLS == TDCNAME && cmp_ss(NAME, DEF->NAMEPTR->NAME) == 0) RET = DEF->NAMEPTR;
+    if (DEF->CLS == TDCNAME && cmp_str(CoEq, CpStringPtr, &NAME, CpStringPtr, &DEF->NAMEPTR->NAME)) RET = DEF->NAMEPTR;
     DEF = DEF->PREV;
   }
   if (REQUIRED && RET == (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 20, "Unknown identifier: ", CpEnd | CpStringPtr, &NAME));
@@ -1427,7 +1427,7 @@ PString UNPARSESTRING(PString ST) {
     }
   } while(0);
   if (QUOTED) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
-  if (cmp_ss(RESULT, str_make(0, "")) == 0) RESULT = str_make(2, "''");
+  if (cmp_str(CoEq, CpStringPtr, &RESULT, CpLenPtr, 0, "")) RESULT = str_make(2, "''");
   return RESULT;
 }
 
@@ -1446,7 +1446,7 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, PBoolean USEORIGINAL) {
     TYP = *TYPEPTR;
     TYPEPTR = TYP.ALIASFOR;
   } while (!(!USEORIGINAL || TYPEPTR == (void*)0));
-  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) RESULT = TYP.NAME;
+  if (cmp_str(CoNotEq, CpStringPtr, &TYP.NAME, CpLenPtr, 0, "")) RESULT = TYP.NAME;
   else if (TYP.CLS == TTCENUM) {
     RET = str_of('(');
     do {
@@ -1519,7 +1519,7 @@ TPSTYPE *ADDTYPE(TPSTYPE TYP) {
   TYPEPTR = _ADDDEF(TDCTYPE)->TYPEPTR;
   *TYPEPTR = TYP;
   RESULT = TYPEPTR;
-  if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) {
+  if (cmp_str(CoNotEq, CpStringPtr, &TYP.NAME, CpLenPtr, 0, "")) {
     if (FINDNAMEINLOCALSCOPE(TYP.NAME, 0) != (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &TYP.NAME, CpEnd | CpLenPtr, 16, " already defined"));
     ADDTYPENAME(TYP.NAME, TYPEPTR);
   }
@@ -1644,7 +1644,7 @@ PInteger FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, PBoolean REQUIRED) {
       RET = 0;
       POS = with1->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_ss(NAME, with1->FIELDS[subrange(POS, 1, 32) - 1].NAME) == 0) RET = POS;
+        if (cmp_str(CoEq, CpStringPtr, &NAME, CpStringPtr, &with1->FIELDS[subrange(POS, 1, 32) - 1].NAME)) RET = POS;
         POS = POS - 1;
       }
     }
@@ -3549,22 +3549,22 @@ TEXPRESSIONOBJ *_EXBINOPSTRIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
     LEFT->IMMEDIATE.CLS = XICBOOLEAN;
     switch (OP) {
       case TKEQUALS:
-        BO = cmp_ss(LT, RT) == 0;
+        BO = cmp_str(CoEq, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       case TKNOTEQUALS:
-        BO = cmp_ss(LT, RT) != 0;
+        BO = cmp_str(CoNotEq, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       case TKLESSTHAN:
-        BO = cmp_ss(LT, RT) < 0;
+        BO = cmp_str(CoBefore, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       case TKMORETHAN:
-        BO = cmp_ss(LT, RT) > 0;
+        BO = cmp_str(CoAfter, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       case TKLESSOREQUALS:
-        BO = cmp_ss(LT, RT) <= 0;
+        BO = cmp_str(CoBeforeOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       case TKMOREOREQUALS:
-        BO = cmp_ss(LT, RT) >= 0;
+        BO = cmp_str(CoAfterOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
         break;
       default:
         ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
@@ -4097,7 +4097,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
         FIELD = first;
         while (1) {
           {
-            if (cmp_ss(REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
+            if (cmp_str(CoEq, CpStringPtr, &REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, CpStringPtr, &NAME)) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
           }
           if (FIELD == last) break;
           ++FIELD;
@@ -6192,13 +6192,13 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
   else if (TYPEPTR->CLS == TTCSTRING) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 7, "PString");
   else if (TYPEPTR->CLS == TTCTEXT) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 5, "PFile");
   else if (TYPEPTR->CLS == TTCENUM) {
-    if (TYPEPTR->ENUMPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
+    if (TYPEPTR->ENUMPTR->HASBEENDEFINED && cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
     else WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "enum enum", RwpInt | RwpEnd, TYPEPTR->ENUMPTR->ID);
   }
   else if (TYPEPTR->CLS == TTCRANGE) OUTTYPEREFERENCE(GETFUNDAMENTALTYPE(TYPEPTR));
   else if (TYPEPTR->CLS == TTCSET) _OUTSETTYPENAME(TYPEPTR);
   else if (TYPEPTR->CLS == TTCRECORD) {
-    if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
+    if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
     else WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 13, "struct record", RwpInt | RwpEnd, TYPEPTR->RECPTR->ID);
   }
   else if (TYPEPTR->CLS == TTCARRAY) {
@@ -6309,7 +6309,7 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
     OUTTYPEREFERENCE(TYPEPTR->POINTEDTYPEPTR);
     WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 2, " *", RwpStringPtr | RwpEnd, &NAME);
   }
-  else if (TYPEPTR->ALIASFOR != (void*)0 && cmp_ss(TYPEPTR->NAME, str_make(0, "")) != 0) WRITE(&CODEGEN.OUTPUT, RwpStringPtr, &TYPEPTR->NAME, RwpChar, ' ', RwpStringPtr | RwpEnd, &NAME);
+  else if (TYPEPTR->ALIASFOR != (void*)0 && cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) WRITE(&CODEGEN.OUTPUT, RwpStringPtr, &TYPEPTR->NAME, RwpChar, ' ', RwpStringPtr | RwpEnd, &NAME);
   else if (TYPEPTR->CLS == TTCBOOLEAN) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "PBoolean ", RwpStringPtr | RwpEnd, &NAME);
   else if (TYPEPTR->CLS == TTCINTEGER) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "PInteger ", RwpStringPtr | RwpEnd, &NAME);
   else if (TYPEPTR->CLS == TTCREAL) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 6, "PReal ", RwpStringPtr | RwpEnd, &NAME);
@@ -7517,7 +7517,7 @@ void COMPILEWARNING(PString MSG) {
 }
 
 void USAGE(PString MSG) {
-  if (cmp_ss(MSG, str_make(0, "")) != 0) {
+  if (cmp_str(CoNotEq, CpStringPtr, &MSG, CpLenPtr, 0, "")) {
     WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, &MSG);
     WRITE(&OUTPUT, RwpEnd | RwpLn);
   }
@@ -7577,19 +7577,19 @@ void PARSECMDLINE() {
       while (1) {
         {
           PARAM = PARAMSTR(POS);
-          if (PARAM.chr[1] == '-' && cmp_sc(PARAM, '-') != 0) {
-            if (cmp_ss(PARAM, str_make(2, "-o")) == 0) FLAG = FLAGOUTPUT;
-            else if (cmp_ss(PARAM, str_make(6, "-Wnone")) == 0) SUPPRESSWARNINGS = 1;
-            else if (cmp_ss(PARAM, str_make(2, "-h")) == 0) USAGE(str_make(0, ""));
+          if (PARAM.chr[1] == '-' && cmp_str(CoNotEq, CpStringPtr, &PARAM, CpChar, '-')) {
+            if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-o")) FLAG = FLAGOUTPUT;
+            else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 6, "-Wnone")) SUPPRESSWARNINGS = 1;
+            else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-h")) USAGE(str_make(0, ""));
             else USAGE(CONCAT(CpLenPtr, 16, "Unknown option: ", CpEnd | CpStringPtr, &PARAM));
           }
           else if (FLAG == FLAGOUTPUT) {
-            if (cmp_ss(OUTPUTFILE, str_make(0, "")) != 0) USAGE(str_make(39, "Output file must be specified only once"));
+            if (cmp_str(CoNotEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(39, "Output file must be specified only once"));
             else OUTPUTFILE = PARAM;
             FLAG = FLAGNONE;
           }
           else {
-            if (cmp_ss(INPUTFILE, str_make(0, "")) != 0) USAGE(str_make(38, "Input file must be specified only once"));
+            if (cmp_str(CoNotEq, CpStringPtr, &INPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(38, "Input file must be specified only once"));
             else INPUTFILE = PARAM;
           }
         }
@@ -7598,14 +7598,14 @@ void PARSECMDLINE() {
       }
     }
   } while(0);
-  if (cmp_ss(INPUTFILE, str_make(0, "")) == 0) USAGE(str_make(28, "Input file must be specified"));
-  if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) {
-    if (cmp_sc(INPUTFILE, '-') == 0) OUTPUTFILE = str_of('-');
+  if (cmp_str(CoEq, CpStringPtr, &INPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(28, "Input file must be specified"));
+  if (cmp_str(CoEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) {
+    if (cmp_str(CoEq, CpStringPtr, &INPUTFILE, CpChar, '-')) OUTPUTFILE = str_of('-');
     else OUTPUTFILE = REPLACEEXTENSION(INPUTFILE, str_make(4, ".pas"), str_make(2, ".c"));
   }
-  if (cmp_ss(OUTPUTFILE, str_make(0, "")) == 0) USAGE(str_make(29, "Output file must be specified"));
-  if (cmp_sc(INPUTFILE, '-') != 0) LXOPEN(INPUTFILE);
-  if (cmp_sc(OUTPUTFILE, '-') != 0) CODEGENSETOUTPUT(OUTPUTFILE);
+  if (cmp_str(CoEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(29, "Output file must be specified"));
+  if (cmp_str(CoNotEq, CpStringPtr, &INPUTFILE, CpChar, '-')) LXOPEN(INPUTFILE);
+  if (cmp_str(CoNotEq, CpStringPtr, &OUTPUTFILE, CpChar, '-')) CODEGENSETOUTPUT(OUTPUTFILE);
   OPTIONS.SUPPRESSWARNINGS = SUPPRESSWARNINGS;
   OPTIONS.CHECKBOUNDS = 1;
 }
