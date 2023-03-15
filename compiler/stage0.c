@@ -367,24 +367,24 @@ PString LXTOKENNAME(TLXTOKENID ID);
 
 PString ERRORDESCRIBEEXPR(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
-  RESULT = cat_sc(cat_ss(cat_ss(EXDESCRIBE(EXPR), str_make(2, " (")), TYPENAME(EXPR->TYPEPTR)), ')');
+  RESULT = CONCAT(CpString, EXDESCRIBE(EXPR), CpLenPtr, 2, " (", CpString, TYPENAME(EXPR->TYPEPTR), CpEnd | CpChar, ')');
   return RESULT;
 }
 
 void ERRORINVALIDOPERATOR(TEXPRESSIONOBJ *EXPR, TLXTOKENID OP) {
-  COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(9, "Operator "), LXTOKENNAME(OP)), str_make(28, " is not valid in expression ")), ERRORDESCRIBEEXPR(EXPR)));
+  COMPILEERROR(CONCAT(CpLenPtr, 9, "Operator ", CpString, LXTOKENNAME(OP), CpLenPtr, 28, " is not valid in expression ", CpEnd | CpString, ERRORDESCRIBEEXPR(EXPR)));
 }
 
 void ERRORINVALIDOPERATOR2(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID OP) {
-  COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(17, "Invalid operator "), LXTOKENNAME(OP)), str_make(5, " for ")), ERRORDESCRIBEEXPR(LEFT)), str_make(5, " and ")), ERRORDESCRIBEEXPR(RIGHT)));
+  COMPILEERROR(CONCAT(CpLenPtr, 17, "Invalid operator ", CpString, LXTOKENNAME(OP), CpLenPtr, 5, " for ", CpString, ERRORDESCRIBEEXPR(LEFT), CpLenPtr, 5, " and ", CpEnd | CpString, ERRORDESCRIBEEXPR(RIGHT)));
 }
 
 void ERRORFORTYPE(PString MSG, TPSTYPE *GOT) {
-  COMPILEERROR(cat_ss(cat_ss(MSG, str_make(6, "; got ")), TYPENAME(GOT)));
+  COMPILEERROR(CONCAT(CpStringPtr, &MSG, CpLenPtr, 6, "; got ", CpEnd | CpString, TYPENAME(GOT)));
 }
 
 void ERRORFOREXPR(PString MSG, TEXPRESSIONOBJ *GOT) {
-  COMPILEERROR(cat_ss(cat_ss(MSG, str_make(6, "; got ")), ERRORDESCRIBEEXPR(GOT)));
+  COMPILEERROR(CONCAT(CpStringPtr, &MSG, CpLenPtr, 6, "; got ", CpEnd | CpString, ERRORDESCRIBEEXPR(GOT)));
 }
 
 void ENSURERECORDTYPE(TPSTYPE *TYP) {
@@ -461,19 +461,19 @@ PString LXPOSSTR(TLXPOS POS) {
   PString COL;
   STR_i(POS.ROW, 0, &ROW);
   STR_i(POS.COL, 0, &COL);
-  RESULT = cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "row "), ROW), str_make(5, " col ")), COL), str_make(4, " in ")), LEXER.INPUT.NAME);
+  RESULT = CONCAT(CpLenPtr, 4, "row ", CpStringPtr, &ROW, CpLenPtr, 5, " col ", CpStringPtr, &COL, CpLenPtr, 4, " in ", CpEnd | CpStringPtr, &LEXER.INPUT.NAME);
   return RESULT;
 }
 
 PString LXWHERESTR() {
   PString RESULT;
-  RESULT = cat_ss(str_make(6, " near "), LXPOSSTR(LEXER.TOKEN.POS));
+  RESULT = CONCAT(CpLenPtr, 6, " near ", CpEnd | CpString, LXPOSSTR(LEXER.TOKEN.POS));
   return RESULT;
 }
 
 PString LXTOKENSTR() {
   PString RESULT;
-  RESULT = cat_sc(cat_ss(cat_ss(LXTOKENNAME(LEXER.TOKEN.ID), str_make(2, " [")), LEXER.TOKEN.VALUE), ']');
+  RESULT = CONCAT(CpString, LXTOKENNAME(LEXER.TOKEN.ID), CpLenPtr, 2, " [", CpStringPtr, &LEXER.TOKEN.VALUE, CpEnd | CpChar, ']');
   return RESULT;
 }
 
@@ -649,7 +649,7 @@ void LXGETCOMMENT() {
   LXGETSYMBOL(TKCOMMENT, DELIMITERLENGTH);
   do {
     while (cmp_ss(LEXER.LINE, str_make(0, "")) == 0) {
-      COMMENT = cat_sc(COMMENT, ' ');
+      COMMENT = CONCAT(CpStringPtr, &COMMENT, CpEnd | CpChar, ' ');
       READ(&LEXER.INPUT.SRC, RwpString | RwpLn | RwpEnd, &LEXER.LINE);
       LEXER.INPUT.POS.ROW = LEXER.INPUT.POS.ROW + 1;
       LEXER.INPUT.POS.COL = 1;
@@ -657,7 +657,7 @@ void LXGETCOMMENT() {
     if (DELIMITERLENGTH == 1) DONE = LEXER.LINE.chr[1] == '}';
     else DONE = LEXER.LINE.chr[1] == '*' && LEXER.LINE.chr[2] == ')';
     if (!DONE) {
-      COMMENT = cat_sc(COMMENT, LEXER.LINE.chr[1]);
+      COMMENT = CONCAT(CpStringPtr, &COMMENT, CpEnd | CpChar, LEXER.LINE.chr[1]);
       DELETE(&LEXER.LINE, 1, 1);
       LEXER.INPUT.POS.COL = LEXER.INPUT.POS.COL + 1;
     }
@@ -675,7 +675,7 @@ void LXREADTOKEN() {
   if (!LXISTOKENWAITING()) LEXER.TOKEN.ID = TKEOF;
   else {
     CHR = LEXER.LINE.chr[1];
-    if (LENGTH(&LEXER.LINE) >= 2) PFX = cat_cc(LEXER.LINE.chr[1], LEXER.LINE.chr[2]);
+    if (LENGTH(&LEXER.LINE) >= 2) PFX = CONCAT(CpChar, LEXER.LINE.chr[1], CpEnd | CpChar, LEXER.LINE.chr[2]);
     else PFX = str_make(0, "");
     if (cmp_ss(PFX, str_make(2, "<>")) == 0) LXGETSYMBOL(TKNOTEQUALS, 2);
     else if (cmp_ss(PFX, str_make(2, "<=")) == 0) LXGETSYMBOL(TKLESSOREQUALS, 2);
@@ -747,7 +747,7 @@ void LXREADTOKEN() {
         LXGETCOMMENT();
         break;
       default:
-        COMPILEERROR(cat_sc(cat_ss(str_make(17, "Could not parse ["), LEXER.LINE), ']'));
+        COMPILEERROR(CONCAT(CpLenPtr, 17, "Could not parse [", CpStringPtr, &LEXER.LINE, CpEnd | CpChar, ']'));
         break;
     }
   }
@@ -925,24 +925,24 @@ void _DISPOSEDEF(TPSDEFENTRY *DEF) {
 void _CHECKUNUSEDSYMBOLS(TPSDEFENTRY *DEF) {
   PString WHERE;
   if (DEFS.CURRENTFN == (void*)0) WHERE = str_make(0, "");
-  else if (DEFS.CURRENTFN->RETURNTYPEPTR == (void*)0) WHERE = cat_ss(str_make(14, " in procedure "), DEFS.CURRENTFN->NAME);
-  else WHERE = cat_ss(str_make(13, " in function "), DEFS.CURRENTFN->NAME);
+  else if (DEFS.CURRENTFN->RETURNTYPEPTR == (void*)0) WHERE = CONCAT(CpLenPtr, 14, " in procedure ", CpEnd | CpStringPtr, &DEFS.CURRENTFN->NAME);
+  else WHERE = CONCAT(CpLenPtr, 13, " in function ", CpEnd | CpStringPtr, &DEFS.CURRENTFN->NAME);
   switch (DEF->CLS) {
     case TDCVARIABLE:
       if (!DEF->VARPTR->WASUSED) {
-        if (DEF->VARPTR->ISCONSTANT) COMPILEWARNING(cat_ss(cat_ss(cat_ss(str_make(9, "Constant "), DEF->VARPTR->NAME), str_make(13, " was not used")), WHERE));
-        else COMPILEWARNING(cat_ss(cat_ss(cat_ss(str_make(9, "Variable "), DEF->VARPTR->NAME), str_make(13, " was not used")), WHERE));
+        if (DEF->VARPTR->ISCONSTANT) COMPILEWARNING(CONCAT(CpLenPtr, 9, "Constant ", CpStringPtr, &DEF->VARPTR->NAME, CpLenPtr, 13, " was not used", CpEnd | CpStringPtr, &WHERE));
+        else COMPILEWARNING(CONCAT(CpLenPtr, 9, "Variable ", CpStringPtr, &DEF->VARPTR->NAME, CpLenPtr, 13, " was not used", CpEnd | CpStringPtr, &WHERE));
       }
-      else if (!DEF->VARPTR->WASINITIALIZED) COMPILEWARNING(cat_ss(cat_ss(cat_ss(str_make(9, "Variable "), DEF->VARPTR->NAME), str_make(20, " was not initialized")), WHERE));
+      else if (!DEF->VARPTR->WASINITIALIZED) COMPILEWARNING(CONCAT(CpLenPtr, 9, "Variable ", CpStringPtr, &DEF->VARPTR->NAME, CpLenPtr, 20, " was not initialized", CpEnd | CpStringPtr, &WHERE));
       break;
     case TDCFUNCTION:
       if (!DEF->FNPTR->WASUSED) {
-        if (DEF->FNPTR->RETURNTYPEPTR == (void*)0) COMPILEWARNING(cat_ss(cat_ss(str_make(10, "Procedure "), DEF->FNPTR->NAME), str_make(13, " was not used")));
-        else COMPILEWARNING(cat_ss(cat_ss(str_make(9, "Function "), DEF->FNPTR->NAME), str_make(13, " was not used")));
+        if (DEF->FNPTR->RETURNTYPEPTR == (void*)0) COMPILEWARNING(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &DEF->FNPTR->NAME, CpEnd | CpLenPtr, 13, " was not used"));
+        else COMPILEWARNING(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &DEF->FNPTR->NAME, CpEnd | CpLenPtr, 13, " was not used"));
       }
       break;
     case TDCTYPE:
-      if (cmp_ss(DEF->TYPEPTR->NAME, str_make(0, "")) != 0 && !DEF->TYPEPTR->WASUSED) COMPILEWARNING(cat_ss(cat_ss(str_make(5, "Type "), TYPENAME(DEF->TYPEPTR)), str_make(13, " was not used")));
+      if (cmp_ss(DEF->TYPEPTR->NAME, str_make(0, "")) != 0 && !DEF->TYPEPTR->WASUSED) COMPILEWARNING(CONCAT(CpLenPtr, 5, "Type ", CpString, TYPENAME(DEF->TYPEPTR), CpEnd | CpLenPtr, 13, " was not used"));
       break;
     default:
       break;
@@ -1018,7 +1018,7 @@ TPSNAME *_FINDNAME(PString NAME, PBoolean REQUIRED, PBoolean FROMLOCALSCOPE) {
     if (DEF->CLS == TDCNAME && cmp_ss(NAME, DEF->NAMEPTR->NAME) == 0) RET = DEF->NAMEPTR;
     DEF = DEF->PREV;
   }
-  if (REQUIRED && RET == (void*)0) COMPILEERROR(cat_ss(str_make(20, "Unknown identifier: "), NAME));
+  if (REQUIRED && RET == (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 20, "Unknown identifier: ", CpEnd | CpStringPtr, &NAME));
   RESULT = RET;
   return RESULT;
 }
@@ -1027,22 +1027,22 @@ TPSNAME *_CHECKNAMECLASS(TPSNAME *NAMEPTR, TPSNAMECLASS CLS) {
   TPSNAME *RESULT;
   if (NAMEPTR != (void*)0 && NAMEPTR->CLS != CLS) switch (CLS) {
     case TNCTYPE:
-      COMPILEERROR(cat_ss(str_make(12, "Not a type: "), NAMEPTR->NAME));
+      COMPILEERROR(CONCAT(CpLenPtr, 12, "Not a type: ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
     case TNCVARIABLE:
-      COMPILEERROR(cat_ss(str_make(16, "Not a variable: "), NAMEPTR->NAME));
+      COMPILEERROR(CONCAT(CpLenPtr, 16, "Not a variable: ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
     case TNCENUMVAL:
-      COMPILEERROR(cat_ss(str_make(26, "Not an enumeration value: "), NAMEPTR->NAME));
+      COMPILEERROR(CONCAT(CpLenPtr, 26, "Not an enumeration value: ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
     case TNCFUNCTION:
-      COMPILEERROR(cat_ss(str_make(29, "Not a procedure or function: "), NAMEPTR->NAME));
+      COMPILEERROR(CONCAT(CpLenPtr, 29, "Not a procedure or function: ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
     case TNCPSEUDOFN:
-      COMPILEERROR(cat_ss(str_make(29, "Not a procedure or function: "), NAMEPTR->NAME));
+      COMPILEERROR(CONCAT(CpLenPtr, 29, "Not a procedure or function: ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(24, "Name class mismatch for "), NAMEPTR->NAME));
+      INTERNALERROR(CONCAT(CpLenPtr, 24, "Name class mismatch for ", CpEnd | CpStringPtr, &NAMEPTR->NAME));
       break;
   }
   RESULT = NAMEPTR;
@@ -1076,7 +1076,7 @@ TPSNAME *FINDNAMEOFCLASS(PString NAME, TPSNAMECLASS CLS, PBoolean REQUIRED) {
 TPSNAME *_ADDNAME(PString NAME, TPSNAMECLASS CLS) {
   TPSNAME *RESULT;
   TPSNAME *POS;
-  if (FINDNAMEINLOCALSCOPE(NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), NAME), str_make(16, " already defined")));
+  if (FINDNAMEINLOCALSCOPE(NAME, 0) != (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 16, " already defined"));
   POS = _ADDDEF(TDCNAME)->NAMEPTR;
   POS->NAME = NAME;
   POS->CLS = CLS;
@@ -1384,9 +1384,9 @@ PString UNPARSECHAR(PChar CHR) {
   if (CHR == '\'') RESULT = str_make(4, "''''");
   else if (CHR < ' ') {
     STR_i((int)CHR, 0, &CHNUM);
-    RESULT = cat_cs('#', CHNUM);
+    RESULT = CONCAT(CpChar, '#', CpEnd | CpStringPtr, &CHNUM);
   }
-  else RESULT = cat_sc(cat_cc('\'', CHR), '\'');
+  else RESULT = CONCAT(CpChar, '\'', CpChar, CHR, CpEnd | CpChar, '\'');
   return RESULT;
 }
 
@@ -1407,18 +1407,18 @@ PString UNPARSESTRING(PString ST) {
           if (ST.chr[POS] < ' ') {
             if (QUOTED) {
               QUOTED = 0;
-              RESULT = cat_sc(RESULT, '\'');
+              RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
             }
             STR_i((int)ST.chr[POS], 0, &CHNUM);
-            RESULT = cat_ss(cat_sc(RESULT, '#'), CHNUM);
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, '#', CpEnd | CpStringPtr, &CHNUM);
           }
           else {
             if (!QUOTED) {
               QUOTED = 1;
-              RESULT = cat_sc(RESULT, '\'');
+              RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
             }
-            if (ST.chr[POS] == '\'') RESULT = cat_ss(RESULT, str_make(2, "''"));
-            else RESULT = cat_sc(RESULT, ST.chr[POS]);
+            if (ST.chr[POS] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "''");
+            else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ST.chr[POS]);
           }
         }
         if (POS == last) break;
@@ -1426,7 +1426,7 @@ PString UNPARSESTRING(PString ST) {
       }
     }
   } while(0);
-  if (QUOTED) RESULT = cat_sc(RESULT, '\'');
+  if (QUOTED) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
   if (cmp_ss(RESULT, str_make(0, "")) == 0) RESULT = str_make(2, "''");
   return RESULT;
 }
@@ -1456,22 +1456,22 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, PBoolean USEORIGINAL) {
         POS = first;
         while (1) {
           {
-            if (POS != 0) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
+            if (POS != 0) RET = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ',');
+            RET = CONCAT(CpStringPtr, &RET, CpEnd | CpStringPtr, &TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
           }
           if (POS == last) break;
           ++POS;
         }
       }
     } while(0);
-    RESULT = cat_sc(RET, ')');
+    RESULT = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ')');
   }
   else if (TYP.CLS == TTCRANGE) {
-    RESULT = cat_ss(cat_ss(_ANTIORDINAL(TYP.RANGEDEF.FIRST, TYP.RANGEDEF.BASETYPEPTR), str_make(2, "..")), _ANTIORDINAL(TYP.RANGEDEF.LAST, TYP.RANGEDEF.BASETYPEPTR));
+    RESULT = CONCAT(CpString, _ANTIORDINAL(TYP.RANGEDEF.FIRST, TYP.RANGEDEF.BASETYPEPTR), CpLenPtr, 2, "..", CpEnd | CpString, _ANTIORDINAL(TYP.RANGEDEF.LAST, TYP.RANGEDEF.BASETYPEPTR));
   }
   else if (TYP.CLS == TTCSET) {
     if (TYP.ELEMENTTYPEPTR == (void*)0) RESULT = str_make(9, "SET OF []");
-    else RESULT = cat_ss(str_make(7, "SET OF "), DEEPTYPENAME(TYP.ELEMENTTYPEPTR, 0));
+    else RESULT = CONCAT(CpLenPtr, 7, "SET OF ", CpEnd | CpString, DEEPTYPENAME(TYP.ELEMENTTYPEPTR, 0));
   }
   else if (TYP.CLS == TTCRECORD) {
     RET = str_make(7, "RECORD ");
@@ -1482,25 +1482,25 @@ PString DEEPTYPENAME(TPSTYPE *TYPEPTR, PBoolean USEORIGINAL) {
         POS = first;
         while (1) {
           {
-            if (POS != 1) RET = cat_sc(RET, ',');
-            RET = cat_ss(RET, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
-            RET = cat_ss(cat_sc(RET, ':'), TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
+            if (POS != 1) RET = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ',');
+            RET = CONCAT(CpStringPtr, &RET, CpEnd | CpString, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
+            RET = CONCAT(CpStringPtr, &RET, CpChar, ':', CpEnd | CpStringPtr, &TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
           }
           if (POS == last) break;
           ++POS;
         }
       }
     } while(0);
-    RESULT = cat_ss(RET, str_make(4, " END"));
+    RESULT = CONCAT(CpStringPtr, &RET, CpEnd | CpLenPtr, 4, " END");
   }
   else if (TYP.CLS == TTCARRAY) {
-    RET = cat_ss(cat_ss(cat_ss(str_make(7, "ARRAY ["), DEEPTYPENAME(TYP.ARRAYDEF.INDEXTYPEPTR, 0)), str_make(5, "] OF ")), DEEPTYPENAME(TYP.ARRAYDEF.VALUETYPEPTR, 0));
+    RET = CONCAT(CpLenPtr, 7, "ARRAY [", CpString, DEEPTYPENAME(TYP.ARRAYDEF.INDEXTYPEPTR, 0), CpLenPtr, 5, "] OF ", CpEnd | CpString, DEEPTYPENAME(TYP.ARRAYDEF.VALUETYPEPTR, 0));
     RESULT = RET;
   }
-  else if (TYP.CLS == TTCPOINTER) RESULT = cat_cs('^', DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
+  else if (TYP.CLS == TTCPOINTER) RESULT = CONCAT(CpChar, '^', CpEnd | CpString, DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
   else {
     STR_e(TYP.CLS, enumvalues5, 0, &RET);
-    COMPILEERROR(cat_ss(str_make(37, "Could not get name for type of class "), RET));
+    COMPILEERROR(CONCAT(CpLenPtr, 37, "Could not get name for type of class ", CpEnd | CpStringPtr, &RET));
   }
   return RESULT;
 }
@@ -1520,7 +1520,7 @@ TPSTYPE *ADDTYPE(TPSTYPE TYP) {
   *TYPEPTR = TYP;
   RESULT = TYPEPTR;
   if (cmp_ss(TYP.NAME, str_make(0, "")) != 0) {
-    if (FINDNAMEINLOCALSCOPE(TYP.NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), TYP.NAME), str_make(16, " already defined")));
+    if (FINDNAMEINLOCALSCOPE(TYP.NAME, 0) != (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &TYP.NAME, CpEnd | CpLenPtr, 16, " already defined"));
     ADDTYPENAME(TYP.NAME, TYPEPTR);
   }
   if (TYP.CLS == TTCENUM && TYP.ALIASFOR == (void*)0) do {
@@ -1541,7 +1541,7 @@ TPSTYPE *ADDTYPE(TPSTYPE TYP) {
 TPSCONSTANT *ADDCONSTANT(TPSCONSTANT CONSTANT) {
   TPSCONSTANT *RESULT;
   TPSCONSTANT *CONSTPTR;
-  if (FINDNAMEINLOCALSCOPE(CONSTANT.NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), CONSTANT.NAME), str_make(16, " already defined")));
+  if (FINDNAMEINLOCALSCOPE(CONSTANT.NAME, 0) != (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &CONSTANT.NAME, CpEnd | CpLenPtr, 16, " already defined"));
   CONSTPTR = _ADDDEF(TDCCONSTANT)->CONSTPTR;
   ADDCONSTANTNAME(CONSTANT.NAME, CONSTPTR);
   *CONSTPTR = CONSTANT;
@@ -1552,7 +1552,7 @@ TPSCONSTANT *ADDCONSTANT(TPSCONSTANT CONSTANT) {
 TPSVARIABLE *ADDVARIABLE(TPSVARIABLE VARDEF) {
   TPSVARIABLE *RESULT;
   TPSVARIABLE *VARPTR;
-  if (FINDNAMEINLOCALSCOPE(VARDEF.NAME, 0) != (void*)0) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), VARDEF.NAME), str_make(16, " already defined")));
+  if (FINDNAMEINLOCALSCOPE(VARDEF.NAME, 0) != (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &VARDEF.NAME, CpEnd | CpLenPtr, 16, " already defined"));
   VARPTR = _ADDDEF(TDCVARIABLE)->VARPTR;
   ADDVARIABLENAME(VARDEF.NAME, VARPTR);
   *VARPTR = VARDEF;
@@ -1615,18 +1615,18 @@ TPSFUNCTION *ADDFUNCTION(TPSFUNCTION FUN) {
     ADDFUNCTIONNAME(FUN.NAME, FNPTR);
   }
   else {
-    if (NAMEPTR->CLS != TNCFUNCTION || FUN.ISDECLARATION) COMPILEERROR(cat_ss(cat_ss(str_make(11, "Identifier "), FUN.NAME), str_make(16, " already defined")));
+    if (NAMEPTR->CLS != TNCFUNCTION || FUN.ISDECLARATION) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
     FNPTR = NAMEPTR->FNPTR;
     if (FNPTR->ISDECLARATION) {
       if (FUN.ARGCOUNT == 0 && FUN.RETURNTYPEPTR == (void*)0 || ISSAMEFUNCTIONDEFINITION(FNPTR, FUN)) FNPTR->ISDECLARATION = 0;
       else {
-        if (ISPROCEDURE) COMPILEERROR(cat_ss(cat_ss(str_make(10, "Procedure "), FUN.NAME), str_make(42, " incompatible with its forward declaration")));
-        else COMPILEERROR(cat_ss(cat_ss(str_make(9, "Function "), FUN.NAME), str_make(42, " incompatible with its forward declaration")));
+        if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
+        else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
       }
     }
     else {
-      if (ISPROCEDURE) COMPILEERROR(cat_ss(cat_ss(str_make(10, "Procedure "), FUN.NAME), str_make(16, " already defined")));
-      else COMPILEERROR(cat_ss(cat_ss(str_make(9, "Function "), FUN.NAME), str_make(16, " already defined")));
+      if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
+      else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
     }
   }
   RESULT = FNPTR;
@@ -1649,7 +1649,7 @@ PInteger FINDFIELD(TPSTYPE *TYPEPTR, PString NAME, PBoolean REQUIRED) {
       }
     }
   }
-  if (REQUIRED && RET == 0) COMPILEERROR(cat_ss(str_make(17, "Field not found: "), NAME));
+  if (REQUIRED && RET == 0) COMPILEERROR(CONCAT(CpLenPtr, 17, "Field not found: ", CpEnd | CpStringPtr, &NAME));
   RESULT = RET;
   return RESULT;
 }
@@ -1689,7 +1689,7 @@ TPSVARIABLE *ADDWITHVAR(TEXPRESSIONOBJ *BASE) {
   TPSWITHVAR *WITHVARPTR;
   ENSURERECORDEXPR(BASE);
   STR_i(DEFCOUNTER(TCTTMPVAR), 0, &TMPVARNUM);
-  TMPVAR.NAME = cat_ss(str_make(4, "with"), TMPVARNUM);
+  TMPVAR.NAME = CONCAT(CpLenPtr, 4, "with", CpEnd | CpStringPtr, &TMPVARNUM);
   TMPVAR.TYPEPTR = BASE->TYPEPTR;
   TMPVAR.ISCONSTANT = 0;
   TMPVAR.ISREFERENCE = BASE->ISASSIGNABLE;
@@ -1748,7 +1748,7 @@ TPSVARIABLE *ADDTMPVARIABLE(PString PREFIX, TPSTYPE *TYPEPTR) {
   TPSVARIABLE *RESULT;
   PString VARNUM;
   STR_i(DEFCOUNTER(TCTTMPVAR), 0, &VARNUM);
-  RESULT = ADDVARIABLE(MAKEVARIABLE(cat_ss(PREFIX, VARNUM), TYPEPTR));
+  RESULT = ADDVARIABLE(MAKEVARIABLE(CONCAT(CpStringPtr, &PREFIX, CpEnd | CpStringPtr, &VARNUM), TYPEPTR));
   return RESULT;
 }
 
@@ -2249,7 +2249,7 @@ TEXPRESSIONOBJ *EXCOPY(TEXPRESSIONOBJ *EXPR) {
       }
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(24, "Cannot copy expression: "), EXDESCRIBE(EXPR)));
+      INTERNALERROR(CONCAT(CpLenPtr, 24, "Cannot copy expression: ", CpEnd | CpString, EXDESCRIBE(EXPR)));
       break;
   }
   RESULT = COPY;
@@ -2260,17 +2260,17 @@ PString _DESCRIBEIMMSETINTERNAL(TEXSETIMMBOUNDSOBJ *BOUNDS, TPSTYPE *SETOFTYPEPT
   PString RESULT;
   RESULT = str_make(0, "");
   while (BOUNDS != (void*)0) {
-    RESULT = cat_ss(RESULT, EXDESCRIBE(EXGETANTIORDINAL(BOUNDS->FIRST, SETOFTYPEPTR)));
-    if (BOUNDS->FIRST != BOUNDS->LAST) RESULT = cat_ss(cat_ss(RESULT, str_make(2, "..")), EXDESCRIBE(EXGETANTIORDINAL(BOUNDS->LAST, SETOFTYPEPTR)));
+    RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXGETANTIORDINAL(BOUNDS->FIRST, SETOFTYPEPTR)));
+    if (BOUNDS->FIRST != BOUNDS->LAST) RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 2, "..", CpEnd | CpString, EXDESCRIBE(EXGETANTIORDINAL(BOUNDS->LAST, SETOFTYPEPTR)));
     BOUNDS = BOUNDS->NEXT;
-    if (BOUNDS != (void*)0) RESULT = cat_ss(RESULT, str_make(2, ", "));
+    if (BOUNDS != (void*)0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
   }
   return RESULT;
 }
 
 PString _DESCRIBEIMMSET(TEXSETIMMBOUNDSOBJ *BOUNDS, TPSTYPE *SETOFTYPEPTR) {
   PString RESULT;
-  RESULT = cat_sc(cat_cs('[', _DESCRIBEIMMSETINTERNAL(BOUNDS, SETOFTYPEPTR)), ']');
+  RESULT = CONCAT(CpChar, '[', CpString, _DESCRIBEIMMSETINTERNAL(BOUNDS, SETOFTYPEPTR), CpEnd | CpChar, ']');
   return RESULT;
 }
 
@@ -2446,9 +2446,9 @@ PString _DESCRIBEUNARYOPEXPR(TEXPRESSIONOBJ *EXPR) {
       break;
   }
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->UNARY.PARENT);
-  if (USEPARENS) RESULT = cat_sc(RESULT, '(');
-  RESULT = cat_ss(RESULT, EXDESCRIBE(EXPR->UNARY.PARENT));
-  if (USEPARENS) RESULT = cat_sc(RESULT, ')');
+  if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->UNARY.PARENT));
+  if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
   return RESULT;
 }
 
@@ -2458,68 +2458,68 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ *EXPR) {
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->BINARY.LEFT);
   if (USEPARENS) RESULT = str_of('(');
   else RESULT = str_make(0, "");
-  RESULT = cat_ss(RESULT, EXDESCRIBE(EXPR->BINARY.LEFT));
-  if (USEPARENS) RESULT = cat_sc(RESULT, ')');
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.LEFT));
+  if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
   switch (EXPR->BINARY.OP) {
     case TKPLUS:
-      RESULT = cat_ss(RESULT, str_make(3, " + "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " + ");
       break;
     case TKMINUS:
-      RESULT = cat_ss(RESULT, str_make(3, " - "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " - ");
       break;
     case TKASTERISK:
-      RESULT = cat_ss(RESULT, str_make(3, " * "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " * ");
       break;
     case TKSLASH:
-      RESULT = cat_ss(RESULT, str_make(3, " / "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " / ");
       break;
     case TKDIV:
-      RESULT = cat_ss(RESULT, str_make(5, " div "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " div ");
       break;
     case TKAND:
-      RESULT = cat_ss(RESULT, str_make(5, " and "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " and ");
       break;
     case TKOR:
-      RESULT = cat_ss(RESULT, str_make(4, " or "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " or ");
       break;
     case TKXOR:
-      RESULT = cat_ss(RESULT, str_make(5, " xor "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " xor ");
       break;
     case TKSHL:
-      RESULT = cat_ss(RESULT, str_make(5, " shl "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " shl ");
       break;
     case TKSHR:
-      RESULT = cat_ss(RESULT, str_make(5, " shr "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " shr ");
       break;
     case TKIN:
-      RESULT = cat_ss(RESULT, str_make(4, " in "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " in ");
       break;
     case TKEQUALS:
-      RESULT = cat_ss(RESULT, str_make(3, " = "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " = ");
       break;
     case TKNOTEQUALS:
-      RESULT = cat_ss(RESULT, str_make(4, " <> "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " <> ");
       break;
     case TKLESSTHAN:
-      RESULT = cat_ss(RESULT, str_make(3, " < "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " < ");
       break;
     case TKMORETHAN:
-      RESULT = cat_ss(RESULT, str_make(3, " > "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " > ");
       break;
     case TKLESSOREQUALS:
-      RESULT = cat_ss(RESULT, str_make(4, " <= "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " <= ");
       break;
     case TKMOREOREQUALS:
-      RESULT = cat_ss(RESULT, str_make(4, " >= "));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " >= ");
       break;
     default:
-      INTERNALERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(46, "Cannot describe binary operation for operator "), LXTOKENNAME(EXPR->BINARY.OP)), str_make(14, " and operands ")), EXDESCRIBE(EXPR->BINARY.LEFT)), str_make(5, " and ")), EXDESCRIBE(EXPR->BINARY.RIGHT)));
+      INTERNALERROR(CONCAT(CpLenPtr, 46, "Cannot describe binary operation for operator ", CpString, LXTOKENNAME(EXPR->BINARY.OP), CpLenPtr, 14, " and operands ", CpString, EXDESCRIBE(EXPR->BINARY.LEFT), CpLenPtr, 5, " and ", CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.RIGHT)));
       break;
   }
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->BINARY.RIGHT);
-  if (USEPARENS) RESULT = cat_sc(RESULT, '(');
-  RESULT = cat_ss(RESULT, EXDESCRIBE(EXPR->BINARY.RIGHT));
-  if (USEPARENS) RESULT = cat_sc(RESULT, ')');
+  if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.RIGHT));
+  if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
   return RESULT;
 }
 
@@ -2527,27 +2527,27 @@ PString _DESCRIBEWITHTMPVAR(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
   RESULT = str_make(6, "{with ");
   while (EXPR->CLS == XCWITHTMPVAR) {
-    RESULT = cat_ss(cat_ss(cat_ss(RESULT, EXDESCRIBE(EXPR->TMPVAR)), str_make(2, ":=")), EXDESCRIBE(EXPR->TMPVARVALUE));
+    RESULT = CONCAT(CpStringPtr, &RESULT, CpString, EXDESCRIBE(EXPR->TMPVAR), CpLenPtr, 2, ":=", CpEnd | CpString, EXDESCRIBE(EXPR->TMPVARVALUE));
     EXPR = EXPR->TMPVARCHILD;
-    if (EXPR->CLS == XCWITHTMPVAR) RESULT = cat_ss(RESULT, str_make(2, ", "));
+    if (EXPR->CLS == XCWITHTMPVAR) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
   }
-  RESULT = cat_ss(cat_ss(RESULT, str_make(2, "} ")), EXDESCRIBE(EXPR));
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 2, "} ", CpEnd | CpString, EXDESCRIBE(EXPR));
   return RESULT;
 }
 
 PString _DESCRIBESET(TEXPRESSIONOBJ *EXPR) {
   PString RESULT;
   TEXSETEXPRBOUNDSOBJ *BOUNDS;
-  RESULT = cat_cs('[', _DESCRIBEIMMSETINTERNAL(EXPR->SETBASE->IMMEDIATE.SETBOUNDS, EXPR->SETBASE->IMMEDIATE.SETOFTYPEPTR));
-  if (EXPR->SETBASE->IMMEDIATE.SETBOUNDS != (void*)0) RESULT = cat_ss(RESULT, str_make(2, ", "));
+  RESULT = CONCAT(CpChar, '[', CpEnd | CpString, _DESCRIBEIMMSETINTERNAL(EXPR->SETBASE->IMMEDIATE.SETBOUNDS, EXPR->SETBASE->IMMEDIATE.SETOFTYPEPTR));
+  if (EXPR->SETBASE->IMMEDIATE.SETBOUNDS != (void*)0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
   BOUNDS = EXPR->SETBOUNDS;
   while (BOUNDS != (void*)0) {
-    RESULT = cat_ss(RESULT, EXDESCRIBE(BOUNDS->FIRST));
-    if (BOUNDS->LAST != (void*)0) RESULT = cat_ss(cat_ss(RESULT, str_make(2, "..")), EXDESCRIBE(BOUNDS->LAST));
+    RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(BOUNDS->FIRST));
+    if (BOUNDS->LAST != (void*)0) RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 2, "..", CpEnd | CpString, EXDESCRIBE(BOUNDS->LAST));
     BOUNDS = BOUNDS->NEXT;
-    if (BOUNDS != (void*)0) RESULT = cat_ss(RESULT, str_make(2, ", "));
+    if (BOUNDS != (void*)0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
   }
-  RESULT = cat_sc(RESULT, ']');
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ']');
   return RESULT;
 }
 
@@ -2577,23 +2577,23 @@ PString EXDESCRIBE(TEXPRESSIONOBJ *EXPR) {
       RESULT = EXPR->VARPTR->NAME;
       break;
     case XCFIELD:
-      RESULT = cat_ss(cat_sc(EXDESCRIBE(EXPR->RECEXPR), '.'), EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->RECEXPR), CpChar, '.', CpEnd | CpStringPtr, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
       break;
     case XCARRAY:
-      RESULT = cat_sc(cat_ss(cat_sc(EXDESCRIBE(EXPR->ARRAYEXPR), '['), EXDESCRIBE(EXPR->ARRAYINDEX)), ']');
+      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->ARRAYEXPR), CpChar, '[', CpString, EXDESCRIBE(EXPR->ARRAYINDEX), CpEnd | CpChar, ']');
       break;
     case XCPOINTER:
-      RESULT = cat_sc(EXDESCRIBE(EXPR->POINTEREXPR), '^');
+      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->POINTEREXPR), CpEnd | CpChar, '^');
       break;
     case XCSTRINGCHAR:
-      RESULT = cat_sc(cat_ss(cat_sc(EXDESCRIBE(EXPR->STRINGEXPR), '['), EXDESCRIBE(EXPR->STRINGINDEX)), ']');
+      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->STRINGEXPR), CpChar, '[', CpString, EXDESCRIBE(EXPR->STRINGINDEX), CpEnd | CpChar, ']');
       break;
     case XCFNREF:
       RESULT = EXPR->FNPTR->NAME;
       break;
     case XCFNCALL:
       {
-        RESULT = cat_sc(EXDESCRIBE(EXPR->FNEXPR), '(');
+        RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->FNEXPR), CpEnd | CpChar, '(');
         do {
           PInteger first = 1;
           PInteger last = EXPR->CALLARGS.SIZE;
@@ -2601,15 +2601,15 @@ PString EXDESCRIBE(TEXPRESSIONOBJ *EXPR) {
             POS = first;
             while (1) {
               {
-                if (POS != 1) RESULT = cat_ss(RESULT, str_make(2, ", "));
-                RESULT = cat_ss(RESULT, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]));
+                if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]));
               }
               if (POS == last) break;
               ++POS;
             }
           }
         } while(0);
-        RESULT = cat_sc(RESULT, ')');
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
       }
       break;
     case XCPSEUDOFNREF:
@@ -2692,7 +2692,7 @@ TEXPRESSIONOBJ *EXSTRINGCONSTANT(PString VALUE) {
 TEXPRESSIONOBJ *EXENUMCONSTANT(PInteger ORDINAL, TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *RESULT;
   ENSUREENUMTYPE(TYPEPTR);
-  if (ORDINAL < 0 || ORDINAL > TYPEPTR->ENUMPTR->SIZE - 1) COMPILEERROR(cat_ss(str_make(18, "Invalid value for "), TYPENAME(TYPEPTR)));
+  if (ORDINAL < 0 || ORDINAL > TYPEPTR->ENUMPTR->SIZE - 1) COMPILEERROR(CONCAT(CpLenPtr, 18, "Invalid value for ", CpEnd | CpString, TYPENAME(TYPEPTR)));
   RESULT = _EXIMMEDIATE(XICENUM);
   RESULT->IMMEDIATE.ENUMORDINAL = ORDINAL;
   RESULT->IMMEDIATE.ENUMPTR = TYPEPTR->ENUMPTR;
@@ -2803,8 +2803,8 @@ TEXPRESSIONOBJ *EXSETADDRANGE(TEXPRESSIONOBJ *SETEXPR, TEXPRESSIONOBJ *FIRST, TE
     SETEXPR->IMMEDIATE.SETOFTYPEPTR = ELEMENTTYPEPTR;
     SETEXPR->TYPEPTR->ELEMENTTYPEPTR = ELEMENTTYPEPTR;
   }
-  if (!ISSAMETYPE(GETFUNDAMENTALTYPE(FIRST->TYPEPTR), ELEMENTTYPEPTR)) ERRORFOREXPR(cat_ss(str_make(26, "Cannot add element to set "), ERRORDESCRIBEEXPR(SETEXPR)), FIRST);
-  if (LAST != (void*)0 && !ISSAMETYPE(GETFUNDAMENTALTYPE(LAST->TYPEPTR), ELEMENTTYPEPTR) && !ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) ERRORFOREXPR(cat_ss(str_make(26, "Cannot add element to set "), ERRORDESCRIBEEXPR(SETEXPR)), LAST);
+  if (!ISSAMETYPE(GETFUNDAMENTALTYPE(FIRST->TYPEPTR), ELEMENTTYPEPTR)) ERRORFOREXPR(CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR)), FIRST);
+  if (LAST != (void*)0 && !ISSAMETYPE(GETFUNDAMENTALTYPE(LAST->TYPEPTR), ELEMENTTYPEPTR) && !ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) ERRORFOREXPR(CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR)), LAST);
   if (EXISIMMEDIATE(SETEXPR)) {
     IMMSET = SETEXPR;
     EXPRSET = (void*)0;
@@ -2924,7 +2924,7 @@ TEXPRESSIONOBJ *EXVARIABLE(TPSVARIABLE *VARPTR) {
 TEXPRESSIONOBJ *EXFIELDACCESS(TEXPRESSIONOBJ *PARENT, PInteger FIELDNUM) {
   TEXPRESSIONOBJ *RESULT;
   ENSURERECORDEXPR(PARENT);
-  if (FIELDNUM < 1 || FIELDNUM > PARENT->TYPEPTR->RECPTR->SIZE) COMPILEERROR(cat_ss(str_make(23, "Invalid field for type "), TYPENAME(PARENT->TYPEPTR)));
+  if (FIELDNUM < 1 || FIELDNUM > PARENT->TYPEPTR->RECPTR->SIZE) COMPILEERROR(CONCAT(CpLenPtr, 23, "Invalid field for type ", CpEnd | CpString, TYPENAME(PARENT->TYPEPTR)));
   RESULT = _NEWEXPR(XCFIELD);
   RESULT->RECEXPR = PARENT;
   RESULT->RECFIELDNUM = FIELDNUM;
@@ -2983,7 +2983,7 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
   PInteger POS;
   TEXPRESSIONOBJ *FNCALL;
   if (FNEXPR->CLS != XCFNREF) ERRORFOREXPR(str_make(24, "Cannot call non-function"), FNEXPR);
-  if (ARGS->SIZE != FNEXPR->FNPTR->ARGCOUNT) COMPILEERROR(cat_ss(str_make(37, "Wrong number of arguments in call to "), FNEXPR->FNPTR->NAME));
+  if (ARGS->SIZE != FNEXPR->FNPTR->ARGCOUNT) COMPILEERROR(CONCAT(CpLenPtr, 37, "Wrong number of arguments in call to ", CpEnd | CpStringPtr, &FNEXPR->FNPTR->NAME));
   FNEXPR->FNPTR->WASUSED = 1;
   FNCALL = _NEWEXPR(XCFNCALL);
   FNCALL->FNEXPR = FNEXPR;
@@ -3006,7 +3006,7 @@ TEXPRESSIONOBJ *EXFUNCTIONCALL(TEXPRESSIONOBJ *FNEXPR, TEXFUNCTIONARGS *ARGS) {
                 RESULT = EXWITHTMPVAR(EXVARIABLE(ADDTMPVARIABLE(str_make(3, "tmp"), FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].TYPEPTR)), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], RESULT);
                 FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOPY(RESULT->TMPVAR);
               }
-              else COMPILEERROR(cat_ss(str_make(47, "Pass-by-reference argument must be assignable: "), EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1])));
+              else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1])));
             }
             else if (!FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISCONSTANT) EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
           }
@@ -3029,7 +3029,7 @@ TEXPRESSIONOBJ *EXPSEUDOFN(TPSPSEUDOFN SPECIALFN) {
 TEXPRESSIONOBJ *EXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
   TEXPRESSIONOBJ *RESULT;
   TPSPSEUDOFN FN;
-  if (EXPR->CLS != XCPSEUDOFNREF) INTERNALERROR(cat_ss(str_make(31, "Expected a pseudofunction, got "), EXDESCRIBE(EXPR)));
+  if (EXPR->CLS != XCPSEUDOFNREF) INTERNALERROR(CONCAT(CpLenPtr, 31, "Expected a pseudofunction, got ", CpEnd | CpString, EXDESCRIBE(EXPR)));
   FN = EXPR->PSEUDOFN;
   EXPR->CLS = XCPSEUDOFNCALL;
   EXPR->PSEUDOFNCALL.PSEUDOFN = FN;
@@ -3050,7 +3050,7 @@ void _EXSETCOERCETOCOMMON(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
   RIGHTTYPE = RIGHT->TYPEPTR;
   if (LEFTTYPE->ELEMENTTYPEPTR == (void*)0 || EXISIMMEDIATE(LEFT)) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
   else if (RIGHTTYPE->ELEMENTTYPEPTR == (void*)0 || EXISIMMEDIATE(RIGHT)) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
-  else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(30, "Type mismatch: cannot combine "), TYPENAME(LEFT->TYPEPTR)), str_make(6, " with ")), TYPENAME(RIGHT->TYPEPTR)));
+  else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(CONCAT(CpLenPtr, 30, "Type mismatch: cannot combine ", CpString, TYPENAME(LEFT->TYPEPTR), CpLenPtr, 6, " with ", CpEnd | CpString, TYPENAME(RIGHT->TYPEPTR)));
 }
 
 TEXPRESSIONOBJ *_EXSETUNION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT) {
@@ -3543,7 +3543,7 @@ TEXPRESSIONOBJ *_EXBINOPSTRIMM(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXT
   else RT = RIGHT->IMMEDIATE.STRINGVAL;
   if (OP == TKPLUS) {
     LEFT->IMMEDIATE.CLS = XICSTRING;
-    LT = cat_ss(LT, RT);
+    LT = CONCAT(CpStringPtr, &LT, CpEnd | CpStringPtr, &RT);
   }
   else {
     LEFT->IMMEDIATE.CLS = XICBOOLEAN;
@@ -3894,7 +3894,7 @@ TEXPRESSIONOBJ *EXGETANTIORDINAL(PInteger ORDINAL, TPSTYPE *TYPEPTR) {
       RESULT = EXENUMCONSTANT(ORDINAL, TYPEPTR);
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(32, "Cannot compute anti-ordinal for "), TYPENAME(TYPEPTR)));
+      INTERNALERROR(CONCAT(CpLenPtr, 32, "Cannot compute anti-ordinal for ", CpEnd | CpString, TYPENAME(TYPEPTR)));
       break;
   }
   return RESULT;
@@ -3905,7 +3905,7 @@ TEXPRESSIONOBJ *EXSUBRANGE(TEXPRESSIONOBJ *PARENT, TPSTYPE *TYPEPTR) {
   PInteger ORDINAL;
   if (EXISIMMEDIATE(PARENT)) {
     ORDINAL = EXGETORDINAL(PARENT);
-    if (ORDINAL < TYPEPTR->RANGEDEF.FIRST || ORDINAL > TYPEPTR->RANGEDEF.LAST) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(6, "Value "), EXDESCRIBE(PARENT)), str_make(19, " out of bounds for ")), TYPENAME(TYPEPTR)));
+    if (ORDINAL < TYPEPTR->RANGEDEF.FIRST || ORDINAL > TYPEPTR->RANGEDEF.LAST) COMPILEERROR(CONCAT(CpLenPtr, 6, "Value ", CpString, EXDESCRIBE(PARENT), CpLenPtr, 19, " out of bounds for ", CpEnd | CpString, TYPENAME(TYPEPTR)));
     PARENT->TYPEPTR = TYPEPTR;
     RESULT = PARENT;
   }
@@ -3943,7 +3943,7 @@ TEXPRESSIONOBJ *_EXCOERCESET(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   else OUTCOME = REJECT;
   switch (OUTCOME) {
     case REJECT:
-      ERRORFOREXPR(cat_ss(str_make(20, "Cannot treat set as "), TYPENAME(TYPEPTR)), EXPR);
+      ERRORFOREXPR(CONCAT(CpLenPtr, 20, "Cannot treat set as ", CpEnd | CpString, TYPENAME(TYPEPTR)), EXPR);
       break;
     case REPLACE:
       {
@@ -3973,7 +3973,7 @@ TEXPRESSIONOBJ *EXCOERCE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   else if (ISSETTYPE(EXPR->TYPEPTR) && ISSETTYPE(TYPEPTR)) {
     RESULT = _EXCOERCESET(EXPR, TYPEPTR);
   }
-  else ERRORFOREXPR(cat_ss(str_make(22, "Cannot treat value as "), TYPENAME(TYPEPTR)), EXPR);
+  else ERRORFOREXPR(CONCAT(CpLenPtr, 22, "Cannot treat value as ", CpEnd | CpString, TYPENAME(TYPEPTR)), EXPR);
   return RESULT;
 }
 
@@ -4000,15 +4000,15 @@ void EXMARKINITIALIZED(TEXPRESSIONOBJ *LHS) {
 void READTOKEN();
 
 void WANTTOKEN(TLXTOKENID ID) {
-  if (LEXER.TOKEN.ID != ID) COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID)), str_make(8, ", found ")), LXTOKENSTR()));
+  if (LEXER.TOKEN.ID != ID) COMPILEERROR(CONCAT(CpLenPtr, 13, "Wanted token ", CpString, LXTOKENNAME(ID), CpLenPtr, 8, ", found ", CpEnd | CpString, LXTOKENSTR()));
 }
 
 void WANTTOKEN2(TLXTOKENID ID1, TLXTOKENID ID2) {
-  if (LEXER.TOKEN.ID != ID1 && LEXER.TOKEN.ID != ID2) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID1)), str_make(4, " or ")), LXTOKENNAME(ID2)), str_make(8, ", found ")), LXTOKENSTR()));
+  if (LEXER.TOKEN.ID != ID1 && LEXER.TOKEN.ID != ID2) COMPILEERROR(CONCAT(CpLenPtr, 13, "Wanted token ", CpString, LXTOKENNAME(ID1), CpLenPtr, 4, " or ", CpString, LXTOKENNAME(ID2), CpLenPtr, 8, ", found ", CpEnd | CpString, LXTOKENSTR()));
 }
 
 void WANTTOKEN3(TLXTOKENID ID1, TLXTOKENID ID2, TLXTOKENID ID3) {
-  if (LEXER.TOKEN.ID != ID1 && LEXER.TOKEN.ID != ID2 && LEXER.TOKEN.ID != ID3) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(13, "Wanted token "), LXTOKENNAME(ID1)), str_make(2, ", ")), LXTOKENNAME(ID2)), str_make(5, ", or ")), LXTOKENNAME(ID3)), str_make(8, ", found ")), LXTOKENSTR()));
+  if (LEXER.TOKEN.ID != ID1 && LEXER.TOKEN.ID != ID2 && LEXER.TOKEN.ID != ID3) COMPILEERROR(CONCAT(CpLenPtr, 13, "Wanted token ", CpString, LXTOKENNAME(ID1), CpLenPtr, 2, ", ", CpString, LXTOKENNAME(ID2), CpLenPtr, 5, ", or ", CpString, LXTOKENNAME(ID3), CpLenPtr, 8, ", found ", CpEnd | CpString, LXTOKENSTR()));
 }
 
 void WANTTOKENANDREAD(TLXTOKENID ID) {
@@ -4097,7 +4097,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
         FIELD = first;
         while (1) {
           {
-            if (cmp_ss(REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(cat_ss(cat_ss(str_make(14, "A field named "), NAME), str_make(25, " has already been defined")));
+            if (cmp_ss(REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, NAME) == 0) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
           }
           if (FIELD == last) break;
           ++FIELD;
@@ -4237,7 +4237,7 @@ TPSTYPE *PSRANGETYPE() {
   WANTTOKENANDREAD(TKRANGE);
   LAST = PSIMMEDIATE();
   ENSUREORDINALEXPR(FIRST);
-  if (!ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) ERRORFOREXPR(cat_ss(str_make(9, "Expected "), TYPENAME(FIRST->TYPEPTR)), LAST);
+  if (!ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) ERRORFOREXPR(CONCAT(CpLenPtr, 9, "Expected ", CpEnd | CpString, TYPENAME(FIRST->TYPEPTR)), LAST);
   TYP = TYPEOFCLASS(TTCRANGE);
   TYP.RANGEDEF.FIRST = EXGETORDINAL(FIRST);
   TYP.RANGEDEF.LAST = EXGETORDINAL(LAST);
@@ -4278,7 +4278,7 @@ TPSTYPE *PSTYPEDENOTER() {
     else if (TNCCONSTANT <= IDX->CLS && IDX->CLS <= TNCENUMVAL) RESULT = PSRANGETYPE();
   }
   else if (LEXER.TOKEN.ID == TKINTEGER || TKSTRING <= LEXER.TOKEN.ID && LEXER.TOKEN.ID <= TKMINUS) RESULT = PSRANGETYPE();
-  if (RESULT == (void*)0) COMPILEERROR(cat_ss(str_make(29, "Expected type denoter, found "), LXTOKENSTR()));
+  if (RESULT == (void*)0) COMPILEERROR(CONCAT(CpLenPtr, 29, "Expected type denoter, found ", CpEnd | CpString, LXTOKENSTR()));
   return RESULT;
 }
 
@@ -4461,7 +4461,7 @@ void PSARGUMENTS(TPSFUNCTION *DEF) {
     LASTARG = DEF->ARGCOUNT;
     do {
       DEF->ARGCOUNT = DEF->ARGCOUNT + 1;
-      if (DEF->ARGCOUNT > 8) COMPILEERROR(cat_ss(str_make(41, "Too many arguments declared for function "), DEF->NAME));
+      if (DEF->ARGCOUNT > 8) COMPILEERROR(CONCAT(CpLenPtr, 41, "Too many arguments declared for function ", CpEnd | CpStringPtr, &DEF->NAME));
       DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
       DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
       DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
@@ -4637,7 +4637,7 @@ TEXPRESSIONOBJ *PSVARIABLE() {
     else if (FOUND.CLS == TNCFUNCTION) EXPR = EXFNREF(FOUND.FNPTR);
     else if (FOUND.CLS == TNCENUMVAL) EXPR = EXENUMCONSTANT(FOUND.ORDINAL, FOUND.ENUMTYPEPTR);
     else if (FOUND.CLS == TNCPSEUDOFN) EXPR = EXPSEUDOFN(FOUND.PSEUDOFN);
-    else COMPILEERROR(cat_ss(str_make(20, "Invalid identifier: "), ID.NAME));
+    else COMPILEERROR(CONCAT(CpLenPtr, 20, "Invalid identifier: ", CpEnd | CpStringPtr, &ID.NAME));
   }
   RESULT = EXPR;
   return RESULT;
@@ -4693,7 +4693,7 @@ PString PARSESTRING(PString PSTR) {
       POS = POS + 1;
       if (CH == '\'') {
         STATE = QUOTEDSTR;
-        if (POS > 2 && PSTR.chr[POS - 2] == '\'') RESULT = cat_sc(RESULT, '\'');
+        if (POS > 2 && PSTR.chr[POS - 2] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
       }
       else if (CH == '#') STATE = HASH;
       else if (CH == '^') STATE = CARET;
@@ -4702,7 +4702,7 @@ PString PARSESTRING(PString PSTR) {
     else if (STATE == QUOTEDSTR) {
       POS = POS + 1;
       if (CH == '\'') STATE = NONE;
-      else RESULT = cat_sc(RESULT, CH);
+      else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, CH);
     }
     else if (STATE == HASH) {
       CHNUM = 0;
@@ -4729,20 +4729,20 @@ PString PARSESTRING(PString PSTR) {
       else STATE = NUMCHARREADY;
     }
     else if (STATE == NUMCHARREADY) {
-      RESULT = cat_sc(RESULT, CHR(CHNUM));
+      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, CHR(CHNUM));
       STATE = NONE;
     }
     else if (STATE == CARET) {
       POS = POS + 1;
       STATE = NONE;
-      if ('@' <= CH && CH <= '_') RESULT = cat_sc(RESULT, CHR((int)CH - 64));
-      else if ('a' <= CH && CH <= 'z') RESULT = cat_sc(RESULT, CHR((int)CH - 96));
+      if ('@' <= CH && CH <= '_') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, CHR((int)CH - 64));
+      else if ('a' <= CH && CH <= 'z') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, CHR((int)CH - 96));
       else STATE = ERROR;
     }
-    else if (STATE == ERROR) COMPILEERROR(cat_ss(str_make(29, "Invalid character in string: "), PSTR));
+    else if (STATE == ERROR) COMPILEERROR(CONCAT(CpLenPtr, 29, "Invalid character in string: ", CpEnd | CpStringPtr, &PSTR));
   }
-  if (STATE == QUOTEDSTR || STATE == CARET) COMPILEERROR(cat_ss(str_make(26, "String is not terminated: "), PSTR));
-  if (NUMCHARDEC <= STATE && STATE <= NUMCHARHEX) RESULT = cat_sc(RESULT, CHR(CHNUM));
+  if (STATE == QUOTEDSTR || STATE == CARET) COMPILEERROR(CONCAT(CpLenPtr, 26, "String is not terminated: ", CpEnd | CpStringPtr, &PSTR));
+  if (NUMCHARDEC <= STATE && STATE <= NUMCHARHEX) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, CHR(CHNUM));
   return RESULT;
 }
 
@@ -4750,7 +4750,7 @@ PInteger PARSEINT(PString PSTR) {
   PInteger RESULT;
   PInteger CODE;
   VAL_i(&PSTR, &RESULT, &CODE);
-  if (CODE != 0) COMPILEERROR(cat_ss(str_make(25, "Could not parse integer: "), PSTR));
+  if (CODE != 0) COMPILEERROR(CONCAT(CpLenPtr, 25, "Could not parse integer: ", CpEnd | CpStringPtr, &PSTR));
   return RESULT;
 }
 
@@ -4758,7 +4758,7 @@ PReal PARSEREAL(PString PSTR) {
   PReal RESULT;
   PInteger CODE;
   VAL_r(&PSTR, &RESULT, &CODE);
-  if (CODE != 0) COMPILEERROR(cat_ss(str_make(29, "Could not parse real number: "), PSTR));
+  if (CODE != 0) COMPILEERROR(CONCAT(CpLenPtr, 29, "Could not parse real number: ", CpEnd | CpStringPtr, &PSTR));
   return RESULT;
 }
 
@@ -4815,7 +4815,7 @@ TEXPRESSIONOBJ *PSFACTOR() {
     WANTTOKENANDREAD(TKNOT);
     EXPR = EXUNARYOP(PSFACTOR(), TKNOT);
   }
-  else COMPILEERROR(cat_ss(str_make(29, "Invalid token in expression: "), LXTOKENSTR()));
+  else COMPILEERROR(CONCAT(CpLenPtr, 29, "Invalid token in expression: ", CpEnd | CpString, LXTOKENSTR()));
   RESULT = EXPR;
   return RESULT;
 }
@@ -5066,7 +5066,7 @@ void PSSTATEMENT() {
   else if (LEXER.TOKEN.ID == TKWHILE) PSWHILESTATEMENT();
   else if (LEXER.TOKEN.ID == TKFOR) PSFORSTATEMENT();
   else if (LEXER.TOKEN.ID == TKWITH) PSWITHSTATEMENT();
-  else COMPILEERROR(cat_ss(str_make(17, "Unexpected token "), LXTOKENSTR()));
+  else COMPILEERROR(CONCAT(CpLenPtr, 17, "Unexpected token ", CpEnd | CpString, LXTOKENSTR()));
 }
 
 void PSPROGRAMBLOCK() {
@@ -5414,7 +5414,7 @@ PInteger _BINOPPREC(TEXPRESSIONOBJ *EXPR) {
       else RESULT = 6;
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(35, "Unknown precedence for operator in "), EXDESCRIBE(EXPR)));
+      INTERNALERROR(CONCAT(CpLenPtr, 35, "Unknown precedence for operator in ", CpEnd | CpString, EXDESCRIBE(EXPR)));
       break;
   }
   return RESULT;
@@ -5476,7 +5476,7 @@ PInteger _PRECEDENCE(TEXPRESSIONOBJ *EXPR) {
       RESULT = _BINOPPREC(EXPR);
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(23, "Unknown precedence for "), EXDESCRIBE(EXPR)));
+      INTERNALERROR(CONCAT(CpLenPtr, 23, "Unknown precedence for ", CpEnd | CpString, EXDESCRIBE(EXPR)));
       break;
   }
   return RESULT;
@@ -5534,7 +5534,7 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ *EXPR) {
     }
   } while(0);
   while (BOUNDS != (void*)0) {
-    if (BOUNDS->FIRST < LOWBOUND || BOUNDS->LAST > HIGHBOUND) COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "Set "), EXDESCRIBE(EXPR)), str_make(19, " contains elements ")), str_make(27, "that are out of bounds for ")), TYPENAME(EXPR->TYPEPTR)));
+    if (BOUNDS->FIRST < LOWBOUND || BOUNDS->LAST > HIGHBOUND) COMPILEERROR(CONCAT(CpLenPtr, 4, "Set ", CpString, EXDESCRIBE(EXPR), CpLenPtr, 19, " contains elements ", CpLenPtr, 27, "that are out of bounds for ", CpEnd | CpString, TYPENAME(EXPR->TYPEPTR)));
     do {
       PInteger first = BOUNDS->FIRST;
       PInteger last = BOUNDS->LAST;
@@ -5768,7 +5768,7 @@ void _OUTEXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
       _OUTWRITE(EXPR);
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(31, "Unimplemented special function "), EXDESCRIBE(EXPR)));
+      INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented special function ", CpEnd | CpString, EXDESCRIBE(EXPR)));
       break;
   }
 }
@@ -5830,7 +5830,7 @@ PString _GETLOGICALOP(TLXTOKENID OP) {
   if (OP == TKAND) RESULT = str_make(2, "&&");
   else if (OP == TKOR) RESULT = str_make(2, "||");
   else if (OP == TKXOR) RESULT = str_make(2, "!=");
-  else INTERNALERROR(cat_ss(str_make(31, "Unimplemented logical operator "), LXTOKENNAME(OP)));
+  else INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented logical operator ", CpEnd | CpString, LXTOKENNAME(OP)));
   return RESULT;
 }
 
@@ -5841,7 +5841,7 @@ PString _GETBITWISEOP(TLXTOKENID OP) {
   else if (OP == TKXOR) RESULT = str_of('^');
   else if (OP == TKSHL) RESULT = str_make(2, "<<");
   else if (OP == TKSHR) RESULT = str_make(2, ">>");
-  else INTERNALERROR(cat_ss(str_make(31, "Unimplemented bitwise operator "), LXTOKENNAME(OP)));
+  else INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented bitwise operator ", CpEnd | CpString, LXTOKENNAME(OP)));
   return RESULT;
 }
 
@@ -5931,7 +5931,7 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
           WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(17, "set_intersection("));
           break;
         default:
-          INTERNALERROR(cat_ss(str_make(44, "Materialized set operation not implemented: "), LXTOKENNAME(OP)));
+          INTERNALERROR(CONCAT(CpLenPtr, 44, "Materialized set operation not implemented: ", CpEnd | CpString, LXTOKENNAME(OP)));
           break;
       }
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
@@ -5943,7 +5943,7 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
 }
 
 void _OUTCONCATARGS(TEXPRESSIONOBJ *EXPR, PBoolean LAST) {
-  if (!ISSTRINGYTYPE(EXPR->TYPEPTR)) INTERNALERROR(cat_ss(str_make(28, "Expected a stringy type for "), EXDESCRIBE(EXPR)));
+  if (!ISSTRINGYTYPE(EXPR->TYPEPTR)) INTERNALERROR(CONCAT(CpLenPtr, 28, "Expected a stringy type for ", CpEnd | CpString, EXDESCRIBE(EXPR)));
   else if (EXPR->CLS != XCBINARYOP || EXPR->BINARY.OP != TKPLUS) {
     if (LAST) WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(8, "CpEnd | "));
     if (EXISIMMEDIATE(EXPR) && ISSTRINGTYPE(EXPR->TYPEPTR)) {
@@ -6154,7 +6154,7 @@ void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
 
 PString OUTVARIABLENAME(PString NAME, PBoolean ISREFERENCE) {
   PString RESULT;
-  if (ISREFERENCE) RESULT = cat_cs('*', NAME);
+  if (ISREFERENCE) RESULT = CONCAT(CpChar, '*', CpEnd | CpStringPtr, &NAME);
   else RESULT = NAME;
   return RESULT;
 }
@@ -6185,7 +6185,7 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
     OUTTYPEREFERENCE(TYPEPTR->ARRAYDEF.VALUETYPEPTR);
     WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, '*');
   }
-  else INTERNALERROR(cat_ss(str_make(30, "Error writing type reference: "), TYPENAME(TYPEPTR)));
+  else INTERNALERROR(CONCAT(CpLenPtr, 30, "Error writing type reference: ", CpEnd | CpString, TYPENAME(TYPEPTR)));
 }
 
 void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR);
@@ -6304,7 +6304,7 @@ void OUTNAMEANDTYPE(PString NAME, TPSTYPE *TYPEPTR) {
   }
   else if (TYPEPTR->CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYPEPTR->RECPTR);
   else if (TYPEPTR->CLS == TTCARRAY) OUTNAMEANDARRAY(NAME, TYPEPTR);
-  else INTERNALERROR(cat_ss(cat_ss(cat_ss(str_make(29, "Error writing name and type: "), NAME), str_make(2, ", ")), TYPENAME(TYPEPTR)));
+  else INTERNALERROR(CONCAT(CpLenPtr, 29, "Error writing name and type: ", CpStringPtr, &NAME, CpLenPtr, 2, ", ", CpEnd | CpString, TYPENAME(TYPEPTR)));
 }
 
 void OUTTYPEDEFINITION(TPSTYPE *TYPEPTR) {
@@ -6312,7 +6312,7 @@ void OUTTYPEDEFINITION(TPSTYPE *TYPEPTR) {
   _OUTBLANKLINE(TOTTYPE);
   _OUTINDENT();
   NAME = TYPEPTR->NAME;
-  if (TYPEPTR->ALIASFOR == (void*)0) INTERNALERROR(cat_ss(cat_ss(str_make(5, "Type "), NAME), str_make(16, " is not an alias")));
+  if (TYPEPTR->ALIASFOR == (void*)0) INTERNALERROR(CONCAT(CpLenPtr, 5, "Type ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 16, " is not an alias"));
   WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, str_make(8, "typedef "));
   OUTNAMEANDTYPE(NAME, TYPEPTR->ALIASFOR);
   WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ';');
@@ -6429,7 +6429,7 @@ PChar SHORTTYPENAME(TPSTYPE *TYPEPTR) {
   else if (ISREALTYPE(TYPEPTR)) RESULT = 'r';
   else if (ISCHARTYPE(TYPEPTR)) RESULT = 'c';
   else if (ISSTRINGTYPE(TYPEPTR)) RESULT = 's';
-  else COMPILEERROR(cat_ss(cat_ss(cat_ss(str_make(5, "Type "), TYPENAME(TYPEPTR)), str_make(26, " is not representable for ")), str_make(24, "READ, WRITE, STR, or VAL")));
+  else COMPILEERROR(CONCAT(CpLenPtr, 5, "Type ", CpString, TYPENAME(TYPEPTR), CpLenPtr, 26, " is not representable for ", CpEnd | CpLenPtr, 24, "READ, WRITE, STR, or VAL"));
   return RESULT;
 }
 
@@ -6933,12 +6933,12 @@ TEXPRESSIONOBJ *_PF_UNARY_PARSE() {
 PString _PF_FUN_OVERLOAD(PString NAMEPREFIX, TPSTYPE *TYPEPTR) {
   PString RESULT;
   TYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
-  if (ISBOOLEANTYPE(TYPEPTR)) RESULT = cat_ss(NAMEPREFIX, str_make(2, "_b"));
-  else if (ISINTEGERTYPE(TYPEPTR)) RESULT = cat_ss(NAMEPREFIX, str_make(2, "_i"));
-  else if (ISREALTYPE(TYPEPTR)) RESULT = cat_ss(NAMEPREFIX, str_make(2, "_r"));
-  else if (ISCHARTYPE(TYPEPTR)) RESULT = cat_ss(NAMEPREFIX, str_make(2, "_c"));
-  else if (ISSTRINGTYPE(TYPEPTR)) RESULT = cat_ss(NAMEPREFIX, str_make(2, "_s"));
-  else COMPILEERROR(cat_ss(cat_ss(cat_ss(cat_ss(str_make(5, "Type "), TYPENAME(TYPEPTR)), str_make(26, " is not representable for ")), str_make(12, "overload of ")), NAMEPREFIX));
+  if (ISBOOLEANTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_b");
+  else if (ISINTEGERTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_i");
+  else if (ISREALTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_r");
+  else if (ISCHARTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_c");
+  else if (ISSTRINGTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_s");
+  else COMPILEERROR(CONCAT(CpLenPtr, 5, "Type ", CpString, TYPENAME(TYPEPTR), CpLenPtr, 26, " is not representable for ", CpLenPtr, 12, "overload of ", CpEnd | CpStringPtr, &NAMEPREFIX));
   return RESULT;
 }
 
@@ -6955,7 +6955,7 @@ TEXPRESSIONOBJ *_PF_OVERLOAD_PARSE(TEXPRESSIONOBJ *FNEXPR, PString NAMEPREFIX) {
     WANTTOKENANDREAD(TKRPAREN);
   }
   if (ARG == (void*)0) {
-    FNPTR = FINDNAMEOFCLASS(cat_ss(NAMEPREFIX, str_make(2, "_n")), TNCFUNCTION, 1)->FNPTR;
+    FNPTR = FINDNAMEOFCLASS(CONCAT(CpStringPtr, &NAMEPREFIX, CpEnd | CpLenPtr, 2, "_n"), TNCFUNCTION, 1)->FNPTR;
     ARGS.SIZE = 0;
     RESULT = EXFUNCTIONCALL(EXFNREF(FNPTR), &ARGS);
   }
@@ -7363,7 +7363,7 @@ TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN) {
       RESULT = PFWRITE_PARSE(FN);
       break;
     default:
-      INTERNALERROR(cat_ss(str_make(31, "Unimplemented special function "), EXDESCRIBE(FN)));
+      INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented special function ", CpEnd | CpString, EXDESCRIBE(FN)));
       break;
   }
   return RESULT;
@@ -7430,16 +7430,16 @@ PString PF_DESCRIBECALL(TEXPRESSIONOBJ *EXPR) {
     TEXPSEUDOFNCALL *with1 = &EXPR->PSEUDOFNCALL;
     switch (with1->PSEUDOFN) {
       case TPFDISPOSE:
-        RESULT = cat_sc(cat_ss(str_make(8, "DISPOSE("), EXDESCRIBE(with1->ARG1)), ')');
+        RESULT = CONCAT(CpLenPtr, 8, "DISPOSE(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
         break;
       case TPFNEW:
-        RESULT = cat_sc(cat_ss(str_make(4, "NEW("), EXDESCRIBE(with1->ARG1)), ')');
+        RESULT = CONCAT(CpLenPtr, 4, "NEW(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
         break;
       case TPFORD:
-        RESULT = cat_sc(cat_ss(str_make(4, "ORD("), EXDESCRIBE(with1->ARG1)), ')');
+        RESULT = CONCAT(CpLenPtr, 4, "ORD(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
         break;
       case TPFPRED:
-        RESULT = cat_sc(cat_ss(str_make(5, "PRED("), EXDESCRIBE(with1->ARG1)), ')');
+        RESULT = CONCAT(CpLenPtr, 5, "PRED(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
         break;
       case TPFREAD:
         RESULT = str_make(9, "READ(...)");
@@ -7448,15 +7448,15 @@ PString PF_DESCRIBECALL(TEXPRESSIONOBJ *EXPR) {
         RESULT = str_make(11, "READLN(...)");
         break;
       case TPFSTR:
-        if (with1->ARG3 == (void*)0) RESULT = cat_sc(cat_ss(cat_ss(cat_ss(str_make(4, "STR("), EXDESCRIBE(with1->ARG1)), str_make(2, ", ")), EXDESCRIBE(with1->ARG2)), ')');
-        else if (with1->ARG4 == (void*)0) RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_sc(cat_ss(str_make(4, "STR("), EXDESCRIBE(with1->ARG1)), ':'), EXDESCRIBE(with1->ARG3)), str_make(2, ", ")), EXDESCRIBE(with1->ARG2)), ')');
-        else RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_sc(cat_ss(cat_sc(cat_ss(str_make(4, "STR("), EXDESCRIBE(with1->ARG1)), ':'), EXDESCRIBE(with1->ARG3)), ':'), EXDESCRIBE(with1->ARG4)), str_make(2, ", ")), EXDESCRIBE(with1->ARG2)), ')');
+        if (with1->ARG3 == (void*)0) RESULT = CONCAT(CpLenPtr, 4, "STR(", CpString, EXDESCRIBE(with1->ARG1), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG2), CpEnd | CpChar, ')');
+        else if (with1->ARG4 == (void*)0) RESULT = CONCAT(CpLenPtr, 4, "STR(", CpString, EXDESCRIBE(with1->ARG1), CpChar, ':', CpString, EXDESCRIBE(with1->ARG3), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG2), CpEnd | CpChar, ')');
+        else RESULT = CONCAT(CpLenPtr, 4, "STR(", CpString, EXDESCRIBE(with1->ARG1), CpChar, ':', CpString, EXDESCRIBE(with1->ARG3), CpChar, ':', CpString, EXDESCRIBE(with1->ARG4), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG2), CpEnd | CpChar, ')');
         break;
       case TPFSUCC:
-        RESULT = cat_sc(cat_ss(str_make(5, "SUCC("), EXDESCRIBE(with1->ARG1)), ')');
+        RESULT = CONCAT(CpLenPtr, 5, "SUCC(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
         break;
       case TPFVAL:
-        RESULT = cat_sc(cat_ss(cat_ss(cat_ss(cat_ss(cat_ss(str_make(4, "VAL("), EXDESCRIBE(with1->ARG1)), str_make(2, ", ")), EXDESCRIBE(with1->ARG2)), str_make(2, ", ")), EXDESCRIBE(with1->ARG3)), ')');
+        RESULT = CONCAT(CpLenPtr, 4, "VAL(", CpString, EXDESCRIBE(with1->ARG1), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG2), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG3), CpEnd | CpChar, ')');
         break;
       case TPFWRITE:
         RESULT = str_make(10, "WRITE(...)");
@@ -7522,7 +7522,7 @@ PString REPLACEEXTENSION(PString STR, PString OLD, PString NEW) {
         }
       }
     } while(0);
-    if (MATCHES) RESULT = cat_ss(COPY(&STR, 1, BASELEN), NEW);
+    if (MATCHES) RESULT = CONCAT(CpString, COPY(&STR, 1, BASELEN), CpEnd | CpStringPtr, &NEW);
   }
   return RESULT;
 }
@@ -7551,7 +7551,7 @@ void PARSECMDLINE() {
             if (cmp_ss(PARAM, str_make(2, "-o")) == 0) FLAG = FLAGOUTPUT;
             else if (cmp_ss(PARAM, str_make(6, "-Wnone")) == 0) SUPPRESSWARNINGS = 1;
             else if (cmp_ss(PARAM, str_make(2, "-h")) == 0) USAGE(str_make(0, ""));
-            else USAGE(cat_ss(str_make(16, "Unknown option: "), PARAM));
+            else USAGE(CONCAT(CpLenPtr, 16, "Unknown option: ", CpEnd | CpStringPtr, &PARAM));
           }
           else if (FLAG == FLAGOUTPUT) {
             if (cmp_ss(OUTPUTFILE, str_make(0, "")) != 0) USAGE(str_make(39, "Output file must be specified only once"));
