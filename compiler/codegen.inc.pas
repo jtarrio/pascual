@@ -584,10 +584,19 @@ begin
       _OutComma;
       _OutCstring(Expr^.Immediate.StringVal)
     end
+    else if IsCharType(Expr^.TypePtr) then
+    begin
+      write(Codegen.Output, 'CpChar, ');
+      OutExpression(Expr)
+    end
+    else if Expr^.IsAssignable then
+    begin
+      write(Codegen.Output, 'CpStringPtr, ');
+      _OutAddress(Expr)
+    end
     else
     begin
-      if IsCharType(Expr^.TypePtr) then write(Codegen.Output, 'CpChar, ')
-      else write(Codegen.Output, 'CpString, ');
+      write(Codegen.Output, 'CpString, ');
       OutExpression(Expr)
     end;
     if not Last then _OutComma

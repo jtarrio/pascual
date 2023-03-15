@@ -21,7 +21,8 @@ const char* pchar_of_str(const PString* str);
 enum ConcatParamType {
   CpChar = 0x01,
   CpString = 0x02,
-  CpLenPtr = 0x03,
+  CpStringPtr = 0x03,
+  CpLenPtr = 0x04,
   CpEnd = 0x80
 };
 PString CONCAT(enum ConcatParamType paramtype, ...);

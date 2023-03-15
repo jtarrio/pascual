@@ -98,6 +98,14 @@ const char* pchar_of_str(const PString* str) {
   return buffer;
 }
 
+static void str_concat(PString* dst, int len, const char* src) {
+  if (len > (255 - dst->len)) len = 255 - dst->len;
+  if (len > 0) {
+    memcpy(dst->value + dst->len, src, len);
+    dst->len += len;
+  }
+}
+
 PString CONCAT(enum ConcatParamType paramtype, ...) {
   int end = 0;
   PString ret;
@@ -114,18 +122,18 @@ PString CONCAT(enum ConcatParamType paramtype, ...) {
         break;
       case CpString: {
         PString b = va_arg(args, PString);
-        int cp = b.len;
-        if (cp > (255 - ret.len)) cp = 255 - ret.len;
-        memcpy(ret.value + ret.len, b.value, cp);
-        ret.len += cp;
+        str_concat(&ret, b.len, b.value);
+        break;
+      }
+      case CpStringPtr: {
+        PString* b = va_arg(args, PString*);
+        str_concat(&ret, b->len, b->value);
         break;
       }
       case CpLenPtr: {
         int cp = va_arg(args, int);
         const char* b = va_arg(args, const char*);
-        if (cp > (255 - ret.len)) cp = 255 - ret.len;
-        memcpy(ret.value + ret.len, b, cp);
-        ret.len += cp;
+        str_concat(&ret, cp, b);
         break;
       }
     }
