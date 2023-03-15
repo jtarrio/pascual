@@ -1157,8 +1157,16 @@ begin
       TtcInteger: write(Codegen.Output, ', RwpInt');
       TtcReal: write(Codegen.Output, ', RwpReal');
       TtcChar: write(Codegen.Output, ', RwpChar');
-      TtcString: write(Codegen.Output, ', RwpString');
       TtcEnum: write(Codegen.Output, ', RwpEnum');
+      TtcString:
+                 begin
+                   if ExIsImmediate(WriteArg^.Arg) then
+                     write(Codegen.Output, ', RwpLenPtr')
+                   else if WriteArg^.Arg^.IsAssignable then
+                          write(Codegen.Output, ', RwpStringPtr')
+                   else
+                     write(Codegen.Output, ', RwpString')
+                 end;
     end;
     if WriteArg^.Width <> nil then write(Codegen.Output, ' | RwpWidth');
     if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then
@@ -1179,7 +1187,18 @@ begin
       OutExpression(WriteArg^.Prec)
     end;
     _OutComma;
-    OutExpression(WriteArg^.Arg);
+    if IsStringType(WriteArg^.Arg^.TypePtr)
+       and ExIsImmediate(WriteArg^.Arg) then
+    begin
+      write(Codegen.Output, Length(WriteArg^.Arg^.Immediate.StringVal));
+      _OutComma;
+      _OutCstring(WriteArg^.Arg^.Immediate.StringVal)
+    end
+    else if IsStringType(WriteArg^.Arg^.TypePtr)
+            and WriteArg^.Arg^.IsAssignable then
+           _OutAddress(WriteArg^.Arg)
+    else
+      OutExpression(WriteArg^.Arg);
     if IsEnumType(TypePtr) then
       write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
     WriteArg := WriteArg^.Next

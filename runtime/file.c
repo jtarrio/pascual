@@ -313,22 +313,27 @@ void READ(PFile* file, ...) {
   va_end(args);
 }
 
-static void writestr(PFile* file, const PString* str, int width, int linefeed) {
+static void writestr(PFile* file, int strlen, const char* strptr, int width,
+                     int linefeed) {
   check_ioresult();
   if (!is_open(file)) return;
   clearerr(file->file);
-  for (int i = 0; i < width - str->len; ++i) fputc(' ', file->file);
-  for (int pos = 0; pos < str->len; ++pos) fputc(str->value[pos], file->file);
+  for (int i = 0; i < width - strlen; ++i) fputc(' ', file->file);
+  for (int pos = 0; pos < strlen; ++pos) fputc(strptr[pos], file->file);
   if (linefeed) fputc('\n', file->file);
   if (ferror(file->file)) set_ioresult(file, ieWriteError);
 }
 
 void WRITE(PFile* file, ...) {
+  int use_ptr;
   PString str;
+  int strlen;
+  const char* strptr;
   enum ReadWriteParamType paramtype;
   va_list args;
   va_start(args, file);
   do {
+    use_ptr = 0;
     str.len = 0;
     paramtype = va_arg(args, enum ReadWriteParamType);
     int width = paramtype & RwpWidth ? va_arg(args, int) : 0;
@@ -347,17 +352,33 @@ void WRITE(PFile* file, ...) {
         str.value[0] = va_arg(args, int);
         str.len = 1;
         break;
-      case RwpString:
-        str = va_arg(args, PString);
-        break;
       case RwpEnum: {
         POrdinal ordinal = va_arg(args, POrdinal);
         const char** enumvalues = va_arg(args, const char**);
         STR_e(ordinal, enumvalues, 0, &str);
         break;
       }
+      case RwpString:
+        str = va_arg(args, PString);
+        break;
+      case RwpStringPtr: {
+        PString* dst = va_arg(args, PString*);
+        use_ptr = 1;
+        strlen = dst->len;
+        strptr = dst->value;
+        break;
+      }
+      case RwpLenPtr: {
+        use_ptr = 1;
+        strlen = va_arg(args, int);
+        strptr = va_arg(args, const char*);
+        break;
+      }
     }
-    writestr(file, &str, width, paramtype & RwpLn);
+    if (use_ptr)
+      writestr(file, strlen, strptr, width, paramtype & RwpLn);
+    else
+      writestr(file, str.len, str.value, width, paramtype & RwpLn);
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
 }
