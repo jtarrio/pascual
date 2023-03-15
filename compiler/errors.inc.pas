@@ -87,3 +87,9 @@ begin
   if not Expr^.IsAssignable then
     ErrorForExpr('Expected a variable', Expr)
 end;
+
+procedure EnsureAddressableExpr(Expr : TExpression);
+begin
+  if not Expr^.IsAddressable then
+    ErrorForExpr('Expected an addressable value', Expr)
+end;

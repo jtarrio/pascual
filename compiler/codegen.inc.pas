@@ -389,7 +389,7 @@ begin
     if Pos <> 1 then _OutComma;
     if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
     begin
-      EnsureAssignableExpr(Expr^.CallArgs.Values[Pos]);
+      EnsureAddressableExpr(Expr^.CallArgs.Values[Pos]);
       _OutAddress(Expr^.CallArgs.Values[Pos])
     end
     else
@@ -584,7 +584,7 @@ begin
     write(Codegen.Output, 'CpChar, ');
     OutExpression(Expr)
   end
-  else if Expr^.IsAssignable then
+  else if Expr^.IsAddressable then
   begin
     write(Codegen.Output, 'CpStringPtr, ');
     _OutAddress(Expr)
@@ -1171,7 +1171,7 @@ begin
                  begin
                    if ExIsImmediate(WriteArg^.Arg) then
                      write(Codegen.Output, ', RwpLenPtr')
-                   else if WriteArg^.Arg^.IsAssignable then
+                   else if WriteArg^.Arg^.IsAddressable then
                           write(Codegen.Output, ', RwpStringPtr')
                    else
                      write(Codegen.Output, ', RwpString')
@@ -1204,7 +1204,7 @@ begin
       _OutCstring(WriteArg^.Arg^.Immediate.StringVal)
     end
     else if IsStringType(WriteArg^.Arg^.TypePtr)
-            and WriteArg^.Arg^.IsAssignable then
+            and WriteArg^.Arg^.IsAddressable then
            _OutAddress(WriteArg^.Arg)
     else
       OutExpression(WriteArg^.Arg);

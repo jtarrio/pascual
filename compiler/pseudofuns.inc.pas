@@ -182,8 +182,9 @@ begin
     while Lexer.Token.Id <> TkRparen do
     begin
       OutVar := PsExpression;
-      if First and OutVar^.IsAssignable and IsTextType(OutVar^.TypePtr) then
+      if First and IsTextType(OutVar^.TypePtr) then
       begin
+        EnsureAddressableExpr(OutVar);
         ExDispose(Result^.PseudoFnCall.Arg1);
         Result^.PseudoFnCall.Arg1 := OutVar
       end
@@ -335,8 +336,9 @@ begin
     while Lexer.Token.Id <> TkRparen do
     begin
       OutExpr := PsExpression;
-      if First and OutExpr^.IsAssignable and IsTextType(OutExpr^.TypePtr) then
+      if First and IsTextType(OutExpr^.TypePtr) then
       begin
+        EnsureAddressableExpr(OutExpr);
         ExDispose(Result^.PseudoFnCall.Arg1);
         Result^.PseudoFnCall.Arg1 := OutExpr
       end

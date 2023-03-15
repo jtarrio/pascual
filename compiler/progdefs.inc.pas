@@ -868,7 +868,7 @@ begin
   TmpVar.Name := 'with' + TmpVarNum;
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;
-  TmpVar.IsReference := Base^.IsAssignable;
+  TmpVar.IsReference := Base^.IsAddressable;
   TmpVar.WasInitialized := true;
   TmpVar.WasUsed := true;
   TmpVarPtr := AddVariable(TmpVar);

@@ -97,6 +97,7 @@ type
   TExpressionObj = record
     TypePtr : TPsTypePtr;
     IsAssignable : boolean;
+    IsAddressable : boolean;
     IsFunctionResult : boolean;
     case Cls : TExpressionClass of 
       XcImmediate : (Immediate : TExImmediate);
