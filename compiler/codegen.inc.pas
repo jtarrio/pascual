@@ -578,9 +578,18 @@ begin
   else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> TkPlus) then
   begin
     if Last then write(Codegen.Output, 'CpEnd | ');
-    if IsCharType(Expr^.TypePtr) then write(Codegen.Output, 'CpChar, ')
-    else write(Codegen.Output, 'CpString, ');
-    OutExpression(Expr);
+    if ExIsImmediate(Expr) and IsStringType(Expr^.TypePtr) then
+    begin
+      write(Codegen.Output, 'CpLenPtr, ', Length(Expr^.Immediate.StringVal));
+      _OutComma;
+      _OutCstring(Expr^.Immediate.StringVal)
+    end
+    else
+    begin
+      if IsCharType(Expr^.TypePtr) then write(Codegen.Output, 'CpChar, ')
+      else write(Codegen.Output, 'CpString, ');
+      OutExpression(Expr)
+    end;
     if not Last then _OutComma
   end
   else

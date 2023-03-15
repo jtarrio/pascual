@@ -120,6 +120,14 @@ PString CONCAT(enum ConcatParamType paramtype, ...) {
         ret.len += cp;
         break;
       }
+      case CpLenPtr: {
+        int cp = va_arg(args, int);
+        const char* b = va_arg(args, const char*);
+        if (cp > (255 - ret.len)) cp = 255 - ret.len;
+        memcpy(ret.value + ret.len, b, cp);
+        ret.len += cp;
+        break;
+      }
     }
     paramtype = va_arg(args, enum ConcatParamType);
   } while (!end);
