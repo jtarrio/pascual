@@ -5942,27 +5942,31 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ *LEFT, TEXPRESSIONOBJ *RIGHT, TLXTOKENID 
   }
 }
 
+void _OUTCMPCONCATARG(TEXPRESSIONOBJ *EXPR) {
+  if (EXISIMMEDIATE(EXPR) && ISSTRINGTYPE(EXPR->TYPEPTR)) {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 10, "CpLenPtr, ", RwpInt | RwpEnd, LENGTH(&EXPR->IMMEDIATE.STRINGVAL));
+    _OUTCOMMA();
+    _OUTCSTRING(&EXPR->IMMEDIATE.STRINGVAL);
+  }
+  else if (ISCHARTYPE(EXPR->TYPEPTR)) {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 8, "CpChar, ");
+    OUTEXPRESSION(EXPR);
+  }
+  else if (EXPR->ISASSIGNABLE) {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 13, "CpStringPtr, ");
+    _OUTADDRESS(EXPR);
+  }
+  else {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 10, "CpString, ");
+    OUTEXPRESSION(EXPR);
+  }
+}
+
 void _OUTCONCATARGS(TEXPRESSIONOBJ *EXPR, PBoolean LAST) {
   if (!ISSTRINGYTYPE(EXPR->TYPEPTR)) INTERNALERROR(CONCAT(CpLenPtr, 28, "Expected a stringy type for ", CpEnd | CpString, EXDESCRIBE(EXPR)));
   else if (EXPR->CLS != XCBINARYOP || EXPR->BINARY.OP != TKPLUS) {
     if (LAST) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 8, "CpEnd | ");
-    if (EXISIMMEDIATE(EXPR) && ISSTRINGTYPE(EXPR->TYPEPTR)) {
-      WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 10, "CpLenPtr, ", RwpInt | RwpEnd, LENGTH(&EXPR->IMMEDIATE.STRINGVAL));
-      _OUTCOMMA();
-      _OUTCSTRING(&EXPR->IMMEDIATE.STRINGVAL);
-    }
-    else if (ISCHARTYPE(EXPR->TYPEPTR)) {
-      WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 8, "CpChar, ");
-      OUTEXPRESSION(EXPR);
-    }
-    else if (EXPR->ISASSIGNABLE) {
-      WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 13, "CpStringPtr, ");
-      _OUTADDRESS(EXPR);
-    }
-    else {
-      WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 10, "CpString, ");
-      OUTEXPRESSION(EXPR);
-    }
+    _OUTCMPCONCATARG(EXPR);
     if (!LAST) _OUTCOMMA();
   }
   else {
@@ -5972,8 +5976,6 @@ void _OUTCONCATARGS(TEXPRESSIONOBJ *EXPR, PBoolean LAST) {
 }
 
 void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
-  PChar LTYPE;
-  PChar RTYPE;
   {
     TEXBINARYOP *with1 = &EXPR->BINARY;
     {
@@ -5993,10 +5995,6 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
       else if (ISSTRINGYTYPE(with1->LEFT->TYPEPTR) && ISSTRINGYTYPE(with1->RIGHT->TYPEPTR)) {
-        if (ISCHARTYPE(with1->LEFT->TYPEPTR)) LTYPE = 'c';
-        else LTYPE = 's';
-        if (ISCHARTYPE(with1->RIGHT->TYPEPTR)) RTYPE = 'c';
-        else RTYPE = 's';
         if (with1->OP == TKPLUS) {
           WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 7, "CONCAT(");
           _OUTCONCATARGS(EXPR, 1);
@@ -6009,12 +6007,34 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ *EXPR) {
           _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
         }
         else {
-          WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 4, "cmp_", RwpChar, LTYPE, RwpChar, RTYPE, RwpChar | RwpEnd, '(');
-          OUTEXPRESSION(with1->LEFT);
+          WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 8, "cmp_str(");
+          switch (with1->OP) {
+            case TKEQUALS:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 6, "CoEq, ");
+              break;
+            case TKNOTEQUALS:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 9, "CoNotEq, ");
+              break;
+            case TKLESSTHAN:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 10, "CoBefore, ");
+              break;
+            case TKMORETHAN:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 9, "CoAfter, ");
+              break;
+            case TKLESSOREQUALS:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 14, "CoBeforeOrEq, ");
+              break;
+            case TKMOREOREQUALS:
+              WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 13, "CoAfterOrEq, ");
+              break;
+            default:
+              ERRORINVALIDOPERATOR(EXPR, with1->OP);
+              break;
+          }
+          _OUTCMPCONCATARG(with1->LEFT);
           _OUTCOMMA();
-          OUTEXPRESSION(with1->RIGHT);
-          if (_ISRELATIONALOP(with1->OP)) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 2, ") ", RwpString, _GETRELATIONALOP(with1->OP), RwpLenPtr | RwpEnd, 2, " 0");
-          else ERRORINVALIDOPERATOR(EXPR, with1->OP);
+          _OUTCMPCONCATARG(with1->RIGHT);
+          WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ')');
         }
       }
       else if (ISSETTYPE(with1->RIGHT->TYPEPTR)) _OUTEXSETOPERATION(with1->LEFT, with1->RIGHT, with1->OP);
