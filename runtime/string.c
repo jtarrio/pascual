@@ -143,37 +143,6 @@ PString CONCAT(enum ConcatParamType paramtype, ...) {
   return ret;
 }
 
-PString cat_cc(PChar a, PChar b) {
-  PString ret;
-  ret.len = 2;
-  ret.value[0] = a;
-  ret.value[1] = b;
-  return ret;
-}
-
-PString cat_cs(PChar a, PString b) {
-  memmove(b.value + 1, b.value, 254);
-  b.value[0] = a;
-  if (b.len < 255) ++b.len;
-  return b;
-}
-
-PString cat_sc(PString a, PChar b) {
-  if (a.len < 255) {
-    a.value[a.len] = b;
-    ++a.len;
-  }
-  return a;
-}
-
-PString cat_ss(PString a, PString b) {
-  int cp = b.len;
-  if (cp > (255 - a.len)) cp = 255 - a.len;
-  memcpy(a.value + a.len, b.value, cp);
-  a.len += cp;
-  return a;
-}
-
 PInteger cmp_cc(PChar a, PChar b) { return a - b; }
 
 PInteger cmp_cs(PChar a, PString b) {

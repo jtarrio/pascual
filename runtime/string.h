@@ -27,11 +27,6 @@ enum ConcatParamType {
 };
 PString CONCAT(enum ConcatParamType paramtype, ...);
 
-PString cat_cc(PChar a, PChar b);
-PString cat_cs(PChar a, PString b);
-PString cat_sc(PString a, PChar b);
-PString cat_ss(PString a, PString b);
-
 PInteger cmp_cc(PChar a, PChar b);
 PInteger cmp_cs(PChar a, PString b);
 PInteger cmp_sc(PString a, PChar b);
