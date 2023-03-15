@@ -571,6 +571,31 @@ begin
   end
 end;
 
+procedure _OutCmpConcatArg(Expr : TExpression);
+begin
+  if ExIsImmediate(Expr) and IsStringType(Expr^.TypePtr) then
+  begin
+    write(Codegen.Output, 'CpLenPtr, ', Length(Expr^.Immediate.StringVal));
+    _OutComma;
+    _OutCstring(Expr^.Immediate.StringVal)
+  end
+  else if IsCharType(Expr^.TypePtr) then
+  begin
+    write(Codegen.Output, 'CpChar, ');
+    OutExpression(Expr)
+  end
+  else if Expr^.IsAssignable then
+  begin
+    write(Codegen.Output, 'CpStringPtr, ');
+    _OutAddress(Expr)
+  end
+  else
+  begin
+    write(Codegen.Output, 'CpString, ');
+    OutExpression(Expr)
+  end
+end;
+
 procedure _OutConcatArgs(Expr : TExpression; Last : boolean);
 begin
   if not IsStringyType(Expr^.TypePtr) then
@@ -578,27 +603,7 @@ begin
   else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> TkPlus) then
   begin
     if Last then write(Codegen.Output, 'CpEnd | ');
-    if ExIsImmediate(Expr) and IsStringType(Expr^.TypePtr) then
-    begin
-      write(Codegen.Output, 'CpLenPtr, ', Length(Expr^.Immediate.StringVal));
-      _OutComma;
-      _OutCstring(Expr^.Immediate.StringVal)
-    end
-    else if IsCharType(Expr^.TypePtr) then
-    begin
-      write(Codegen.Output, 'CpChar, ');
-      OutExpression(Expr)
-    end
-    else if Expr^.IsAssignable then
-    begin
-      write(Codegen.Output, 'CpStringPtr, ');
-      _OutAddress(Expr)
-    end
-    else
-    begin
-      write(Codegen.Output, 'CpString, ');
-      OutExpression(Expr)
-    end;
+    _OutCmpConcatArg(Expr);
     if not Last then _OutComma
   end
   else
@@ -609,7 +614,6 @@ begin
 end;
 
 procedure _OutExBinaryOp(Expr : TExpression);
-var Ltype, Rtype : char;
 begin
   with Expr^.Binary do
   begin
@@ -637,10 +641,6 @@ begin
     end
     else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
     begin
-      if IsCharType(Left^.TypePtr) then Ltype := 'c'
-      else Ltype := 's';
-      if IsCharType(Right^.TypePtr) then Rtype := 'c'
-      else Rtype := 's';
       if Op = TkPlus then
       begin
         write(Codegen.Output, 'CONCAT(');
@@ -657,13 +657,20 @@ begin
       end
       else
       begin
-        write(Codegen.Output, 'cmp_', Ltype, Rtype, '(');
-        OutExpression(Left);
+        write(Codegen.Output, 'cmp_str(');
+        case Op of 
+          TkEquals: write(Codegen.Output, 'CoEq, ');
+          TkNotEquals: write(Codegen.Output, 'CoNotEq, ');
+          TkLessthan: write(Codegen.Output, 'CoBefore, ');
+          TkMorethan: write(Codegen.Output, 'CoAfter, ');
+          TkLessOrEquals: write(Codegen.Output, 'CoBeforeOrEq, ');
+          TkMoreOrEquals: write(Codegen.Output, 'CoAfterOrEq, ');
+          else ErrorInvalidOperator(Expr, Op)
+        end;
+        _OutCmpConcatArg(Left);
         _OutComma;
-        OutExpression(Right);
-        if _IsRelationalOp(Op) then
-          write(Codegen.Output, ') ', _GetRelationalOp(Op), ' 0')
-        else ErrorInvalidOperator(Expr, Op)
+        _OutCmpConcatArg(Right);
+        write(Codegen.Output, ')')
       end
     end
     else if IsSetType(Right^.TypePtr) then _OutExSetOperation(Left, Right, Op)

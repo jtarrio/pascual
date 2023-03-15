@@ -18,14 +18,17 @@ PInteger ORD(PChar chr);
 PString str_of_pchar(const char* str, PInteger width);
 const char* pchar_of_str(const PString* str);
 
-enum ConcatParamType {
+enum ConcatCmpParamType {
   CpChar = 0x01,
   CpString = 0x02,
   CpStringPtr = 0x03,
   CpLenPtr = 0x04,
   CpEnd = 0x80
 };
-PString CONCAT(enum ConcatParamType paramtype, ...);
+PString CONCAT(enum ConcatCmpParamType paramtype, ...);
+
+enum CmpOp { CoEq, CoNotEq, CoBefore, CoAfter, CoBeforeOrEq, CoAfterOrEq };
+PBoolean cmp_str(enum CmpOp op, ...);
 
 PInteger cmp_cc(PChar a, PChar b);
 PInteger cmp_cs(PChar a, PString b);

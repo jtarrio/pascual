@@ -106,7 +106,7 @@ static void str_concat(PString* dst, int len, const char* src) {
   }
 }
 
-PString CONCAT(enum ConcatParamType paramtype, ...) {
+PString CONCAT(enum ConcatCmpParamType paramtype, ...) {
   int end = 0;
   PString ret;
   ret.len = 0;
@@ -137,10 +137,69 @@ PString CONCAT(enum ConcatParamType paramtype, ...) {
         break;
       }
     }
-    paramtype = va_arg(args, enum ConcatParamType);
+    paramtype = va_arg(args, enum ConcatCmpParamType);
   } while (!end);
   va_end(args);
   return ret;
+}
+
+struct StrData {
+  PString str;
+  int len;
+  const unsigned char* ptr;
+};
+
+void LoadStrData(va_list* args, struct StrData* strdata) {
+  enum ConcatCmpParamType type = va_arg(*args, enum ConcatCmpParamType);
+  switch (type) {
+    case CpChar:
+      strdata->str.len = 1;
+      strdata->str.value[0] = va_arg(*args, int);
+      strdata->len = 1;
+      strdata->ptr = strdata->str.value;
+      break;
+    case CpString:
+      strdata->str = va_arg(*args, PString);
+      strdata->len = strdata->str.len;
+      strdata->ptr = strdata->str.value;
+      break;
+    case CpStringPtr: {
+      PString* strptr = va_arg(*args, PString*);
+      strdata->len = strptr->len;
+      strdata->ptr = strptr->value;
+      break;
+    }
+    case CpLenPtr: {
+      int len = va_arg(*args, int);
+      const char* ptr = va_arg(*args, const char*);
+      strdata->len = len;
+      strdata->ptr = ptr;
+      break;
+    }
+  }
+}
+
+PBoolean cmp_str(enum CmpOp op, ...) {
+  va_list args;
+  va_start(args, op);
+  struct StrData astr, bstr;
+  LoadStrData(&args, &astr);
+  LoadStrData(&args, &bstr);
+  if ((op == CoEq || op == CoNotEq) && astr.len != bstr.len) {
+    return op == CoNotEq;
+  }
+  int res = 0;
+  for (int pos = 0; pos < astr.len && pos < bstr.len && res == 0; ++pos) {
+    res = astr.ptr[pos] - bstr.ptr[pos];
+  }
+  if (res != 0)
+    return op == CoNotEq ||
+           (res < 0 && (op == CoBefore || op == CoBeforeOrEq)) ||
+           (res > 0 && (op == CoAfter || op == CoAfterOrEq));
+  if (astr.len != bstr.len)
+    return (astr.len < bstr.len && (op == CoBefore || op == CoBeforeOrEq)) ||
+           (astr.len > bstr.len && (op == CoAfter || op == CoAfterOrEq));
+  return op == CoEq || op == CoBeforeOrEq || op == CoAfterOrEq;
 }
 
 PInteger cmp_cc(PChar a, PChar b) { return a - b; }
