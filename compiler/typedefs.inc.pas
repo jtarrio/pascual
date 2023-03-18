@@ -24,8 +24,8 @@ type
   end;
 
   TPsPseudoFn = (TpfAbs, TpfConcat, TpfDispose, TpfNew, TpfOrd, TpfPred,
-                 TpfRandom, TpfRead, TpfReadln, TpfSqr, TpfStr, TpfSucc, TpfVal,
-                 TpfWrite, TpfWriteln);
+                 TpfRandom, TpfRead, TpfReadln, TpfSizeof, TpfSqr, TpfStr,
+                 TpfSucc, TpfVal, TpfWrite, TpfWriteln);
 
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
@@ -76,6 +76,7 @@ type
     Arg2 : TExpression;
     Arg3 : TExpression;
     Arg4 : TExpression;
+    TypeArg : TPsTypePtr;
     case PseudoFn : TPsPseudoFn of 
       TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
       TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);
@@ -174,6 +175,7 @@ type
     Fields : array[1..MaxRecordFields] of TPsRecordField;
     NumVariants : integer;
     VariantBounds : array[1..MaxRecordFields] of integer;
+    IsPacked : boolean;
     Id : integer;
     HasBeenDefined : boolean;
     RefCount : integer

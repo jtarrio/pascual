@@ -183,13 +183,13 @@ echo 'array[1..10,1..20] of integer' | testtype | is_valid
 echo '(One, Two, Three);
       X = array[One..Two] of integer' | testtype | is_valid
 echo 'array[boolean] of integer' | testtype | is_valid
-echo 'packed array[1..10] of char' | testtype | will_be_valid
+echo 'packed array[1..10] of char' | testtype | is_valid
 echo 'record A : integer end' | testtype | is_valid
 echo 'record A : integer; B : string end' | testtype | is_valid
 echo 'record A : integer; B : string; end' | testtype | is_valid
 echo 'record A : integer; A : string end' | testtype | is_not_valid
 echo 'record A : integer; B : record C : char end end' | testtype | is_valid
-echo 'packed record A : integer; B : char end' | testtype | will_be_valid
+echo 'packed record A : integer; B : char end' | testtype | is_valid
 echo 'record A,B : integer; C : char end' | testtype | is_valid
 echo 'record A : integer;
              case J : boolean of

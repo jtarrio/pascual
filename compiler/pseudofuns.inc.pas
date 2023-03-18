@@ -5,7 +5,8 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
-function _Pf_Fun_Overload(const NamePrefix : string; TypePtr : TPsTypePtr) : string;
+function _Pf_Fun_Overload(const NamePrefix : string;
+                          TypePtr : TPsTypePtr) : string;
 begin
   TypePtr := GetFundamentalType(TypePtr);
   if IsBooleanType(TypePtr) then Result := NamePrefix + '_b'
@@ -213,6 +214,25 @@ begin
   end
 end;
 
+function PfSizeof_Parse(FnExpr : TExpression) : TExpression;
+var 
+  Id : TPsIdentifier;
+  Found : TPsName;
+begin
+  WantTokenAndRead(TkLparen);
+  Id := PsIdentifier;
+  WantTokenAndRead(TkRparen);
+  Result := ExPseudoFnCall(FnExpr);
+  Result^.TypePtr := PrimitiveTypes.PtInteger;
+  Found := FindName(Id.Name, {Required=}true)^;
+  if Found.Cls = TncVariable then
+    Result^.PseudoFnCall.Arg1 := ExVariable(Found.VarPtr)
+  else if Found.Cls = TncType then
+         Result^.PseudoFnCall.TypeArg := Found.TypePtr
+  else
+    CompileError('Expected a variable or a type identifier; got ' + Id.Name);
+end;
+
 function PfSqr_Parse(FnExpr : TExpression) : TExpression;
 begin
   Result := _Pf_Overload_Parse(FnExpr, 'SQR')
@@ -392,6 +412,7 @@ begin
     TpfRandom : Result := PfRandom_Parse(Fn);
     TpfRead : Result := PfRead_Parse(Fn);
     TpfReadln : Result := PfRead_Parse(Fn);
+    TpfSizeof : Result := PfSizeof_Parse(Fn);
     TpfSqr : Result := PfSqr_Parse(Fn);
     TpfStr : Result := PfStr_Parse(Fn);
     TpfSucc : Result := PfSucc_Parse(Fn);
@@ -414,6 +435,7 @@ begin
     TpfRandom : Result := 'RANDOM';
     TpfRead: Result := 'READ';
     TpfReadln: Result := 'READLN';
+    TpfSizeof: Result := 'SIZEOF';
     TpfSqr: Result := 'SQR';
     TpfStr: Result := 'STR';
     TpfSucc: Result := 'SUCC';
@@ -434,6 +456,10 @@ begin
       TpfPred: Result := 'PRED(' + ExDescribe(Arg1) + ')';
       TpfRead: Result := 'READ(...)';
       TpfReadln: Result := 'READLN(...)';
+      TpfSizeof: if Arg1 <> nil then
+                   Result := 'SIZEOF(' + ExDescribe(Arg1) + ')'
+                 else
+                   Result := 'SIZEOF(' + TypeName(TypeArg) + ')';
       TpfStr:
               if Arg3 = nil then
                 Result := 'STR(' + ExDescribe(Arg1) + ', ' +

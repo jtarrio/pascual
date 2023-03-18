@@ -941,6 +941,7 @@ begin
   Expr^.PseudoFnCall.Arg2 := nil;
   Expr^.PseudoFnCall.Arg3 := nil;
   Expr^.PseudoFnCall.Arg4 := nil;
+  Expr^.PseudoFnCall.TypeArg := nil;
   Expr^.PseudoFnCall.ReadArgs := nil;
   Expr^.PseudoFnCall.WriteArgs := nil;
   Result := Expr

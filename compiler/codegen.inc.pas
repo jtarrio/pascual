@@ -429,6 +429,8 @@ procedure _OutPred(Expr : TExpression);
 forward;
 procedure _OutRead(Expr : TExpression);
 forward;
+procedure _OutSizeof(Expr : TExpression);
+forward;
 procedure _OutStr(Expr : TExpression);
 forward;
 procedure _OutSucc(Expr : TExpression);
@@ -447,6 +449,7 @@ begin
     TpfPred : _OutPred(Expr);
     TpfRead : _OutRead(Expr);
     TpfReadln : _OutRead(Expr);
+    TpfSizeof : _OutSizeof(Expr);
     TpfStr : _OutStr(Expr);
     TpfSucc : _OutSucc(Expr);
     TpfVal : _OutVal(Expr);
@@ -795,7 +798,33 @@ begin
   end
 end;
 
+function _GetRangeType(TypePtr : TPsTypePtr) : string;
+type 
+  Types = (U8, S8, U16, S16, U32, S32);
+const 
+  Names : array[Types] of string = ('PBits8', 'PBits8S', 'PBits16', 'PBits16S',
+                                    'PBits32', 'PBits32S');
+  LowLimits : array[Types] of integer = (0, -128, 0, -32768, 0, -2147483648);
+  HighLimits : array[Types] of integer = (255, 127, 65535, 32767, 4294967295,
+                                          2147483647);
+var 
+  FitTypes : set of Types;
+  Low, High : integer;
+  T : Types;
+begin
+  FitTypes := [];
+  Low := GetTypeLowBound(TypePtr);
+  High := GetTypeHighBound(TypePtr);
+  for T := U8 to S32 do
+    if (Low >= LowLimits[T]) and (High <= HighLimits[T]) then
+      FitTypes := FitTypes + [T];
+  Result := 'PInteger';
+  for T := S32 downto U8 do
+    if T in FitTypes then Result := Names[T]
+end;
+
 procedure OutTypeReference(TypePtr : TPsTypePtr);
+var TheType : TPsTypePtr;
 begin
   if TypePtr = nil then write(Codegen.Output, 'void')
   else if TypePtr^.Cls = TtcPointer then
@@ -817,7 +846,7 @@ begin
       write(Codegen.Output, 'enum enum', TypePtr^.EnumPtr^.Id)
   end
   else if TypePtr^.Cls = TtcRange then
-         OutTypeReference(GetFundamentalType(TypePtr))
+         write(Codegen.Output, _GetRangeType(TypePtr))
   else if TypePtr^.Cls = TtcSet then
          _OutSetTypeName(TypePtr)
   else if TypePtr^.Cls = TtcRecord then
@@ -829,8 +858,17 @@ begin
   end
   else if TypePtr^.Cls = TtcArray then
   begin
-    OutTypeReference(TypePtr^.ArrayDef.ValueTypePtr);
-    write(Codegen.Output, '*')
+    TheType := TypePtr;
+    while IsArrayType(TheType) do
+      TheType := TheType^.ArrayDef.ValueTypePtr;
+    OutTypeReference(TheType);
+    TheType := TypePtr;
+    while IsArrayType(TheType) do
+    begin
+      write(Codegen.Output, '[', GetBoundedTypeSize(TheType^.ArrayDef.
+            IndexTypePtr), ']');
+      TheType := TheType^.ArrayDef.ValueTypePtr
+    end
   end
   else
     InternalError('Error writing type reference: ' + TypeName(TypePtr))
@@ -845,10 +883,14 @@ var
   NumVariant : integer;
 begin
   NumVariant := 0;
-  write(Codegen.Output, 'struct record', RecPtr^.Id);
-  if not RecPtr^.HasBeenDefined then
+  if RecPtr^.HasBeenDefined then
+    write(Codegen.Output, 'struct record', RecPtr^.Id)
+  else
   begin
-    write(Codegen.Output, ' ');
+    write(Codegen.Output, 'struct ');
+    if RecPtr^.IsPacked then
+      write(Codegen.Output, '__attribute__((__packed__)) ');
+    write(Codegen.Output, 'record', RecPtr^.Id, ' ');
     OutBegin;
     for Pos := 1 to RecPtr^.Size do
     begin
@@ -924,7 +966,7 @@ begin
   while IsArrayType(TheType) do
   begin
     write(Codegen.Output, '[',
-          GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr), ']');
+          GetBoundedTypeSize(TheType^.ArrayDef.IndexTypePtr), ']');
     TheType := TheType^.ArrayDef.ValueTypePtr
   end
 end;
@@ -954,7 +996,7 @@ begin
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
-         OutNameAndType(Name, GetFundamentalType(TypePtr))
+         write(Codegen.Output, _GetRangeType(TypePtr), ' ', Name)
   else if TypePtr^.Cls = TtcSet then
   begin
     _OutSetTypeName(TypePtr);
@@ -1229,6 +1271,14 @@ begin
   end;
   write(Codegen.Output, ');');
   _OutNewline
+end;
+
+procedure _OutSizeof(Expr : TExpression);
+begin
+  write(Codegen.Output, 'sizeof(');
+  if Expr^.PseudoFnCall.Arg1 <> nil then OutExpression(Expr^.PseudoFnCall.Arg1)
+  else OutTypeReference(Expr^.PseudoFnCall.TypeArg);
+  write(Codegen.Output, ')')
 end;
 
 procedure _OutStr(Expr : TExpression);

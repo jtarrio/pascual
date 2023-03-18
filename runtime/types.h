@@ -2,9 +2,17 @@
 #define __PASCUAL_TYPES_H
 
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #define PNil ((void*)0)
+
+typedef uint8_t PBits8;
+typedef int8_t PBits8S;
+typedef uint16_t PBits16;
+typedef int16_t PBits16S;
+typedef uint32_t PBits32;
+typedef int32_t PBits32S;
 
 typedef int POrdinal;
 

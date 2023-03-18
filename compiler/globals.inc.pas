@@ -144,6 +144,7 @@ begin
 
   { Misc subroutines }
   AddPseudoFn('RANDOM', TpfRandom);
+  AddPseudoFn('SIZEOF', TpfSizeof);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));

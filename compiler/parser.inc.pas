@@ -167,7 +167,7 @@ begin
   until Lexer.Token.Id = TkEnd;
 end;
 
-function PsRecordType : TPsTypePtr;
+function PsRecordType(IsPacked : boolean) : TPsTypePtr;
 var 
   Typ : TPsType;
   Rec : TPsRecordDef;
@@ -175,6 +175,7 @@ begin
   WantTokenAndRead(TkRecord);
   Rec.Size := 0;
   Rec.NumVariants := 0;
+  Rec.IsPacked := IsPacked;
   Rec.HasBeenDefined := false;
   while (Lexer.Token.Id <> TkCase) and (Lexer.Token.Id <> TkEnd) do
     PsRecordField(Rec, TkEnd);
@@ -282,12 +283,21 @@ begin
 end;
 
 function PsTypeDenoter;
-var Idx : TPsNamePtr;
+var 
+  Idx : TPsNamePtr;
+  IsPacked : boolean;
 begin
   Result := nil;
+  IsPacked := Lexer.Token.Id = TkPacked;
+  if IsPacked then
+  begin
+    ReadToken;
+    WantToken2(TkArray, TkRecord)
+  end;
+
   if Lexer.Token.Id = TkLparen then Result := PsEnumeratedType
   else if Lexer.Token.Id = TkSet then Result := PsSetType
-  else if Lexer.Token.Id = TkRecord then Result := PsRecordType
+  else if Lexer.Token.Id = TkRecord then Result := PsRecordType(IsPacked)
   else if Lexer.Token.Id = TkArray then Result := PsArrayType
   else if Lexer.Token.Id = TkCaret then Result := PsPointerType
   else if Lexer.Token.Id = TkIdentifier then
