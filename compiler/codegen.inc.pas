@@ -938,10 +938,12 @@ procedure OutNameAndEnum(const Name : string; EnumPtr : TPsEnumPtr);
 var 
   Pos : integer;
 begin
-  write(Codegen.Output, 'enum enum', EnumPtr^.Id);
-  if not EnumPtr^.HasBeenDefined then
+  if EnumPtr^.HasBeenDefined then
+    write(Codegen.Output, 'enum enum', EnumPtr^.Id)
+  else
   begin
-    write(Codegen.Output, ' { ');
+    write(Codegen.Output, 'enum __attribute__((__packed__)) enum', EnumPtr^.Id,
+          ' { ');
     for Pos := 0 to EnumPtr^.Size - 1 do
     begin
       if Pos > 0 then

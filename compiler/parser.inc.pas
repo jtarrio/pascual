@@ -289,11 +289,7 @@ var
 begin
   Result := nil;
   IsPacked := Lexer.Token.Id = TkPacked;
-  if IsPacked then
-  begin
-    ReadToken;
-    WantToken2(TkArray, TkRecord)
-  end;
+  SkipToken(TkPacked);
 
   if Lexer.Token.Id = TkLparen then Result := PsEnumeratedType
   else if Lexer.Token.Id = TkSet then Result := PsSetType

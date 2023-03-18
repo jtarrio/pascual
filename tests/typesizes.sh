@@ -20,6 +20,9 @@ testtype -32768..32767 | outputs 2
 testtype -2147483648..2147483647 | outputs 4
 testtype 0..2147483647 | outputs 4
 
+# Enums
+testtype '(One, Two, Three)' | outputs 1
+
 # Arrays
 testtype 'array[1..10] of -128..127' | outputs 10
 testtype 'packed array[1..10] of -128..127' | outputs 10
