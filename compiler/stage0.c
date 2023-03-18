@@ -20,7 +20,7 @@ typedef struct record3 {
   PString VALUE;
   TLXPOS POS;
 } TLXTOKEN;
-typedef enum enum2 { TPFABS, TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFRANDOM, TPFREAD, TPFREADLN, TPFSQR, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
+typedef enum enum2 { TPFABS, TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFRANDOM, TPFREAD, TPFREADLN, TPFSIZEOF, TPFSQR, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
 typedef struct record17 *TPSTYPEPTR;
 typedef struct record18 *TPSENUMPTR;
 typedef struct record22 *TPSVARPTR;
@@ -86,6 +86,7 @@ typedef struct record10 {
   struct record13 *ARG2;
   struct record13 *ARG3;
   struct record13 *ARG4;
+  struct record17 *TYPEARG;
   TPSPSEUDOFN PSEUDOFN;
   union {
     struct {
@@ -234,6 +235,7 @@ typedef struct record20 {
   TPSRECORDFIELD FIELDS[32];
   PInteger NUMVARIANTS;
   PInteger VARIANTBOUNDS[32];
+  PBoolean ISPACKED;
   PInteger ID;
   PBoolean HASBEENDEFINED;
   PInteger REFCOUNT;
@@ -333,7 +335,7 @@ typedef struct record28 {
 } TPSDEFS;
 
 const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKSHL", "TKSHR", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH", "TKXOR" };
-const char* enumvalues2[] = { "TPFABS", "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFRANDOM", "TPFREAD", "TPFREADLN", "TPFSQR", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
+const char* enumvalues2[] = { "TPFABS", "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFRANDOM", "TPFREAD", "TPFREADLN", "TPFSIZEOF", "TPFSQR", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
 const char* enumvalues3[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
 const char* enumvalues4[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCWITHTMPVAR", "XCSUBRANGE", "XCSET", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
 const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
@@ -3101,6 +3103,7 @@ TEXPRESSIONOBJ *EXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
   EXPR->PSEUDOFNCALL.ARG2 = PNil;
   EXPR->PSEUDOFNCALL.ARG3 = PNil;
   EXPR->PSEUDOFNCALL.ARG4 = PNil;
+  EXPR->PSEUDOFNCALL.TYPEARG = PNil;
   EXPR->PSEUDOFNCALL.READARGS = PNil;
   EXPR->PSEUDOFNCALL.WRITEARGS = PNil;
   RESULT = EXPR;
@@ -4239,13 +4242,14 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
   } while (!(LEXER.TOKEN.ID == TKEND));
 }
 
-TPSTYPE *PSRECORDTYPE() {
+TPSTYPE *PSRECORDTYPE(PBoolean ISPACKED) {
   TPSTYPE *RESULT;
   TPSTYPE TYP;
   TPSRECORDDEF REC;
   WANTTOKENANDREAD(TKRECORD);
   REC.SIZE = 0;
   REC.NUMVARIANTS = 0;
+  REC.ISPACKED = ISPACKED;
   REC.HASBEENDEFINED = 0;
   while (LEXER.TOKEN.ID != TKCASE && LEXER.TOKEN.ID != TKEND) PSRECORDFIELD(&REC, TKEND);
   if (LEXER.TOKEN.ID == TKCASE) PSRECORDVARIANTS(&REC);
@@ -4353,10 +4357,13 @@ TPSTYPE *PSSETTYPE() {
 TPSTYPE *PSTYPEDENOTER() {
   TPSTYPE *RESULT;
   TPSNAME *IDX;
+  PBoolean ISPACKED;
   RESULT = PNil;
+  ISPACKED = LEXER.TOKEN.ID == TKPACKED;
+  SKIPTOKEN(TKPACKED);
   if (LEXER.TOKEN.ID == TKLPAREN) RESULT = PSENUMERATEDTYPE();
   else if (LEXER.TOKEN.ID == TKSET) RESULT = PSSETTYPE();
-  else if (LEXER.TOKEN.ID == TKRECORD) RESULT = PSRECORDTYPE();
+  else if (LEXER.TOKEN.ID == TKRECORD) RESULT = PSRECORDTYPE(ISPACKED);
   else if (LEXER.TOKEN.ID == TKARRAY) RESULT = PSARRAYTYPE();
   else if (LEXER.TOKEN.ID == TKCARET) RESULT = PSPOINTERTYPE();
   else if (LEXER.TOKEN.ID == TKIDENTIFIER) {
@@ -5333,12 +5340,16 @@ void STARTGLOBALSCOPE() {
     PString tmp121 = str_make(6, "RANDOM");
     ADDPSEUDOFN(&tmp121, TPFRANDOM);
   }
-  ADDFUNCTION(({ PString tmp123 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp123, ({ PString tmp122 = str_make(4, "CODE"); MAKEARG(&tmp122, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp124 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp124, PRIMITIVETYPES.PTINTEGER); }));
-  ADDFUNCTION(({ PString tmp126 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp126, PRIMITIVETYPES.PTSTRING, ({ PString tmp125 = str_of('I'); MAKEARG(&tmp125, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp127 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp127, PRIMITIVETYPES.PTREAL); }));
-  ADDFUNCTION(({ PString tmp129 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp129, PRIMITIVETYPES.PTINTEGER, ({ PString tmp128 = str_make(3, "NUM"); MAKEARG(&tmp128, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp130 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp130); }));
+  {
+    PString tmp122 = str_make(6, "SIZEOF");
+    ADDPSEUDOFN(&tmp122, TPFSIZEOF);
+  }
+  ADDFUNCTION(({ PString tmp124 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp124, ({ PString tmp123 = str_make(4, "CODE"); MAKEARG(&tmp123, PRIMITIVETYPES.PTINTEGER); })); }));
+  ADDFUNCTION(({ PString tmp125 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp125, PRIMITIVETYPES.PTINTEGER); }));
+  ADDFUNCTION(({ PString tmp127 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp127, PRIMITIVETYPES.PTSTRING, ({ PString tmp126 = str_of('I'); MAKEARG(&tmp126, PRIMITIVETYPES.PTINTEGER); })); }));
+  ADDFUNCTION(({ PString tmp128 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp128, PRIMITIVETYPES.PTREAL); }));
+  ADDFUNCTION(({ PString tmp130 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp130, PRIMITIVETYPES.PTINTEGER, ({ PString tmp129 = str_make(3, "NUM"); MAKEARG(&tmp129, PRIMITIVETYPES.PTINTEGER); })); }));
+  ADDFUNCTION(({ PString tmp131 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp131); }));
   DEF = DEFS.LATEST;
   while (DEF != PNil) {
     switch (DEF->CLS) {
@@ -5847,6 +5858,25 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ *EXPR) {
   }
 }
 
+void _OUTEXSTRINGCHAR(TEXPRESSIONOBJ *EXPR) {
+  {
+    TEXPRESSIONOBJ *with1 = EXPR->STRINGEXPR;
+    {
+      if (with1->CLS == XCPOINTER) {
+        _OUTEXPRESSIONPARENS(with1->POINTEREXPR, EXPR);
+        WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 6, "->chr[");
+      }
+      else if (with1->CLS == XCVARIABLE && with1->VARPTR->ISREFERENCE) WRITE(&CODEGEN.OUTPUT, RwpStringPtr, &with1->VARPTR->NAME, RwpLenPtr | RwpEnd, 6, "->chr[");
+      else {
+        _OUTEXPRESSIONPARENS(EXPR->STRINGEXPR, EXPR);
+        WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 5, ".chr[");
+      }
+      OUTEXPRESSION(EXPR->STRINGINDEX);
+      WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ']');
+    }
+  }
+}
+
 void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ *EXPR) {
   PInteger POS;
   _OUTEXPRESSIONPARENS(EXPR->FNEXPR, EXPR);
@@ -5878,6 +5908,7 @@ void _OUTNEW(TEXPRESSIONOBJ *EXPR);
 void _OUTORD(TEXPRESSIONOBJ *EXPR);
 void _OUTPRED(TEXPRESSIONOBJ *EXPR);
 void _OUTREAD(TEXPRESSIONOBJ *EXPR);
+void _OUTSIZEOF(TEXPRESSIONOBJ *EXPR);
 void _OUTSTR(TEXPRESSIONOBJ *EXPR);
 void _OUTSUCC(TEXPRESSIONOBJ *EXPR);
 void _OUTVAL(TEXPRESSIONOBJ *EXPR);
@@ -5902,6 +5933,9 @@ void _OUTEXPSEUDOFNCALL(TEXPRESSIONOBJ *EXPR) {
       break;
     case TPFREADLN:
       _OUTREAD(EXPR);
+      break;
+    case TPFSIZEOF:
+      _OUTSIZEOF(EXPR);
       break;
     case TPFSTR:
       _OUTSTR(EXPR);
@@ -6260,12 +6294,7 @@ void OUTEXPRESSION(TEXPRESSIONOBJ *EXPR) {
       }
       break;
     case XCSTRINGCHAR:
-      {
-        _OUTEXPRESSIONPARENS(EXPR->STRINGEXPR, EXPR);
-        WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 5, ".chr[");
-        OUTEXPRESSION(EXPR->STRINGINDEX);
-        WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ']');
-      }
+      _OUTEXSTRINGCHAR(EXPR);
       break;
     case XCFNREF:
       WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &EXPR->FNPTR->EXTERNALNAME);
@@ -6323,7 +6352,50 @@ void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
   }
 }
 
+PString _GETRANGETYPE(TPSTYPE *TYPEPTR) {
+  PString RESULT;
+  typedef enum enum10 { U8, S8, U16, S16, U32, S32 } TYPES;
+  const char* enumvalues10[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
+  const PString NAMES[6] = { str_make(6, "PBits8"), str_make(7, "PBits8S"), str_make(7, "PBits16"), str_make(8, "PBits16S"), str_make(7, "PBits32"), str_make(8, "PBits32S") };
+  const PInteger LOWLIMITS[6] = { 0, -128, 0, -32768, 0, -0 };
+  const PInteger HIGHLIMITS[6] = { 255, 127, 65535, 32767, -1, 2147483647 };
+  PSet8 FITTYPES;
+  PInteger LOW;
+  PInteger HIGH;
+  TYPES T;
+  FITTYPES = (PSet8) { 0 };
+  LOW = GETTYPELOWBOUND(TYPEPTR);
+  HIGH = GETTYPEHIGHBOUND(TYPEPTR);
+  do {
+    PInteger first = U8;
+    PInteger last = S32;
+    if (first <= last) {
+      T = first;
+      while (1) {
+        if (LOW >= LOWLIMITS[T] && HIGH <= HIGHLIMITS[T]) FITTYPES = ({ PSet8 dst; set_union(FITTYPES.bits, ({ PSet8 dst = (PSet8) { 0 }; set_set(T, T, 0, dst.bits); dst; }).bits, dst.bits, 1); dst; });
+        if (T == last) break;
+        ++T;
+      }
+    }
+  } while(0);
+  RESULT = str_make(8, "PInteger");
+  do {
+    PInteger first = S32;
+    PInteger last = U8;
+    if (first >= last) {
+      T = first;
+      while (1) {
+        if (set_in(T, 0, FITTYPES.bits)) RESULT = NAMES[T];
+        if (T == last) break;
+        --T;
+      }
+    }
+  } while(0);
+  return RESULT;
+}
+
 void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
+  TPSTYPE *THETYPE;
   if (TYPEPTR == PNil) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 4, "void");
   else if (TYPEPTR->CLS == TTCPOINTER) {
     OUTTYPEREFERENCE(TYPEPTR->POINTEDTYPEPTR);
@@ -6339,15 +6411,21 @@ void OUTTYPEREFERENCE(TPSTYPE *TYPEPTR) {
     if (TYPEPTR->ENUMPTR->HASBEENDEFINED && cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
     else WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "enum enum", RwpInt | RwpEnd, TYPEPTR->ENUMPTR->ID);
   }
-  else if (TYPEPTR->CLS == TTCRANGE) OUTTYPEREFERENCE(GETFUNDAMENTALTYPE(TYPEPTR));
+  else if (TYPEPTR->CLS == TTCRANGE) WRITE(&CODEGEN.OUTPUT, RwpString | RwpEnd, _GETRANGETYPE(TYPEPTR));
   else if (TYPEPTR->CLS == TTCSET) _OUTSETTYPENAME(TYPEPTR);
   else if (TYPEPTR->CLS == TTCRECORD) {
     if (TYPEPTR->RECPTR->HASBEENDEFINED && cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) WRITE(&CODEGEN.OUTPUT, RwpStringPtr | RwpEnd, &TYPEPTR->NAME);
     else WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 13, "struct record", RwpInt | RwpEnd, TYPEPTR->RECPTR->ID);
   }
   else if (TYPEPTR->CLS == TTCARRAY) {
-    OUTTYPEREFERENCE(TYPEPTR->ARRAYDEF.VALUETYPEPTR);
-    WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, '*');
+    THETYPE = TYPEPTR;
+    while (ISARRAYTYPE(THETYPE)) THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
+    OUTTYPEREFERENCE(THETYPE);
+    THETYPE = TYPEPTR;
+    while (ISARRAYTYPE(THETYPE)) {
+      WRITE(&CODEGEN.OUTPUT, RwpChar, '[', RwpInt, GETBOUNDEDTYPESIZE(THETYPE->ARRAYDEF.INDEXTYPEPTR), RwpChar | RwpEnd, ']');
+      THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
+    }
   }
   else INTERNALERROR(CONCAT(CpLenPtr, 30, "Error writing type reference: ", CpEnd | CpString, TYPENAME(TYPEPTR)));
 }
@@ -6358,9 +6436,11 @@ void OUTNAMEANDRECORD(const PString *NAME, TPSRECORDDEF *RECPTR) {
   PInteger POS;
   PInteger NUMVARIANT;
   NUMVARIANT = 0;
-  WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 13, "struct record", RwpInt | RwpEnd, RECPTR->ID);
-  if (!RECPTR->HASBEENDEFINED) {
-    WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ' ');
+  if (RECPTR->HASBEENDEFINED) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 13, "struct record", RwpInt | RwpEnd, RECPTR->ID);
+  else {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 7, "struct ");
+    if (RECPTR->ISPACKED) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 28, "__attribute__((__packed__)) ");
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 6, "record", RwpInt, RECPTR->ID, RwpChar | RwpEnd, ' ');
     OUTBEGIN();
     do {
       PInteger first = 1;
@@ -6411,9 +6491,9 @@ void OUTNAMEANDRECORD(const PString *NAME, TPSRECORDDEF *RECPTR) {
 
 void OUTNAMEANDENUM(const PString *NAME, TPSENUMDEF *ENUMPTR) {
   PInteger POS;
-  WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "enum enum", RwpInt | RwpEnd, ENUMPTR->ID);
-  if (!ENUMPTR->HASBEENDEFINED) {
-    WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 3, " { ");
+  if (ENUMPTR->HASBEENDEFINED) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 9, "enum enum", RwpInt | RwpEnd, ENUMPTR->ID);
+  else {
+    WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 37, "enum __attribute__((__packed__)) enum", RwpInt, ENUMPTR->ID, RwpLenPtr | RwpEnd, 3, " { ");
     do {
       PInteger first = 0;
       PInteger last = ENUMPTR->SIZE - 1;
@@ -6442,7 +6522,7 @@ void OUTNAMEANDARRAY(const PString *NAME, TPSTYPE *TYPEPTR) {
   OUTNAMEANDTYPE(NAME, THETYPE);
   THETYPE = TYPEPTR;
   while (ISARRAYTYPE(THETYPE)) {
-    WRITE(&CODEGEN.OUTPUT, RwpChar, '[', RwpInt, GETBOUNDEDTYPESIZE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR), RwpChar | RwpEnd, ']');
+    WRITE(&CODEGEN.OUTPUT, RwpChar, '[', RwpInt, GETBOUNDEDTYPESIZE(THETYPE->ARRAYDEF.INDEXTYPEPTR), RwpChar | RwpEnd, ']');
     THETYPE = THETYPE->ARRAYDEF.VALUETYPEPTR;
   }
 }
@@ -6461,7 +6541,7 @@ void OUTNAMEANDTYPE(const PString *NAME, TPSTYPE *TYPEPTR) {
   else if (TYPEPTR->CLS == TTCSTRING) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 8, "PString ", RwpStringPtr | RwpEnd, NAME);
   else if (TYPEPTR->CLS == TTCTEXT) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 6, "PFile ", RwpStringPtr | RwpEnd, NAME);
   else if (TYPEPTR->CLS == TTCENUM) OUTNAMEANDENUM(NAME, TYPEPTR->ENUMPTR);
-  else if (TYPEPTR->CLS == TTCRANGE) OUTNAMEANDTYPE(NAME, GETFUNDAMENTALTYPE(TYPEPTR));
+  else if (TYPEPTR->CLS == TTCRANGE) WRITE(&CODEGEN.OUTPUT, RwpString, _GETRANGETYPE(TYPEPTR), RwpChar, ' ', RwpStringPtr | RwpEnd, NAME);
   else if (TYPEPTR->CLS == TTCSET) {
     _OUTSETTYPENAME(TYPEPTR);
     WRITE(&CODEGEN.OUTPUT, RwpChar, ' ', RwpStringPtr | RwpEnd, NAME);
@@ -6718,6 +6798,13 @@ void _OUTWRITE(TEXPRESSIONOBJ *EXPR) {
   }
   WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 2, ");");
   _OUTNEWLINE();
+}
+
+void _OUTSIZEOF(TEXPRESSIONOBJ *EXPR) {
+  WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 7, "sizeof(");
+  if (EXPR->PSEUDOFNCALL.ARG1 != PNil) OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
+  else OUTTYPEREFERENCE(EXPR->PSEUDOFNCALL.TYPEARG);
+  WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ')');
 }
 
 void _OUTSTR(TEXPRESSIONOBJ *EXPR) {
@@ -7340,6 +7427,22 @@ TEXPRESSIONOBJ *PFREAD_PARSE(TEXPRESSIONOBJ *FNEXPR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ *PFSIZEOF_PARSE(TEXPRESSIONOBJ *FNEXPR) {
+  TEXPRESSIONOBJ *RESULT;
+  TPSIDENTIFIER ID;
+  TPSNAME FOUND;
+  WANTTOKENANDREAD(TKLPAREN);
+  ID = PSIDENTIFIER();
+  WANTTOKENANDREAD(TKRPAREN);
+  RESULT = EXPSEUDOFNCALL(FNEXPR);
+  RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
+  FOUND = *FINDNAME(&ID.NAME, 1);
+  if (FOUND.CLS == TNCVARIABLE) RESULT->PSEUDOFNCALL.ARG1 = EXVARIABLE(FOUND.VARPTR);
+  else if (FOUND.CLS == TNCTYPE) RESULT->PSEUDOFNCALL.TYPEARG = FOUND.TYPEPTR;
+  else COMPILEERROR(CONCAT(CpLenPtr, 46, "Expected a variable or a type identifier; got ", CpEnd | CpStringPtr, &ID.NAME));
+  return RESULT;
+}
+
 TEXPRESSIONOBJ *PFSQR_PARSE(TEXPRESSIONOBJ *FNEXPR) {
   TEXPRESSIONOBJ *RESULT;
   RESULT = _PF_OVERLOAD_PARSE(FNEXPR, str_make(3, "SQR"));
@@ -7547,6 +7650,9 @@ TEXPRESSIONOBJ *PF_PARSE(TEXPRESSIONOBJ *FN) {
     case TPFREADLN:
       RESULT = PFREAD_PARSE(FN);
       break;
+    case TPFSIZEOF:
+      RESULT = PFSIZEOF_PARSE(FN);
+      break;
     case TPFSQR:
       RESULT = PFSQR_PARSE(FN);
       break;
@@ -7602,6 +7708,9 @@ PString PF_DESCRIBENAME(TEXPRESSIONOBJ *FN) {
     case TPFREADLN:
       RESULT = str_make(6, "READLN");
       break;
+    case TPFSIZEOF:
+      RESULT = str_make(6, "SIZEOF");
+      break;
     case TPFSQR:
       RESULT = str_make(3, "SQR");
       break;
@@ -7649,6 +7758,10 @@ PString PF_DESCRIBECALL(TEXPRESSIONOBJ *EXPR) {
         break;
       case TPFREADLN:
         RESULT = str_make(11, "READLN(...)");
+        break;
+      case TPFSIZEOF:
+        if (with1->ARG1 != PNil) RESULT = CONCAT(CpLenPtr, 7, "SIZEOF(", CpString, EXDESCRIBE(with1->ARG1), CpEnd | CpChar, ')');
+        else RESULT = CONCAT(CpLenPtr, 7, "SIZEOF(", CpString, TYPENAME(with1->TYPEARG), CpEnd | CpChar, ')');
         break;
       case TPFSTR:
         if (with1->ARG3 == PNil) RESULT = CONCAT(CpLenPtr, 4, "STR(", CpString, EXDESCRIBE(with1->ARG1), CpLenPtr, 2, ", ", CpString, EXDESCRIBE(with1->ARG2), CpEnd | CpChar, ')');
