@@ -10,7 +10,7 @@ void COMPILEERROR(PString MSG);
 void INTERNALERROR(PString MSG);
 void COMPILEWARNING(PString MSG);
 
-typedef enum enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
+typedef enum __attribute__((__packed__)) enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
 typedef struct record2 {
   PInteger ROW;
   PInteger COL;
@@ -20,7 +20,7 @@ typedef struct record3 {
   PString VALUE;
   TLXPOS POS;
 } TLXTOKEN;
-typedef enum enum2 { TPFABS, TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFRANDOM, TPFREAD, TPFREADLN, TPFSIZEOF, TPFSQR, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
+typedef enum __attribute__((__packed__)) enum2 { TPFABS, TPFCONCAT, TPFDISPOSE, TPFNEW, TPFORD, TPFPRED, TPFRANDOM, TPFREAD, TPFREADLN, TPFSIZEOF, TPFSQR, TPFSTR, TPFSUCC, TPFVAL, TPFWRITE, TPFWRITELN } TPSPSEUDOFN;
 typedef struct record17 *TPSTYPEPTR;
 typedef struct record18 *TPSENUMPTR;
 typedef struct record22 *TPSVARPTR;
@@ -28,7 +28,7 @@ typedef struct record23 *TPSFNPTR;
 typedef struct record5 *TEXSETIMMBOUNDS;
 typedef struct record6 *TEXSETEXPRBOUNDS;
 typedef struct record13 *TEXPRESSION;
-typedef enum enum3 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
+typedef enum __attribute__((__packed__)) enum3 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
 typedef struct record4 {
   TEXIMMEDIATECLASS CLS;
   union {
@@ -106,7 +106,7 @@ typedef struct record12 {
   struct record13 *RIGHT;
   TLXTOKENID OP;
 } TEXBINARYOP;
-typedef enum enum4 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCWITHTMPVAR, XCSUBRANGE, XCSET, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
+typedef enum __attribute__((__packed__)) enum4 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCWITHTMPVAR, XCSUBRANGE, XCSET, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
 typedef struct record13 {
   struct record17 *TYPEPTR;
   PBoolean ISASSIGNABLE;
@@ -181,7 +181,7 @@ typedef struct record20 *TPSRECPTR;
 typedef struct record21 *TPSCONSTPTR;
 typedef struct record24 *TPSWITHVARPTR;
 typedef struct record25 *TPSNAMEPTR;
-typedef enum enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
+typedef enum __attribute__((__packed__)) enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
 typedef struct record17 {
   PString NAME;
   struct record17 *ALIASFOR;
@@ -264,7 +264,7 @@ typedef struct record23 {
 typedef struct record24 {
   TPSVARIABLE *VARPTR;
 } TPSWITHVAR;
-typedef enum enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
+typedef enum __attribute__((__packed__)) enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
 typedef struct record25 {
   PString NAME;
   TPSNAMECLASS CLS;
@@ -290,14 +290,14 @@ typedef struct record25 {
     };
   };
 } TPSNAME;
-typedef enum enum7 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
+typedef enum __attribute__((__packed__)) enum7 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
 typedef struct record26 {
   PInteger ENUMCTR;
   PInteger RECORDCTR;
   PInteger TMPVARCTR;
 } TPSCOUNTERS;
 typedef struct record27 *TPSDEFPTR;
-typedef enum enum8 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
+typedef enum __attribute__((__packed__)) enum8 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
 typedef struct record27 {
   struct record27 *PREV;
   struct record27 *NEXT;
@@ -631,7 +631,7 @@ void LXGETSTRING() {
   PChar CHR;
   PInteger POS;
   PInteger LAST;
-  enum enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
+  enum __attribute__((__packed__)) enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
   const char* enumvalues9[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
   POS = 0;
   STATE = NONE;
@@ -1453,12 +1453,12 @@ PString UNPARSESTRING(const PString *ST) {
       POS = first;
       while (1) {
         {
-          if ((*ST).chr[POS] < ' ') {
+          if (ST->chr[POS] < ' ') {
             if (QUOTED) {
               QUOTED = 0;
               RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
             }
-            STR_i((int)(*ST).chr[POS], 0, &CHNUM);
+            STR_i((int)ST->chr[POS], 0, &CHNUM);
             RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, '#', CpEnd | CpStringPtr, &CHNUM);
           }
           else {
@@ -1466,8 +1466,8 @@ PString UNPARSESTRING(const PString *ST) {
               QUOTED = 1;
               RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
             }
-            if ((*ST).chr[POS] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "''");
-            else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, (*ST).chr[POS]);
+            if (ST->chr[POS] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "''");
+            else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ST->chr[POS]);
           }
         }
         if (POS == last) break;
@@ -3853,7 +3853,7 @@ PBoolean _EXISFALSE(TEXPRESSIONOBJ *EXPR) {
 
 PBoolean _EXBINOPSHORTCUT(TEXPRESSIONOBJ **LEFT, TEXPRESSIONOBJ **RIGHT, TLXTOKENID OP) {
   PBoolean RESULT;
-  enum enum9 { USELEFT, USERIGHT, KEEP } USE;
+  enum __attribute__((__packed__)) enum9 { USELEFT, USERIGHT, KEEP } USE;
   const char* enumvalues9[] = { "USELEFT", "USERIGHT", "KEEP" };
   USE = KEEP;
   switch (OP) {
@@ -3999,7 +3999,7 @@ TEXPRESSIONOBJ *EXRERANGE(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
 
 TEXPRESSIONOBJ *_EXCOERCESET(TEXPRESSIONOBJ *EXPR, TPSTYPE *TYPEPTR) {
   TEXPRESSIONOBJ *RESULT;
-  enum enum9 { PASS, REJECT, REPLACE } OUTCOME;
+  enum __attribute__((__packed__)) enum9 { PASS, REJECT, REPLACE } OUTCOME;
   TPSTYPE *EXPRELEMTYPE;
   TPSTYPE *DESTELEMTYPE;
   const char* enumvalues9[] = { "PASS", "REJECT", "REPLACE" };
@@ -4777,7 +4777,7 @@ PBoolean ISOPRELATIONAL(TLXTOKEN TOK) {
 
 PString PARSESTRING(const PString *PSTR) {
   PString RESULT;
-  enum enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
+  enum __attribute__((__packed__)) enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   PInteger POS;
   PChar CH;
   PInteger CHNUM;
@@ -4786,12 +4786,12 @@ PString PARSESTRING(const PString *PSTR) {
   STATE = NONE;
   POS = 1;
   while (POS <= LENGTH(PSTR)) {
-    CH = (*PSTR).chr[POS];
+    CH = PSTR->chr[POS];
     if (STATE == NONE) {
       POS = POS + 1;
       if (CH == '\'') {
         STATE = QUOTEDSTR;
-        if (POS > 2 && (*PSTR).chr[POS - 2] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
+        if (POS > 2 && PSTR->chr[POS - 2] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
       }
       else if (CH == '#') STATE = HASH;
       else if (CH == '^') STATE = CARET;
@@ -5196,8 +5196,8 @@ void PSPROGRAMBLOCK() {
 }
 
 void EXECUTEDIRECTIVE(const PString *DIR) {
-  if (LENGTH(DIR) > 3 && (*DIR).chr[2] == 'I' && (*DIR).chr[3] == ' ') LXINCLUDE(COPY(DIR, 4, 255));
-  else if (LENGTH(DIR) == 3 && (*DIR).chr[2] == 'R' && ((*DIR).chr[3] == '+' || (*DIR).chr[3] == '-')) OPTIONS.CHECKBOUNDS = (*DIR).chr[3] == '+';
+  if (LENGTH(DIR) > 3 && DIR->chr[2] == 'I' && DIR->chr[3] == ' ') LXINCLUDE(COPY(DIR, 4, 255));
+  else if (LENGTH(DIR) == 3 && DIR->chr[2] == 'R' && (DIR->chr[3] == '+' || DIR->chr[3] == '-')) OPTIONS.CHECKBOUNDS = DIR->chr[3] == '+';
 }
 
 void READTOKEN() {
@@ -5373,7 +5373,7 @@ void STARTGLOBALSCOPE() {
   STARTTEMPORARYSCOPE();
 }
 
-typedef enum enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum __attribute__((__packed__)) enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
 const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
@@ -5472,10 +5472,10 @@ void _OUTCSTRING(const PString *STR) {
       POS = first;
       while (1) {
         {
-          CH = (*STR).chr[POS];
+          CH = STR->chr[POS];
           if (CH < ' ' || CH > '~') {
             _OUTESCAPEDCHAR(CH);
-            if (POS < LENGTH(STR) && LXISHEXDIGIT((*STR).chr[POS + 1])) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 2, "\"\"");
+            if (POS < LENGTH(STR) && LXISHEXDIGIT(STR->chr[POS + 1])) WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 2, "\"\"");
           }
           else {
             if (CH == '"') WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 2, "\\\"");
@@ -5494,7 +5494,7 @@ void _OUTCSTRING(const PString *STR) {
 void _OUTSTRING(const PString *STR) {
   if (LENGTH(STR) == 1) {
     WRITE(&CODEGEN.OUTPUT, RwpLenPtr | RwpEnd, 7, "str_of(");
-    _OUTCHAR((*STR).chr[1]);
+    _OUTCHAR(STR->chr[1]);
     WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ')');
   }
   else {
@@ -6354,7 +6354,7 @@ void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY *CHECKPOINT) {
 
 PString _GETRANGETYPE(TPSTYPE *TYPEPTR) {
   PString RESULT;
-  typedef enum enum10 { U8, S8, U16, S16, U32, S32 } TYPES;
+  typedef enum __attribute__((__packed__)) enum10 { U8, S8, U16, S16, U32, S32 } TYPES;
   const char* enumvalues10[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
   const PString NAMES[6] = { str_make(6, "PBits8"), str_make(7, "PBits8S"), str_make(7, "PBits16"), str_make(8, "PBits16S"), str_make(7, "PBits32"), str_make(8, "PBits32S") };
   const PInteger LOWLIMITS[6] = { 0, -128, 0, -32768, 0, -0 };
@@ -7848,7 +7848,7 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   PBoolean SUPPRESSWARNINGS;
-  enum enum10 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum __attribute__((__packed__)) enum10 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
   const char* enumvalues10[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
