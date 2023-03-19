@@ -1090,11 +1090,14 @@ begin
   until Lexer.Token.Id in [TkElse, TkEnd];
   OutCaseElseBegin;
   if Lexer.Token.Id = TkElse then
+  begin
+    ReadToken;
     repeat
-      ReadToken;
       PsStatement;
       WantToken2(TkSemicolon, TkEnd);
-    until Lexer.Token.Id = TkEnd;
+      SkipToken(TkSemicolon)
+    until Lexer.Token.Id = TkEnd
+  end;
   OutCaseElseEnd;
   OutCaseEnd;
   WantTokenAndRead(TkEnd);
