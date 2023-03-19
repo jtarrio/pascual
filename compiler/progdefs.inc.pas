@@ -447,15 +447,6 @@ begin
   IsArrayType := (TypePtr <> nil) and (TypePtr^.Cls = TtcArray)
 end;
 
-function PointerType(TypePtr : TPsTypePtr) : TPsType;
-var 
-  Typ : TPsType;
-begin
-  Typ := TypeOfClass(TtcPointer);
-  Typ.PointedTypePtr := TypePtr;
-  PointerType := Typ
-end;
-
 function IsPointerType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsPointerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcPointer)
@@ -1037,4 +1028,26 @@ begin
   Result.Args[1] := Arg1;
   Result.Args[2] := Arg2;
   Result.Args[3] := Arg3
+end;
+
+function GetPointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+  Typ : TPsType;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and IsPointerType(Def^.TypePtr)
+       and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr) then
+      Result := Def^.TypePtr;
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    Typ := TypeOfClass(TtcPointer);
+    Typ.PointedTypePtr := TypePtr;
+    Result := AddType(Typ)
+  end
 end;

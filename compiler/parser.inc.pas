@@ -53,11 +53,8 @@ begin
 end;
 
 function PsIdentifier : TPsIdentifier;
-var 
-  Ident : TPsIdentifier;
 begin
-  Ident.Name := GetTokenValueAndRead(TkIdentifier);
-  PsIdentifier := Ident
+  Result.Name := GetTokenValueAndRead(TkIdentifier);
 end;
 
 function PsExpression : TExpression;
@@ -223,21 +220,19 @@ begin
 end;
 
 function PsPointerType : TPsTypePtr;
-var 
-  Typ : TPsType;
-  NamePtr : TPsNamePtr;
+var NamePtr : TPsNamePtr;
 begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
   NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
-  if NamePtr = nil then Typ := PointerUnknownType(Lexer.Token.Value)
+  if NamePtr = nil then
+    Result := AddType(PointerUnknownType(Lexer.Token.Value))
   else
   begin
-    Typ := PointerType(NamePtr^.TypePtr);
+    Result := GetPointerType(NamePtr^.TypePtr);
     NamePtr^.TypePtr^.WasUsed := true
   end;
-  ReadToken;
-  PsPointerType := AddType(Typ)
+  ReadToken
 end;
 
 function PsRangeType : TPsTypePtr;
