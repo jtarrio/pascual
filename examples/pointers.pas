@@ -21,11 +21,12 @@ type
   end;
 
 var
-  MyStr : StringP;
-  MyRec : MyRecordP;
+  MyStrPtr : StringP;
+  MyRecPtr : MyRecordP;
   RootNode : NodeP;
   { Of course, you can just declare and use pointer types }
-  MyInt : ^integer;
+  MyIntPtr : ^integer;
+  MyInt : integer;
 
 { Some linked list subroutines. }
 procedure AddNode(Value : integer);
@@ -70,23 +71,28 @@ end;
 
 begin
   { Using a pointer to a string }
-  New(MyStr);
-  MyStr^ := 'foo';
-  writeln(MyStr^);
-  Dispose(MyStr);
+  New(MyStrPtr);
+  MyStrPtr^ := 'foo';
+  writeln(MyStrPtr^);
+  Dispose(MyStrPtr);
 
   { Using a pointer to a record }
-  New(MyRec);
-  MyRec^.a := 123;
-  MyRec^.b := true;
-  writeln(MyRec^.a, ' ', MyRec^.b);
-  Dispose(MyRec);
+  New(MyRecPtr);
+  MyRecPtr^.a := 123;
+  MyRecPtr^.b := true;
+  writeln(MyRecPtr^.a, ' ', MyRecPtr^.b);
+  Dispose(MyRecPtr);
 
   { Using a pointer to an integer }
-  New(MyInt);
-  MyInt^ := 42;
-  writeln(MyInt^);
-  Dispose(MyInt);
+  New(MyIntPtr);
+  MyIntPtr^ := 42;
+  writeln(MyIntPtr^);
+  Dispose(MyIntPtr);
+
+  { Using the address-of operator }
+  MyInt := 123456;
+  MyIntPtr := @MyInt;
+  writeln(MyIntPtr^);
 
   { Using a doubly linked list }
   RootNode := nil;

@@ -64,7 +64,7 @@ void CONVERSIONS() {
   PString A;
   PInteger B;
   PBoolean C;
-  enum enum1 { ONE, TWO, THREE } D;
+  enum __attribute__((__packed__)) enum1 { ONE, TWO, THREE } D;
   PInteger X;
   const char* enumvalues1[] = { "ONE", "TWO", "THREE" };
   WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 53, "You can use Str() to convert several types to string.");

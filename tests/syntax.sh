@@ -347,6 +347,19 @@ echo 'program foo;
       type U = array [1..10] of ^T;
       var A : ^U;
       begin writeln(A^[1]^.C[10]^) end.' | is_valid
+echo 'program foo;
+      type T = ^integer;
+      var A : integer; PA : T;
+      begin A := 42; PA := @A; writeln(PA^) end.' | is_valid
+echo 'program foo;
+      type T = ^integer;
+      const A : integer = 42;
+      var PA : T;
+      begin PA := @A; writeln(PA^) end.' | is_not_valid
+echo 'program foo;
+      type T = ^integer;
+      var A : integer; PA : T; PPA : ^T;
+      begin A := 42; PA := @A; PPA := @PA; writeln(PA^, PPA^^) end.' | is_valid
 
 # Procedures
 echo 'program foo;

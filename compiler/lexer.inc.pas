@@ -297,6 +297,7 @@ begin
            ':' : LxGetSymbol(TkColon, 1);
            ';' : LxGetSymbol(TkSemicolon, 1);
            '^' : LxGetSymbol(TkCaret, 1);
+           '@' : LxGetSymbol(TkAt, 1);
            '(' : LxGetSymbol(TkLparen, 1);
            ')' : LxGetSymbol(TkRparen, 1);
            '{' : LxGetComment;

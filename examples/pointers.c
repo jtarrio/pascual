@@ -1,26 +1,27 @@
 /* Program: POINTERS */
 #include "pascual.h"
 
-typedef PString *STRINGP;
+typedef PString* STRINGP;
 typedef struct record1 {
   PInteger A;
   PBoolean B;
 } MYRECORD;
-typedef MYRECORD *MYRECORDP;
-typedef struct record2 *NODEP;
+typedef MYRECORD* MYRECORDP;
+typedef struct record2* NODEP;
 typedef struct record2 {
   PInteger VALUE;
-  struct record2 *PREV;
-  struct record2 *NEXT;
+  struct record2* PREV;
+  struct record2* NEXT;
 } NODE;
 
-PString *MYSTR;
-MYRECORD *MYREC;
-NODE *ROOTNODE;
-PInteger *MYINT;
+PString* MYSTRPTR;
+MYRECORD* MYRECPTR;
+NODE* ROOTNODE;
+PInteger* MYINTPTR;
+PInteger MYINT;
 
 void ADDNODE(PInteger VALUE) {
-  NODE *PREVROOT;
+  NODE* PREVROOT;
   PREVROOT = ROOTNODE;
   ROOTNODE = malloc(sizeof(NODE));
   ROOTNODE->VALUE = VALUE;
@@ -32,9 +33,9 @@ void ADDNODE(PInteger VALUE) {
   }
 }
 
-NODE *FINDNODE(PInteger COUNT) {
-  NODE *RESULT;
-  NODE *NODE;
+NODE* FINDNODE(PInteger COUNT) {
+  NODE* RESULT;
+  NODE* NODE;
   NODE = ROOTNODE;
   while (COUNT > 1 && NODE != PNil) {
     if (NODE != PNil) NODE = NODE->NEXT;
@@ -45,7 +46,7 @@ NODE *FINDNODE(PInteger COUNT) {
 }
 
 void DISPOSELIST() {
-  NODE *NEXT;
+  NODE* NEXT;
   while (ROOTNODE != PNil) {
     NEXT = ROOTNODE->NEXT;
     free(ROOTNODE);
@@ -54,19 +55,22 @@ void DISPOSELIST() {
 }
 
 void pascual_main() {
-  MYSTR = malloc(sizeof(PString));
-  *MYSTR = str_make(3, "foo");
-  WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, MYSTR);
-  free(MYSTR);
-  MYREC = malloc(sizeof(MYRECORD));
-  MYREC->A = 123;
-  MYREC->B = 1;
-  WRITE(&OUTPUT, RwpInt, MYREC->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYREC->B);
-  free(MYREC);
-  MYINT = malloc(sizeof(PInteger));
-  *MYINT = 42;
-  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINT);
-  free(MYINT);
+  MYSTRPTR = malloc(sizeof(PString));
+  *MYSTRPTR = str_make(3, "foo");
+  WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, MYSTRPTR);
+  free(MYSTRPTR);
+  MYRECPTR = malloc(sizeof(MYRECORD));
+  MYRECPTR->A = 123;
+  MYRECPTR->B = 1;
+  WRITE(&OUTPUT, RwpInt, MYRECPTR->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYRECPTR->B);
+  free(MYRECPTR);
+  MYINTPTR = malloc(sizeof(PInteger));
+  *MYINTPTR = 42;
+  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
+  free(MYINTPTR);
+  MYINT = 123456;
+  MYINTPTR = &MYINT;
+  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
   ROOTNODE = PNil;
   ADDNODE(123);
   ADDNODE(456);

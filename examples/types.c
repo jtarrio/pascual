@@ -23,13 +23,13 @@ void BASICTYPES() {
 }
 
 void ENUMERATEDTYPES() {
-  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
-  typedef enum enum2 { NORTH, EAST, SOUTH, WEST } DIRECTIONS;
+  typedef enum __attribute__((__packed__)) enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum __attribute__((__packed__)) enum2 { NORTH, EAST, SOUTH, WEST } DIRECTIONS;
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   const char* enumvalues2[] = { "NORTH", "EAST", "SOUTH", "WEST" };
   SUITS SUIT;
   DIRECTIONS DIRECTION;
-  enum enum3 { PARK, REVERSE, NEUTRAL, LOW, DIRECT } GEAR;
+  enum __attribute__((__packed__)) enum3 { PARK, REVERSE, NEUTRAL, LOW, DIRECT } GEAR;
   const char* enumvalues3[] = { "PARK", "REVERSE", "NEUTRAL", "LOW", "DIRECT" };
   SUIT = DIAMONDS;
   DIRECTION = WEST;
@@ -40,15 +40,15 @@ void ENUMERATEDTYPES() {
 }
 
 void SUBRANGES() {
-  typedef PInteger FIRSTHUNDRED;
-  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
-  typedef enum enum1 REDS;
-  typedef enum enum1 BLACKS;
+  typedef PBits8 FIRSTHUNDRED;
+  typedef enum __attribute__((__packed__)) enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef PBits8 REDS;
+  typedef PBits8 BLACKS;
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   FIRSTHUNDRED NUM;
   REDS REDSUIT;
   BLACKS BLACKSUIT;
-  PChar LETTER;
+  PBits8 LETTER;
   NUM = 27;
   REDSUIT = HEARTS;
   BLACKSUIT = SPADES;
@@ -56,8 +56,8 @@ void SUBRANGES() {
 }
 
 void ARRAYS() {
-  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
-  typedef enum enum2 { KING, QUEEN, BISHOP, KNIGHT, ROOK, PAWN } PIECE;
+  typedef enum __attribute__((__packed__)) enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum __attribute__((__packed__)) enum2 { KING, QUEEN, BISHOP, KNIGHT, ROOK, PAWN } PIECE;
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   const char* enumvalues2[] = { "KING", "QUEEN", "BISHOP", "KNIGHT", "ROOK", "PAWN" };
   PString NAMES[12];
@@ -68,7 +68,7 @@ void ARRAYS() {
   PInteger BOOLEANCOUNTS[2];
   PIECE CHESSBOARD[8][8];
   PIECE OTHERCHESSBOARD[8][8];
-  PReal MASHUP[13][13][13];
+  PReal MASHUP[13][26][2];
   NAMES[0] = str_make(4, "Mark");
   SUITCOUNTS[1] = 3;
   CHESSBOARD[2][1] = PAWN;
@@ -78,7 +78,7 @@ void ARRAYS() {
 }
 
 void RECORDS() {
-  typedef enum enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
+  typedef enum __attribute__((__packed__)) enum1 { HEARTS, DIAMONDS, CLUBS, SPADES } SUITS;
   const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   typedef struct record1 {
     PInteger A;

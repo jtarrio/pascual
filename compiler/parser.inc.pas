@@ -884,8 +884,7 @@ begin
     if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
     Expr := PsVariableOrFunctionExtension(Expr)
   end
-  else if Lexer.Token.Id = TkLbracket then
-         Expr := PsSetConstructor
+  else if Lexer.Token.Id = TkLbracket then Expr := PsSetConstructor
   else if Lexer.Token.Id = TkLparen then
   begin
     WantTokenAndRead(TkLparen);
@@ -896,6 +895,13 @@ begin
   begin
     WantTokenAndRead(TkNot);
     Expr := ExUnaryOp(PsFactor, TkNot);
+  end
+  else if Lexer.Token.Id = TkAt then
+  begin
+    WantTokenAndRead(TkAt);
+    Expr := PsVariable;
+    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
+    Expr := ExAddressOf(Expr)
   end
   else
     CompileError('Invalid token in expression: ' + LxTokenStr);

@@ -181,6 +181,7 @@ begin
     XcField : Result := 1;
     XcArray : Result := 1;
     XcPointer : Result := 2;
+    XcAddress : Result := 2;
     XcStringChar : Result := 1;
     XcFnRef : Result := 0;
     XcFnCall : Result := 1;
@@ -756,6 +757,7 @@ begin
                  write(Codegen.Output, '*');
                  _OutExpressionParens(Expr^.PointerExpr, Expr)
                end;
+    XcAddress: _OutAddress(Expr^.AddressExpr);
     XcStringChar: _OutExStringChar(Expr);
     XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
     XcFnCall: _OutExFunctionCall(Expr);
@@ -979,7 +981,7 @@ begin
   else if TypePtr^.Cls = TtcPointer then
   begin
     OutTypeReference(TypePtr^.PointedTypePtr);
-    write(Codegen.Output, ' *', Name)
+    write(Codegen.Output, '* ', Name)
   end
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
          write(Codegen.Output, TypePtr^.Name, ' ', Name)
@@ -1185,6 +1187,7 @@ begin
       TtcReal: write(Codegen.Output, ', RwpReal');
       TtcChar: write(Codegen.Output, ', RwpChar');
       TtcString: write(Codegen.Output, ', RwpString');
+      else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Arg)
     end;
     if ReadArg^.Next = nil then
     begin
@@ -1235,6 +1238,7 @@ begin
                    else
                      write(Codegen.Output, ', RwpString')
                  end;
+      else ErrorForExpr('Expression has invalid type for WRITE', WriteArg^.Arg)
     end;
     if WriteArg^.Width <> nil then write(Codegen.Output, ' | RwpWidth');
     if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then

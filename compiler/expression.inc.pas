@@ -1,12 +1,10 @@
 function _NewExpr(Cls : TExpressionClass) : TExpression;
-var Expr : TExpression;
 begin
-  new(Expr);
-  Expr^.Cls := Cls;
-  Expr^.IsAssignable := false;
-  Expr^.IsAddressable := false;
-  Expr^.IsFunctionResult := false;
-  _NewExpr := Expr
+  new(Result);
+  Result^.Cls := Cls;
+  Result^.IsAssignable := false;
+  Result^.IsAddressable := false;
+  Result^.IsFunctionResult := false
 end;
 
 procedure _DisposePseudoCallExpr(var Call : TExPseudoFnCall);
@@ -97,6 +95,7 @@ begin
                 ExDispose(Expr^.ArrayIndex);
               end;
     XcPointer : ExDispose(Expr^.PointerExpr);
+    XcAddress : ExDispose(Expr^.AddressExpr);
     XcStringChar :
                    begin
                      ExDispose(Expr^.StringExpr);
@@ -264,6 +263,7 @@ begin
                Copy^.ArrayIndex := ExCopy(Expr^.ArrayIndex)
              end;
     XcPointer: Copy^.PointerExpr := ExCopy(Expr^.PointerExpr);
+    XcAddress: Copy^.AddressExpr := ExCopy(Expr^.AddressExpr);
     XcStringChar:
                   begin
                     Copy^.StringExpr := ExCopy(Expr^.StringExpr);
@@ -348,6 +348,7 @@ begin
     XcField: Result := 1;
     XcArray: Result := 1;
     XcPointer: Result := 1;
+    XcAddress: Result := 1;
     XcStringChar: Result := 1;
     XcFnRef: Result := 0;
     XcFnCall: Result := 1;
@@ -479,6 +480,7 @@ begin
     XcArray: Result := ExDescribe(Expr^.ArrayExpr) +
                        '[' + ExDescribe(Expr^.ArrayIndex) + ']';
     XcPointer: Result := ExDescribe(Expr^.PointerExpr) + '^';
+    XcAddress: Result := '@' + ExDescribe(Expr^.AddressExpr);
     XcStringChar: Result := ExDescribe(Expr^.StringExpr) + '[' +
                             ExDescribe(Expr^.StringIndex) + ']';
     XcFnRef: Result := Expr^.FnPtr^.Name;
@@ -856,6 +858,17 @@ begin
   Result^.IsAssignable := true;
   Result^.IsAddressable := true;
   Result^.IsFunctionResult := Parent^.IsFunctionResult
+end;
+
+function ExAddressOf(Parent : TExpression) : TExpression;
+begin
+  EnsureAddressableExpr(Parent);
+  EnsureAssignableExpr(Parent);
+  if Parent^.Cls <> XcVariable then
+    ErrorForExpr('Expected a variable', Parent);
+  Result := _NewExpr(XcAddress);
+  Result^.AddressExpr := Parent;
+  Result^.TypePtr := GetPointerType(Parent^.TypePtr)
 end;
 
 function ExStringChar(Parent, Subscript : TExpression) : TExpression;
