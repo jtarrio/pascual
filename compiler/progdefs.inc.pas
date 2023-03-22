@@ -646,10 +646,9 @@ begin
     Result := Result + ')'
   end
   else if Typ.Cls = TtcRange then
-  begin
-    Result := _AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
-              '..' + _AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.BaseTypePtr)
-  end
+         Result := _AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
+                   '..' + _AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.
+                   BaseTypePtr)
   else if Typ.Cls = TtcSet then
   begin
     if Typ.ElementTypePtr = nil then Result := 'SET OF []'
@@ -667,10 +666,8 @@ begin
     Result := Result + ' END'
   end
   else if Typ.Cls = TtcArray then
-  begin
-    Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
-              '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false)
-  end
+         Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
+                   '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false)
   else if Typ.Cls = TtcPointer then
          Result := '^' + DeepTypeName(Typ.PointedTypePtr, true)
   else if Typ.Cls = TtcFunction then
@@ -692,9 +689,7 @@ begin
       Result := Result + ')';
     end;
     if ReturnTypePtr <> nil then
-    begin
       Result := Result + ' : ' + DeepTypeName(ReturnTypePtr, false)
-    end
   end
   else
   begin
