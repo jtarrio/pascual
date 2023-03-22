@@ -661,7 +661,7 @@ begin
     end;
     PsFunctionCall := ExFunctionCall(Fn, Args)
   end
-  else if Fn^.Cls = XcPseudoFnRef then PsFunctionCall := Pf_Parse(Fn)
+  else if Fn^.Cls = XcPseudoFnRef then PsFunctionCall := Fn^.PseudoFnPtr^.ParseFn(Fn)
 end;
 
 function PsArrayAccess(Arr : TExpression) : TExpression;
@@ -720,7 +720,7 @@ begin
     else if Found.Cls = TncEnumVal then
            Expr := ExEnumConstant(Found.Ordinal, Found.EnumTypePtr)
     else if Found.Cls = TncPseudoFn then
-           Expr := ExPseudoFn(Found.PseudoFn)
+           Expr := ExPseudoFn(Found.PseudoFnPtr)
     else
       CompileError('Invalid identifier: ' + Id.Name)
   end;

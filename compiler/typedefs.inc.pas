@@ -23,14 +23,11 @@ type
     Pos : TLxPos
   end;
 
-  TPsPseudoFn = (TpfAbs, TpfConcat, TpfDispose, TpfNew, TpfOrd, TpfPred,
-                 TpfRandom, TpfRead, TpfReadln, TpfSizeof, TpfSqr, TpfStr,
-                 TpfSucc, TpfVal, TpfWrite, TpfWriteln);
-
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
   TPsFnPtr = ^TPsFunction;
+  TPsPseudoFnPtr = ^TPsPseudoFn;
   TExSetImmBounds = ^TExSetImmBoundsObj;
   TExSetExprBounds = ^TExSetExprboundsObj;
 
@@ -72,14 +69,14 @@ type
     Next : ^TExWriteArgs
   end;
   TExPseudoFnCall = record
+    PseudoFnPtr : TPsPseudoFnPtr;
     Arg1 : TExpression;
     Arg2 : TExpression;
     Arg3 : TExpression;
     Arg4 : TExpression;
     TypeArg : TPsTypePtr;
-    case PseudoFn : TPsPseudoFn of 
-      TpfRead, TpfReadln: (ReadArgs : ^TExReadArgs);
-      TpfWrite, TpfWriteln: (WriteArgs : ^TExWriteArgs);
+    ReadArgs : ^TExReadArgs;
+    WriteArgs : ^TExWriteArgs
   end;
   TExUnaryOp = record
     Parent : TExpression;
@@ -122,7 +119,7 @@ type
       XcFnRef : (FnPtr : TPsFnPtr);
       XcFnCall : (FnExpr : TExpression;
                   CallArgs : TExFunctionArgs);
-      XcPseudoFnRef : (PseudoFn : TPsPseudoFn);
+      XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
@@ -212,6 +209,13 @@ type
     IsDeclaration : boolean;
     WasUsed : boolean
   end;
+  TPsPseudoFnParser = function (FnExpr : TExpression) : TExpression;
+  TPsPseudoFnDescriptor = function (FnExpr : TExpression) : string;
+  TPsPseudoFn = record
+    Name : string;
+    ParseFn : TPsPseudoFnParser;
+    DescribeFn : TPsPseudoFnDescriptor;
+  end;
   TPsWithVar = record
     VarPtr : TPsVarPtr
   end;
@@ -226,7 +230,7 @@ type
       TncEnumVal : (EnumTypePtr : TPsTypePtr;
                     Ordinal : integer);
       TncFunction : (FnPtr : TPsFnPtr);
-      TncPseudoFn : (PseudoFn : TPsPseudoFn)
+      TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;
 
   TPsCounterType = (TctEnum, TctRecord, TctTmpVar);
@@ -238,7 +242,7 @@ type
 
   TPsDefPtr = ^TPsDefEntry;
   TPsDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
-                 TdcFunction, TdcWithVar, TdcScopeBoundary);
+                 TdcFunction, TdcPseudoFn, TdcWithVar, TdcScopeBoundary);
   TPsDefEntry = record
     Prev : TPsDefPtr;
     Next : TPsDefPtr;
@@ -248,6 +252,7 @@ type
       TdcConstant : (ConstPtr : TPsConstPtr);
       TdcVariable : (VarPtr : TPsVarPtr);
       TdcFunction : (FnPtr : TPsFnPtr);
+      TdcPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr);
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
       TdcScopeBoundary : (TemporaryScope : boolean;
                           Counters : TPsCounters;

@@ -23,9 +23,9 @@ forward;
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
 {$I parser.inc.pas}
+{$I pseudofuns.inc.pas}
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
-{$I pseudofuns.inc.pas}
 
 procedure CompileError(Msg : string);
 begin

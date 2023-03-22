@@ -443,21 +443,20 @@ forward;
 
 procedure _OutExPseudoFnCall(Expr : TExpression);
 begin
-  case Expr^.PseudoFnCall.PseudoFn of 
-    TpfDispose : _OutDispose(Expr);
-    TpfNew : _OutNew(Expr);
-    TpfOrd : _OutOrd(Expr);
-    TpfPred : _OutPred(Expr);
-    TpfRead : _OutRead(Expr);
-    TpfReadln : _OutRead(Expr);
-    TpfSizeof : _OutSizeof(Expr);
-    TpfStr : _OutStr(Expr);
-    TpfSucc : _OutSucc(Expr);
-    TpfVal : _OutVal(Expr);
-    TpfWrite : _OutWrite(Expr);
-    TpfWriteln : _OutWrite(Expr);
+  with Expr^.PseudoFnCall do
+    if PseudoFnPtr = PseudoFuns.Dispose then _OutDispose(Expr)
+    else if PseudoFnPtr = PseudoFuns.New then _OutNew(Expr)
+    else if PseudoFnPtr = PseudoFuns.Ord then _OutOrd(Expr)
+    else if PseudoFnPtr = PseudoFuns.Pred then _OutPred(Expr)
+    else if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
+    else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
+    else if PseudoFnPtr = PseudoFuns.Sizeof then _OutSizeof(Expr)
+    else if PseudoFnPtr = PseudoFuns.Str then _OutStr(Expr)
+    else if PseudoFnPtr = PseudoFuns.Succ then _OutSucc(Expr)
+    else if PseudoFnPtr = PseudoFuns.Val then _OutVal(Expr)
+    else if PseudoFnPtr = PseudoFuns.Write then _OutWrite(Expr)
+    else if PseudoFnPtr = PseudoFuns.Writeln then _OutWrite(Expr)
     else InternalError('Unimplemented special function ' + ExDescribe(Expr))
-  end
 end;
 
 procedure _OutExUnaryOp(Expr : TExpression);
@@ -1182,7 +1181,7 @@ var
   TypePtr : TPsTypePtr;
 begin
   Src := Expr^.PseudoFnCall.Arg1;
-  Linefeed := Expr^.PseudoFnCall.PseudoFn = TpfReadln;
+  Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Readln;
   ReadArg := Expr^.PseudoFnCall.ReadArgs;
   _OutIndent;
   write(Codegen.Output, 'READ(');
@@ -1223,7 +1222,7 @@ var
   TypePtr : TPsTypePtr;
 begin
   Dst := Expr^.PseudoFnCall.Arg1;
-  Linefeed := Expr^.PseudoFnCall.PseudoFn = TpfWriteln;
+  Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Writeln;
   WriteArg := Expr^.PseudoFnCall.WriteArgs;
   _OutIndent;
   write(Codegen.Output, 'WRITE(');

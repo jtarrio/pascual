@@ -25,13 +25,13 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
 
   { Ordinal subroutines }
-  AddPseudoFn('ORD', TpfOrd);
-  AddPseudoFn('PRED', TpfPred);
-  AddPseudoFn('SUCC', TpfSucc);
+  PseudoFuns.Ord := AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Unary_Describe);
+  PseudoFuns.Pred := AddPseudoFn('PRED', @PfPred_Parse, @Pf_Unary_Describe);
+  PseudoFuns.Succ := AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
 
   { Math subroutines }
-  AddPseudoFn('ABS', TpfAbs);
-  AddPseudoFn('SQR', TpfSqr);
+  AddPseudoFn('ABS', @PfAbs_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('SQR', @PfSqr_Parse, @Pf_Unary_Describe);
   AddFunction(MakeFunction1('ABS_i', PrimitiveTypes.PtInteger,
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction1('ABS_r', PrimitiveTypes.PtReal,
@@ -64,14 +64,14 @@ begin
               MakeArg('X', PrimitiveTypes.PtReal)));
 
   { Memory subroutines }
-  AddPseudoFn('DISPOSE', TpfDispose);
-  AddPseudoFn('NEW', TpfNew);
+  PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
+  PseudoFuns.New := AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
 
   { I/O subroutines }
-  AddPseudoFn('READ', TpfRead);
-  AddPseudoFn('READLN', TpfReadln);
-  AddPseudoFn('WRITE', TpfWrite);
-  AddPseudoFn('WRITELN', TpfWriteln);
+  PseudoFuns.Read := AddPseudoFn('READ', @PfRead_Parse, @Pf_Indef_Describe);
+  PseudoFuns.Readln := AddPseudoFn('READLN', @PfRead_Parse, @Pf_Indef_Describe);
+  PseudoFuns.Write := AddPseudoFn('WRITE', @PfWrite_Parse, @Pf_Indef_Describe);
+  PseudoFuns.Writeln := AddPseudoFn('WRITELN', @PfWrite_Parse, @Pf_Indef_Describe);
   AddFunction(MakeProcedure2('ASSIGN',
               MakeVarArg('F', PrimitiveTypes.PtText),
               MakeConstArg('NAME', PrimitiveTypes.PtString)));
@@ -117,9 +117,9 @@ begin
               MakeConstArg('DIR', PrimitiveTypes.PtString)));
 
   { Character and String subroutines }
-  AddPseudoFn('CONCAT', TpfConcat);
-  AddPseudoFn('STR', TpfStr);
-  AddPseudoFn('VAL', TpfVal);
+  AddPseudoFn('CONCAT', @PfConcat_Parse, @Pf_Indef_Describe);
+  PseudoFuns.Str := AddPseudoFn('STR', @PfStr_Parse, @PfStr_Describe);
+  PseudoFuns.Val := AddPseudoFn('VAL', @PfVal_Parse, @Pf_Ternary_Describe);
   AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
@@ -143,8 +143,8 @@ begin
               MakeArg('CHR', PrimitiveTypes.PtChar)));
 
   { Misc subroutines }
-  AddPseudoFn('RANDOM', TpfRandom);
-  AddPseudoFn('SIZEOF', TpfSizeof);
+  AddPseudoFn('RANDOM', @PfRandom_Parse, @Pf_Indef_Describe);
+  PseudoFuns.Sizeof := AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));

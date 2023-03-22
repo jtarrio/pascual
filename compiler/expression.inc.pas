@@ -16,29 +16,23 @@ begin
   if Call.Arg2 <> nil then ExDispose(Call.Arg2);
   if Call.Arg3 <> nil then ExDispose(Call.Arg3);
   if Call.Arg4 <> nil then ExDispose(Call.Arg4);
-  if Call.PseudoFn in [TpfRead, TpfReadln] then
+  ReadArg := Call.ReadArgs;
+  while ReadArg <> nil do
   begin
-    ReadArg := Call.ReadArgs;
-    while ReadArg <> nil do
-    begin
-      NextReadArg := ReadArg^.Next;
-      ExDispose(ReadArg^.Arg);
-      dispose(ReadArg);
-      ReadArg := NextReadArg
-    end
-  end
-  else if Call.PseudoFn in [TpfWrite, TpfWriteln] then
+    NextReadArg := ReadArg^.Next;
+    ExDispose(ReadArg^.Arg);
+    dispose(ReadArg);
+    ReadArg := NextReadArg
+  end;
+  WriteArg := Call.WriteArgs;
+  while WriteArg <> nil do
   begin
-    WriteArg := Call.WriteArgs;
-    while WriteArg <> nil do
-    begin
-      NextWriteArg := WriteArg^.Next;
-      ExDispose(WriteArg^.Arg);
-      if WriteArg^.Width <> nil then ExDispose(WriteArg^.Width);
-      if WriteArg^.Prec <> nil then ExDispose(WriteArg^.Prec);
-      dispose(WriteArg);
-      WriteArg := NextWriteArg
-    end
+    NextWriteArg := WriteArg^.Next;
+    ExDispose(WriteArg^.Arg);
+    if WriteArg^.Width <> nil then ExDispose(WriteArg^.Width);
+    if WriteArg^.Prec <> nil then ExDispose(WriteArg^.Prec);
+    dispose(WriteArg);
+    WriteArg := NextWriteArg
   end
 end;
 
@@ -123,58 +117,53 @@ var
   ReadArg, NextReadArg, CopyReadArg : ^TExReadArgs;
   WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
 begin
-  Copy.PseudoFn := Call.PseudoFn;
+  Copy.PseudoFnPtr := Call.PseudoFnPtr;
   if Call.Arg1 <> nil then Copy.Arg1 := ExCopy(Call.Arg1);
   if Call.Arg2 <> nil then Copy.Arg2 := ExCopy(Call.Arg2);
   if Call.Arg3 <> nil then Copy.Arg3 := ExCopy(Call.Arg3);
   if Call.Arg4 <> nil then Copy.Arg4 := ExCopy(Call.Arg4);
-  if Call.PseudoFn in [TpfRead, TpfReadln] then
+  Copy.TypeArg := Call.TypeArg;
+  ReadArg := Call.ReadArgs;
+  CopyReadArg := nil;
+  while ReadArg <> nil do
   begin
-    ReadArg := Call.ReadArgs;
-    CopyReadArg := nil;
-    while ReadArg <> nil do
+    NextReadArg := ReadArg^.Next;
+    if CopyReadArg = nil then
     begin
-      NextReadArg := ReadArg^.Next;
-      if CopyReadArg = nil then
-      begin
-        new(CopyReadArg);
-        Copy.ReadArgs := CopyReadArg
-      end
-      else
-      begin
-        new(CopyReadArg^.Next);
-        CopyReadArg := CopyReadArg^.Next;
-      end;
-      CopyReadArg^.Next := nil;
-      CopyReadArg^.Arg := ExCopy(ReadArg^.Arg);
-      ReadArg := NextReadArg
+      new(CopyReadArg);
+      Copy.ReadArgs := CopyReadArg
     end
-  end
-  else if Call.PseudoFn in [TpfWrite, TpfWriteln] then
+    else
+    begin
+      new(CopyReadArg^.Next);
+      CopyReadArg := CopyReadArg^.Next;
+    end;
+    CopyReadArg^.Next := nil;
+    CopyReadArg^.Arg := ExCopy(ReadArg^.Arg);
+    ReadArg := NextReadArg
+  end;
+  WriteArg := Call.WriteArgs;
+  CopyWriteArg := nil;
+  while WriteArg <> nil do
   begin
-    WriteArg := Call.WriteArgs;
-    CopyWriteArg := nil;
-    while WriteArg <> nil do
+    NextWriteArg := WriteArg^.Next;
+    if CopyWriteArg = nil then
     begin
-      NextWriteArg := WriteArg^.Next;
-      if CopyWriteArg = nil then
-      begin
-        new(CopyWriteArg);
-        Copy.WriteArgs := CopyWriteArg
-      end
-      else
-      begin
-        new(CopyWriteArg^.Next);
-        CopyWriteArg := CopyWriteArg^.Next;
-      end;
-      CopyWriteArg^.Next := nil;
-      CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
-      if WriteArg^.Width <> nil then
-        CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
-      if WriteArg^.Prec <> nil then
-        CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
-      WriteArg := NextWriteArg
+      new(CopyWriteArg);
+      Copy.WriteArgs := CopyWriteArg
     end
+    else
+    begin
+      new(CopyWriteArg^.Next);
+      CopyWriteArg := CopyWriteArg^.Next;
+    end;
+    CopyWriteArg^.Next := nil;
+    CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
+    if WriteArg^.Width <> nil then
+      CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
+    if WriteArg^.Prec <> nil then
+      CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
+    WriteArg := NextWriteArg
   end
 end;
 
@@ -278,7 +267,7 @@ begin
                   Copy^.CallArgs.Values[Pos] := ExCopy(Expr^.CallArgs
                                                 .Values[Pos])
               end;
-    XcPseudoFnRef: Copy^.PseudoFn := Expr^.PseudoFn;
+    XcPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
     XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
                                         Copy^.PseudoFnCall);
     XcUnaryOp:
@@ -494,8 +483,8 @@ begin
                 end;
                 Result := Result + ')'
               end;
-    XcPseudoFnRef: Result := Pf_DescribeName(Expr);
-    XcPseudoFnCall: Result := Pf_DescribeCall(Expr);
+    XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
+    XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -956,20 +945,20 @@ begin
     ErrorForExpr('Cannot call non-function', FnExpr)
 end;
 
-function ExPseudoFn(SpecialFn : TPsPseudoFn) : TExpression;
+function ExPseudoFn(SpecialFn : TPsPseudoFnPtr) : TExpression;
 begin
   Result := _NewExpr(XcPseudoFnRef);
-  Result^.PseudoFn := SpecialFn
+  Result^.PseudoFnPtr := SpecialFn
 end;
 
 function ExPseudoFnCall(Expr : TExpression) : TExpression;
-var Fn : TPsPseudoFn;
+var Fn : TPsPseudoFnPtr;
 begin
   if Expr^.Cls <> XcPseudoFnRef then
     InternalError('Expected a pseudofunction, got ' + ExDescribe(Expr));
-  Fn := Expr^.PseudoFn;
+  Fn := Expr^.PseudoFnPtr;
   Expr^.Cls := XcPseudoFnCall;
-  Expr^.PseudoFnCall.PseudoFn := Fn;
+  Expr^.PseudoFnCall.PseudoFnPtr := Fn;
   Expr^.PseudoFnCall.Arg1 := nil;
   Expr^.PseudoFnCall.Arg2 := nil;
   Expr^.PseudoFnCall.Arg3 := nil;

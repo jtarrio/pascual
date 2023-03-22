@@ -117,7 +117,7 @@ begin
   end
   else
   begin
-    Result := ExPseudoFnCall(ExPseudoFn(TpfOrd));
+    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Ord));
     Result^.PseudoFnCall.Arg1 := Arg;
     Result^.TypePtr := PrimitiveTypes.PtInteger
   end
@@ -155,7 +155,7 @@ begin
   end
   else
   begin
-    Result := ExPseudoFnCall(ExPseudoFn(TpfPred));
+    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Pred));
     Result^.PseudoFnCall.Arg1 := Arg;
     Result^.TypePtr := Arg^.TypePtr
   end
@@ -307,7 +307,7 @@ begin
   end
   else
   begin
-    Result := ExPseudoFnCall(ExPseudoFn(TpfSucc));
+    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Succ));
     Result^.PseudoFnCall.Arg1 := Arg;
     Result^.TypePtr := Arg^.TypePtr
   end
@@ -411,84 +411,45 @@ begin
   end
 end;
 
-function Pf_Parse(Fn : TExpression) : TExpression;
-begin
-  case Fn^.PseudoFn of 
-    TpfAbs : Result := PfAbs_Parse(Fn);
-    TpfConcat : Result := PfConcat_Parse(Fn);
-    TpfDispose : Result := PfDispose_Parse(Fn);
-    TpfNew : Result := PfNew_Parse(Fn);
-    TpfOrd : Result := PfOrd_Parse(Fn);
-    TpfPred : Result := PfPred_Parse(Fn);
-    TpfRandom : Result := PfRandom_Parse(Fn);
-    TpfRead : Result := PfRead_Parse(Fn);
-    TpfReadln : Result := PfRead_Parse(Fn);
-    TpfSizeof : Result := PfSizeof_Parse(Fn);
-    TpfSqr : Result := PfSqr_Parse(Fn);
-    TpfStr : Result := PfStr_Parse(Fn);
-    TpfSucc : Result := PfSucc_Parse(Fn);
-    TpfVal : Result := PfVal_Parse(Fn);
-    TpfWrite : Result := PfWrite_Parse(Fn);
-    TpfWriteln : Result := PfWrite_Parse(Fn);
-    else InternalError('Unimplemented special function ' + ExDescribe(Fn))
-  end
-end;
-
-function Pf_DescribeName(Fn : TExpression) : string;
-begin
-  case Fn^.PseudoFn of 
-    TpfAbs: Result := 'ABS';
-    TpfConcat: Result := 'CONCAT';
-    TpfDispose: Result := 'DISPOSE';
-    TpfNew: Result := 'NEW';
-    TpfOrd: Result := 'ORD';
-    TpfPred: Result := 'PRED';
-    TpfRandom : Result := 'RANDOM';
-    TpfRead: Result := 'READ';
-    TpfReadln: Result := 'READLN';
-    TpfSizeof: Result := 'SIZEOF';
-    TpfSqr: Result := 'SQR';
-    TpfStr: Result := 'STR';
-    TpfSucc: Result := 'SUCC';
-    TpfVal: Result := 'VAL';
-    TpfWrite: Result := 'WRITE';
-    TpfWriteln: Result := 'WRITELN';
-    else InternalError('Cannot describe pseudofun')
-  end
-end;
-
-function Pf_DescribeCall(Expr : TExpression) : string;
+function Pf_Unary_Describe(Expr : TExpression) : string;
 begin
   with Expr^.PseudoFnCall do
-    case PseudoFn of 
-      TpfDispose: Result := 'DISPOSE(' + ExDescribe(Arg1) + ')';
-      TpfNew: Result := 'NEW(' + ExDescribe(Arg1) + ')';
-      TpfOrd: Result := 'ORD(' + ExDescribe(Arg1) + ')';
-      TpfPred: Result := 'PRED(' + ExDescribe(Arg1) + ')';
-      TpfRead: Result := 'READ(...)';
-      TpfReadln: Result := 'READLN(...)';
-      TpfSizeof: if Arg1 <> nil then
-                   Result := 'SIZEOF(' + ExDescribe(Arg1) + ')'
-                 else
-                   Result := 'SIZEOF(' + TypeName(TypeArg) + ')';
-      TpfStr:
-              if Arg3 = nil then
-                Result := 'STR(' + ExDescribe(Arg1) + ', ' +
-                          ExDescribe(Arg2) + ')'
-              else if Arg4 = nil then
-                     Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                               ExDescribe(Arg3) + ', ' +
-                               ExDescribe(Arg2) + ')'
-              else Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                             ExDescribe(Arg3) + ':' +
-                             ExDescribe(Arg4) + ', ' +
-                             ExDescribe(Arg2) + ')';
-      TpfSucc: Result := 'SUCC(' + ExDescribe(Arg1) + ')';
-      TpfVal: Result := 'VAL(' + ExDescribe(Arg1) + ', ' +
-                        ExDescribe(Arg2) + ', ' +
-                        ExDescribe(Arg3) + ')';
-      TpfWrite: Result := 'WRITE(...)';
-      TpfWriteln: Result := 'WRITELN(...)';
-      else InternalError('Cannot describe pseudofun')
-    end
+    Result := PseudoFnPtr^.Name + '(' + ExDescribe(Arg1) + ')'
+end;
+
+function Pf_Ternary_Describe(Expr : TExpression) : string;
+begin
+  with Expr^.PseudoFnCall do
+    Result := PseudoFnPtr^.Name + '(' + ExDescribe(Arg1) + ', ' +
+              ExDescribe(Arg2) + ', ' + ExDescribe(Arg3) + ')'
+end;
+
+function Pf_Indef_Describe(Expr : TExpression) : string;
+begin
+  with Expr^.PseudoFnCall do
+    Result := PseudoFnPtr^.Name + '(...)'
+end;
+
+function PfSizeof_Describe(Expr : TExpression) : string;
+begin
+  with Expr^.PseudoFnCall do
+    if Arg1 <> nil then
+      Result := 'SIZEOF(' + ExDescribe(Arg1) + ')'
+    else
+      Result := 'SIZEOF(' + TypeName(TypeArg) + ')'
+end;
+
+function PfStr_Describe(Expr : TExpression) : string;
+begin
+  with Expr^.PseudoFnCall do
+    if Arg3 = nil then
+      Result := 'STR(' + ExDescribe(Arg1) + ', ' + ExDescribe(Arg2) + ')'
+    else if Arg4 = nil then
+           Result := 'STR(' + ExDescribe(Arg1) + ':' +
+                     ExDescribe(Arg3) + ', ' +
+                     ExDescribe(Arg2) + ')'
+    else Result := 'STR(' + ExDescribe(Arg1) + ':' +
+                   ExDescribe(Arg3) + ':' +
+                   ExDescribe(Arg4) + ', ' +
+                   ExDescribe(Arg2) + ')'
 end;

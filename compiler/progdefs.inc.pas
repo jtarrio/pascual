@@ -3,6 +3,10 @@ var
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText : TPsTypePtr
   end;
+  PseudoFuns : record
+    Dispose, New, Ord, Pred, Read, Readln, Sizeof, Str, Succ, Val, Write,
+    Writeln : TPsPseudoFnPtr
+  end;
 
 function DefCounter(CounterType : TPsCounterType) : integer;
 begin
@@ -89,6 +93,7 @@ begin
     TdcConstant : new(Def^.ConstPtr);
     TdcVariable : new(Def^.VarPtr);
     TdcFunction : new(Def^.FnPtr);
+    TdcPseudoFn : new(Def^.PseudoFnPtr);
     TdcWithVar : new(Def^.WithVarPtr);
     TdcScopeBoundary :
                        begin
@@ -115,6 +120,7 @@ begin
     TdcConstant : dispose(Def^.ConstPtr);
     TdcVariable : dispose(Def^.VarPtr);
     TdcFunction : dispose(Def^.FnPtr);
+    TdcPseudoFn : dispose(Def^.PseudoFnPtr);
     TdcWithVar : dispose(Def^.WithVarPtr)
   end;
   dispose(Def)
@@ -347,12 +353,16 @@ begin
   AddEnumValName := Def
 end;
 
-function AddPseudoFn(const Name : string; Fn : TPsPseudoFn) : TPsNamePtr;
+function AddPseudoFn(const Name : string; Parse : TPsPseudoFnParser;
+                     Describe : TPsPseudoFnDescriptor) : TPsPseudoFnPtr;
 var Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncPseudoFn);
-  Def^.PseudoFn := Fn;
-  AddPseudoFn := Def
+  Def^.PseudoFnPtr := _AddDef(TdcPseudoFn)^.PseudoFnPtr;
+  Def^.PseudoFnPtr^.Name := Name;
+  Def^.PseudoFnPtr^.ParseFn := Parse;
+  Def^.PseudoFnPtr^.DescribeFn := Describe;
+  Result := Def^.PseudoFnPtr
 end;
 
 function EmptyType : TPsType;
