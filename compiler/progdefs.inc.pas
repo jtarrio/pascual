@@ -669,8 +669,7 @@ begin
   else if Typ.Cls = TtcArray then
   begin
     Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
-              '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
-    Result := Result
+              '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false)
   end
   else if Typ.Cls = TtcPointer then
          Result := '^' + DeepTypeName(Typ.PointedTypePtr, true)
