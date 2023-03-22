@@ -24,7 +24,7 @@ typedef enum __attribute__((__packed__)) enum2 { TPFABS, TPFCONCAT, TPFDISPOSE, 
 typedef struct record17* TPSTYPEPTR;
 typedef struct record18* TPSENUMPTR;
 typedef struct record22* TPSVARPTR;
-typedef struct record23* TPSFNPTR;
+typedef struct record25* TPSFNPTR;
 typedef struct record5* TEXSETIMMBOUNDS;
 typedef struct record6* TEXSETEXPRBOUNDS;
 typedef struct record13* TEXPRESSION;
@@ -157,7 +157,7 @@ typedef struct record13 {
       struct record13* STRINGINDEX;
     };
     struct {
-      struct record23* FNPTR;
+      struct record25* FNPTR;
     };
     struct {
       struct record13* FNEXPR;
@@ -181,10 +181,11 @@ typedef struct record14 {
   PString NAME;
 } TPSIDENTIFIER;
 typedef struct record20* TPSRECPTR;
+typedef struct record24* TPSFNDEFPTR;
 typedef struct record21* TPSCONSTPTR;
-typedef struct record24* TPSWITHVARPTR;
-typedef struct record25* TPSNAMEPTR;
-typedef enum __attribute__((__packed__)) enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN } TPSTYPECLASS;
+typedef struct record26* TPSWITHVARPTR;
+typedef struct record27* TPSNAMEPTR;
+typedef enum __attribute__((__packed__)) enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN, TTCFUNCTION } TPSTYPECLASS;
 typedef struct record17 {
   PString NAME;
   struct record17* ALIASFOR;
@@ -218,6 +219,9 @@ typedef struct record17 {
     };
     struct {
       PString* TARGETNAME;
+    };
+    struct {
+      struct record24* FNDEFPTR;
     };
   };
 } TPSTYPE;
@@ -256,19 +260,27 @@ typedef struct record22 {
   PBoolean WASUSED;
 } TPSVARIABLE;
 typedef struct record23 {
+  PInteger COUNT;
+  TPSVARIABLE DEFS[8];
+} TPSFNARGS;
+typedef struct record24 {
+  TPSFNARGS ARGS;
+  TPSTYPE* RETURNTYPEPTR;
+  PInteger REFCOUNT;
+} TPSFNDEF;
+typedef struct record25 {
   PString NAME;
   PString EXTERNALNAME;
-  PInteger ARGCOUNT;
-  TPSVARIABLE ARGS[8];
+  TPSFNARGS ARGS;
   TPSTYPE* RETURNTYPEPTR;
   PBoolean ISDECLARATION;
   PBoolean WASUSED;
 } TPSFUNCTION;
-typedef struct record24 {
+typedef struct record26 {
   TPSVARIABLE* VARPTR;
 } TPSWITHVAR;
 typedef enum __attribute__((__packed__)) enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
-typedef struct record25 {
+typedef struct record27 {
   PString NAME;
   TPSNAMECLASS CLS;
   union {
@@ -294,16 +306,16 @@ typedef struct record25 {
   };
 } TPSNAME;
 typedef enum __attribute__((__packed__)) enum7 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
-typedef struct record26 {
+typedef struct record28 {
   PInteger ENUMCTR;
   PInteger RECORDCTR;
   PInteger TMPVARCTR;
 } TPSCOUNTERS;
-typedef struct record27* TPSDEFPTR;
+typedef struct record29* TPSDEFPTR;
 typedef enum __attribute__((__packed__)) enum8 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
-typedef struct record27 {
-  struct record27* PREV;
-  struct record27* NEXT;
+typedef struct record29 {
+  struct record29* PREV;
+  struct record29* NEXT;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -331,7 +343,7 @@ typedef struct record27 {
     };
   };
 } TPSDEFENTRY;
-typedef struct record28 {
+typedef struct record30 {
   TPSDEFENTRY* LATEST;
   TPSFUNCTION* CURRENTFN;
   TPSCOUNTERS COUNTERS;
@@ -341,7 +353,7 @@ const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER",
 const char* enumvalues2[] = { "TPFABS", "TPFCONCAT", "TPFDISPOSE", "TPFNEW", "TPFORD", "TPFPRED", "TPFRANDOM", "TPFREAD", "TPFREADLN", "TPFSIZEOF", "TPFSQR", "TPFSTR", "TPFSUCC", "TPFVAL", "TPFWRITE", "TPFWRITELN" };
 const char* enumvalues3[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
 const char* enumvalues4[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCWITHTMPVAR", "XCSUBRANGE", "XCSET", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCADDRESS", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
-const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN" };
+const char* enumvalues5[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN", "TTCFUNCTION" };
 const char* enumvalues6[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
 const char* enumvalues7[] = { "TCTENUM", "TCTRECORD", "TCTTMPVAR" };
 const char* enumvalues8[] = { "TDCNAME", "TDCTYPE", "TDCCONSTANT", "TDCVARIABLE", "TDCFUNCTION", "TDCWITHVAR", "TDCSCOPEBOUNDARY" };
@@ -477,17 +489,17 @@ void ENSUREADDRESSABLEEXPR(TEXPRESSIONOBJ* EXPR) {
   }
 }
 
-typedef struct record29 {
+typedef struct record31 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
 
-struct record31 {
+struct record33 {
   PString LINE;
   TLXTOKEN TOKEN;
   TLXINPUTFILE INPUT;
-  struct record30 {
+  struct record32 {
     PBoolean EXISTS;
     TLXINPUTFILE INPUT;
   } PREV;
@@ -827,7 +839,7 @@ void LXINCLUDE(PString FILENAME) {
 }
 
 TPSDEFS DEFS;
-struct record32 {
+struct record34 {
   TPSTYPE* PTNIL;
   TPSTYPE* PTBOOLEAN;
   TPSTYPE* PTINTEGER;
@@ -900,6 +912,19 @@ void DISPOSERECORD(TPSRECORDDEF* PTR) {
   if (PTR->REFCOUNT == 0) free(PTR);
 }
 
+TPSFNDEF* NEWFNDEF(TPSFNDEF FNDEF) {
+  TPSFNDEF* RESULT;
+  RESULT = malloc(sizeof(TPSFNDEF));
+  *RESULT = FNDEF;
+  RESULT->REFCOUNT = 1;
+  return RESULT;
+}
+
+void DISPOSEFNDEF(TPSFNDEF* PTR) {
+  PTR->REFCOUNT = PTR->REFCOUNT - 1;
+  if (PTR->REFCOUNT == 0) free(PTR);
+}
+
 TPSDEFENTRY* _NEWDEF(TPSDEFCLASS CLS) {
   TPSDEFENTRY* RESULT;
   TPSDEFENTRY* DEF;
@@ -942,6 +967,7 @@ TPSDEFENTRY* _NEWDEF(TPSDEFCLASS CLS) {
 void _DISPOSETYPE(TPSTYPE* *TYPEPTR) {
   if ((*TYPEPTR)->CLS == TTCENUM) DISPOSEENUM((*TYPEPTR)->ENUMPTR);
   else if ((*TYPEPTR)->CLS == TTCRECORD) DISPOSERECORD((*TYPEPTR)->RECPTR);
+  else if ((*TYPEPTR)->CLS == TTCFUNCTION) DISPOSEFNDEF((*TYPEPTR)->FNDEFPTR);
   free(*TYPEPTR);
 }
 
@@ -1208,6 +1234,7 @@ TPSTYPE COPYTYPE(TPSTYPE* TYPEPTR) {
   }
   else if (RESULT.CLS == TTCENUM) RESULT.ENUMPTR->REFCOUNT = RESULT.ENUMPTR->REFCOUNT + 1;
   else if (RESULT.CLS == TTCRECORD) RESULT.RECPTR->REFCOUNT = RESULT.RECPTR->REFCOUNT + 1;
+  else if (RESULT.CLS == TTCFUNCTION) RESULT.FNDEFPTR->REFCOUNT = RESULT.FNDEFPTR->REFCOUNT + 1;
   return RESULT;
 }
 
@@ -1339,6 +1366,12 @@ PBoolean ISPOINTERUNKNOWNTYPE(TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
+PBoolean ISFUNCTIONTYPE(TPSTYPE* TYPEPTR) {
+  PBoolean RESULT;
+  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCFUNCTION;
+  return RESULT;
+}
+
 PBoolean ISORDINALTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
   RESULT = ISBOOLEANTYPE(TYPEPTR) || ISINTEGERTYPE(TYPEPTR) || ISCHARTYPE(TYPEPTR) || ISENUMTYPE(TYPEPTR) || ISRANGETYPE(TYPEPTR);
@@ -1413,7 +1446,7 @@ PBoolean ISSAMETYPE(TPSTYPE* A, TPSTYPE* B) {
   else {
     while (A->ALIASFOR != PNil) A = A->ALIASFOR;
     while (B->ALIASFOR != PNil) B = B->ALIASFOR;
-    RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEPTR, B->POINTEDTYPEPTR) || (ISRANGETYPE(A) && ISRANGETYPE(B) && ISSAMETYPE(GETFUNDAMENTALTYPE(A), GETFUNDAMENTALTYPE(B)) && GETTYPELOWBOUND(A) == GETTYPELOWBOUND(B) && GETTYPEHIGHBOUND(A) == GETTYPEHIGHBOUND(B) || ISSETTYPE(A) && ISSETTYPE(B) && ISSAMETYPE(A->ELEMENTTYPEPTR, B->ELEMENTTYPEPTR));
+    RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEPTR, B->POINTEDTYPEPTR) || ISRANGETYPE(A) && ISRANGETYPE(B) && ISSAMETYPE(GETFUNDAMENTALTYPE(A), GETFUNDAMENTALTYPE(B)) && GETTYPELOWBOUND(A) == GETTYPELOWBOUND(B) && GETTYPEHIGHBOUND(A) == GETTYPEHIGHBOUND(B) || ISSETTYPE(A) && ISSETTYPE(B) && ISSAMETYPE(A->ELEMENTTYPEPTR, B->ELEMENTTYPEPTR);
   }
   return RESULT;
 }
@@ -1486,7 +1519,6 @@ PString _ANTIORDINAL(PInteger ORDINAL, TPSTYPE* TYPEPTR) {
 PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
   PString RESULT;
   TPSTYPE TYP;
-  PString RET;
   PInteger POS;
   do {
     TYP = *TYPEPTR;
@@ -1494,7 +1526,7 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
   } while (!(!USEORIGINAL || TYPEPTR == PNil));
   if (cmp_str(CoNotEq, CpStringPtr, &TYP.NAME, CpLenPtr, 0, "")) RESULT = TYP.NAME;
   else if (TYP.CLS == TTCENUM) {
-    RET = str_of('(');
+    RESULT = str_of('(');
     do {
       PInteger first = 0;
       PInteger last = TYP.ENUMPTR->SIZE - 1;
@@ -1502,25 +1534,23 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
         POS = first;
         while (1) {
           {
-            if (POS != 0) RET = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ',');
-            RET = CONCAT(CpStringPtr, &RET, CpEnd | CpStringPtr, &TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
+            if (POS != 0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ',');
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &TYP.ENUMPTR->VALUES[subrange(POS, 0, 127)]);
           }
           if (POS == last) break;
           ++POS;
         }
       }
     } while(0);
-    RESULT = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ')');
+    RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
   }
-  else if (TYP.CLS == TTCRANGE) {
-    RESULT = CONCAT(CpString, _ANTIORDINAL(TYP.RANGEDEF.FIRST, TYP.RANGEDEF.BASETYPEPTR), CpLenPtr, 2, "..", CpEnd | CpString, _ANTIORDINAL(TYP.RANGEDEF.LAST, TYP.RANGEDEF.BASETYPEPTR));
-  }
+  else if (TYP.CLS == TTCRANGE) RESULT = CONCAT(CpString, _ANTIORDINAL(TYP.RANGEDEF.FIRST, TYP.RANGEDEF.BASETYPEPTR), CpLenPtr, 2, "..", CpEnd | CpString, _ANTIORDINAL(TYP.RANGEDEF.LAST, TYP.RANGEDEF.BASETYPEPTR));
   else if (TYP.CLS == TTCSET) {
     if (TYP.ELEMENTTYPEPTR == PNil) RESULT = str_make(9, "SET OF []");
     else RESULT = CONCAT(CpLenPtr, 7, "SET OF ", CpEnd | CpString, DEEPTYPENAME(TYP.ELEMENTTYPEPTR, 0));
   }
   else if (TYP.CLS == TTCRECORD) {
-    RET = str_make(7, "RECORD ");
+    RESULT = str_make(7, "RECORD ");
     do {
       PInteger first = 1;
       PInteger last = TYP.RECPTR->SIZE;
@@ -1528,25 +1558,52 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
         POS = first;
         while (1) {
           {
-            if (POS != 1) RET = CONCAT(CpStringPtr, &RET, CpEnd | CpChar, ',');
-            RET = CONCAT(CpStringPtr, &RET, CpEnd | CpString, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
-            RET = CONCAT(CpStringPtr, &RET, CpChar, ':', CpEnd | CpStringPtr, &TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
+            if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ',');
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, ':', CpEnd | CpStringPtr, &TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
           }
           if (POS == last) break;
           ++POS;
         }
       }
     } while(0);
-    RESULT = CONCAT(CpStringPtr, &RET, CpEnd | CpLenPtr, 4, " END");
+    RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " END");
   }
-  else if (TYP.CLS == TTCARRAY) {
-    RET = CONCAT(CpLenPtr, 7, "ARRAY [", CpString, DEEPTYPENAME(TYP.ARRAYDEF.INDEXTYPEPTR, 0), CpLenPtr, 5, "] OF ", CpEnd | CpString, DEEPTYPENAME(TYP.ARRAYDEF.VALUETYPEPTR, 0));
-    RESULT = RET;
-  }
+  else if (TYP.CLS == TTCARRAY) RESULT = CONCAT(CpLenPtr, 7, "ARRAY [", CpString, DEEPTYPENAME(TYP.ARRAYDEF.INDEXTYPEPTR, 0), CpLenPtr, 5, "] OF ", CpEnd | CpString, DEEPTYPENAME(TYP.ARRAYDEF.VALUETYPEPTR, 0));
   else if (TYP.CLS == TTCPOINTER) RESULT = CONCAT(CpChar, '^', CpEnd | CpString, DEEPTYPENAME(TYP.POINTEDTYPEPTR, 1));
+  else if (TYP.CLS == TTCFUNCTION) {
+    TPSFNDEF *with1 = TYP.FNDEFPTR;
+    {
+      if (with1->RETURNTYPEPTR == PNil) RESULT = str_make(9, "PROCEDURE");
+      else RESULT = str_make(8, "FUNCTION");
+      if (with1->ARGS.COUNT > 0) {
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
+        do {
+          PInteger first = 1;
+          PInteger last = with1->ARGS.COUNT;
+          if (first <= last) {
+            POS = first;
+            while (1) {
+              {
+                if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
+                if (with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 6, "CONST ");
+                else if (with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, "VAR ");
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].NAME);
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, 0));
+              }
+              if (POS == last) break;
+              ++POS;
+            }
+          }
+        } while(0);
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
+      }
+      if (with1->RETURNTYPEPTR != PNil) RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->RETURNTYPEPTR, 0));
+    }
+  }
   else {
-    STR_e(TYP.CLS, enumvalues5, 0, &RET);
-    COMPILEERROR(CONCAT(CpLenPtr, 37, "Could not get name for type of class ", CpEnd | CpStringPtr, &RET));
+    STR_e(TYP.CLS, enumvalues5, 0, &RESULT);
+    COMPILEERROR(CONCAT(CpLenPtr, 37, "Could not get name for type of class ", CpEnd | CpStringPtr, &RESULT));
   }
   return RESULT;
 }
@@ -1610,7 +1667,7 @@ TPSFUNCTION EMPTYFUNCTION() {
   TPSFUNCTION RESULT;
   RESULT.NAME = str_make(0, "");
   RESULT.EXTERNALNAME = str_make(0, "");
-  RESULT.ARGCOUNT = 0;
+  RESULT.ARGS.COUNT = 0;
   RESULT.RETURNTYPEPTR = PNil;
   RESULT.ISDECLARATION = 0;
   RESULT.WASUSED = 0;
@@ -1623,14 +1680,14 @@ PBoolean ISSAMEFUNCTIONDEFINITION(TPSFUNCTION* DECLPTR, TPSFUNCTION FUN) {
   PBoolean SAME;
   PInteger POS;
   DECL = *DECLPTR;
-  SAME = ISSAMETYPE(DECL.RETURNTYPEPTR, FUN.RETURNTYPEPTR) && DECL.ARGCOUNT == FUN.ARGCOUNT;
+  SAME = ISSAMETYPE(DECL.RETURNTYPEPTR, FUN.RETURNTYPEPTR) && DECL.ARGS.COUNT == FUN.ARGS.COUNT;
   do {
     PInteger first = 1;
-    PInteger last = DECL.ARGCOUNT;
+    PInteger last = DECL.ARGS.COUNT;
     if (first <= last) {
       POS = first;
       while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS[subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS[subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE;
+        SAME = SAME && ISSAMETYPE(DECL.ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE;
         if (POS == last) break;
         ++POS;
       }
@@ -1664,7 +1721,7 @@ TPSFUNCTION* ADDFUNCTION(TPSFUNCTION FUN) {
     if (NAMEPTR->CLS != TNCFUNCTION || FUN.ISDECLARATION) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
     FNPTR = NAMEPTR->FNPTR;
     if (FNPTR->ISDECLARATION) {
-      if (FUN.ARGCOUNT == 0 && FUN.RETURNTYPEPTR == PNil || ISSAMEFUNCTIONDEFINITION(FNPTR, FUN)) FNPTR->ISDECLARATION = 0;
+      if (FUN.ARGS.COUNT == 0 && FUN.RETURNTYPEPTR == PNil || ISSAMEFUNCTIONDEFINITION(FNPTR, FUN)) FNPTR->ISDECLARATION = 0;
       else {
         if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
         else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
@@ -1832,7 +1889,7 @@ TPSFUNCTION MAKEPROCEDURE0(const PString *NAME) {
   RESULT = EMPTYFUNCTION();
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
-  RESULT.ARGCOUNT = 0;
+  RESULT.ARGS.COUNT = 0;
   return RESULT;
 }
 
@@ -1841,8 +1898,8 @@ TPSFUNCTION MAKEPROCEDURE1(const PString *NAME, TPSVARIABLE ARG) {
   RESULT = EMPTYFUNCTION();
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
-  RESULT.ARGCOUNT = 1;
-  RESULT.ARGS[0] = ARG;
+  RESULT.ARGS.COUNT = 1;
+  RESULT.ARGS.DEFS[0] = ARG;
   return RESULT;
 }
 
@@ -1851,9 +1908,9 @@ TPSFUNCTION MAKEPROCEDURE2(const PString *NAME, TPSVARIABLE ARG1, TPSVARIABLE AR
   RESULT = EMPTYFUNCTION();
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
-  RESULT.ARGCOUNT = 2;
-  RESULT.ARGS[0] = ARG1;
-  RESULT.ARGS[1] = ARG2;
+  RESULT.ARGS.COUNT = 2;
+  RESULT.ARGS.DEFS[0] = ARG1;
+  RESULT.ARGS.DEFS[1] = ARG2;
   return RESULT;
 }
 
@@ -1862,10 +1919,10 @@ TPSFUNCTION MAKEPROCEDURE3(const PString *NAME, TPSVARIABLE ARG1, TPSVARIABLE AR
   RESULT = EMPTYFUNCTION();
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
-  RESULT.ARGCOUNT = 3;
-  RESULT.ARGS[0] = ARG1;
-  RESULT.ARGS[1] = ARG2;
-  RESULT.ARGS[2] = ARG3;
+  RESULT.ARGS.COUNT = 3;
+  RESULT.ARGS.DEFS[0] = ARG1;
+  RESULT.ARGS.DEFS[1] = ARG2;
+  RESULT.ARGS.DEFS[2] = ARG3;
   return RESULT;
 }
 
@@ -1884,8 +1941,8 @@ TPSFUNCTION MAKEFUNCTION1(const PString *NAME, TPSTYPE* RETTYPEPTR, TPSVARIABLE 
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
   RESULT.RETURNTYPEPTR = RETTYPEPTR;
-  RESULT.ARGCOUNT = 1;
-  RESULT.ARGS[0] = ARG;
+  RESULT.ARGS.COUNT = 1;
+  RESULT.ARGS.DEFS[0] = ARG;
   return RESULT;
 }
 
@@ -1895,9 +1952,9 @@ TPSFUNCTION MAKEFUNCTION2(const PString *NAME, TPSTYPE* RETTYPEPTR, TPSVARIABLE 
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
   RESULT.RETURNTYPEPTR = RETTYPEPTR;
-  RESULT.ARGCOUNT = 2;
-  RESULT.ARGS[0] = ARG1;
-  RESULT.ARGS[1] = ARG2;
+  RESULT.ARGS.COUNT = 2;
+  RESULT.ARGS.DEFS[0] = ARG1;
+  RESULT.ARGS.DEFS[1] = ARG2;
   return RESULT;
 }
 
@@ -1907,10 +1964,10 @@ TPSFUNCTION MAKEFUNCTION3(const PString *NAME, TPSTYPE* RETTYPEPTR, TPSVARIABLE 
   RESULT.NAME = *NAME;
   RESULT.EXTERNALNAME = *NAME;
   RESULT.RETURNTYPEPTR = RETTYPEPTR;
-  RESULT.ARGCOUNT = 3;
-  RESULT.ARGS[0] = ARG1;
-  RESULT.ARGS[1] = ARG2;
-  RESULT.ARGS[2] = ARG3;
+  RESULT.ARGS.COUNT = 3;
+  RESULT.ARGS.DEFS[0] = ARG1;
+  RESULT.ARGS.DEFS[1] = ARG2;
+  RESULT.ARGS.DEFS[2] = ARG3;
   return RESULT;
 }
 
@@ -1927,6 +1984,44 @@ TPSTYPE* GETPOINTERTYPE(TPSTYPE* TYPEPTR) {
   if (RESULT == PNil) {
     TYP = TYPEOFCLASS(TTCPOINTER);
     TYP.POINTEDTYPEPTR = TYPEPTR;
+    RESULT = ADDTYPE(TYP);
+  }
+  return RESULT;
+}
+
+PBoolean ARESAMEARGS(const TPSFNARGS *A, const TPSFNARGS *B) {
+  PBoolean RESULT;
+  PInteger POS;
+  RESULT = A->COUNT == B->COUNT;
+  if (RESULT) do {
+    PInteger first = 1;
+    PInteger last = A->COUNT;
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        RESULT = RESULT && A->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE == B->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE && A->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT == B->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT && ISSAMETYPE(A->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, B->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR);
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  return RESULT;
+}
+
+TPSTYPE* GETFUNCTIONTYPE(TPSFUNCTION* FNPTR) {
+  TPSTYPE* RESULT;
+  TPSDEFENTRY* DEF;
+  TPSTYPE TYP;
+  RESULT = PNil;
+  DEF = DEFS.LATEST;
+  while (DEF != PNil && RESULT == PNil) {
+    if (DEF->CLS == TDCTYPE && ISFUNCTIONTYPE(DEF->TYPEPTR) && ISSAMETYPE(DEF->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, FNPTR->RETURNTYPEPTR) && ARESAMEARGS(&DEF->TYPEPTR->FNDEFPTR->ARGS, &FNPTR->ARGS)) RESULT = DEF->TYPEPTR;
+    DEF = DEF->PREV;
+  }
+  if (RESULT == PNil) {
+    TYP = TYPEOFCLASS(TTCFUNCTION);
+    TYP.FNDEFPTR->RETURNTYPEPTR = FNPTR->RETURNTYPEPTR;
+    TYP.FNDEFPTR->ARGS = FNPTR->ARGS;
     RESULT = ADDTYPE(TYP);
   }
   return RESULT;
@@ -3044,15 +3139,18 @@ TEXPRESSIONOBJ* EXPOINTERACCESS(TEXPRESSIONOBJ* PARENT) {
 
 TEXPRESSIONOBJ* EXADDRESSOF(TEXPRESSIONOBJ* PARENT) {
   TEXPRESSIONOBJ* RESULT;
-  ENSUREADDRESSABLEEXPR(PARENT);
-  ENSUREASSIGNABLEEXPR(PARENT);
-  if (PARENT->CLS != XCVARIABLE) {
-    PString tmp1 = str_make(19, "Expected a variable");
-    ERRORFOREXPR(&tmp1, PARENT);
-  }
   RESULT = _NEWEXPR(XCADDRESS);
   RESULT->ADDRESSEXPR = PARENT;
-  RESULT->TYPEPTR = GETPOINTERTYPE(PARENT->TYPEPTR);
+  if (PARENT->CLS == XCFNREF) RESULT->TYPEPTR = GETFUNCTIONTYPE(PARENT->FNPTR);
+  else {
+    ENSUREADDRESSABLEEXPR(PARENT);
+    ENSUREASSIGNABLEEXPR(PARENT);
+    if (PARENT->CLS != XCVARIABLE) {
+      PString tmp1 = str_make(19, "Expected a variable");
+      ERRORFOREXPR(&tmp1, PARENT);
+    }
+    RESULT->TYPEPTR = GETPOINTERTYPE(PARENT->TYPEPTR);
+  }
   return RESULT;
 }
 
@@ -3078,20 +3176,15 @@ TEXPRESSIONOBJ* EXFNREF(TPSFUNCTION* FNPTR) {
   return RESULT;
 }
 
-TEXPRESSIONOBJ* EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, TEXFUNCTIONARGS *ARGS) {
+TEXPRESSIONOBJ* _EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, const TPSFNARGS *ARGDEFS, TPSTYPE* RETURNTYPEPTR, const TEXFUNCTIONARGS *ARGS) {
   TEXPRESSIONOBJ* RESULT;
   PInteger POS;
   TEXPRESSIONOBJ* FNCALL;
-  if (FNEXPR->CLS != XCFNREF) {
-    PString tmp1 = str_make(24, "Cannot call non-function");
-    ERRORFOREXPR(&tmp1, FNEXPR);
-  }
-  if (ARGS->SIZE != FNEXPR->FNPTR->ARGCOUNT) COMPILEERROR(CONCAT(CpLenPtr, 37, "Wrong number of arguments in call to ", CpEnd | CpStringPtr, &FNEXPR->FNPTR->NAME));
-  FNEXPR->FNPTR->WASUSED = 1;
+  if (ARGS->SIZE != ARGDEFS->COUNT) COMPILEERROR(CONCAT(CpLenPtr, 37, "Wrong number of arguments in call to ", CpEnd | CpString, EXDESCRIBE(FNEXPR)));
   FNCALL = _NEWEXPR(XCFNCALL);
   FNCALL->FNEXPR = FNEXPR;
   FNCALL->CALLARGS.SIZE = ARGS->SIZE;
-  FNCALL->TYPEPTR = FNEXPR->FNPTR->RETURNTYPEPTR;
+  FNCALL->TYPEPTR = RETURNTYPEPTR;
   FNCALL->ISFUNCTIONRESULT = 1;
   RESULT = FNCALL;
   do {
@@ -3101,16 +3194,16 @@ TEXPRESSIONOBJ* EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, TEXFUNCTIONARGS *ARGS) {
       POS = first;
       while (1) {
         {
-          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 8) - 1], FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].TYPEPTR);
-          if (FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
+          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 8) - 1], ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR);
+          if (ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
             if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]->ISADDRESSABLE) {
-              if (FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
-                RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp2 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp2, FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], RESULT);
+              if (ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
+                RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], RESULT);
                 FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOPY(RESULT->TMPVAR);
               }
               else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1])));
             }
-            else if (!FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
+            else if (!ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
               ENSUREASSIGNABLEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
               EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
             }
@@ -3121,6 +3214,20 @@ TEXPRESSIONOBJ* EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, TEXFUNCTIONARGS *ARGS) {
       }
     }
   } while(0);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, const TEXFUNCTIONARGS *ARGS) {
+  TEXPRESSIONOBJ* RESULT;
+  if (FNEXPR->CLS == XCFNREF) {
+    FNEXPR->FNPTR->WASUSED = 1;
+    RESULT = _EXFUNCTIONCALL(FNEXPR, &FNEXPR->FNPTR->ARGS, FNEXPR->FNPTR->RETURNTYPEPTR, ARGS);
+  }
+  else if (ISFUNCTIONTYPE(FNEXPR->TYPEPTR)) RESULT = _EXFUNCTIONCALL(FNEXPR, &FNEXPR->TYPEPTR->FNDEFPTR->ARGS, FNEXPR->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, ARGS);
+  else {
+    PString tmp1 = str_make(24, "Cannot call non-function");
+    ERRORFOREXPR(&tmp1, FNEXPR);
+  }
   return RESULT;
 }
 
@@ -4297,6 +4404,84 @@ TPSTYPE* PSRECORDTYPE(PBoolean ISPACKED) {
   return RESULT;
 }
 
+void PSARGUMENTS(TPSFNARGS *ARGS) {
+  PBoolean ISCONST;
+  PBoolean ISVAR;
+  PInteger LASTARG;
+  PInteger ARG;
+  TPSTYPE* TYPEPTR;
+  WANTTOKENANDREAD(TKLPAREN);
+  ARGS->COUNT = 0;
+  do {
+    ISCONST = LEXER.TOKEN.ID == TKCONST;
+    ISVAR = LEXER.TOKEN.ID == TKVAR;
+    if (ISCONST) WANTTOKENANDREAD(TKCONST);
+    if (ISVAR) WANTTOKENANDREAD(TKVAR);
+    LASTARG = ARGS->COUNT;
+    do {
+      ARGS->COUNT = ARGS->COUNT + 1;
+      if (ARGS->COUNT > 8) COMPILEERROR(str_make(42, "Too many arguments declared for subroutine"));
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].WASINITIALIZED = 1;
+      WANTTOKEN2(TKCOLON, TKCOMMA);
+      SKIPTOKEN(TKCOMMA);
+    } while (!(LEXER.TOKEN.ID == TKCOLON));
+    SKIPTOKEN(TKCOLON);
+    TYPEPTR = PSTYPEIDENTIFIER();
+    do {
+      PInteger first = LASTARG + 1;
+      PInteger last = ARGS->COUNT;
+      if (first <= last) {
+        ARG = first;
+        while (1) {
+          ARGS->DEFS[subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
+          if (ARG == last) break;
+          ++ARG;
+        }
+      }
+    } while(0);
+    WANTTOKEN2(TKSEMICOLON, TKRPAREN);
+    SKIPTOKEN(TKSEMICOLON);
+  } while (!(LEXER.TOKEN.ID == TKRPAREN));
+  SKIPTOKEN(TKRPAREN);
+}
+
+TPSTYPE* PSRESULTTYPE() {
+  TPSTYPE* RESULT;
+  RESULT = PSTYPEIDENTIFIER();
+  return RESULT;
+}
+
+TPSTYPE* PSPROCEDURETYPE() {
+  TPSTYPE* RESULT;
+  TPSTYPE TYP;
+  TPSFNDEF FN;
+  WANTTOKENANDREAD(TKPROCEDURE);
+  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&FN.ARGS);
+  FN.RETURNTYPEPTR = PNil;
+  TYP = TYPEOFCLASS(TTCFUNCTION);
+  TYP.FNDEFPTR = NEWFNDEF(FN);
+  RESULT = ADDTYPE(TYP);
+  return RESULT;
+}
+
+TPSTYPE* PSFUNCTIONTYPE() {
+  TPSTYPE* RESULT;
+  TPSTYPE TYP;
+  TPSFNDEF FN;
+  WANTTOKENANDREAD(TKFUNCTION);
+  WANTTOKEN2(TKLPAREN, TKCOLON);
+  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&FN.ARGS);
+  WANTTOKENANDREAD(TKCOLON);
+  FN.RETURNTYPEPTR = PSRESULTTYPE();
+  TYP = TYPEOFCLASS(TTCFUNCTION);
+  TYP.FNDEFPTR = NEWFNDEF(FN);
+  RESULT = ADDTYPE(TYP);
+  return RESULT;
+}
+
 TPSTYPE* PSARRAYTYPE() {
   TPSTYPE* RESULT;
   TPSTYPE TYP;
@@ -4401,6 +4586,8 @@ TPSTYPE* PSTYPEDENOTER() {
   else if (LEXER.TOKEN.ID == TKRECORD) RESULT = PSRECORDTYPE(ISPACKED);
   else if (LEXER.TOKEN.ID == TKARRAY) RESULT = PSARRAYTYPE();
   else if (LEXER.TOKEN.ID == TKCARET) RESULT = PSPOINTERTYPE();
+  else if (LEXER.TOKEN.ID == TKPROCEDURE) RESULT = PSPROCEDURETYPE();
+  else if (LEXER.TOKEN.ID == TKFUNCTION) RESULT = PSFUNCTIONTYPE();
   else if (LEXER.TOKEN.ID == TKIDENTIFIER) {
     IDX = FINDNAME(&LEXER.TOKEN.VALUE, 0);
     if (IDX == PNil) ;
@@ -4545,11 +4732,11 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
   CHECKPOINT = DEFS.LATEST;
   do {
     PInteger first = 1;
-    PInteger last = FNPTR->ARGCOUNT;
+    PInteger last = FNPTR->ARGS.COUNT;
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS[subrange(POS, 1, 8) - 1]);
+        ADDVARIABLE(FNPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -4575,50 +4762,6 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
   CLOSELOCALSCOPE();
 }
 
-void PSARGUMENTS(TPSFUNCTION *DEF) {
-  PBoolean ISCONST;
-  PBoolean ISVAR;
-  PInteger LASTARG;
-  PInteger ARG;
-  TPSTYPE* TYPEPTR;
-  WANTTOKENANDREAD(TKLPAREN);
-  DEF->ARGCOUNT = 0;
-  do {
-    ISCONST = LEXER.TOKEN.ID == TKCONST;
-    ISVAR = LEXER.TOKEN.ID == TKVAR;
-    if (ISCONST) WANTTOKENANDREAD(TKCONST);
-    if (ISVAR) WANTTOKENANDREAD(TKVAR);
-    LASTARG = DEF->ARGCOUNT;
-    do {
-      DEF->ARGCOUNT = DEF->ARGCOUNT + 1;
-      if (DEF->ARGCOUNT > 8) COMPILEERROR(CONCAT(CpLenPtr, 41, "Too many arguments declared for function ", CpEnd | CpStringPtr, &DEF->NAME));
-      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
-      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
-      DEF->ARGS[subrange(DEF->ARGCOUNT, 1, 8) - 1].WASINITIALIZED = 1;
-      WANTTOKEN2(TKCOLON, TKCOMMA);
-      SKIPTOKEN(TKCOMMA);
-    } while (!(LEXER.TOKEN.ID == TKCOLON));
-    SKIPTOKEN(TKCOLON);
-    TYPEPTR = PSTYPEIDENTIFIER();
-    do {
-      PInteger first = LASTARG + 1;
-      PInteger last = DEF->ARGCOUNT;
-      if (first <= last) {
-        ARG = first;
-        while (1) {
-          DEF->ARGS[subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
-          if (ARG == last) break;
-          ++ARG;
-        }
-      }
-    } while(0);
-    WANTTOKEN2(TKSEMICOLON, TKRPAREN);
-    SKIPTOKEN(TKSEMICOLON);
-  } while (!(LEXER.TOKEN.ID == TKRPAREN));
-  SKIPTOKEN(TKRPAREN);
-}
-
 void PSPROCEDUREDEFINITION() {
   TPSFUNCTION DEF;
   DEF = EMPTYFUNCTION();
@@ -4626,7 +4769,7 @@ void PSPROCEDUREDEFINITION() {
   DEF.NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
   DEF.EXTERNALNAME = DEF.NAME;
   WANTTOKEN2(TKLPAREN, TKSEMICOLON);
-  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&DEF);
+  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&DEF.ARGS);
   WANTTOKENANDREAD(TKSEMICOLON);
   if (LEXER.TOKEN.ID == TKFORWARD) {
     SKIPTOKEN(TKFORWARD);
@@ -4635,12 +4778,6 @@ void PSPROCEDUREDEFINITION() {
     OUTFUNCTIONDECLARATION(ADDFUNCTION(DEF));
   }
   else PSFUNCTIONBODY(ADDFUNCTION(DEF));
-}
-
-TPSTYPE* PSRESULTTYPE() {
-  TPSTYPE* RESULT;
-  RESULT = PSTYPEIDENTIFIER();
-  return RESULT;
 }
 
 void PSFUNCTIONDEFINITION() {
@@ -4652,7 +4789,7 @@ void PSFUNCTIONDEFINITION() {
   if (LEXER.TOKEN.ID == TKSEMICOLON && HASFORWARDDECLARATION(&DEF.NAME)) DEF.RETURNTYPEPTR = PNil;
   else {
     WANTTOKEN2(TKLPAREN, TKCOLON);
-    if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&DEF);
+    if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&DEF.ARGS);
     WANTTOKENANDREAD(TKCOLON);
     DEF.RETURNTYPEPTR = PSRESULTTYPE();
   }
@@ -4704,7 +4841,7 @@ TEXPRESSIONOBJ* PSPOINTERDEREF(TEXPRESSIONOBJ* PTR) {
 TEXPRESSIONOBJ* PSFUNCTIONCALL(TEXPRESSIONOBJ* FN) {
   TEXPRESSIONOBJ* RESULT;
   TEXFUNCTIONARGS ARGS;
-  if (FN->CLS == XCFNREF) {
+  if (FN->CLS == XCFNREF || ISFUNCTIONTYPE(FN->TYPEPTR)) {
     ARGS.SIZE = 0;
     if (LEXER.TOKEN.ID == TKLPAREN) {
       WANTTOKENANDREAD(TKLPAREN);
@@ -4779,10 +4916,11 @@ TEXPRESSIONOBJ* PSVARIABLE() {
 TEXPRESSIONOBJ* PSVARIABLEORFUNCTIONEXTENSION(TEXPRESSIONOBJ* EXPR) {
   TEXPRESSIONOBJ* RESULT;
   PBoolean DONE;
-  if (EXPR->CLS == XCVARIABLE && (LEXER.TOKEN.ID == TKLBRACKET || LEXER.TOKEN.ID == TKDOT || LEXER.TOKEN.ID == TKCARET)) EXPR->VARPTR->WASUSED = 1;
+  if (EXPR->CLS == XCVARIABLE && (LEXER.TOKEN.ID == TKLBRACKET || LEXER.TOKEN.ID == TKDOT || TKCARET <= LEXER.TOKEN.ID && LEXER.TOKEN.ID <= TKLPAREN)) EXPR->VARPTR->WASUSED = 1;
   DONE = 0;
   do {
     if (EXPR->CLS == XCFNREF || EXPR->CLS == XCPSEUDOFNREF) EXPR = PSFUNCTIONCALL(EXPR);
+    else if (ISFUNCTIONTYPE(EXPR->TYPEPTR) && LEXER.TOKEN.ID == TKLPAREN) EXPR = PSFUNCTIONCALL(EXPR);
     else if (LEXER.TOKEN.ID == TKDOT) EXPR = PSFIELDACCESS(EXPR);
     else if (LEXER.TOKEN.ID == TKLBRACKET) EXPR = PSARRAYACCESS(EXPR);
     else if (LEXER.TOKEN.ID == TKCARET) EXPR = PSPOINTERDEREF(EXPR);
@@ -4955,6 +5093,7 @@ TEXPRESSIONOBJ* PSFACTOR() {
     WANTTOKENANDREAD(TKAT);
     EXPR = PSVARIABLE();
     if (EXPR->CLS == XCVARIABLE) EXPR->VARPTR->WASUSED = 1;
+    else if (EXPR->CLS == XCFNREF) EXPR->FNPTR->WASUSED = 1;
     EXPR = EXADDRESSOF(EXPR);
   }
   else COMPILEERROR(CONCAT(CpLenPtr, 29, "Invalid token in expression: ", CpEnd | CpString, LXTOKENSTR()));
@@ -5060,6 +5199,7 @@ void PSIDENTIFIERSTATEMENT() {
     PSASSIGN(LHS, PSEXPRESSION());
   }
   else {
+    if (ISFUNCTIONTYPE(LHS->TYPEPTR)) LHS = PSFUNCTIONCALL(LHS);
     ORIGLHS = LHS;
     USESTMPVARS = 0;
     while (LHS->CLS == XCWITHTMPVAR) {
@@ -5421,7 +5561,7 @@ typedef enum __attribute__((__packed__)) enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTEN
 
 const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record33 {
+struct record35 {
   PFile OUTPUT;
   PBoolean ISMULTISTATEMENT;
   PInteger INDENT;
@@ -5936,7 +6076,7 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ* EXPR) {
       while (1) {
         {
           if (POS != 1) _OUTCOMMA();
-          if (EXPR->FNEXPR->FNPTR->ARGS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
+          if (EXPR->FNEXPR->FNPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
             ENSUREADDRESSABLEEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
             _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
           }
@@ -6577,6 +6717,31 @@ void OUTNAMEANDARRAY(const PString *NAME, TPSTYPE* TYPEPTR) {
   }
 }
 
+void OUTNAMEANDFUNCTION(const PString *NAME, TPSTYPE* TYPEPTR) {
+  PInteger POS;
+  {
+    PString tmp1 = CONCAT(CpLenPtr, 2, "(*", CpStringPtr, NAME, CpEnd | CpChar, ')');
+    OUTNAMEANDTYPE(&tmp1, TYPEPTR->FNDEFPTR->RETURNTYPEPTR);
+  }
+  WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, '(');
+  do {
+    PInteger first = 1;
+    PInteger last = TYPEPTR->FNDEFPTR->ARGS.COUNT;
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        {
+          if (POS != 1) _OUTCOMMA();
+          OUTVARIABLEDECLARATION(TYPEPTR->FNDEFPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1]);
+        }
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, ')');
+}
+
 void OUTNAMEANDTYPE(const PString *NAME, TPSTYPE* TYPEPTR) {
   if (TYPEPTR == PNil) WRITE(&CODEGEN.OUTPUT, RwpLenPtr, 5, "void ", RwpStringPtr | RwpEnd, NAME);
   else if (TYPEPTR->CLS == TTCPOINTER) {
@@ -6598,6 +6763,7 @@ void OUTNAMEANDTYPE(const PString *NAME, TPSTYPE* TYPEPTR) {
   }
   else if (TYPEPTR->CLS == TTCRECORD) OUTNAMEANDRECORD(NAME, TYPEPTR->RECPTR);
   else if (TYPEPTR->CLS == TTCARRAY) OUTNAMEANDARRAY(NAME, TYPEPTR);
+  else if (TYPEPTR->CLS == TTCFUNCTION) OUTNAMEANDFUNCTION(NAME, TYPEPTR);
   else INTERNALERROR(CONCAT(CpLenPtr, 29, "Error writing name and type: ", CpStringPtr, NAME, CpLenPtr, 2, ", ", CpEnd | CpString, TYPENAME(TYPEPTR)));
 }
 
@@ -6675,13 +6841,13 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
   WRITE(&CODEGEN.OUTPUT, RwpChar | RwpEnd, '(');
   do {
     PInteger first = 1;
-    PInteger last = DEF.ARGCOUNT;
+    PInteger last = DEF.ARGS.COUNT;
     if (first <= last) {
       POS = first;
       while (1) {
         {
-          OUTVARIABLEDECLARATION(DEF.ARGS[subrange(POS, 1, 8) - 1]);
-          if (POS != DEF.ARGCOUNT) _OUTCOMMA();
+          if (POS != 1) _OUTCOMMA();
+          OUTVARIABLEDECLARATION(DEF.ARGS.DEFS[subrange(POS, 1, 8) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -7627,6 +7793,15 @@ TEXPRESSIONOBJ* PFVAL_PARSE(TEXPRESSIONOBJ* FNEXPR) {
   return RESULT;
 }
 
+TEXPRESSIONOBJ* _EVALUATEZEROARG(TEXPRESSIONOBJ* EXPR) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXFUNCTIONARGS ARGS;
+  ARGS.SIZE = 0;
+  if (ISFUNCTIONTYPE(EXPR->TYPEPTR) && EXPR->TYPEPTR->FNDEFPTR->RETURNTYPEPTR != PNil && EXPR->TYPEPTR->FNDEFPTR->ARGS.COUNT == 0) RESULT = EXFUNCTIONCALL(EXPR, &ARGS);
+  else RESULT = EXPR;
+  return RESULT;
+}
+
 TEXPRESSIONOBJ* PFWRITE_PARSE(TEXPRESSIONOBJ* FNEXPR) {
   TEXPRESSIONOBJ* RESULT;
   PBoolean FIRST;
@@ -7639,7 +7814,7 @@ TEXPRESSIONOBJ* PFWRITE_PARSE(TEXPRESSIONOBJ* FNEXPR) {
     FIRST = 1;
     WANTTOKENANDREAD(TKLPAREN);
     while (LEXER.TOKEN.ID != TKRPAREN) {
-      OUTEXPR = PSEXPRESSION();
+      OUTEXPR = _EVALUATEZEROARG(PSEXPRESSION());
       if (FIRST && ISTEXTTYPE(OUTEXPR->TYPEPTR)) {
         ENSUREADDRESSABLEEXPR(OUTEXPR);
         EXDISPOSE(&RESULT->PSEUDOFNCALL.ARG1);
