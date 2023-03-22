@@ -409,7 +409,7 @@ begin
   for Pos := 1 to Expr^.CallArgs.Size do
   begin
     if Pos <> 1 then _OutComma;
-    if Expr^.FnExpr^.FnPtr^.Args[Pos].IsReference then
+    if Expr^.FnExpr^.FnPtr^.Args.Defs[Pos].IsReference then
     begin
       EnsureAddressableExpr(Expr^.CallArgs.Values[Pos]);
       _OutAddress(Expr^.CallArgs.Values[Pos])
@@ -975,6 +975,19 @@ begin
   end
 end;
 
+procedure OutNameAndFunction(const Name : string; TypePtr : TPsTypePtr);
+var Pos : integer;
+begin
+  OutNameAndType('(*' + Name + ')', TypePtr^.FnDefPtr^.ReturnTypePtr);
+  write(Codegen.Output, '(');
+  for Pos := 1 to TypePtr^.FnDefPtr^.Args.Count do
+  begin
+    if Pos <> 1 then _OutComma;
+    OutVariableDeclaration(TypePtr^.FnDefPtr^.Args.Defs[Pos])
+  end;
+  write(Codegen.Output, ')')
+end;
+
 procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
 begin
   if TypePtr = nil then write(Codegen.Output, 'void ', Name)
@@ -1009,6 +1022,7 @@ begin
   else if TypePtr^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
   else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)
+  else if TypePtr^.Cls = TtcFunction then OutNameAndFunction(Name, TypePtr)
   else
     InternalError('Error writing name and type: ' + Name + ', ' +
                   TypeName(TypePtr))
@@ -1105,11 +1119,10 @@ begin
   _OutIndent;
   OutNameAndType(Def.ExternalName, Def.ReturnTypePtr);
   write(Codegen.Output, '(');
-  for Pos := 1 to Def.ArgCount do
+  for Pos := 1 to Def.Args.Count do
   begin
-    OutVariableDeclaration(def.Args[Pos]);
-    if Pos <> Def.ArgCount then
-      _OutComma
+    if Pos <> 1 then _OutComma;
+    OutVariableDeclaration(Def.Args.Defs[Pos])
   end;
   write(Codegen.Output, ')')
 end;

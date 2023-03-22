@@ -339,6 +339,17 @@ begin
   Result^.PseudoFnCall.Arg3 := Code;
 end;
 
+function _EvaluateZeroArg(Expr : TExpression) : TExpression;
+var Args : TExFunctionArgs;
+begin
+  Args.Size := 0;
+  if IsFunctionType(Expr^.TypePtr)
+     and (Expr^.TypePtr^.FnDefPtr^.ReturnTypePtr <> nil)
+     and (Expr^.TypePtr^.FnDefPtr^.Args.Count = 0) then
+    Result := ExFunctionCall(Expr, Args)
+  else Result := Expr
+end;
+
 function PfWrite_Parse(FnExpr : TExpression) : TExpression;
 var 
   First : boolean;
@@ -355,7 +366,7 @@ begin
     WantTokenAndRead(TkLparen);
     while Lexer.Token.Id <> TkRparen do
     begin
-      OutExpr := PsExpression;
+      OutExpr := _EvaluateZeroArg(PsExpression);
       if First and IsTextType(OutExpr^.TypePtr) then
       begin
         EnsureAddressableExpr(OutExpr);

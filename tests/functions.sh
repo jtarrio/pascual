@@ -207,3 +207,28 @@ echo "program foo;
       function Make : integer;
       begin Make := 1 end;
       begin Make() := 2; write(Make()) end." | is_not_valid
+
+# Passing functions in arguments
+echo "program foo;
+      type T = function(A : integer) : integer;
+      function Duplicate(A : integer) : integer;
+      begin Result := A + A end;
+      procedure CallWithIntAndDisplay(P : T; A : integer);
+      begin write(P(A)) end;
+      begin CallWithIntAndDisplay(@Duplicate, 123) end." | outputs 246
+
+# function-typed variables
+echo "program foo;
+      type T = function(A : integer) : integer;
+      var Fun : T;
+      function Duplicate(A : integer) : integer;
+      begin Result := A + A end;
+      begin Fun := @Duplicate; write(Fun(123)) end." | outputs 246
+
+# 0-argument function variables are evaluated by write/writeln
+echo "program foo;
+      type T = function : integer;
+      var Fun : T;
+      function Gen42 : integer;
+      begin Result := 42 end;
+      begin Fun := @Gen42; write(Fun) end." | outputs 42

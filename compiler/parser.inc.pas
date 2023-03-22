@@ -184,6 +184,75 @@ begin
   PsRecordType := AddType(Typ);
 end;
 
+procedure PsArguments(var Args : TPsFnArgs);
+var 
+  IsConst : boolean;
+  IsVar : boolean;
+  LastArg, Arg : integer;
+  TypePtr : TPsTypePtr;
+begin
+  WantTokenAndRead(TkLparen);
+  Args.Count := 0;
+  repeat
+    IsConst := Lexer.Token.Id = TkConst;
+    IsVar := Lexer.Token.Id = TkVar;
+    if IsConst then WantTokenAndRead(TkConst);
+    if IsVar then WantTokenAndRead(TkVar);
+    LastArg := Args.Count;
+    repeat
+      Args.Count := Args.Count + 1;
+      if Args.Count > MaxFnArgs then
+        CompileError('Too many arguments declared for subroutine');
+      Args.Defs[Args.Count].Name := GetTokenValueAndRead(TkIdentifier);
+      Args.Defs[Args.Count].IsConstant := IsConst;
+      Args.Defs[Args.Count].IsReference := IsVar or IsConst;
+      Args.Defs[Args.Count].WasInitialized := true;
+      WantToken2(TkColon, TkComma);
+      SkipToken(TkComma)
+    until Lexer.Token.Id = TkColon;
+    SkipToken(TkColon);
+    TypePtr := PsTypeIdentifier;
+    for Arg := LastArg + 1 to Args.Count do
+      Args.Defs[Arg].TypePtr := TypePtr;
+    WantToken2(TkSemicolon, TkRparen);
+    SkipToken(TkSemicolon);
+  until Lexer.Token.Id = TkRparen;
+  SkipToken(TkRparen)
+end;
+
+function PsResultType : TPsTypePtr;
+begin
+  PsResultType := PsTypeIdentifier
+end;
+
+function PsProcedureType : TPsTypePtr;
+var 
+  Typ : TPsType;
+  Fn : TPsFnDef;
+begin
+  WantTokenAndRead(TkProcedure);
+  if Lexer.Token.Id = TkLParen then PsArguments(Fn.Args);
+  Fn.ReturnTypePtr := nil;
+  Typ := TypeOfClass(TtcFunction);
+  Typ.FnDefPtr := NewFnDef(Fn);
+  Result := AddType(Typ)
+end;
+
+function PsFunctionType : TPsTypePtr;
+var 
+  Typ : TPsType;
+  Fn : TPsFnDef;
+begin
+  WantTokenAndRead(TkFunction);
+  WantToken2(TkLParen, TkColon);
+  if Lexer.Token.Id = TkLParen then PsArguments(Fn.Args);
+  WantTokenAndRead(TkColon);
+  Fn.ReturnTypePtr := PsResultType;
+  Typ := TypeOfClass(TtcFunction);
+  Typ.FnDefPtr := NewFnDef(Fn);
+  Result := AddType(Typ)
+end;
+
 function PsArrayType : TPsTypePtr;
 var 
   Typ : TPsType;
@@ -291,6 +360,8 @@ begin
   else if Lexer.Token.Id = TkRecord then Result := PsRecordType(IsPacked)
   else if Lexer.Token.Id = TkArray then Result := PsArrayType
   else if Lexer.Token.Id = TkCaret then Result := PsPointerType
+  else if Lexer.Token.Id = TkProcedure then Result := PsProcedureType
+  else if Lexer.Token.Id = TkFunction then Result := PsFunctionType
   else if Lexer.Token.Id = TkIdentifier then
   begin
     Idx := FindName(Lexer.Token.Value, {Required=}false);
@@ -455,8 +526,8 @@ var
 begin
   StartLocalScope(FnPtr);
   Checkpoint := Defs.Latest;
-  for Pos := 1 to FnPtr^.ArgCount do
-    AddVariable(FnPtr^.Args[Pos]);
+  for Pos := 1 to FnPtr^.Args.Count do
+    AddVariable(FnPtr^.Args.Defs[Pos]);
   OutFunctionDefinition(FnPtr);
   OutEnumValuesFromCheckpoint(Checkpoint);
   if FnPtr^.ReturnTypePtr <> nil then
@@ -479,42 +550,6 @@ begin
   CloseLocalScope
 end;
 
-procedure PsArguments(var Def : TPsFunction);
-var 
-  IsConst : boolean;
-  IsVar : boolean;
-  LastArg, Arg : integer;
-  TypePtr : TPsTypePtr;
-begin
-  WantTokenAndRead(TkLparen);
-  Def.ArgCount := 0;
-  repeat
-    IsConst := Lexer.Token.Id = TkConst;
-    IsVar := Lexer.Token.Id = TkVar;
-    if IsConst then WantTokenAndRead(TkConst);
-    if IsVar then WantTokenAndRead(TkVar);
-    LastArg := Def.ArgCount;
-    repeat
-      Def.ArgCount := Def.ArgCount + 1;
-      if Def.ArgCount > MaxFnArgs then
-        CompileError('Too many arguments declared for function ' + Def.Name);
-      Def.Args[Def.ArgCount].Name := GetTokenValueAndRead(TkIdentifier);
-      Def.Args[Def.ArgCount].IsConstant := IsConst;
-      Def.Args[Def.ArgCount].IsReference := IsVar or IsConst;
-      Def.Args[Def.ArgCount].WasInitialized := true;
-      WantToken2(TkColon, TkComma);
-      SkipToken(TkComma)
-    until Lexer.Token.Id = TkColon;
-    SkipToken(TkColon);
-    TypePtr := PsTypeIdentifier;
-    for Arg := LastArg + 1 to Def.ArgCount do
-      Def.Args[Arg].TypePtr := TypePtr;
-    WantToken2(TkSemicolon, TkRparen);
-    SkipToken(TkSemicolon);
-  until Lexer.Token.Id = TkRparen;
-  SkipToken(TkRparen)
-end;
-
 procedure PsProcedureDefinition;
 var 
   Def : TPsFunction;
@@ -524,7 +559,7 @@ begin
   Def.Name := GetTokenValueAndRead(TkIdentifier);
   Def.ExternalName := Def.Name;
   WantToken2(TkLparen, TkSemicolon);
-  if Lexer.Token.Id = TkLparen then PsArguments(Def);
+  if Lexer.Token.Id = TkLparen then PsArguments(Def.Args);
   WantTokenAndRead(TkSemicolon);
   if Lexer.Token.Id = TkForward then
   begin
@@ -535,11 +570,6 @@ begin
   end
   else
     PsFunctionBody(AddFunction(Def));
-end;
-
-function PsResultType : TPsTypePtr;
-begin
-  PsResultType := PsTypeIdentifier
 end;
 
 procedure PsFunctionDefinition;
@@ -555,7 +585,7 @@ begin
   else
   begin
     WantToken2(TkLparen, TkColon);
-    if Lexer.Token.Id = TkLparen then PsArguments(Def);
+    if Lexer.Token.Id = TkLparen then PsArguments(Def.Args);
     WantTokenAndRead(TkColon);
     Def.ReturnTypePtr := PsResultType;
   end;
@@ -614,7 +644,7 @@ function PsFunctionCall(Fn : TExpression) : TExpression;
 var 
   Args : TExFunctionArgs;
 begin
-  if Fn^.Cls = XcFnRef then
+  if (Fn^.Cls = XcFnRef) or IsFunctionType(Fn^.TypePtr) then
   begin
     Args.Size := 0;
     if Lexer.Token.Id = TkLParen then
@@ -702,11 +732,13 @@ var
   Done : boolean;
 begin
   if (Expr^.Cls = XcVariable)
-     and (Lexer.Token.Id in [TkDot, TkLbracket, TkCaret]) then
+     and (Lexer.Token.Id in [TkDot, TkLbracket, TkCaret, TkLparen]) then
     Expr^.VarPtr^.WasUsed := true;
   Done := false;
   repeat
-    if Expr^.Cls in [XcFnRef, XcPseudoFnRef] then Expr := PsFunctionCall(Expr)
+    if (Expr^.Cls in [XcFnRef, XcPseudoFnRef]) then Expr := PsFunctionCall(Expr)
+    else if IsFunctionType(Expr^.TypePtr) and (Lexer.Token.Id = TkLparen) then
+           Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
@@ -900,7 +932,8 @@ begin
   begin
     WantTokenAndRead(TkAt);
     Expr := PsVariable;
-    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
+    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true
+    else if Expr^.Cls = XcFnRef then Expr^.FnPtr^.WasUsed := true;
     Expr := ExAddressOf(Expr)
   end
   else
@@ -1018,6 +1051,7 @@ begin
   end
   else
   begin
+    if IsFunctionType(Lhs^.TypePtr) then Lhs := PsFunctionCall(Lhs);
     OrigLhs := Lhs;
     UsesTmpVars := false;
     while Lhs^.Cls = XcWithTmpVar do

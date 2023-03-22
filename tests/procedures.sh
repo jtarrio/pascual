@@ -189,3 +189,28 @@ echo "program foo;
       procedure Change(var t : integer);
       begin t := 2 end;
       begin Change(x) end." | is_not_valid
+
+# Passing procedures in arguments
+echo "program foo;
+      type T = procedure(A : integer);
+      procedure Display(A : integer);
+      begin write(A) end;
+      procedure CallWithInt(P : T; A : integer);
+      begin P(A) end;
+      begin CallWithInt(@Display, 123) end." | outputs 123
+
+# Procedure-typed variables
+echo "program foo;
+      type T = procedure(A : integer);
+      var Proc : T;
+      procedure Display(A : integer);
+      begin write(A) end;
+      begin Proc := @Display; Proc(123) end." | outputs 123
+
+# 0-argument procedure variables are evaluated when invoked as statements
+echo "program foo;
+      type T = procedure;
+      var Proc : T;
+      procedure Display42;
+      begin write(42) end;
+      begin Proc := @Display42; Proc end." | outputs 42

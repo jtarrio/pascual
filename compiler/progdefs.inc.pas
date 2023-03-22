@@ -62,6 +62,19 @@ begin
   if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
+function NewFnDef(FnDef : TPsFnDef) : TPsFnDefPtr;
+begin
+  new(Result);
+  Result^ := FnDef;
+  Result^.RefCount := 1
+end;
+
+procedure DisposeFnDef(Ptr : TPsFnDefPtr);
+begin
+  Ptr^.RefCount := Ptr^.RefCount - 1;
+  if Ptr^.RefCount = 0 then dispose(Ptr)
+end;
+
 function _NewDef(Cls : TPsDefClass) : TPsDefPtr;
 var 
   Def : TPsDefPtr;
@@ -89,7 +102,8 @@ end;
 procedure _DisposeType(var TypePtr : TPsTypePtr);
 begin
   if TypePtr^.Cls = TtcEnum then DisposeEnum(TypePtr^.EnumPtr)
-  else if TypePtr^.Cls = TtcRecord then DisposeRecord(TypePtr^.RecPtr);
+  else if TypePtr^.Cls = TtcRecord then DisposeRecord(TypePtr^.RecPtr)
+  else if TypePtr^.Cls = TtcFunction then DisposeFnDef(TypePtr^.FnDefPtr);
   dispose(TypePtr);
 end;
 
@@ -364,6 +378,8 @@ begin
          Result.EnumPtr^.RefCount := Result.EnumPtr^.RefCount + 1
   else if Result.Cls = TtcRecord then
          Result.RecPtr^.RefCount := Result.RecPtr^.RefCount + 1
+  else if Result.Cls = TtcFunction then
+         Result.FnDefPtr^.RefCount := Result.FnDefPtr^.RefCount + 1
 end;
 
 function TypeOfClass(Cls : TPsTypeClass) : TPsType;
@@ -478,6 +494,11 @@ begin
                           and (TypePtr^.Cls = TtcPointerUnknown)
 end;
 
+function IsFunctionType(TypePtr : TPsTypePtr) : boolean;
+begin
+  IsFunctionType := (TypePtr <> nil) and (TypePtr^.Cls = TtcFunction)
+end;
+
 function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsOrdinalType := IsBooleanType(TypePtr)
@@ -537,9 +558,9 @@ begin
                   or (IsRangeType(A) and IsRangeType(B)
                   and IsSameType(GetFundamentalType(A), GetFundamentalType(B))
                   and (GetTypeLowBound(A) = GetTypeLowBound(B))
-                  and (GetTypeHighBound(A) = GetTypeHighBound(B))
+                  and (GetTypeHighBound(A) = GetTypeHighBound(B)))
                   or (IsSetType(A) and IsSetType(B)
-                  and IsSameType(A^.ElementTypePtr, B^.ElementTypePtr)))
+                  and IsSameType(A^.ElementTypePtr, B^.ElementTypePtr))
   end
 end;
 
@@ -606,24 +627,23 @@ end;
 function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
 var 
   Typ : TPsType;
-  Ret : string;
   Pos : integer;
 begin
   repeat
     Typ := TypePtr^;
     TypePtr := Typ.AliasFor
   until not UseOriginal or (TypePtr = nil);
-  if Typ.Name <> '' then DeepTypeName := Typ.Name
+  if Typ.Name <> '' then Result := Typ.Name
   else if Typ.Cls = TtcEnum then
   begin
-    Ret := '(';
+    Result := '(';
     for Pos := 0 to Typ.EnumPtr^.Size - 1 do
     begin
       if Pos <> 0 then
-        Ret := Ret + ',';
-      Ret := Ret + Typ.EnumPtr^.Values[Pos]
+        Result := Result + ',';
+      Result := Result + Typ.EnumPtr^.Values[Pos]
     end;
-    DeepTypeName := Ret + ')'
+    Result := Result + ')'
   end
   else if Typ.Cls = TtcRange then
   begin
@@ -637,27 +657,50 @@ begin
   end
   else if Typ.Cls = TtcRecord then
   begin
-    Ret := 'RECORD ';
+    Result := 'RECORD ';
     for Pos := 1 to Typ.RecPtr^.Size do
     begin
-      if Pos <> 1 then Ret := Ret + ',';
-      Ret := Ret + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
-      Ret := Ret + ':' + Typ.RecPtr^.Fields[Pos].Name
+      if Pos <> 1 then Result := Result + ',';
+      Result := Result + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
+      Result := Result + ':' + Typ.RecPtr^.Fields[Pos].Name
     end;
-    DeepTypeName := Ret + ' END'
+    Result := Result + ' END'
   end
   else if Typ.Cls = TtcArray then
   begin
-    Ret := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
-           '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
-    DeepTypeName := Ret
+    Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
+              '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false);
+    Result := Result
   end
   else if Typ.Cls = TtcPointer then
-         DeepTypeName := '^' + DeepTypeName(Typ.PointedTypePtr, true)
+         Result := '^' + DeepTypeName(Typ.PointedTypePtr, true)
+  else if Typ.Cls = TtcFunction then
+         with Typ.FnDefPtr^ do
+  begin
+    if ReturnTypePtr = nil then Result := 'PROCEDURE'
+    else Result := 'FUNCTION';
+    if Args.Count > 0 then
+    begin
+      Result := Result + '(';
+      for Pos := 1 to Args.Count do
+      begin
+        if Pos <> 1 then Result := Result + '; ';
+        if Args.Defs[Pos].IsConstant then Result := Result + 'CONST '
+        else if Args.Defs[Pos].IsReference then Result := Result + 'VAR ';
+        Result := Result + Args.Defs[Pos].Name;
+        Result := Result + ' : ' + DeepTypeName(Args.Defs[Pos].TypePtr, false)
+      end;
+      Result := Result + ')';
+    end;
+    if ReturnTypePtr <> nil then
+    begin
+      Result := Result + ' : ' + DeepTypeName(ReturnTypePtr, false)
+    end
+  end
   else
   begin
-    Str(Typ.Cls, Ret);
-    CompileError('Could not get name for type of class ' + Ret)
+    Str(Typ.Cls, Result);
+    CompileError('Could not get name for type of class ' + Result)
   end
 end;
 
@@ -716,7 +759,7 @@ function EmptyFunction : TPsFunction;
 begin
   Result.Name := '';
   Result.ExternalName := '';
-  Result.ArgCount := 0;
+  Result.Args.Count := 0;
   Result.ReturnTypePtr := nil;
   Result.IsDeclaration := false;
   Result.WasUsed := false
@@ -731,11 +774,13 @@ var
 begin
   Decl := DeclPtr^;
   Same := IsSameType(Decl.ReturnTypePtr, Fun.ReturnTypePtr)
-          and (Decl.ArgCount = Fun.ArgCount);
-  for Pos := 1 to Decl.ArgCount do
+          and (Decl.Args.Count = Fun.Args.Count);
+  for Pos := 1 to Decl.Args.Count do
     Same := Same
-            and IsSameType(Decl.Args[Pos].TypePtr, Fun.Args[Pos].TypePtr)
-            and (Decl.Args[Pos].IsReference = Fun.Args[Pos].IsReference);
+            and IsSameType(Decl.Args.Defs[Pos].TypePtr,
+            Fun.Args.Defs[Pos].TypePtr)
+            and (Decl.Args.Defs[Pos].IsReference =
+            Fun.Args.Defs[Pos].IsReference);
   IsSameFunctionDefinition := Same
 end;
 
@@ -769,7 +814,7 @@ begin
     FnPtr := NamePtr^.FnPtr;
     if FnPtr^.IsDeclaration then
     begin
-      if ((Fun.ArgCount = 0) and (Fun.ReturnTypePtr = nil))
+      if ((Fun.Args.Count = 0) and (Fun.ReturnTypePtr = nil))
          or IsSameFunctionDefinition(FnPtr, Fun) then
         FnPtr^.IsDeclaration := false
       else
@@ -950,7 +995,7 @@ begin
   Result := EmptyFunction;
   Result.Name := Name;
   Result.ExternalName := Name;
-  Result.ArgCount := 0
+  Result.Args.Count := 0
 end;
 
 function MakeProcedure1(const Name : string; Arg : TPsVariable) : TPsFunction;
@@ -958,8 +1003,8 @@ begin
   Result := EmptyFunction;
   Result.Name := Name;
   Result.ExternalName := Name;
-  Result.ArgCount := 1;
-  Result.Args[1] := Arg
+  Result.Args.Count := 1;
+  Result.Args.Defs[1] := Arg
 end;
 
 function MakeProcedure2(const Name : string;
@@ -968,9 +1013,9 @@ begin
   Result := EmptyFunction;
   Result.Name := Name;
   Result.ExternalName := Name;
-  Result.ArgCount := 2;
-  Result.Args[1] := Arg1;
-  Result.Args[2] := Arg2
+  Result.Args.Count := 2;
+  Result.Args.Defs[1] := Arg1;
+  Result.Args.Defs[2] := Arg2
 end;
 
 function MakeProcedure3(const Name : string;
@@ -979,10 +1024,10 @@ begin
   Result := EmptyFunction;
   Result.Name := Name;
   Result.ExternalName := Name;
-  Result.ArgCount := 3;
-  Result.Args[1] := Arg1;
-  Result.Args[2] := Arg2;
-  Result.Args[3] := Arg3
+  Result.Args.Count := 3;
+  Result.Args.Defs[1] := Arg1;
+  Result.Args.Defs[2] := Arg2;
+  Result.Args.Defs[3] := Arg3
 end;
 
 function MakeFunction0(const Name : string;
@@ -1001,8 +1046,8 @@ begin
   Result.Name := Name;
   Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
-  Result.ArgCount := 1;
-  Result.Args[1] := Arg
+  Result.Args.Count := 1;
+  Result.Args.Defs[1] := Arg
 end;
 
 function MakeFunction2(const Name : string; RetTypePtr : TPsTypePtr;
@@ -1012,9 +1057,9 @@ begin
   Result.Name := Name;
   Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
-  Result.ArgCount := 2;
-  Result.Args[1] := Arg1;
-  Result.Args[2] := Arg2
+  Result.Args.Count := 2;
+  Result.Args.Defs[1] := Arg1;
+  Result.Args.Defs[2] := Arg2
 end;
 
 function MakeFunction3(const Name : string; RetTypePtr : TPsTypePtr;
@@ -1024,10 +1069,10 @@ begin
   Result.Name := Name;
   Result.ExternalName := Name;
   Result.ReturnTypePtr := RetTypePtr;
-  Result.ArgCount := 3;
-  Result.Args[1] := Arg1;
-  Result.Args[2] := Arg2;
-  Result.Args[3] := Arg3
+  Result.Args.Count := 3;
+  Result.Args.Defs[1] := Arg1;
+  Result.Args.Defs[2] := Arg2;
+  Result.Args.Defs[3] := Arg3
 end;
 
 function GetPointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
@@ -1048,6 +1093,42 @@ begin
   begin
     Typ := TypeOfClass(TtcPointer);
     Typ.PointedTypePtr := TypePtr;
+    Result := AddType(Typ)
+  end
+end;
+
+function AreSameArgs(const A, B : TPsFnArgs) : boolean;
+var Pos : integer;
+begin
+  Result := A.Count = B.Count;
+  if Result then
+    for Pos := 1 to A.Count do
+      Result := Result and (A.Defs[Pos].IsReference = B.Defs[Pos].IsReference)
+                and (A.Defs[Pos].IsConstant = B.Defs[Pos].IsConstant)
+                and IsSameType(A.Defs[Pos].TypePtr, B.Defs[Pos].TypePtr)
+end;
+
+function GetFunctionType(FnPtr : TPsFnPtr) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+  Typ : TPsType;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and IsFunctionType(Def^.TypePtr)
+       and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr, FnPtr^.
+       ReturnTypePtr)
+       and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, FnPtr^.Args) then
+      Result := Def^.TypePtr;
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    Typ := TypeOfClass(TtcFunction);
+    Typ.FnDefPtr^.ReturnTypePtr := FnPtr^.ReturnTypePtr;
+    Typ.FnDefPtr^.Args := FnPtr^.Args;
     Result := AddType(Typ)
   end
 end;

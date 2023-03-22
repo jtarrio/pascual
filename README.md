@@ -14,7 +14,6 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 * Type definitions, variable definitions, untyped constant definitions, typed constant definitions.
     * Missing record typed constants.
 * Functions and procedures, pass by value, pass by reference, and pass by const reference.
-    * Missing functions and procedures as arguments.
     * Missing nested functions and procedures.
     * Missing parameterized array bounds.
 * `While`, `repeat until`, `for`, `if`, `case`.

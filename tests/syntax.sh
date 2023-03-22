@@ -410,22 +410,22 @@ echo 'program foo;
       type T = procedure;
       procedure Proc(P : T);
       begin P end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       type T = procedure (A : integer);
       procedure Proc(P : T);
       begin P(1) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       type T = function : integer;
       procedure Proc(P : T);
       begin writeln(P) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       type T = function (A : integer) : integer;
       procedure Proc(P : T);
       begin writeln(P(1)) end;
-      begin end.' | will_be_valid
+      begin end.' | is_valid
 echo 'program foo;
       procedure Proc; forward;
       procedure Proc;

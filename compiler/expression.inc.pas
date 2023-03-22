@@ -862,13 +862,18 @@ end;
 
 function ExAddressOf(Parent : TExpression) : TExpression;
 begin
-  EnsureAddressableExpr(Parent);
-  EnsureAssignableExpr(Parent);
-  if Parent^.Cls <> XcVariable then
-    ErrorForExpr('Expected a variable', Parent);
   Result := _NewExpr(XcAddress);
   Result^.AddressExpr := Parent;
-  Result^.TypePtr := GetPointerType(Parent^.TypePtr)
+  if Parent^.Cls = XcFnRef then
+    Result^.TypePtr := GetFunctionType(Parent^.FnPtr)
+  else
+  begin
+    EnsureAddressableExpr(Parent);
+    EnsureAssignableExpr(Parent);
+    if Parent^.Cls <> XcVariable then
+      ErrorForExpr('Expected a variable', Parent);
+    Result^.TypePtr := GetPointerType(Parent^.TypePtr)
+  end
 end;
 
 function ExStringChar(Parent, Subscript : TExpression) : TExpression;
@@ -891,35 +896,34 @@ begin
   Result^.TypePtr := nil
 end;
 
-function ExFunctionCall(FnExpr : TExpression; var Args : TExFunctionArgs)
-: TExpression;
+function _ExFunctionCall(FnExpr : TExpression;
+                         const ArgDefs : TPsFnArgs;
+                         ReturnTypePtr : TPsTypePtr;
+                         const Args : TExFunctionArgs) : TExpression;
 var 
   Pos : integer;
   FnCall : TExpression;
 begin
-  if FnExpr^.Cls <> XcFnRef then
-    ErrorForExpr('Cannot call non-function', FnExpr);
-  if Args.Size <> FnExpr^.FnPtr^.ArgCount then
-    CompileError('Wrong number of arguments in call to ' + FnExpr^.FnPtr^.Name);
-  FnExpr^.FnPtr^.WasUsed := true;
+  if Args.Size <> ArgDefs.Count then
+    CompileError('Wrong number of arguments in call to ' + ExDescribe(FnExpr));
   FnCall := _NewExpr(XcFnCall);
   FnCall^.FnExpr := FnExpr;
   FnCall^.CallArgs.Size := Args.Size;
-  FnCall^.TypePtr := FnExpr^.FnPtr^.ReturnTypePtr;
+  FnCall^.TypePtr := ReturnTypePtr;
   FnCall^.IsFunctionResult := true;
   Result := FnCall;
   for Pos := 1 to Args.Size do
   begin
     FnCall^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
-                                    FnExpr^.FnPtr^.Args[Pos].TypePtr);
-    if FnExpr^.FnPtr^.Args[Pos].IsReference then
+                                    ArgDefs.Defs[Pos].TypePtr);
+    if ArgDefs.Defs[Pos].IsReference then
     begin
       if not FnCall^.CallArgs.Values[Pos]^.IsAddressable then
       begin
-        if FnExpr^.FnPtr^.Args[Pos].IsConstant then
+        if ArgDefs.Defs[Pos].IsConstant then
         begin
           Result := ExWithTmpVar(ExVariable(AddTmpVariable(
-                    'tmp', FnExpr^.FnPtr^.Args[Pos].TypePtr)),
+                    'tmp', ArgDefs.Defs[Pos].TypePtr)),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := ExCopy(Result^.TmpVar)
         end
@@ -927,13 +931,29 @@ begin
           CompileError('Pass-by-reference argument must be assignable: ' +
                        ExDescribe(FnCall^.CallArgs.Values[Pos]))
       end
-      else if not FnExpr^.FnPtr^.Args[Pos].IsConstant then
+      else if not ArgDefs.Defs[Pos].IsConstant then
       begin
         EnsureAssignableExpr(FnCall^.CallArgs.Values[Pos]);
         ExMarkInitialized(FnCall^.CallArgs.Values[Pos])
       end
     end
   end
+end;
+
+function ExFunctionCall(FnExpr : TExpression;
+                        const Args : TExFunctionArgs) : TExpression;
+begin
+  if FnExpr^.Cls = XcFnRef then
+  begin
+    FnExpr^.FnPtr^.WasUsed := true;
+    Result := _ExFunctionCall(FnExpr, FnExpr^.FnPtr^.Args,
+              FnExpr^.FnPtr^.ReturnTypePtr, Args)
+  end
+  else if IsFunctionType(FnExpr^.TypePtr) then
+         Result := _ExFunctionCall(FnExpr, FnExpr^.TypePtr^.FnDefPtr^.Args,
+                   FnExpr^.TypePtr^.FnDefPtr^.ReturnTypePtr, Args)
+  else
+    ErrorForExpr('Cannot call non-function', FnExpr)
 end;
 
 function ExPseudoFn(SpecialFn : TPsPseudoFn) : TExpression;

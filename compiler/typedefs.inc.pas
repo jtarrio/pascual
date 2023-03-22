@@ -133,13 +133,14 @@ type
   end;
 
   TPsRecPtr = ^TPsRecordDef;
+  TPsFnDefPtr = ^TPsFnDef;
   TPsConstPtr = ^TPsConstant;
   TPsWithVarPtr = ^TPsWithVar;
   TPsNamePtr = ^TPsName;
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
-                  TtcPointer, TtcNil, TtcPointerUnknown);
+                  TtcPointer, TtcNil, TtcPointerUnknown, TtcFunction);
   TPsType = record
     Name : string;
     AliasFor : TPsTypePtr;
@@ -158,6 +159,7 @@ type
                   end);
       TtcPointer : (PointedTypePtr : TPsTypePtr);
       TtcPointerUnknown : (TargetName : ^string);
+      TtcFunction : (FnDefPtr : TPsFnDefPtr);
   end;
   TPsEnumDef = record
     Size : integer;
@@ -193,11 +195,19 @@ type
     WasInitialized : boolean;
     WasUsed : boolean
   end;
+  TPsFnArgs = record
+    Count : integer;
+    Defs : array[1..MaxFnArgs] of TPsVariable;
+  end;
+  TPsFnDef = record
+    Args : TPsFnArgs;
+    ReturnTypePtr : TPsTypePtr;
+    RefCount : integer;
+  end;
   TPsFunction = record
     Name : string;
     ExternalName : string;
-    ArgCount : integer;
-    Args : array[1..MaxFnArgs] of TPsVariable;
+    Args : TPsFnArgs;
     ReturnTypePtr : TPsTypePtr;
     IsDeclaration : boolean;
     WasUsed : boolean
