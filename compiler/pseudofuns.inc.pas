@@ -18,7 +18,7 @@ begin
     'overload of ' + NamePrefix)
 end;
 
-function _Pf_Overload_Parse(FnExpr : TExpression;
+function Pf_Overload_Parse(FnExpr : TExpression;
                             NamePrefix : string) : TExpression;
 var 
   Arg : TExpression;
@@ -48,11 +48,6 @@ begin
     Args.Values[1] := Arg;
     Result := ExFunctionCall(ExFnRef(FnPtr), Args);
   end
-end;
-
-function PfAbs_Parse(FnExpr : TExpression) : TExpression;
-begin
-  Result := _Pf_Overload_Parse(FnExpr, 'ABS')
 end;
 
 function PfConcat_Parse(FnExpr : TExpression) : TExpression;
@@ -163,7 +158,7 @@ end;
 
 function PfRandom_Parse(FnExpr : TExpression) : TExpression;
 begin
-  Result := _Pf_Overload_Parse(FnExpr, 'RANDOM')
+  Result := Pf_Overload_Parse(FnExpr, 'RANDOM')
 end;
 
 function PfSizeof_Parse(FnExpr : TExpression) : TExpression;
@@ -183,11 +178,6 @@ begin
          Result^.PseudoFnCall.TypeArg := Found.TypePtr
   else
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
-end;
-
-function PfSqr_Parse(FnExpr : TExpression) : TExpression;
-begin
-  Result := _Pf_Overload_Parse(FnExpr, 'SQR')
 end;
 
 function PfStr_Parse(FnExpr : TExpression) : TExpression;

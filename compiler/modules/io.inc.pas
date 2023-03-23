@@ -223,6 +223,11 @@ end;
 
 procedure RegisterGlobals_Io;
 begin
+  { Default files }
+  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText));
+  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText));
+  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
+
   { I/O subroutines }
   PseudoFuns.Read := AddPseudoFn('READ', @_ModIoRead_Parse, @Pf_Indef_Describe);
   PseudoFuns.Readln := AddPseudoFn('READLN', @_ModIoRead_Parse,

@@ -17,57 +17,18 @@ begin
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
   AddConstant(MakeConstant('TRUE', ExBooleanConstant(true)));
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
-  AddConstant(MakeConstant('PI', ExRealConstant(3.141592653589793238)));
-
-  { Default files }
-  AddVariable(MakeVariable('INPUT', PrimitiveTypes.PtText));
-  AddVariable(MakeVariable('OUTPUT', PrimitiveTypes.PtText));
-  AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
 
   { Ordinal subroutines }
   PseudoFuns.Ord := AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Unary_Describe);
   PseudoFuns.Pred := AddPseudoFn('PRED', @PfPred_Parse, @Pf_Unary_Describe);
   PseudoFuns.Succ := AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
 
-  { Math subroutines }
-  AddPseudoFn('ABS', @PfAbs_Parse, @Pf_Unary_Describe);
-  AddPseudoFn('SQR', @PfSqr_Parse, @Pf_Unary_Describe);
-  AddFunction(MakeFunction1('ABS_i', PrimitiveTypes.PtInteger,
-              MakeArg('NUM', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('ABS_r', PrimitiveTypes.PtReal,
-              MakeArg('NUM', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('ARCTAN', PrimitiveTypes.PtReal,
-              MakeArg('TAN', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('COS', PrimitiveTypes.PtReal,
-              MakeArg('ANGLE', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('EXP', PrimitiveTypes.PtReal,
-              MakeArg('POW', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('FRAC', PrimitiveTypes.PtReal,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('INT', PrimitiveTypes.PtReal,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('LN', PrimitiveTypes.PtReal,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('ODD', PrimitiveTypes.PtBoolean,
-              MakeArg('X', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('ROUND', PrimitiveTypes.PtInteger,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('SIN', PrimitiveTypes.PtReal,
-              MakeArg('ANGLE', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('SQR_i', PrimitiveTypes.PtInteger,
-              MakeArg('NUM', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('SQR_r', PrimitiveTypes.PtReal,
-              MakeArg('NUM', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('SQRT', PrimitiveTypes.PtReal,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-  AddFunction(MakeFunction1('TRUNC', PrimitiveTypes.PtInteger,
-              MakeArg('X', PrimitiveTypes.PtReal)));
-
   { Memory subroutines }
   PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
   PseudoFuns.New := AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
 
   RegisterGlobals_Io;
+  RegisterGlobals_Math;
 
   { Character and String subroutines }
   AddPseudoFn('CONCAT', @PfConcat_Parse, @Pf_Indef_Describe);
