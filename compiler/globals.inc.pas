@@ -67,54 +67,7 @@ begin
   PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
   PseudoFuns.New := AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
 
-  { I/O subroutines }
-  PseudoFuns.Read := AddPseudoFn('READ', @PfRead_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Readln := AddPseudoFn('READLN', @PfRead_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Write := AddPseudoFn('WRITE', @PfWrite_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Writeln := AddPseudoFn('WRITELN', @PfWrite_Parse, @Pf_Indef_Describe);
-  AddFunction(MakeProcedure2('ASSIGN',
-              MakeVarArg('F', PrimitiveTypes.PtText),
-              MakeConstArg('NAME', PrimitiveTypes.PtString)));
-  AddFunction(MakeProcedure1('CLOSE',
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction1('EOF', PrimitiveTypes.PtBoolean,
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction1('EOLN', PrimitiveTypes.PtBoolean,
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction1('FILEPOS', PrimitiveTypes.PtInteger,
-              MakeConstArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction1('FILESIZE', PrimitiveTypes.PtInteger,
-              MakeConstArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeProcedure1('FLUSH', 
-              MakeConstArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction0('IORESULT', PrimitiveTypes.PtInteger));
-  AddFunction(MakeProcedure1('RESET',
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeProcedure1('REWRITE',
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeProcedure2('SEEK',
-              MakeVarArg('F', PrimitiveTypes.PtText),
-              MakeArg('POS', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('SEEKEOF', PrimitiveTypes.PtBoolean,
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeFunction1('SEEKEOLN', PrimitiveTypes.PtBoolean,
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-
-  { File and directory subroutines }
-  AddFunction(MakeProcedure1('CHDIR',
-              MakeConstArg('DIR', PrimitiveTypes.PtString)));
-  AddFunction(MakeProcedure1('ERASE',
-              MakeVarArg('F', PrimitiveTypes.PtText)));
-  AddFunction(MakeProcedure2('GETDIR',
-              MakeArg('DRIVE', PrimitiveTypes.PtInteger),
-              MakeVarArg('DIR', PrimitiveTypes.PtString)));
-  AddFunction(MakeProcedure1('MKDIR',
-              MakeConstArg('DIR', PrimitiveTypes.PtString)));
-  AddFunction(MakeProcedure2('RENAME',
-              MakeVarArg('F', PrimitiveTypes.PtText),
-              MakeConstArg('NAME', PrimitiveTypes.PtString)));
-  AddFunction(MakeProcedure1('RMDIR',
-              MakeConstArg('DIR', PrimitiveTypes.PtString)));
+  RegisterGlobals_Io;
 
   { Character and String subroutines }
   AddPseudoFn('CONCAT', @PfConcat_Parse, @Pf_Indef_Describe);

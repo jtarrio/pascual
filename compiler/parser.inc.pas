@@ -640,28 +640,29 @@ begin
   PsPointerDeref := ExPointerAccess(Ptr)
 end;
 
+function PsFunctionArgs : TExFunctionArgs;
+begin
+  Result.Size := 0;
+  if Lexer.Token.Id = TkLParen then
+  begin
+    WantTokenAndRead(TkLParen);
+    while Lexer.Token.Id <> TkRParen do
+    begin
+      Result.Size := Result.Size + 1;
+      Result.Values[Result.Size] := PsExpression;
+      WantToken2(TkComma, TkRParen);
+      SkipToken(TkComma)
+    end;
+    WantTokenAndRead(TkRparen)
+  end
+end;
+
 function PsFunctionCall(Fn : TExpression) : TExpression;
-var 
-  Args : TExFunctionArgs;
 begin
   if (Fn^.Cls = XcFnRef) or IsFunctionType(Fn^.TypePtr) then
-  begin
-    Args.Size := 0;
-    if Lexer.Token.Id = TkLParen then
-    begin
-      WantTokenAndRead(TkLParen);
-      while Lexer.Token.Id <> TkRParen do
-      begin
-        Args.Size := Args.Size + 1;
-        Args.Values[Args.Size] := PsExpression;
-        WantToken2(TkComma, TkRParen);
-        SkipToken(TkComma)
-      end;
-      WantTokenAndRead(TkRparen)
-    end;
-    PsFunctionCall := ExFunctionCall(Fn, Args)
-  end
-  else if Fn^.Cls = XcPseudoFnRef then PsFunctionCall := Fn^.PseudoFnPtr^.ParseFn(Fn)
+    PsFunctionCall := ExFunctionCall(Fn, PsFunctionArgs)
+  else if Fn^.Cls = XcPseudoFnRef then
+         PsFunctionCall := Fn^.PseudoFnPtr^.ParseFn(Fn)
 end;
 
 function PsArrayAccess(Arr : TExpression) : TExpression;

@@ -24,6 +24,7 @@ forward;
 {$I expression.inc.pas}
 {$I parser.inc.pas}
 {$I pseudofuns.inc.pas}
+{$I modules/io.inc.pas}
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
 

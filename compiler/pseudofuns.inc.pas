@@ -166,54 +166,6 @@ begin
   Result := _Pf_Overload_Parse(FnExpr, 'RANDOM')
 end;
 
-function PfRead_Parse(FnExpr : TExpression) : TExpression;
-var 
-  First : boolean;
-  OutVar : TExpression;
-  ReadArg : ^TExReadArgs;
-begin
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('INPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
-  ReadArg := nil;
-  if Lexer.Token.Id = TkLparen then
-  begin
-    First := true;
-    WantTokenAndRead(TkLparen);
-    while Lexer.Token.Id <> TkRparen do
-    begin
-      OutVar := PsExpression;
-      if First and IsTextType(OutVar^.TypePtr) then
-      begin
-        EnsureAddressableExpr(OutVar);
-        ExDispose(Result^.PseudoFnCall.Arg1);
-        Result^.PseudoFnCall.Arg1 := OutVar
-      end
-      else
-      begin
-        EnsureAssignableExpr(OutVar);
-        if ReadArg = nil then
-        begin
-          new(Result^.PseudoFnCall.ReadArgs);
-          ReadArg := Result^.PseudoFnCall.ReadArgs
-        end
-        else
-        begin
-          new(ReadArg^.Next);
-          ReadArg := ReadArg^.Next;
-        end;
-        ReadArg^.Next := nil;
-        ReadArg^.Arg := OutVar;
-        ExMarkInitialized(OutVar)
-      end;
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
-      First := false
-    end;
-    WantTokenAndRead(TkRparen)
-  end
-end;
-
 function PfSizeof_Parse(FnExpr : TExpression) : TExpression;
 var 
   Id : TPsIdentifier;
@@ -337,78 +289,6 @@ begin
   Result^.PseudoFnCall.Arg1 := Src;
   Result^.PseudoFnCall.Arg2 := Dest;
   Result^.PseudoFnCall.Arg3 := Code;
-end;
-
-function _EvaluateZeroArg(Expr : TExpression) : TExpression;
-var Args : TExFunctionArgs;
-begin
-  Args.Size := 0;
-  if IsFunctionType(Expr^.TypePtr)
-     and (Expr^.TypePtr^.FnDefPtr^.ReturnTypePtr <> nil)
-     and (Expr^.TypePtr^.FnDefPtr^.Args.Count = 0) then
-    Result := ExFunctionCall(Expr, Args)
-  else Result := Expr
-end;
-
-function PfWrite_Parse(FnExpr : TExpression) : TExpression;
-var 
-  First : boolean;
-  OutExpr : TExpression;
-  WriteArg : ^TExWriteArgs;
-begin
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
-  WriteArg := nil;
-  if Lexer.Token.Id = TkLparen then
-  begin
-    First := true;
-    WantTokenAndRead(TkLparen);
-    while Lexer.Token.Id <> TkRparen do
-    begin
-      OutExpr := _EvaluateZeroArg(PsExpression);
-      if First and IsTextType(OutExpr^.TypePtr) then
-      begin
-        EnsureAddressableExpr(OutExpr);
-        ExDispose(Result^.PseudoFnCall.Arg1);
-        Result^.PseudoFnCall.Arg1 := OutExpr
-      end
-      else
-      begin
-        if WriteArg = nil then
-        begin
-          new(Result^.PseudoFnCall.WriteArgs);
-          WriteArg := Result^.PseudoFnCall.WriteArgs
-        end
-        else
-        begin
-          new(WriteArg^.Next);
-          WriteArg := WriteArg^.Next;
-        end;
-        WriteArg^.Arg := OutExpr;
-        WriteArg^.Width := nil;
-        WriteArg^.Prec := nil;
-        WriteArg^.Next := nil;
-        if Lexer.Token.Id = TkColon then
-        begin
-          WantTokenAndRead(TkColon);
-          WriteArg^.Width := PsExpression;
-          EnsureIntegerExpr(WriteArg^.Width);
-          if IsRealType(WriteArg^.Arg^.TypePtr)
-             and (Lexer.Token.Id = TkColon) then
-          begin
-            WantTokenAndRead(TkColon);
-            WriteArg^.Prec := PsExpression;
-            EnsureIntegerExpr(WriteArg^.Prec);
-          end
-        end
-      end;
-      WantToken2(TkComma, TkRparen);
-      SkipToken(TkComma);
-      First := false
-    end;
-    WantTokenAndRead(TkRparen)
-  end
 end;
 
 function Pf_Unary_Describe(Expr : TExpression) : string;
