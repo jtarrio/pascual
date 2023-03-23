@@ -9,6 +9,7 @@ void DELETE(PString* src, PInteger pos, PInteger num);
 void INSERT(const PString* ins, PString* target, PInteger pos);
 PInteger POS(const PString* needle, const PString* haystack);
 PChar UPCASE(PChar src);
+PChar LOWERCASE(PChar src);
 PChar CHR(PInteger pos);
 PInteger ORD(PChar chr);
 

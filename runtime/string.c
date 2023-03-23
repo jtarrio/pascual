@@ -64,7 +64,12 @@ PInteger POS(const PString* needle, const PString* haystack) {
 }
 
 PChar UPCASE(PChar src) {
-  if ((src >= 'a') && (src <= 'z')) return src - ('a' - 'A');
+  if (src >= 'a' && src <= 'z') return src - ('a' - 'A');
+  return src;
+}
+
+PChar LOWERCASE(PChar src) {
+  if (src >= 'A' && src <= 'Z') return src + ('a' - 'A');
   return src;
 }
 

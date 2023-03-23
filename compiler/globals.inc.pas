@@ -136,6 +136,8 @@ begin
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction1('LENGTH', PrimitiveTypes.PtInteger,
               MakeConstArg('STR', PrimitiveTypes.PtString)));
+  AddFunction(MakeFunction1('LOWERCASE', PrimitiveTypes.PtChar,
+              MakeArg('CHR', PrimitiveTypes.PtChar)));
   AddFunction(MakeFunction2('POS', PrimitiveTypes.PtInteger,
               MakeConstArg('NEEDLE', PrimitiveTypes.PtString),
               MakeConstArg('HAYSTACK', PrimitiveTypes.PtString)));

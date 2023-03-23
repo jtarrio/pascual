@@ -253,3 +253,12 @@ testupcase 'a' | outputs 'A'
 testupcase 'B' | outputs 'B'
 testupcase '`' | outputs '`'
 testupcase '{' | outputs '{'
+
+# Lowercase
+testlowercase() {
+  echo "program foo; begin write(Lowercase('$1')) end."
+}
+testlowercase 'a' | outputs 'a'
+testlowercase 'B' | outputs 'b'
+testlowercase '`' | outputs '`'
+testlowercase '{' | outputs '{'
