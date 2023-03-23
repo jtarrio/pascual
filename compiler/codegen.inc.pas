@@ -1184,8 +1184,10 @@ begin
   Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Readln;
   ReadArg := Expr^.PseudoFnCall.ReadArgs;
   _OutIndent;
-  write(Codegen.Output, 'READ(');
+  write(Codegen.Output, 'Read(');
   _OutAddress(Src);
+  _OutComma;
+  OutExpression(ExBooleanConstant(Options.CheckIoResult));
   if ReadArg = nil then
   begin
     write(Codegen.Output, ', RwpEnd');
@@ -1225,8 +1227,10 @@ begin
   Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Writeln;
   WriteArg := Expr^.PseudoFnCall.WriteArgs;
   _OutIndent;
-  write(Codegen.Output, 'WRITE(');
+  write(Codegen.Output, 'Write(');
   _OutAddress(Dst);
+  _OutComma;
+  OutExpression(ExBooleanConstant(Options.CheckIoResult));
   if WriteArg = nil then
   begin
     write(Codegen.Output, ', RwpEnd');
