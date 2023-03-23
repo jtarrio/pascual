@@ -27,6 +27,7 @@ forward;
 {$I pseudofuns.inc.pas}
 {$I modules/io.inc.pas}
 {$I modules/math.inc.pas}
+{$I modules/strings.inc.pas}
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
 

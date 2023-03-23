@@ -24,43 +24,18 @@ begin
   PseudoFuns.Succ := AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
 
   { Memory subroutines }
-  PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
+  PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse,
+                        @Pf_Unary_Describe);
   PseudoFuns.New := AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
+  PseudoFuns.Sizeof := AddPseudoFn('SIZEOF', @PfSizeof_Parse,
+                       @PfSizeof_Describe);
 
   RegisterGlobals_Io;
   RegisterGlobals_Math;
-
-  { Character and String subroutines }
-  AddPseudoFn('CONCAT', @PfConcat_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Str := AddPseudoFn('STR', @PfStr_Parse, @PfStr_Describe);
-  PseudoFuns.Val := AddPseudoFn('VAL', @PfVal_Parse, @Pf_Ternary_Describe);
-  AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
-              MakeArg('POS', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
-              MakeConstArg('STR', PrimitiveTypes.PtString),
-              MakeArg('POS', PrimitiveTypes.PtInteger),
-              MakeArg('NUM', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeProcedure3('DELETE',
-              MakeVarArg('STR', PrimitiveTypes.PtString),
-              MakeArg('POS', PrimitiveTypes.PtInteger),
-              MakeArg('NUM', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeProcedure3('INSERT',
-              MakeConstArg('INS', PrimitiveTypes.PtString),
-              MakeVarArg('TARGET', PrimitiveTypes.PtString),
-              MakeArg('POS', PrimitiveTypes.PtInteger)));
-  AddFunction(MakeFunction1('LENGTH', PrimitiveTypes.PtInteger,
-              MakeConstArg('STR', PrimitiveTypes.PtString)));
-  AddFunction(MakeFunction1('LOWERCASE', PrimitiveTypes.PtChar,
-              MakeArg('CHR', PrimitiveTypes.PtChar)));
-  AddFunction(MakeFunction2('POS', PrimitiveTypes.PtInteger,
-              MakeConstArg('NEEDLE', PrimitiveTypes.PtString),
-              MakeConstArg('HAYSTACK', PrimitiveTypes.PtString)));
-  AddFunction(MakeFunction1('UPCASE', PrimitiveTypes.PtChar,
-              MakeArg('CHR', PrimitiveTypes.PtChar)));
+  RegisterGlobals_Strings;
 
   { Misc subroutines }
   AddPseudoFn('RANDOM', @PfRandom_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Sizeof := AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));

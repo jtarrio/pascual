@@ -50,23 +50,6 @@ begin
   end
 end;
 
-function PfConcat_Parse(FnExpr : TExpression) : TExpression;
-var Operand : TExpression;
-begin
-  ExDispose(FnExpr);
-  Result := nil;
-  WantTokenAndRead(TkLparen);
-  repeat
-    Operand := PSExpression;
-    EnsureStringyExpr(Operand);
-    if Result = nil then Result := Operand
-    else Result := ExBinaryOp(Result, Operand, TkPlus);
-    WantToken2(TkComma, TkRparen);
-    SkipToken(TkComma)
-  until Lexer.Token.Id = TkRparen;
-  WantTokenAndRead(TkRparen)
-end;
-
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
@@ -180,43 +163,6 @@ begin
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
 end;
 
-function PfStr_Parse(FnExpr : TExpression) : TExpression;
-var 
-  Src, Dest : TExpression;
-  Width, Prec : TExpression;
-begin
-  Width := nil;
-  Prec := nil;
-  WantTokenAndRead(TkLparen);
-  Src := ExOutrange(PsExpression);
-  if Lexer.Token.Id = TkColon then
-  begin
-    WantTokenAndRead(TkColon);
-    Width := PsExpression;
-    EnsureIntegerExpr(Width);
-    if IsRealType(Src^.TypePtr) and (Lexer.Token.Id = TkColon) then
-    begin
-      WantTokenAndRead(TkColon);
-      Prec := PsExpression;
-      EnsureIntegerExpr(Prec)
-    end
-  end;
-  WantTokenAndRead(TkComma);
-  Dest := PsExpression;
-  WantTokenAndRead(TkRparen);
-  EnsureAssignableExpr(Dest);
-  EnsureStringExpr(Dest);
-  if not IsBooleanType(Src^.TypePtr) and not IsIntegerType(Src^.TypePtr)
-     and not IsRealType(Src^.TypePtr) and not IsEnumType(Src^.TypePtr) then
-    ErrorForExpr('Invalid type for source of STR', Src);
-  ExMarkInitialized(Dest);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Src;
-  Result^.PseudoFnCall.Arg2 := Dest;
-  Result^.PseudoFnCall.Arg3 := Width;
-  Result^.PseudoFnCall.Arg4 := Prec
-end;
-
 function PfSucc_Parse(FnExpr : TExpression) : TExpression;
 begin
   ExDispose(FnExpr);
@@ -255,32 +201,6 @@ begin
   end
 end;
 
-function PfVal_Parse(FnExpr : TExpression) : TExpression;
-var 
-  Src, Dest, Code : TExpression;
-begin
-  WantTokenAndRead(TkLparen);
-  Src := ExOutrange(PsExpression);
-  WantTokenAndRead(TkComma);
-  Dest := PsExpression;
-  WantTokenAndRead(TkComma);
-  Code := PsExpression;
-  WantTokenAndRead(TkRparen);
-  EnsureStringExpr(Src);
-  EnsureAssignableExpr(Dest);
-  if not IsBooleanType(Dest^.TypePtr) and not IsIntegerType(Dest^.TypePtr)
-     and not IsRealType(Dest^.TypePtr) and not IsEnumType(Dest^.TypePtr) then
-    ErrorForExpr('Invalid type for target of VAL', Dest);
-  EnsureAssignableExpr(Code);
-  EnsureIntegerExpr(Code);
-  ExMarkInitialized(Dest);
-  ExMarkInitialized(Code);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Src;
-  Result^.PseudoFnCall.Arg2 := Dest;
-  Result^.PseudoFnCall.Arg3 := Code;
-end;
-
 function Pf_Unary_Describe(Expr : TExpression) : string;
 begin
   with Expr^.PseudoFnCall do
@@ -307,19 +227,4 @@ begin
       Result := 'SIZEOF(' + ExDescribe(Arg1) + ')'
     else
       Result := 'SIZEOF(' + TypeName(TypeArg) + ')'
-end;
-
-function PfStr_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    if Arg3 = nil then
-      Result := 'STR(' + ExDescribe(Arg1) + ', ' + ExDescribe(Arg2) + ')'
-    else if Arg4 = nil then
-           Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                     ExDescribe(Arg3) + ', ' +
-                     ExDescribe(Arg2) + ')'
-    else Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                   ExDescribe(Arg3) + ':' +
-                   ExDescribe(Arg4) + ', ' +
-                   ExDescribe(Arg2) + ')'
 end;
