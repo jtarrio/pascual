@@ -3,10 +3,12 @@
 . ./testing.libsh
 
 # Directory subroutines
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var cwd : string;
       begin GetDir(0, cwd); write(cwd) end." | outputs "$(pwd)"
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var cwd : string;
       begin
         MkDir('testdir');
@@ -18,7 +20,8 @@ echo "program foo;
       end." | outputs "$(pwd)/testdir"
 
 # Erase
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text;
       begin
         assign(f, 'testfile');
@@ -34,7 +37,8 @@ echo "program foo;
       end." | outputs '0(0) 0(0) 2(2)'
 
 # Rename
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text;
       begin
         assign(f, 'testfile1');
@@ -52,7 +56,8 @@ echo "program foo;
       end." | outputs '2(2) 0(0)'
 
 # Text files
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string;
       begin
         assign(f, 'testfile');
@@ -72,7 +77,8 @@ echo "program foo;
         erase(f)
       end." | outputs "Text 2 TRUE"
 # Eoln
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string; i : integer;
       begin
         assign(f, 'testfile');
@@ -94,7 +100,8 @@ echo "program foo;
         erase(f)
       end." | outputs 'FALSETRUEFALSEFALSETRUE'
 # SeekEoln
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string; i : integer;
       begin
         assign(f, 'testfile');
@@ -116,7 +123,8 @@ echo "program foo;
         erase(f)
       end." | outputs 'FALSETRUEFALSETRUETRUE'
 # Eof
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string; i : integer;
       begin
         assign(f, 'testfile');
@@ -138,7 +146,8 @@ echo "program foo;
         erase(f)
       end." | outputs 'FALSEFALSEFALSEFALSETRUE'
 # SeekEof
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string; i : integer;
       begin
         assign(f, 'testfile');
@@ -160,7 +169,8 @@ echo "program foo;
         erase(f)
       end." | outputs 'FALSEFALSEFALSETRUETRUE'
 # Seek/FilePos/FileSize
-echo "program foo;
+echo "{\$I-}
+      program foo;
       var f : text; s : string;
       begin
         assign(f, 'testfile');
@@ -181,3 +191,23 @@ echo "program foo;
         erase(f)
       end." | outputs '31(31) 0(0) 16(16) 8(8) line 1.(line 1.)'
 
+# Passive I/O error checking
+echo "{\$I-}
+      program foo;
+      var f : text; r : integer;
+      begin
+        assign(f, 'testfile');
+        erase(f);
+        r := ioresult;
+        write('Continues ', r)
+      end." | outputs 'Continues 2'
+# Active I/O error checking
+echo "{\$I+}
+      program foo;
+      var f : text; r : integer;
+      begin
+        assign(f, 'testfile');
+        erase(f);
+        r := ioresult;
+        write('Continues ', r)
+      end." | outputs '' 2>/dev/null

@@ -10,7 +10,6 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 
 * `Boolean`, `integer`, `real`, `char`, and `string`; enumerated types, subranges; arrays, records, pointers, and sets; text files.
     * Missing non-text files.
-    * Missing active I/O result checking.
 * Type definitions, variable definitions, untyped constant definitions, typed constant definitions.
     * Missing record typed constants.
 * Functions and procedures, pass by value, pass by reference, and pass by const reference.
@@ -21,6 +20,7 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 * `Write`, `writeln`, `read`, `readln`, `str`.
 * Compiler directives:
     * `{$I name.pas}`: include the file `name.pas`
+    * `{$I[-}]}`: disable or enable checking for an error after every I/O operation (enabled by default)
     * `{$R[-+]}`: disable or enable bounds checking (enabled by default)
 
 # Objectives

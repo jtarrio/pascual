@@ -140,7 +140,7 @@ begin
   FnPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.FnPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 1;
-  Args.Values[Args.Size] := ExBooleanConstant(false);
+  Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
   Result := ExFunctionCall(ExFnRef(FnPtr), Args)
 end;
 
@@ -157,7 +157,7 @@ begin
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
   Args.Values[Args.Size - 1] := ExIntegerConstant(0);
-  Args.Values[Args.Size] := ExBooleanConstant(false);
+  Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
   Result := ExFunctionCall(ExFnRef(FnPtr), Args)
 end;
 
@@ -252,7 +252,7 @@ begin
               MakeArg('DRIVE', PrimitiveTypes.PtInteger),
               MakeVarArg('DIR', PrimitiveTypes.PtString));
   _AddDirProc('MKDIR');
-  _AddFileProc1('RENAME', 
-              MakeConstArg('NAME', PrimitiveTypes.PtString));
+  _AddFileProc1('RENAME',
+                MakeConstArg('NAME', PrimitiveTypes.PtString));
   _AddDirProc('RMDIR');
 end;

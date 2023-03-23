@@ -3,6 +3,7 @@ program Pascual;
 var Options : record
   SuppressWarnings : boolean;
   CheckBounds : boolean;
+  CheckIoResult : boolean;
 end;
 
 procedure CompileError(Msg : string);
@@ -128,7 +129,8 @@ begin
   if InputFile <> '-' then LxOpen(InputFile);
   if OutputFile <> '-' then CodegenSetOutput(OutputFile);
   Options.SuppressWarnings := SuppressWarnings;
-  Options.CheckBounds := true
+  Options.CheckBounds := true;
+  Options.CheckIoResult := true;
 end;
 
 procedure ClearState;
