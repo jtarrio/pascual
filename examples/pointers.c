@@ -57,24 +57,24 @@ void DISPOSELIST() {
 void pascual_main() {
   MYSTRPTR = malloc(sizeof(PString));
   *MYSTRPTR = str_make(3, "foo");
-  WRITE(&OUTPUT, RwpStringPtr | RwpLn | RwpEnd, MYSTRPTR);
+  Write(&OUTPUT, 1, RwpStringPtr | RwpLn | RwpEnd, MYSTRPTR);
   free(MYSTRPTR);
   MYRECPTR = malloc(sizeof(MYRECORD));
   MYRECPTR->A = 123;
   MYRECPTR->B = 1;
-  WRITE(&OUTPUT, RwpInt, MYRECPTR->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYRECPTR->B);
+  Write(&OUTPUT, 1, RwpInt, MYRECPTR->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYRECPTR->B);
   free(MYRECPTR);
   MYINTPTR = malloc(sizeof(PInteger));
   *MYINTPTR = 42;
-  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
+  Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
   free(MYINTPTR);
   MYINT = 123456;
   MYINTPTR = &MYINT;
-  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
+  Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
   ROOTNODE = PNil;
   ADDNODE(123);
   ADDNODE(456);
   ADDNODE(789);
-  WRITE(&OUTPUT, RwpInt | RwpLn | RwpEnd, FINDNODE(2)->VALUE);
+  Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, FINDNODE(2)->VALUE);
   DISPOSELIST();
 }

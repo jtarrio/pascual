@@ -34,9 +34,9 @@ void ENUMERATEDTYPES() {
   SUIT = DIAMONDS;
   DIRECTION = WEST;
   GEAR = NEUTRAL;
-  WRITE(&OUTPUT, RwpEnum, SUIT, enumvalues1, RwpChar, ' ', RwpEnum, DIRECTION, enumvalues2, RwpChar, ' ', RwpEnum | RwpLn | RwpEnd, GEAR, enumvalues3);
-  WRITE(&OUTPUT, RwpLenPtr, 18, "Suit > Hearts  -> ", RwpBool | RwpLn | RwpEnd, SUIT > HEARTS);
-  WRITE(&OUTPUT, RwpLenPtr, 21, "Direction = West  -> ", RwpBool | RwpLn | RwpEnd, DIRECTION == WEST);
+  Write(&OUTPUT, 1, RwpEnum, SUIT, enumvalues1, RwpChar, ' ', RwpEnum, DIRECTION, enumvalues2, RwpChar, ' ', RwpEnum | RwpLn | RwpEnd, GEAR, enumvalues3);
+  Write(&OUTPUT, 1, RwpLenPtr, 18, "Suit > Hearts  -> ", RwpBool | RwpLn | RwpEnd, SUIT > HEARTS);
+  Write(&OUTPUT, 1, RwpLenPtr, 21, "Direction = West  -> ", RwpBool | RwpLn | RwpEnd, DIRECTION == WEST);
 }
 
 void SUBRANGES() {

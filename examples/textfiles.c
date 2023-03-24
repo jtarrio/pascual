@@ -6,24 +6,24 @@ PFile OUTFILE;
 
 void COPYFILE(PFile *FILEIN, PFile *FILEOUT) {
   PString LINE;
-  while (!EOF(FILEIN)) {
-    READ(FILEIN, RwpString | RwpLn | RwpEnd, &LINE);
-    WRITE(FILEOUT, RwpStringPtr | RwpLn | RwpEnd, &LINE);
+  while (!Eof(FILEIN, 1)) {
+    Read(FILEIN, 1, RwpString | RwpLn | RwpEnd, &LINE);
+    Write(FILEOUT, 1, RwpStringPtr | RwpLn | RwpEnd, &LINE);
   }
-  CLOSE(FILEIN);
-  CLOSE(FILEOUT);
+  Close(FILEIN, 1);
+  Close(FILEOUT, 1);
 }
 
 void pascual_main() {
   {
     PString tmp1 = str_make(13, "textfiles.pas");
-    ASSIGN(&INFILE, &tmp1);
+    Assign(&INFILE, &tmp1, 1);
   }
-  RESET(&INFILE);
+  Reset(&INFILE, 0, 1);
   {
     PString tmp2 = str_make(23, "/tmp/textfiles-copy.pas");
-    ASSIGN(&OUTFILE, &tmp2);
+    Assign(&OUTFILE, &tmp2, 1);
   }
-  REWRITE(&OUTFILE);
+  Rewrite(&OUTFILE, 0, 1);
   COPYFILE(&INFILE, &OUTFILE);
 }

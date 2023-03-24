@@ -2,5 +2,5 @@
 #include "pascual.h"
 
 void pascual_main() {
-  WRITE(&OUTPUT, RwpLenPtr | RwpLn | RwpEnd, 13, "Hello, World!");
+  Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 13, "Hello, World!");
 }
