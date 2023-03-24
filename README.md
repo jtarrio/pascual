@@ -20,8 +20,8 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
 * `Write`, `writeln`, `read`, `readln`, `str`.
 * Compiler directives:
     * `{$I name.pas}`: include the file `name.pas`
-    * `{$I[-}]}`: disable or enable checking for an error after every I/O operation (enabled by default)
-    * `{$R[-+]}`: disable or enable bounds checking (enabled by default)
+    * `{$I-}`, `{$I+}`: disable or enable checking for an error after every I/O operation (enabled by default)
+    * `{$R-}`, `{$R+}`: disable or enable bounds checking (enabled by default)
 
 # Objectives
 
