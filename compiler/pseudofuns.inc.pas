@@ -8,7 +8,6 @@ end;
 function _Pf_Fun_Overload(const NamePrefix : string;
                           TypePtr : TPsTypePtr) : string;
 begin
-  TypePtr := GetFundamentalType(TypePtr);
   if IsBooleanType(TypePtr) then Result := NamePrefix + '_b'
   else if IsIntegerType(TypePtr) then Result := NamePrefix + '_i'
   else if IsRealType(TypePtr) then Result := NamePrefix + '_r'

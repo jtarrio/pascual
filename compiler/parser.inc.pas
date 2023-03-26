@@ -70,14 +70,10 @@ begin
 end;
 
 function PsEnumeratedType : TPsTypePtr;
-var 
-  Typ : TPsType;
-  Enum : TPsEnumDef;
+var Enum : TPsEnumDef;
 begin
   WantTokenAndRead(TkLparen);
   Enum.Size := 0;
-  Enum.HasBeenDefined := false;
-  Enum.ValuesHaveBeenOutput := false;
   repeat
     Enum.Size := Enum.Size + 1;
     if Enum.Size > MaxEnumVals then
@@ -86,13 +82,8 @@ begin
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma);
   until Lexer.Token.Id = TkRparen;
-  Typ := EmptyType;
-  Typ.Cls := TtcEnum;
-  Typ.EnumPtr := NewEnum(Enum);
-  { It's hard to detect when an enumerated type was used, so we give up. }
-  Typ.WasUsed := true;
-  PsEnumeratedType := AddType(Typ);
-  SkipToken(TkRparen)
+  WantTokenAndRead(TkRparen);
+  Result := MakeEnumType(Enum)
 end;
 
 procedure PsRecordField(var Rec : TPsRecordDef; Delimiter : TLxTokenId);
@@ -165,23 +156,18 @@ begin
 end;
 
 function PsRecordType(IsPacked : boolean) : TPsTypePtr;
-var 
-  Typ : TPsType;
-  Rec : TPsRecordDef;
+var Rec : TPsRecordDef;
 begin
   WantTokenAndRead(TkRecord);
   Rec.Size := 0;
   Rec.NumVariants := 0;
   Rec.IsPacked := IsPacked;
-  Rec.HasBeenDefined := false;
   while (Lexer.Token.Id <> TkCase) and (Lexer.Token.Id <> TkEnd) do
     PsRecordField(Rec, TkEnd);
   if Lexer.Token.Id = TkCase then
     PsRecordVariants(Rec);
   WantTokenAndRead(TkEnd);
-  Typ := TypeOfClass(TtcRecord);
-  Typ.RecPtr := NewRecord(Rec);
-  PsRecordType := AddType(Typ);
+  Result := MakeRecordType(Rec)
 end;
 
 procedure PsArguments(var Args : TPsFnArgs);
@@ -226,66 +212,50 @@ begin
 end;
 
 function PsProcedureType : TPsTypePtr;
-var 
-  Typ : TPsType;
-  Fn : TPsFnDef;
+var Args : TPsFnArgs;
 begin
   WantTokenAndRead(TkProcedure);
-  if Lexer.Token.Id = TkLParen then PsArguments(Fn.Args);
-  Fn.ReturnTypePtr := nil;
-  Typ := TypeOfClass(TtcFunction);
-  Typ.FnDefPtr := NewFnDef(Fn);
-  Result := AddType(Typ)
+  if Lexer.Token.Id = TkLParen then PsArguments(Args);
+  Result := MakeFunctionType(Args, nil)
 end;
 
 function PsFunctionType : TPsTypePtr;
 var 
-  Typ : TPsType;
-  Fn : TPsFnDef;
+  Args : TPsFnArgs;
+  ReturnType : TPsTypePtr;
 begin
   WantTokenAndRead(TkFunction);
   WantToken2(TkLParen, TkColon);
-  if Lexer.Token.Id = TkLParen then PsArguments(Fn.Args);
+  if Lexer.Token.Id = TkLParen then PsArguments(Args);
   WantTokenAndRead(TkColon);
-  Fn.ReturnTypePtr := PsResultType;
-  Typ := TypeOfClass(TtcFunction);
-  Typ.FnDefPtr := NewFnDef(Fn);
-  Result := AddType(Typ)
+  ReturnType := PsResultType;
+  Result := MakeFunctionType(Args, ReturnType)
+end;
+
+function _PsArrayTypeInternal : TPsTypePtr;
+var IndexType, ValueType : TPsTypePtr;
+begin
+  IndexType := PsTypeDenoter;
+  WantToken2(TkComma, TkRbracket);
+  if Lexer.Token.Id = TkComma then
+  begin
+    WantTokenAndRead(TkComma);
+    ValueType := _PsArrayTypeInternal
+  end
+  else
+  begin
+    WantTokenAndRead(TkRbracket);
+    WantTokenAndRead(TkOf);
+    ValueType := PsTypeDenoter
+  end;
+  Result := MakeArrayType(IndexType, ValueType)
 end;
 
 function PsArrayType : TPsTypePtr;
-var 
-  Typ : TPsType;
-  TypePtr : TPsTypePtr;
-  NewTypePtr : TPsTypePtr;
 begin
-  Typ := TypeOfClass(TtcArray);
-  Typ.ArrayDef.IndexTypePtr := nil;
-  Typ.ArrayDef.ValueTypePtr := nil;
-  TypePtr := AddType(Typ);
-  Result := TypePtr;
-
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
-  repeat
-    TypePtr^.ArrayDef.IndexTypePtr := PsTypeDenoter;
-    TypePtr^.ArrayDef.IndexTypePtr^.WasUsed := true;
-    if not IsBoundedType(TypePtr^.ArrayDef.IndexTypePtr) then
-      ErrorForType('Array indices must belong to a bounded ordinal type',
-                   TypePtr^.ArrayDef.IndexTypePtr);
-    WantToken2(TkComma, TkRbracket);
-    if Lexer.Token.Id = TkComma then
-    begin
-      NewTypePtr := AddType(Typ);
-      TypePtr^.ArrayDef.ValueTypePtr := NewTypePtr;
-      TypePtr^.ArrayDef.ValuetypePtr^.WasUsed := true;
-      TypePtr := NewTypePtr
-    end;
-    SkipToken(TkComma)
-  until Lexer.Token.Id = TkRbracket;
-  WantTokenAndRead(TkRbracket);
-  WantTokenAndRead(TkOf);
-  TypePtr^.ArrayDef.ValueTypePtr := PsTypeDenoter
+  Result := _PsArrayTypeInternal
 end;
 
 function PsPointerType : TPsTypePtr;
@@ -294,11 +264,10 @@ begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
   NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
-  if NamePtr = nil then
-    Result := AddType(PointerUnknownType(Lexer.Token.Value))
+  if NamePtr = nil then Result := MakePointerUnknownType(Lexer.Token.Value)
   else
   begin
-    Result := GetPointerType(NamePtr^.TypePtr);
+    Result := MakePointerType(NamePtr^.TypePtr);
     NamePtr^.TypePtr^.WasUsed := true
   end;
   ReadToken
@@ -307,7 +276,6 @@ end;
 function PsRangeType : TPsTypePtr;
 var 
   First, Last : TExpression;
-  Typ : TPsType;
 begin
   First := PsImmediate;
   WantTokenAndRead(TkRange);
@@ -316,34 +284,26 @@ begin
   if not IsSameType(First^.TypePtr, Last^.TypePtr) then
     ErrorForExpr('Expected ' + TypeName(First^.TypePtr), Last);
 
-  Typ := TypeOfClass(TtcRange);
-  Typ.RangeDef.First := ExGetOrdinal(First);
-  Typ.RangeDef.Last := ExGetOrdinal(Last);
-  Typ.RangeDef.BaseTypePtr := First^.TypePtr;
-  Result := AddType(Typ);
+  Result := MakeRangeType(First^.TypePtr,
+            ExGetOrdinal(First), ExGetOrdinal(Last));
 
-  if Typ.RangeDef.First > Typ.RangeDef.Last then
-    CompileError('The bounds of a subrange must be in ascending order');
   ExDispose(First);
   ExDispose(Last)
 end;
 
 function PsSetType : TPsTypePtr;
-var Typ : TPsType;
+var ElementTypePtr : TPsTypePtr;
 begin
   WantTokenAndRead(TkSet);
   WantTokenAndRead(TkOf);
-
-  Typ := TypeOfClass(TtcSet);
-  Typ.ElementTypePtr := PsTypeDenoter;
-  Result := AddType(Typ);
-
-  if not IsBoundedType(Typ.ElementTypePtr) then
+  ElementTypePtr := PsTypeDenoter;
+  if not IsBoundedType(ElementTypePtr) then
     ErrorForType('Set element types must be bounded ordinal types',
-                 Typ.ElementTypePtr);
-  if GetBoundedTypeSize(Typ.ElementTypePtr) > 256 then
+                  ElementTypePtr);
+  if GetBoundedTypeSize(ElementTypePtr) > 256 then
     ErrorForType('Set element types may not contain more than 256 values',
-                 Typ.ElementTypePtr)
+                  ElementTypePtr);
+  Result := MakeSetType(ElementTypePtr)
 end;
 
 function PsTypeDenoter;
@@ -395,7 +355,6 @@ procedure PsTypeDefinitions;
 var 
   Name : string;
   TypePtr : TPsTypePtr;
-  NewType : TPsType;
   Checkpoint : TPsDefPtr;
 begin
   Checkpoint := Defs.Latest;
@@ -404,11 +363,8 @@ begin
     Name := GetTokenValueAndRead(TkIdentifier);
     WantTokenAndRead(TkEquals);
     TypePtr := PsTypeDenoter;
-    NewType := CopyType(TypePtr);
-    NewType.Name := Name;
-    NewType.AliasFor := TypePtr;
-    TypePtr := AddType(NewType);
-    WantTokenAndRead(TkSemicolon)
+    WantTokenAndRead(TkSemicolon);
+    MakeAliasType(Name, TypePtr)
   until Lexer.Token.Id <> TkIdentifier;
   OutTypeDefinitionsFromCheckpoint(Checkpoint);
   OutEnumValuesFromCheckpoint(Checkpoint)

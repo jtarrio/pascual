@@ -5,13 +5,14 @@ begin
   InitDefs;
 
   { Primitive types }
-  PrimitiveTypes.PtNil := AddType(MakeType('NIL', TtcNil));
-  PrimitiveTypes.PtBoolean := AddType(MakeType('BOOLEAN', TtcBoolean));
-  PrimitiveTypes.PtInteger := AddType(MakeType('INTEGER', TtcInteger));
-  PrimitiveTypes.PtReal := AddType(MakeType('REAL', TtcReal));
-  PrimitiveTypes.PtChar := AddType(MakeType('CHAR', TtcChar));
-  PrimitiveTypes.PtString := AddType(MakeType('STRING', TtcString));
-  PrimitiveTypes.PtText := AddType(MakeType('TEXT', TtcText));
+  PrimitiveTypes.PtNil := MakeBaseType('NIL', TtcNil);
+  PrimitiveTypes.PtBoolean := MakeBaseType('BOOLEAN', TtcBoolean);
+  PrimitiveTypes.PtInteger := MakeBaseType('INTEGER', TtcInteger);
+  PrimitiveTypes.PtReal := MakeBaseType('REAL', TtcReal);
+  PrimitiveTypes.PtChar := MakeBaseType('CHAR', TtcChar);
+  PrimitiveTypes.PtString := MakeBaseType('STRING', TtcString);
+  PrimitiveTypes.PtText := MakeBaseType('TEXT', TtcText);
+  PrimitiveTypes.PtEmptySet := MakeSetType(nil);
 
   { Mandatory constants }
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));

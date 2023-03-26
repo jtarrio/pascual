@@ -1,7 +1,8 @@
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
-    PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText : TPsTypePtr
+    PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText,
+    PtEmptySet : TPsTypePtr
   end;
   PseudoFuns : record
     Dispose, New, Ord, Pred, Read, Readln, Sizeof, Str, Succ, Val, Write,
@@ -38,12 +39,14 @@ begin
   Defs.CurrentFn := nil;
 end;
 
-function NewEnum(Enum : TPsEnumDef) : TPsEnumPtr;
+function NewEnum(const Enum : TPsEnumDef) : TPsEnumPtr;
 begin
   new(Result);
   Result^ := Enum;
   Result^.Id := DefCounter(TctEnum);
-  Result^.RefCount := 1
+  Result^.RefCount := 1;
+  Result^.HasBeenDefined := false;
+  Result^.ValuesHaveBeenOutput := false
 end;
 
 procedure DisposeEnum(Ptr : TPsEnumPtr);
@@ -52,12 +55,13 @@ begin
   if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
-function NewRecord(Rec : TPsRecordDef) : TPsRecPtr;
+function NewRecord(const Rec : TPsRecordDef) : TPsRecPtr;
 begin
   new(Result);
   Result^ := Rec;
   Result^.Id := DefCounter(TctRecord);
-  Result^.RefCount := 1
+  Result^.RefCount := 1;
+  Result^.HasBeenDefined := false
 end;
 
 procedure DisposeRecord(Ptr : TPsRecPtr);
@@ -66,10 +70,9 @@ begin
   if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
-function NewFnDef(FnDef : TPsFnDef) : TPsFnDefPtr;
+function NewFnDef : TPsFnDefPtr;
 begin
   new(Result);
-  Result^ := FnDef;
   Result^.RefCount := 1
 end;
 
@@ -308,12 +311,9 @@ begin
 end;
 
 function AddTypeName(const Name : string; Idx : TPsTypePtr) : TPsNamePtr;
-var 
-  Def : TPsNamePtr;
 begin
-  Def := _AddName(Name, TncType);
-  Def^.TypePtr := Idx;
-  AddTypeName := Def
+  Result := _AddName(Name, TncType);
+  Result^.TypePtr := Idx
 end;
 
 function AddVariableName(const Name : string; Idx : TPsVarPtr) : TPsNamePtr;
@@ -365,17 +365,6 @@ begin
   Result := Def^.PseudoFnPtr
 end;
 
-function EmptyType : TPsType;
-var 
-  Ret : TPsType;
-begin
-  Ret.Name := '';
-  Ret.Cls := TtcBoolean;
-  Ret.AliasFor := nil;
-  Ret.WasUsed := false;
-  EmptyType := Ret
-end;
-
 function CopyType(TypePtr : TPsTypePtr) : TPsType;
 begin
   Result := TypePtr^;
@@ -392,23 +381,27 @@ begin
          Result.FnDefPtr^.RefCount := Result.FnDefPtr^.RefCount + 1
 end;
 
-function TypeOfClass(Cls : TPsTypeClass) : TPsType;
-var 
-  Ret : TPsType;
+function GetFundamentalType(TypePtr : TPsTypePtr) : TPsTypePtr;
 begin
-  Ret := EmptyType;
-  Ret.Cls := Cls;
-  TypeOfClass := Ret
+  if (TypePtr <> nil) and (TypePtr^.Cls = TtcRange) then
+    Result := TypePtr^.RangeDef.BaseTypePtr
+  else
+    Result := TypePtr
+end;
+
+function _TypeHasClass(TypePtr : TPsTypePtr; Cls : TPsTypeClass) : boolean;
+begin
+  Result := (TypePtr <> nil) and (GetFundamentalType(TypePtr)^.Cls = Cls)
 end;
 
 function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsIntegerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcInteger)
+  IsIntegerType := _TypeHasClass(TypePtr, TtcInteger)
 end;
 
 function IsRealType(TypePtr : TPsTypePtr) : boolean;
 begin
-  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcReal)
+  Result := _TypeHasClass(TypePtr, TtcReal)
 end;
 
 function IsNumericType(TypePtr : TPsTypePtr) : boolean;
@@ -418,12 +411,12 @@ end;
 
 function IsStringType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsStringType := (TypePtr <> nil) and (TypePtr^.Cls = TtcString)
+  IsStringType := _TypeHasClass(TypePtr, TtcString)
 end;
 
 function IsCharType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsCharType := (TypePtr <> nil) and (TypePtr^.Cls = TtcChar)
+  IsCharType := _TypeHasClass(TypePtr, TtcChar)
 end;
 
 function IsStringyType(TypePtr : TPsTypePtr) : boolean;
@@ -433,17 +426,17 @@ end;
 
 function IsBooleanType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsBooleanType := (TypePtr <> nil) and (TypePtr^.Cls = TtcBoolean)
+  IsBooleanType := _TypeHasClass(TypePtr, TtcBoolean)
 end;
 
 function IsTextType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsTextType := (TypePtr <> nil) and (TypePtr^.Cls = TtcText)
+  IsTextType := _TypeHasClass(TypePtr, TtcText)
 end;
 
 function IsEnumType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsEnumType := (TypePtr <> nil) and (TypePtr^.Cls = TtcEnum)
+  IsEnumType := _TypeHasClass(TypePtr, TtcEnum)
 end;
 
 function IsRangeType(TypePtr : TPsTypePtr) : boolean;
@@ -451,36 +444,29 @@ begin
   Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcRange)
 end;
 
-function GetFundamentalType(TypePtr : TPsTypePtr) : TPsTypePtr;
-begin
-  while IsRangeType(TypePtr) do
-    TypePtr := TypePtr^.RangeDef.BaseTypePtr;
-  Result := TypePtr
-end;
-
 function IsSetType(TypePtr : TPsTypePtr) : boolean;
 begin
-  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcSet)
+  Result := _TypeHasClass(TypePtr, TtcSet)
 end;
 
 function IsRecordType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsRecordType := (TypePtr <> nil) and (TypePtr^.Cls = TtcRecord)
+  IsRecordType := _TypeHasClass(TypePtr, TtcRecord)
 end;
 
 function IsArrayType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsArrayType := (TypePtr <> nil) and (TypePtr^.Cls = TtcArray)
+  IsArrayType := _TypeHasClass(TypePtr, TtcArray)
 end;
 
 function IsPointerType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointerType := (TypePtr <> nil) and (TypePtr^.Cls = TtcPointer)
+  IsPointerType := _TypeHasClass(TypePtr, TtcPointer)
 end;
 
 function IsNilType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsNilType := (TypePtr <> nil) and (TypePtr^.Cls = TtcNil)
+  IsNilType := _TypeHasClass(TypePtr, TtcNil)
 end;
 
 function IsPointeryType(TypePtr : TPsTypePtr) : boolean;
@@ -488,25 +474,14 @@ begin
   IsPointeryType := IsPointerType(TypePtr) or IsNilType(TypePtr)
 end;
 
-function PointerUnknownType(const TargetName : string) : TPsType;
-var 
-  Typ : TPsType;
-begin
-  Typ := TypeOfClass(TtcPointerUnknown);
-  new(Typ.TargetName);
-  Typ.TargetName^ := TargetName;
-  PointerUnknownType := Typ
-end;
-
 function IsPointerUnknownType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointerUnknownType := (TypePtr <> nil)
-                          and (TypePtr^.Cls = TtcPointerUnknown)
+  IsPointerUnknownType := _TypeHasClass(TypePtr, TtcPointerUnknown)
 end;
 
 function IsFunctionType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsFunctionType := (TypePtr <> nil) and (TypePtr^.Cls = TtcFunction)
+  IsFunctionType := _TypeHasClass(TypePtr, TtcFunction)
 end;
 
 function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
@@ -572,6 +547,11 @@ begin
                   or (IsSetType(A) and IsSetType(B)
                   and IsSameType(A^.ElementTypePtr, B^.ElementTypePtr))
   end
+end;
+
+function IsFundamentallySameType(A, B : TPsTypePtr) : boolean;
+begin
+  Result := IsSameType(GetFundamentalType(A), GetFundamentalType(B))
 end;
 
 function ArePointersCompatible(A, B : TPsTypePtr) : boolean;
@@ -712,27 +692,6 @@ function TypeName(TypePtr : TPsTypePtr) : string;
 begin
   if TypePtr = nil then TypeName := '(none)'
   else TypeName := DeepTypeName(TypePtr, false)
-end;
-
-function AddType(Typ : TPsType) : TPsTypePtr;
-var 
-  TypePtr : TPsTypePtr;
-  EnumPos : integer;
-begin
-  TypePtr := _AddDef(TdcType)^.TypePtr;
-  TypePtr^ := Typ;
-  AddType := TypePtr;
-
-  if Typ.Name <> '' then
-  begin
-    if FindNameInLocalScope(Typ.Name, {Required=}false) <> nil then
-      CompileError('Identifier ' + Typ.Name + ' already defined');
-    AddTypeName(Typ.Name, TypePtr)
-  end;
-
-  if (Typ.Cls = TtcEnum) and (Typ.AliasFor = nil) then
-    for EnumPos := 0 to Typ.EnumPtr^.Size - 1 do
-      AddEnumValName(EnumPos, TypePtr)
 end;
 
 function AddConstant(Constant : TPsConstant) : TPsConstPtr;
@@ -917,16 +876,6 @@ begin
   AddWithVar := TmpVarPtr
 end;
 
-function MakeType(const Name : string; Cls : TPsTypeClass) : TPsType;
-var 
-  Typ : TPsType;
-begin
-  Typ := EmptyType;
-  Typ.Name := Name;
-  Typ.Cls := Cls;
-  MakeType := Typ
-end;
-
 function MakeConstant(const Name : string; Value : TExpression)
 : TPsConstant;
 var 
@@ -1079,25 +1028,155 @@ begin
   Result.Args.Defs[3] := Arg3
 end;
 
-function GetPointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function _UnaliasType(TypePtr : TPsTypePtr) : TPsTypePtr;
+begin
+  Result := TypePtr;
+  while Result^.AliasFor <> nil do
+    Result := Result^.AliasFor
+end;
+
+function _NewType(Cls : TPsTypeClass) : TPsTypePtr;
+begin
+  Result := _AddDef(TdcType)^.TypePtr;
+  Result^.Name := '';
+  Result^.Cls := Cls;
+  Result^.AliasFor := nil;
+  Result^.WasUsed := false
+end;
+
+function MakeBaseType(const Name : String; Cls : TPsTypeClass) : TPsTypePtr;
+begin
+  Result := _NewType(Cls);
+  Result^.Name := Name;
+  AddTypeName(Name, Result)
+end;
+
+function MakeEnumType(const Enum : TPsEnumDef) : TPsTypePtr;
+var Pos : integer;
+begin
+  Result := _NewType(TtcEnum);
+  Result^.EnumPtr := NewEnum(Enum);
+  { It's hard to detect when an enumerated type was used }
+  Result^.WasUsed := true;
+  for Pos := 0 to Result^.EnumPtr^.Size - 1 do
+    AddEnumValName(Pos, Result)
+end;
+
+function MakeRecordType(const Rec : TPsRecordDef) : TPsTypePtr;
+begin
+  Result := _NewType(TtcRecord);
+  Result^.RecPtr := NewRecord(Rec)
+end;
+
+function MakeArrayType(IndexType, ValueType : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
-  Typ : TPsType;
 begin
   Result := nil;
   Def := Defs.Latest;
   while (Def <> nil) and (Result = nil) do
   begin
-    if (Def^.Cls = TdcType) and IsPointerType(Def^.TypePtr)
-       and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr) then
-      Result := Def^.TypePtr;
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcArray)
+       and IsSameType(Def^.TypePtr^.ArrayDef.IndexTypePtr, IndexType)
+       and IsSameType(Def^.TypePtr^.ArrayDef.ValueTypePtr, ValueType) then
+      Result := _UnaliasType(Def^.TypePtr);
     Def := Def^.Prev
   end;
   if Result = nil then
   begin
-    Typ := TypeOfClass(TtcPointer);
-    Typ.PointedTypePtr := TypePtr;
-    Result := AddType(Typ)
+    if not IsBoundedType(IndexType) then
+      ErrorForType('Array indices must belong to a bounded ordinal type',
+                   IndexType);
+    Result := _NewType(TtcArray);
+    Result^.ArrayDef.IndexTypePtr := IndexType;
+    Result^.ArrayDef.ValueTypePtr := ValueType
+  end
+end;
+
+function MakeRangeType(TypePtr : TPsTypePtr; First, Last : integer) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcRange)
+       and IsSameType(Def^.TypePtr^.RangeDef.BaseTypePtr, TypePtr)
+       and (First = Def^.TypePtr^.RangeDef.First)
+       and (Last = Def^.TypePtr^.RangeDef.Last) then
+      Result := _UnaliasType(Def^.TypePtr);
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    if First > Last then
+      CompileError('The bounds of a subrange must be in ascending order');
+    Result := _NewType(TtcRange);
+    Result^.RangeDef.First := First;
+    Result^.RangeDef.Last := Last;
+    Result^.RangeDef.BaseTypePtr := GetFundamentalType(TypePtr)
+  end
+end;
+
+function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointer)
+       and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr) then
+      Result := _UnaliasType(Def^.TypePtr);
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    Result := _NewType(TtcPointer);
+    Result^.PointedTypePtr := TypePtr
+  end
+end;
+
+function MakePointerUnknownType(const TargetName : string) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerUnknown)
+       and (Def^.TypePtr^.TargetName^ = TargetName) then
+      Result := _UnaliasType(Def^.TypePtr);
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    Result := _NewType(TtcPointerUnknown);
+    new(Result^.TargetName);
+    Result^.TargetName^ := TargetName
+  end
+end;
+
+function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcSet)
+       and IsSameType(Def^.TypePtr^.ElementTypePtr, TypePtr) then
+      Result := _UnaliasType(Def^.TypePtr);
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    Result := _NewType(TtcSet);
+    Result^.ElementTypePtr := TypePtr
   end
 end;
 
@@ -1112,27 +1191,35 @@ begin
                 and IsSameType(A.Defs[Pos].TypePtr, B.Defs[Pos].TypePtr)
 end;
 
-function GetFunctionType(FnPtr : TPsFnPtr) : TPsTypePtr;
-var 
-  Def : TPsDefPtr;
-  Typ : TPsType;
+function MakeFunctionType(const Args : TPsFnArgs;
+                         ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
+var Def : TPsDefPtr;
 begin
   Result := nil;
   Def := Defs.Latest;
   while (Def <> nil) and (Result = nil) do
   begin
-    if (Def^.Cls = TdcType) and IsFunctionType(Def^.TypePtr)
-       and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr, FnPtr^.
-       ReturnTypePtr)
-       and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, FnPtr^.Args) then
-      Result := Def^.TypePtr;
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFunction)
+       and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr, ReturnTypePtr)
+       and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, Args) then
+      Result := _UnaliasType(Def^.TypePtr);
     Def := Def^.Prev
   end;
   if Result = nil then
   begin
-    Typ := TypeOfClass(TtcFunction);
-    Typ.FnDefPtr^.ReturnTypePtr := FnPtr^.ReturnTypePtr;
-    Typ.FnDefPtr^.Args := FnPtr^.Args;
-    Result := AddType(Typ)
+    Result := _NewType(TtcFunction);
+    Result^.FnDefPtr := NewFnDef;
+    Result^.FnDefPtr^.ReturnTypePtr := ReturnTypePtr;
+    Result^.FnDefPtr^.Args := Args
   end
+end;
+
+function MakeAliasType(const Name : string; TypePtr : TPsTypePtr) : TPsTypePtr;
+begin
+  TypePtr := _UnaliasType(TypePtr);
+  Result := _NewType(TypePtr^.Cls);
+  Result^ := CopyType(TypePtr);
+  Result^.Name := Name;
+  Result^.AliasFor := TypePtr;
+  AddTypeName(Name, Result)
 end;

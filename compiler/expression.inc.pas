@@ -651,15 +651,11 @@ begin
 end;
 
 function ExSet : TExpression;
-var SetType : TPsType;
 begin
-  SetType := EmptyType;
-  SetType.Cls := TtcSet;
-  SetType.ElementTypePtr := nil;
   Result := _ExImmediate(XicSet);
   Result^.Immediate.SetBounds := nil;
   Result^.Immediate.SetOfTypePtr := nil;
-  Result^.TypePtr := AddType(SetType)
+  Result^.TypePtr := PrimitiveTypes.PtEmptySet
 end;
 
 function ExSetAddRange(SetExpr : TExpression;
@@ -675,13 +671,13 @@ begin
   begin
     ElementTypePtr := GetFundamentalType(First^.TypePtr);
     SetExpr^.Immediate.SetOfTypePtr := ElementTypePtr;
-    SetExpr^.TypePtr^.ElementTypePtr := ElementTypePtr
+    SetExpr^.TypePtr := MakeSetType(First^.TypePtr)
   end;
-  if not IsSameType(GetFundamentalType(First^.TypePtr), ElementTypePtr) then
+  if not IsFundamentallySameType(First^.TypePtr, ElementTypePtr) then
     ErrorForExpr('Cannot add element to set ' +
                  ErrorDescribeExpr(SetExpr), First);
   if (Last <> nil)
-     and not IsSameType(GetFundamentalType(Last^.TypePtr), ElementTypePtr)
+     and not IsFundamentallySameType(Last^.TypePtr, ElementTypePtr)
      and not IsSameType(First^.TypePtr, Last^.TypePtr) then
     ErrorForExpr('Cannot add element to set ' +
                  ErrorDescribeExpr(SetExpr), Last);
@@ -854,14 +850,15 @@ begin
   Result := _NewExpr(XcAddress);
   Result^.AddressExpr := Parent;
   if Parent^.Cls = XcFnRef then
-    Result^.TypePtr := GetFunctionType(Parent^.FnPtr)
+    Result^.TypePtr := MakeFunctionType(Parent^.FnPtr^.Args,
+                       Parent^.FnPtr^.ReturnTypePtr)
   else
   begin
     EnsureAddressableExpr(Parent);
     EnsureAssignableExpr(Parent);
     if Parent^.Cls <> XcVariable then
       ErrorForExpr('Expected a variable', Parent);
-    Result^.TypePtr := GetPointerType(Parent^.TypePtr)
+    Result^.TypePtr := MakePointerType(Parent^.TypePtr)
   end
 end;
 
@@ -1869,8 +1866,8 @@ begin
   ExprElemType := Expr^.TypePtr^.ElementTypePtr;
   DestElemType := TypePtr^.ElementTypePtr;
   if ExprElemType = nil then Outcome := Replace
-  else if not IsSameType(GetFundamentalType(ExprElemType),
-          GetFundamentalType(DestElemType)) then Outcome := Reject
+  else if not IsFundamentallySameType(ExprElemType, DestElemType) then
+         Outcome := Reject
   else if ExIsImmediate(Expr) then Outcome := Replace
   else if Expr^.Cls = XcSet then Outcome := Replace
   else if (GetTypeLowBound(ExprElemType) = GetTypeLowBound(DestElemType))
@@ -1893,28 +1890,25 @@ end;
 
 function ExCoerce;
 begin
-  if IsRangeType(Expr^.TypePtr)
-     and IsSameType(TypePtr, GetFundamentalType(Expr^.TypePtr)) then
-    ExCoerce := ExOutrange(Expr)
-  else if IsRangeType(TypePtr)
-          and IsSameType(GetFundamentalType(TypePtr), Expr^.TypePtr) then
-         ExCoerce := ExSubrange(Expr, TypePtr)
-  else if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr)
-          and IsSameType(GetFundamentalType(Expr^.TypePtr),
-          GetFundamentalType(TypePtr)) then
-         ExCoerce := ExRerange(Expr, TypePtr)
+  if IsFundamentallySameType(Expr^.TypePtr, TypePtr) then
+  begin
+    if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr) then
+      ExCoerce := ExRerange(Expr, TypePtr)
+    else if IsRangeType(Expr^.TypePtr) then
+           ExCoerce := ExOutrange(Expr)
+    else if IsRangeType(TypePtr) then
+           ExCoerce := ExSubrange(Expr, TypePtr)
+    else
+      ExCoerce := Expr
+  end
   else if IsCharType(Expr^.TypePtr) and IsStringType(TypePtr) then
          ExCoerce := ExToString(Expr)
   else if IsIntegerType(Expr^.TypePtr) and IsRealType(TypePtr) then
          ExCoerce := ExToReal(Expr)
-  else if IsSameType(Expr^.TypePtr, TypePtr) then
-         ExCoerce := Expr
   else if IsNilType(Expr^.TypePtr) and IsPointeryType(TypePtr) then
          ExCoerce := Expr
   else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
-  begin
-    ExCoerce := _ExCoerceSet(Expr, TypePtr)
-  end
+         ExCoerce := _ExCoerceSet(Expr, TypePtr)
   else
     ErrorForExpr('Cannot treat value as ' + TypeName(TypePtr), Expr)
 end;

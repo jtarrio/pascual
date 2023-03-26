@@ -1163,7 +1163,6 @@ end;
 
 function ShortTypeName(TypePtr : TPsTypePtr) : char;
 begin
-  TypePtr := GetFundamentalType(TypePtr);
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
   else if IsRealType(TypePtr) then ShortTypeName := 'r'
@@ -1430,23 +1429,9 @@ procedure _OutPred(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
   EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
-  if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  if IsBoundedType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), TkMinus);
-    OutExpression(TmpExpr);
-    ExDispose(TmpExpr)
-  end
-  else
-  begin
-    if not Options.CheckBounds then
-    begin
-      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), TkMinus);
-      OutExpression(TmpExpr);
-      ExDispose(TmpExpr)
-    end
-    else
+    if Options.CheckBounds then
     begin
       write(Codegen.Output, 'pred(');
       OutExpression(Expr^.PseudoFnCall.Arg1);
@@ -1454,6 +1439,20 @@ begin
       _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
       write(Codegen.Output, ')')
     end
+    else
+    begin
+      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1), TkMinus);
+      OutExpression(TmpExpr);
+      ExDispose(TmpExpr)
+    end
+  end
+  else
+  begin
+    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
+               ExIntegerConstant(1), TkMinus);
+    OutExpression(TmpExpr);
+    ExDispose(TmpExpr)
   end
 end;
 
@@ -1461,23 +1460,9 @@ procedure _OutSucc(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
   EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
-  if IsIntegerType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  if IsBoundedType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
   begin
-    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), TkPlus);
-    OutExpression(TmpExpr);
-    ExDispose(TmpExpr)
-  end
-  else
-  begin
-    if not Options.CheckBounds then
-    begin
-      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), TkPlus);
-      OutExpression(TmpExpr);
-      ExDispose(TmpExpr)
-    end
-    else
+    if Options.CheckBounds then
     begin
       write(Codegen.Output, 'succ(');
       OutExpression(Expr^.PseudoFnCall.Arg1);
@@ -1485,6 +1470,20 @@ begin
       _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
       write(Codegen.Output, ')')
     end
+    else
+    begin
+      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1), TkPlus);
+      OutExpression(TmpExpr);
+      ExDispose(TmpExpr)
+    end
+  end
+  else
+  begin
+    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
+               ExIntegerConstant(1), TkPlus);
+    OutExpression(TmpExpr);
+    ExDispose(TmpExpr)
   end
 end;
 
