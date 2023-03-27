@@ -135,33 +135,33 @@ begin
   IsSetLeft := IsSetType(Expr^.Binary.Left^.TypePtr);
   IsSetRight := IsSetType(Expr^.Binary.Right^.TypePtr);
   case Expr^.Binary.Op of 
-    TkPlus : if IsStringyType(Expr^.TypePtr) then Result := 1
-             else Result := 4;
-    TkMinus : Result := 4;
-    TkAsterisk : Result := 3;
-    TkSlash : Result := 3;
-    TkDiv : Result := 3;
-    TkMod : Result := 3;
-    TkAnd : if IsBooleanType(Expr^.TypePtr) then Result := 11
-            else Result := 8;
-    TkOr : if IsBooleanType(Expr^.TypePtr) then Result := 12
-           else Result := 10;
-    TkXor : if IsBooleanType(Expr^.TypePtr) then Result := 7
-            else Result := 9;
-    TkShl : Result := 5;
-    TkShr : Result := 5;
-    TkIn : if ExIsImmediate(Expr^.Binary.Right) then Result := 12
-           else Result := 1;
-    TkEquals : if IsSetLeft and IsSetRight then Result := 1
-               else Result := 7;
-    TkNotEquals : if IsSetLeft and IsSetRight then Result := 1
-                  else Result := 7;
-    TkLessthan : Result := 6;
-    TkMorethan : Result := 6;
-    TkLessOrEquals : if IsSetLeft and IsSetRight then Result := 1
-                     else Result := 6;
-    TkMoreOrEquals : if IsSetLeft and IsSetRight then Result := 1
-                     else Result := 6;
+    XoAdd: if IsStringyType(Expr^.TypePtr) then Result := 1
+           else Result := 4;
+    XoSub: Result := 4;
+    XoMul: Result := 3;
+    XoDivReal: Result := 3;
+    XoDivInt: Result := 3;
+    XoMod: Result := 3;
+    XoAnd: if IsBooleanType(Expr^.TypePtr) then Result := 11
+           else Result := 8;
+    XoOr: if IsBooleanType(Expr^.TypePtr) then Result := 12
+          else Result := 10;
+    XoXor: if IsBooleanType(Expr^.TypePtr) then Result := 7
+           else Result := 9;
+    XoShl: Result := 5;
+    XoShr: Result := 5;
+    XoIn: if ExIsImmediate(Expr^.Binary.Right) then Result := 12
+          else Result := 1;
+    XoEq: if IsSetLeft and IsSetRight then Result := 1
+          else Result := 7;
+    XoNe: if IsSetLeft and IsSetRight then Result := 1
+          else Result := 7;
+    XoLt : Result := 6;
+    XoGt : Result := 6;
+    XoLtEq : if IsSetLeft and IsSetRight then Result := 1
+             else Result := 6;
+    XoGtEq : if IsSetLeft and IsSetRight then Result := 1
+             else Result := 6;
     else InternalError('Unknown precedence for operator in ' +
                        ExDescribe(Expr))
   end
@@ -321,7 +321,7 @@ begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
   Size := ExBinaryOp(PfOrd(ExCopy(Index)),
           ExIntegerConstant(LowBound),
-          TkMinus);
+          XoSub);
   OutExpression(Size);
   ExDispose(Size)
 end;
@@ -461,90 +461,95 @@ end;
 
 procedure _OutExUnaryOp(Expr : TExpression);
 begin
-  if Expr^.Unary.Op = TkMinus then write(Codegen.Output, '-')
-  else if (Expr^.Unary.Op = TkNot) and IsBooleanType(Expr^.TypePtr) then
+  if Expr^.Unary.Op = XoNeg then write(Codegen.Output, '-')
+  else if (Expr^.Unary.Op = XoNot) and IsBooleanType(Expr^.TypePtr) then
          write(Codegen.Output, '!')
-  else if (Expr^.Unary.Op = TkNot) and IsIntegerType(Expr^.TypePtr) then
+  else if (Expr^.Unary.Op = XoNot) and IsIntegerType(Expr^.TypePtr) then
          write(Codegen.Output, '~');
   _OutExpressionParens(Expr^.Unary.Parent, Expr)
 end;
 
-function _IsArithmeticOp(Op : TLxTokenId) : boolean;
+function _IsArithmeticOp(Op : TExOperator) : boolean;
 begin
-  _IsArithmeticOp := Op in [TkPlus, TkMinus, TkAsterisk, TkSlash, TkDiv, TkMod]
+  _IsArithmeticOp := Op in [XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod]
 end;
 
-function _GetArithmeticOp(Op : TLxTokenId) : string;
+function _GetArithmeticOp(Op : TExOperator) : string;
 begin
   case Op of 
-    TkPlus : _GetArithmeticOp := '+';
-    TkMinus : _GetArithmeticOp := '-';
-    TkAsterisk : _GetArithmeticOp := '*';
-    TkSlash : _GetArithmeticOp := '/';
-    TkDiv : _GetArithmeticOp := '/';
-    TkMod : _GetArithmeticOp := '%';
+    XoAdd : _GetArithmeticOp := '+';
+    XoSub : _GetArithmeticOp := '-';
+    XoMul : _GetArithmeticOp := '*';
+    XoDivReal : _GetArithmeticOp := '/';
+    XoDivInt : _GetArithmeticOp := '/';
+    XoMod : _GetArithmeticOp := '%';
   end
 end;
 
-function _IsLogicalOrBitwiseOp(Op : TLxTokenId) : boolean;
+function _IsLogicalOrBitwiseOp(Op : TExOperator) : boolean;
 begin
-  _IsLogicalOrBitwiseOp := Op in [TkAnd, TkOr, TkXor]
+  _IsLogicalOrBitwiseOp := Op in [XoAnd, XoOr, XoXor]
 end;
 
-function _IsBitwiseOp(Op : TLxTokenId) : boolean;
+function _IsBitwiseOp(Op : TExOperator) : boolean;
 begin
-  _IsBitwiseOp := Op in [TkShl, TkShr]
+  _IsBitwiseOp := Op in [XoShl, XoShr]
 end;
 
-function _GetLogicalOp(Op : TLxTokenId) : string;
-begin
-  if Op = TkAnd then _GetLogicalOp := '&&'
-  else if Op = TkOr then _GetLogicalOp := '||'
-  else if Op = TkXor then _GetLogicalOp := '!='
-  else InternalError('Unimplemented logical operator ' + LxTokenName(Op))
-end;
-
-function _GetBitwiseOp(Op : TLxTokenId) : string;
-begin
-  if Op = TkAnd then _GetBitwiseOp := '&'
-  else if Op = TkOr Then _GetBitwiseOp := '|'
-  else if Op = TkXor then _GetBitwiseOp := '^'
-  else if Op = TkShl then _GetBitwiseOp := '<<'
-  else if Op = TkShr then _GetBitwiseOp := '>>'
-  else InternalError('Unimplemented bitwise operator ' + LxTokenName(Op))
-end;
-
-function _IsRelationalOp(Op : TLxTokenId) : boolean;
-begin
-  _IsRelationalOp := Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan,
-                     TkLessOrEquals, TkMoreOrEquals]
-end;
-
-function _GetRelationalOp(Op : TLxTokenId) : string;
+function _GetLogicalOp(Op : TExOperator) : string;
 begin
   case Op of 
-    TkEquals: _GetRelationalOp := '==';
-    TkNotEquals : _GetRelationalOp := '!=';
-    TkLessthan : _GetRelationalOp := '<';
-    TkMorethan : _GetRelationalOp := '>';
-    TkLessOrEquals : _GetRelationalOp := '<=';
-    TkMoreOrEquals : _GetRelationalOp := '>='
+    XoAnd: Result := '&&';
+    XoOr: Result := '||';
+    XoXor: Result := '!=';
+    else InternalError('Unimplemented logical operator ' +
+                       ExDescribeOperator(Op))
   end
 end;
 
-procedure _OutExSetOperation(Left, Right: TExpression; Op : TLxTokenId);
+function _GetBitwiseOp(Op : TExOperator) : string;
+begin
+  case Op of 
+    XoAnd: Result := '&';
+    XoOr: Result := '|';
+    XoXor: Result := '^';
+    XoShl: Result := '<<';
+    XoShr: Result := '>>';
+    else InternalError('Unimplemented bitwise operator ' +
+                       ExDescribeOperator(Op))
+  end
+end;
+
+function _IsRelationalOp(Op : TExOperator) : boolean;
+begin
+  _IsRelationalOp := Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq, XoGtEq]
+end;
+
+function _GetRelationalOp(Op : TExOperator) : string;
+begin
+  case Op of 
+    XoEq: _GetRelationalOp := '==';
+    XoNe : _GetRelationalOp := '!=';
+    XoLt : _GetRelationalOp := '<';
+    XoGt : _GetRelationalOp := '>';
+    XoLtEq : _GetRelationalOp := '<=';
+    XoGtEq : _GetRelationalOp := '>='
+  end
+end;
+
+procedure _OutExSetOperation(Left, Right: TExpression; Op : TExOperator);
 var 
   ElemTypePtr : TPsTypePtr;
   LowBound, HighBound, LowBoundByte, SetSize : integer;
 begin
   ElemTypePtr := Right^.TypePtr^.ElementTypePtr;
-  if Op = TkLessOrEquals then _OutExSetOperation(Right, Left, TkMoreOrEquals)
-  else if Op = TkNotEquals then
+  if Op = XoLtEq then _OutExSetOperation(Right, Left, XoGtEq)
+  else if Op = XoNe then
   begin
     write(Codegen.Output, '!');
-    _OutExSetOperation(Left, Right, TkEquals)
+    _OutExSetOperation(Left, Right, XoEq)
   end
-  else if Op = TkIn then
+  else if Op = XoIn then
   begin
     LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
     write(Codegen.Output, 'set_in(');
@@ -560,7 +565,7 @@ begin
     LowBound := GetTypeLowBound(ElemTypePtr);
     HighBound := GetTypeHighBound(ElemTypePtr);
     SetSize := HighBound div 8 - LowBound div 8 + 1;
-    if Op = TkEquals then
+    if Op = XoEq then
     begin
       write(Codegen.Output, 'set_equals(');
       _OutExpressionParensPrec(Left, 1);
@@ -568,7 +573,7 @@ begin
       _OutExpressionParensPrec(Right, 1);
       write(Codegen.Output, '.bits, ', SetSize, ')')
     end
-    else if Op = TkMoreOrEquals then
+    else if Op = XoGtEq then
     begin
       write(Codegen.Output, 'set_issuperset(');
       _OutExpressionParensPrec(Left, 1);
@@ -580,12 +585,12 @@ begin
     begin
       write(Codegen.Output, '({ PSet', SetSize * 8, ' dst; ');
       case Op of 
-        TkPlus: write(Codegen.Output, 'set_union(');
-        TkMinus: write(Codegen.Output, 'set_difference(');
-        TkAsterisk: write(Codegen.Output, 'set_intersection(');
+        XoAdd: write(Codegen.Output, 'set_union(');
+        XoSub: write(Codegen.Output, 'set_difference(');
+        XoMul: write(Codegen.Output, 'set_intersection(');
         else
           InternalError('Materialized set operation not implemented: ' +
-                        LxTokenName(Op))
+                        ExDescribeOperator(Op))
       end;
       _OutExpressionParensPrec(Left, 1);
       write(Codegen.Output, '.bits, ');
@@ -624,7 +629,7 @@ procedure _OutConcatArgs(Expr : TExpression; Last : boolean);
 begin
   if not IsStringyType(Expr^.TypePtr) then
     InternalError('Expected a stringy type for ' + ExDescribe(Expr))
-  else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> TkPlus) then
+  else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> XoAdd) then
   begin
     if Last then write(Codegen.Output, 'CpEnd | ');
     _OutCmpConcatArg(Expr);
@@ -665,7 +670,7 @@ begin
     end
     else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
     begin
-      if Op = TkPlus then
+      if Op = XoAdd then
       begin
         write(Codegen.Output, 'CONCAT(');
         _OutConcatArgs(Expr, {Last=}true);
@@ -683,12 +688,12 @@ begin
       begin
         write(Codegen.Output, 'cmp_str(');
         case Op of 
-          TkEquals: write(Codegen.Output, 'CoEq, ');
-          TkNotEquals: write(Codegen.Output, 'CoNotEq, ');
-          TkLessthan: write(Codegen.Output, 'CoBefore, ');
-          TkMorethan: write(Codegen.Output, 'CoAfter, ');
-          TkLessOrEquals: write(Codegen.Output, 'CoBeforeOrEq, ');
-          TkMoreOrEquals: write(Codegen.Output, 'CoAfterOrEq, ');
+          XoEq: write(Codegen.Output, 'CoEq, ');
+          XoNe: write(Codegen.Output, 'CoNotEq, ');
+          XoLt: write(Codegen.Output, 'CoBefore, ');
+          XoGt: write(Codegen.Output, 'CoAfter, ');
+          XoLtEq: write(Codegen.Output, 'CoBeforeOrEq, ');
+          XoGtEq: write(Codegen.Output, 'CoAfterOrEq, ');
           else ErrorInvalidOperator(Expr, Op)
         end;
         _OutCmpConcatArg(Left);
@@ -1442,7 +1447,7 @@ begin
     else
     begin
       TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), TkMinus);
+                 ExIntegerConstant(1), XoSub);
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
     end
@@ -1450,7 +1455,7 @@ begin
   else
   begin
     TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), TkMinus);
+               ExIntegerConstant(1), XoSub);
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
@@ -1473,7 +1478,7 @@ begin
     else
     begin
       TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), TkPlus);
+                 ExIntegerConstant(1), XoAdd);
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
     end
@@ -1481,7 +1486,7 @@ begin
   else
   begin
     TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), TkPlus);
+               ExIntegerConstant(1), XoAdd);
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
@@ -1601,7 +1606,7 @@ var TmpExpr : TExpression;
 begin
   OutEndSameLine;
   write(Codegen.Output, ' while (');
-  TmpExpr := ExUnaryOp(ExCopy(Expr), TkNot);
+  TmpExpr := ExUnaryOp(ExCopy(Expr), XoNot);
   OutExpression(TmpExpr);
   ExDispose(TmpExpr);
   write(Codegen.Output, ');');

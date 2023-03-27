@@ -8,7 +8,7 @@ begin
     Operand := PSExpression;
     EnsureStringyExpr(Operand);
     if Result = nil then Result := Operand
-    else Result := ExBinaryOp(Result, Operand, TkPlus);
+    else Result := ExBinaryOp(Result, Operand, XoAdd);
     WantToken2(TkComma, TkRparen);
     SkipToken(TkComma)
   until Lexer.Token.Id = TkRparen;

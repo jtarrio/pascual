@@ -324,58 +324,49 @@ begin
     end
 end;
 
+const _ExPrecedences : array[TExpressionClass] of integer 
+                       = ( 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1,
+                          0, 1, -1, -1);
+const _ExOpPrecedences : array[TExOperator] of integer 
+                         = (4, 4, 4, 3, 3, 3, 4,
+                            3, 4, 4, 3, 3,
+                            5, 5, 5, 5, 5, 5,
+                            1, 1, 1);
+const _ExOpNames : array[TExOperator] of string 
+                   = ('+', '-', '*', '/', 'DIV', 'MOD', '-',
+                      'AND', 'OR', 'XOR', 'NOT', 'SHL', 'SHR',
+                      'IN',
+                      '=', '<>', '<', '>', '<=', '>=',
+                      'ORD', 'PRED', 'SUCC');
+
 function _ExprPrecedence(Expr : TExpression) : integer;
 begin
-  case Expr^.Cls of 
-    XcImmediate: Result := 0;
-    XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
-    XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
-    XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
-    XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
-    XcSet: Result := 0;
-    XcVariable: Result := 0;
-    XcField: Result := 1;
-    XcArray: Result := 1;
-    XcPointer: Result := 1;
-    XcAddress: Result := 1;
-    XcStringChar: Result := 1;
-    XcFnRef: Result := 0;
-    XcFnCall: Result := 1;
-    XcPseudoFnRef: Result := 0;
-    XcPseudoFnCall: Result := 1;
-    XcUnaryOp: case Expr^.Unary.Op of 
-                 TkMinus: Result := 4;
-                 TkNot: Result := 2;
-               end;
-    XcBinaryOp: case Expr^.Binary.Op of 
-                  TkPlus: Result := 4;
-                  TkMinus: Result := 4;
-                  TkAsterisk: Result := 3;
-                  TkDiv: Result := 3;
-                  TkAnd: Result := 3;
-                  TkOr: Result := 4;
-                  TkXor: Result := 4;
-                  TkShl: Result := 3;
-                  TkShr: Result := 3;
-                  TkIn: Result := 5;
-                  TkEquals: Result := 5;
-                  TkNotEquals: Result := 5;
-                  TkLessthan: Result := 5;
-                  TkMorethan: Result := 5;
-                  TkLessOrEquals: Result := 5;
-                  TkMoreOrEquals: Result := 5;
-                end;
+  Result := _ExPrecedences[Expr^.Cls];
+  if Result < 0 then
+  begin
+    case Expr^.Cls of 
+      XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
+      XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
+      XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
+      XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
+      XcUnaryOp: Result := _ExOpPrecedences[Expr^.Unary.Op];
+      XcBinaryOp: Result := _ExOpPrecedences[Expr^.Binary.Op];
+    end
   end;
+  if Result < 0 then
+    CompileError('Unknown precedence for expression')
+end;
+
+function ExDescribeOperator(Op : TExOperator) : string;
+begin
+  Result := _ExOpNames[Op]
 end;
 
 function _DescribeUnaryOpExpr(Expr : TExpression) : string;
 var UseParens : boolean;
 begin
-  case Expr^.Unary.Op of 
-    TkMinus: Result := '-';
-    TkNot: Result := 'not ';
-    else InternalError('Cannot describe unary operation')
-  end;
+  Result := ExDescribeOperator(Expr^.Unary.Op);
+  if Expr^.Unary.Op <> XoNeg then Result := Result + ' ';
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
   if UseParens then Result := Result + '(';
   Result := Result + ExDescribe(Expr^.Unary.Parent);
@@ -390,29 +381,7 @@ begin
   else Result := '';
   Result := Result + ExDescribe(Expr^.Binary.Left);
   if UseParens then Result := Result + ')';
-  case Expr^.Binary.Op of 
-    TkPlus: Result := Result + ' + ';
-    TkMinus: Result := Result + ' - ';
-    TkAsterisk: Result := Result + ' * ';
-    TkSlash: Result := Result + ' / ';
-    TkDiv: Result := Result + ' div ';
-    TkAnd: Result := Result + ' and ';
-    TkOr: Result := Result + ' or ';
-    TkXor: Result := Result + ' xor ';
-    TkShl: Result := Result + ' shl ';
-    TkShr: Result := Result + ' shr ';
-    TkIn: Result := Result + ' in ';
-    TkEquals: Result := Result + ' = ';
-    TkNotEquals: Result := Result + ' <> ';
-    TkLessthan: Result := Result + ' < ';
-    TkMorethan: Result := Result + ' > ';
-    TkLessOrEquals: Result := Result + ' <= ';
-    TkMoreOrEquals: Result := Result + ' >= ';
-    else InternalError('Cannot describe binary operation for operator ' +
-                       LxTokenName(Expr^.Binary.Op) + ' and operands ' +
-      ExDescribe(Expr^.Binary.Left) +
-      ' and ' + ExDescribe(Expr^.Binary.Right))
-  end;
+  Result := Result + ' ' + ExDescribeOperator(Expr^.Binary.Op) + ' ';
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Right);
   if UseParens then Result := Result + '(';
   Result := Result + ExDescribe(Expr^.Binary.Right);
@@ -1214,17 +1183,17 @@ begin
       if ImmBounds^.First = ImmBounds^.Last then
         Cond := ExBinaryOp(ExCopy(Wanted),
                 ExGetAntiOrdinal(ImmBounds^.First, ElemType),
-                TkEquals)
+                XoEq)
       else
         Cond := ExBinaryOp(
                 ExBinaryOp(ExGetAntiOrdinal(ImmBounds^.First, ElemType),
                 ExCopy(Wanted),
-                TkLessOrEquals),
+                XoLtEq),
                 ExBinaryOp(ExCopy(Wanted),
                 ExGetAntiOrdinal(ImmBounds^.Last, ElemType),
-                TkLessOrEquals),
-                TkAnd);
-      Result := ExBinaryOp(Result, Cond, TkOr);
+                XoLtEq),
+                XoAnd);
+      Result := ExBinaryOp(Result, Cond, XoOr);
       ImmBounds := ImmBounds^.Next
     end
   end;
@@ -1235,17 +1204,17 @@ begin
     begin
       if ExprBounds^.Last = nil then
         Cond := ExBinaryOp(ExCopy(Wanted), ExCopy(ExprBounds^.First),
-                TkEquals)
+                XoEq)
       else
         Cond := ExBinaryOp(
                 ExBinaryOp(ExCopy(ExprBounds^.First),
                 ExCopy(Wanted),
-                TkLessOrEquals),
+                XoLtEq),
                 ExBinaryOp(ExCopy(Wanted),
                 ExCopy(ExprBounds^.Last),
-                TkLessOrEquals),
-                TkAnd);
-      Result := ExBinaryOp(Result, Cond, TkOr);
+                XoLtEq),
+                XoAnd);
+      Result := ExBinaryOp(Result, Cond, XoOr);
       ExprBounds := ExprBounds^.Next
     end
   end;
@@ -1257,17 +1226,17 @@ begin
   ExDispose(Haystack)
 end;
 
-function _ExUnOpImm(Parent : TExpression; Op : TLxTokenId) : TExpression;
+function _ExUnOpImm(Parent : TExpression; Op : TExOperator) : TExpression;
 forward;
-function _ExUnOpCmp(Parent : TExpression; Op : TLxTokenId) : TExpression;
+function _ExUnOpCmp(Parent : TExpression; Op : TExOperator) : TExpression;
 forward;
-function ExUnaryOp(Parent : TExpression; Op : TLxTokenId) : TExpression;
+function ExUnaryOp(Parent : TExpression; Op : TExOperator) : TExpression;
 begin
-  if Op in [TkMinus, TkPlus] then
+  if Op = XoNeg then
   begin
     if not IsNumericType(Parent^.TypePtr) then ErrorInvalidOperator(Parent, Op)
   end
-  else if Op = TkNot then
+  else if Op = XoNot then
   begin
     if not IsBooleanType(Parent^.TypePtr)
        and not IsIntegerType(Parent^.TypePtr) then
@@ -1281,17 +1250,13 @@ end;
 
 function _ExUnOpImm;
 begin
-  if (Op = TkMinus) and ExIsImmediateOfClass(Parent, XicInteger) then
+  if (Op = XoNeg) and ExIsImmediateOfClass(Parent, XicInteger) then
     Parent^.Immediate.IntegerVal := -Parent^.Immediate.IntegerVal
-  else if (Op = TkPlus) and ExIsImmediateOfClass(Parent, XicInteger) then
-    { do nothing }
-  else if (Op = TkMinus) and ExIsImmediateOfClass(Parent, XicReal) then
+  else if (Op = XoNeg) and ExIsImmediateOfClass(Parent, XicReal) then
          Parent^.Immediate.RealVal := -Parent^.Immediate.RealVal
-  else if (Op = TkPlus) and ExIsImmediateOfClass(Parent, XicReal) then
-    { do nothing }
-  else if (Op = TkNot) and ExIsImmediateOfClass(Parent, XicBoolean) then
+  else if (Op = XoNot) and ExIsImmediateOfClass(Parent, XicBoolean) then
          Parent^.Immediate.BooleanVal := not Parent^.Immediate.BooleanVal
-  else if (Op = TkNot) and ExIsImmediateOfClass(Parent, XicInteger) then
+  else if (Op = XoNot) and ExIsImmediateOfClass(Parent, XicInteger) then
          Parent^.Immediate.IntegerVal := not Parent^.Immediate.IntegerVal
   else InternalError('Invalid immediate unary operation');
   _ExUnOpImm := Parent
@@ -1307,49 +1272,49 @@ begin
 end;
 
 function _ExBinOpBoolImm(Left, Right : TExpression;
-                         Op : TLxTokenId) : TExpression;
+                         Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpIntImm(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpNumImm(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpStrImm(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpEnumImm(Left, Right : TExpression;
-                         Op : TLxTokenId) : TExpression;
+                         Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpSetImm(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpBoolCmp(Left, Right : TExpression;
-                         Op : TLxTokenId) : TExpression;
+                         Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpIntCmp(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpNumCmp(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpStrCmp(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpEnumCmp(Left, Right : TExpression;
-                         Op : TLxTokenId) : TExpression;
+                         Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpPtrCmp(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpSetCmp(Left, Right : TExpression;
-                        Op : TLxTokenId) : TExpression;
+                        Op : TExOperator) : TExpression;
 forward;
 function _ExBinOpShortcut(var Left, Right : TExpression;
-                          Op : TLxTokenId) : boolean;
+                          Op : TExOperator) : boolean;
 forward;
 function ExBinaryOp(Left, Right : TExpression;
-                    Op : TLxTokenId) : TExpression;
+                    Op : TExOperator) : TExpression;
 var 
   Immediate : boolean;
 begin
@@ -1394,7 +1359,7 @@ begin
     if ExIsImmediate(Right)
        and (ExIsImmediate(Left) or not IsSetType(Left^.TypePtr)) then
       Result := _ExBinOpSetImm(Left, Right, Op)
-    else if (Op = TkIn) and (Right^.Cls = XcSet) then
+    else if (Op = XoIn) and (Right^.Cls = XcSet) then
            Result := _ExBinOpSetImm(Left, Right, Op)
     else Result := _ExBinOpSetCmp(Left, Right, Op)
   end
@@ -1407,15 +1372,15 @@ begin
   Lt := Left^.Immediate.BooleanVal;
   Rt := Right^.Immediate.BooleanVal;
   case Op of 
-    TkAnd : Lt := Lt and Rt;
-    TkOr : Lt := Lt or Rt;
-    TkXor : Lt := Lt xor Rt;
-    TkEquals : Lt := Lt = Rt;
-    TkNotEquals : Lt := Lt <> Rt;
-    TkLessthan : Lt := Lt < Rt;
-    TkMorethan : Lt := Lt > Rt;
-    TkLessOrEquals : Lt := Lt <= Rt;
-    TkMoreOrEquals : Lt := Lt >= Rt;
+    XoAnd : Lt := Lt and Rt;
+    XoOr : Lt := Lt or Rt;
+    XoXor : Lt := Lt xor Rt;
+    XoEq : Lt := Lt = Rt;
+    XoNe : Lt := Lt <> Rt;
+    XoLt : Lt := Lt < Rt;
+    XoGt : Lt := Lt > Rt;
+    XoLtEq : Lt := Lt <= Rt;
+    XoGtEq : Lt := Lt >= Rt;
     else ErrorInvalidOperator2(Left, Right, Op)
   end;
   Left^.Immediate.BooleanVal := Lt;
@@ -1434,26 +1399,26 @@ begin
   Lt := Left^.Immediate.IntegerVal;
   Rt := Right^.Immediate.IntegerVal;
   case Op of 
-    TkPlus : Lt := Lt + Rt;
-    TkMinus : Lt := Lt - Rt;
-    TkAsterisk : Lt := Lt * Rt;
-    TkDiv : Lt := Lt div Rt;
-    TkMod : Lt := Lt mod Rt;
-    TkAnd : Lt := Lt and Rt;
-    TkOr : Lt := Lt or Rt;
-    TkXor : Lt := Lt xor Rt;
-    TkShl : Lt := Lt shl Rt;
-    TkShr : Lt := Lt shr Rt;
+    XoAdd : Lt := Lt + Rt;
+    XoSub : Lt := Lt - Rt;
+    XoMul : Lt := Lt * Rt;
+    XoDivInt : Lt := Lt div Rt;
+    XoMod : Lt := Lt mod Rt;
+    XoAnd : Lt := Lt and Rt;
+    XoOr : Lt := Lt or Rt;
+    XoXor : Lt := Lt xor Rt;
+    XoShl : Lt := Lt shl Rt;
+    XoShr : Lt := Lt shr Rt;
     else
     begin
       Left^.Immediate.Cls := XicBoolean;
       case Op of 
-        TkEquals : Bo := Lt = Rt;
-        TkNotEquals : Bo := Lt <> Rt;
-        TkLessthan : Bo := Lt < Rt;
-        TkMorethan : Bo := Lt > Rt;
-        TkLessOrEquals : Bo := Lt <= Rt;
-        TkMoreOrEquals : Bo := Lt >= Rt;
+        XoEq : Bo := Lt = Rt;
+        XoNe : Bo := Lt <> Rt;
+        XoLt : Bo := Lt < Rt;
+        XoGt : Bo := Lt > Rt;
+        XoLtEq : Bo := Lt <= Rt;
+        XoGtEq : Bo := Lt >= Rt;
         else ErrorInvalidOperator2(Left, Right, Op)
       end
     end
@@ -1484,20 +1449,20 @@ begin
   Right := ExCoerce(Right, PrimitiveTypes.PtReal);
   Rt := Right^.Immediate.RealVal;
   case Op of 
-    TkPlus : Lt := Lt + Rt;
-    TkMinus : Lt := Lt - Rt;
-    TkAsterisk : Lt := Lt * Rt;
-    TkSlash : Lt := Lt / Rt;
+    XoAdd : Lt := Lt + Rt;
+    XoSub : Lt := Lt - Rt;
+    XoMul : Lt := Lt * Rt;
+    XoDivReal : Lt := Lt / Rt;
     else
     begin
       Left^.Immediate.Cls := XicBoolean;
       case Op of 
-        TkEquals : Bo := Lt = Rt;
-        TkNotEquals : Bo := Lt <> Rt;
-        TkLessthan : Bo := Lt < Rt;
-        TkMorethan : Bo := Lt > Rt;
-        TkLessOrEquals : Bo := Lt <= Rt;
-        TkMoreOrEquals : Bo := Lt >= Rt;
+        XoEq : Bo := Lt = Rt;
+        XoNe : Bo := Lt <> Rt;
+        XoLt : Bo := Lt < Rt;
+        XoGt : Bo := Lt > Rt;
+        XoLtEq : Bo := Lt <= Rt;
+        XoGtEq : Bo := Lt >= Rt;
         else ErrorInvalidOperator2(Left, Right, Op)
       end
     end
@@ -1527,7 +1492,7 @@ begin
   else Lt := Left^.Immediate.StringVal;
   if ExIsImmediateOfClass(Right, XicChar) then Rt := Right^.Immediate.CharVal
   else Rt := Right^.Immediate.StringVal;
-  if Op = TkPlus then
+  if Op = XoAdd then
   begin
     Left^.Immediate.Cls := XicString;
     Lt := Lt + Rt;
@@ -1536,12 +1501,12 @@ begin
   begin
     Left^.Immediate.Cls := XicBoolean;
     case Op of 
-      TkEquals : Bo := Lt = Rt;
-      TkNotEquals : Bo := Lt <> Rt;
-      TkLessthan : Bo := Lt < Rt;
-      TkMorethan : Bo := Lt > Rt;
-      TkLessOrEquals : Bo := Lt <= Rt;
-      TkMoreOrEquals : Bo := Lt >= Rt;
+      XoEq : Bo := Lt = Rt;
+      XoNe : Bo := Lt <> Rt;
+      XoLt : Bo := Lt < Rt;
+      XoGt : Bo := Lt > Rt;
+      XoLtEq : Bo := Lt <= Rt;
+      XoGtEq : Bo := Lt >= Rt;
       else ErrorInvalidOperator2(Left, Right, Op)
     end;
   end;
@@ -1569,12 +1534,12 @@ begin
   Lt := Left^.Immediate.EnumOrdinal;
   Rt := Right^.Immediate.EnumOrdinal;
   case Op of 
-    TkEquals : Bo := Lt = Rt;
-    TkNotEquals : Bo := Lt <> Rt;
-    TkLessthan : Bo := Lt < Rt;
-    TkMorethan : Bo := Lt > Rt;
-    TkLessOrEquals : Bo := Lt <= Rt;
-    TkMoreOrEquals : Bo := Lt >= Rt;
+    XoEq : Bo := Lt = Rt;
+    XoNe : Bo := Lt <> Rt;
+    XoLt : Bo := Lt < Rt;
+    XoGt : Bo := Lt > Rt;
+    XoLtEq : Bo := Lt <= Rt;
+    XoGtEq : Bo := Lt >= Rt;
     else ErrorInvalidOperator2(Left, Right, Op)
   end;
   Left^.Immediate.Cls := XicBoolean;
@@ -1590,23 +1555,22 @@ function _ExBinOpSetImm;
 begin
   if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
     case Op of 
-      TkPlus: Result := _ExSetUnion(Left, Right);
-      TkMinus: Result := _ExSetDifference(Left, Right);
-      TkAsterisk: Result := _ExSetIntersection(Left, Right);
-      TkEquals: Result := _ExSetEquals(Left, Right, false);
-      TkNotEquals: Result := _ExSetEquals(Left, Right, true);
-      TkMoreOrEquals: Result := _ExSetSubset(Left, Right);
-      TkLessOrEquals: Result := _ExSetSubset(Right, Left);
+      XoAdd: Result := _ExSetUnion(Left, Right);
+      XoSub: Result := _ExSetDifference(Left, Right);
+      XoMul: Result := _ExSetIntersection(Left, Right);
+      XoEq: Result := _ExSetEquals(Left, Right, false);
+      XoNe: Result := _ExSetEquals(Left, Right, true);
+      XoGtEq: Result := _ExSetSubset(Left, Right);
+      XoLtEq: Result := _ExSetSubset(Right, Left);
       else ErrorInvalidOperator2(Left, Right, Op)
     end
-  else if Op = TkIn then Result := _ExSetIn(Left, Right)
+  else if Op = XoIn then Result := _ExSetIn(Left, Right)
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
 
 function _ExBinOpBoolCmp;
 begin
-  if Op in [TkAnd, tkOr, TkXor, TkEquals, TkNotEquals, TkLessthan, TkMorethan,
-     TkLessOrEquals, TkMoreOrEquals] then
+  if Op in [XoAnd, XoOr, XoXor, XoEq, XoNe, XoLt, XoGt, XoLtEq, XoGtEq] then
   begin
     Result := _NewExpr(XcBinaryOp);
     Result^.Binary.Left := Left;
@@ -1626,11 +1590,11 @@ begin
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if Op in [TkPlus, TkMinus, TkAsterisk, TkDiv, TkMod, TkAnd, TkOr, TkXor,
-     TkShl, TkShr] then
+  if Op in [XoAdd, XoSub, XoMul, XoDivInt, XoMod, XoAnd, XoOr, XoXor,
+     XoShl, XoShr] then
     Result^.TypePtr := PrimitiveTypes.PtInteger
-  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
-          TkMoreOrEquals] then
+  else if Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq,
+          XoGtEq] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
@@ -1642,10 +1606,10 @@ begin
   Result^.Binary.Right := ExCoerce(Right, PrimitiveTypes.PtReal);
   Result^.Binary.Op := Op;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if Op in [TkPlus, TkMinus, TkAsterisk, TkSlash] then
+  if Op in [XoAdd, XoSub, XoMul, XoDivReal] then
     Result^.TypePtr := PrimitiveTypes.PtReal
-  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
-          TkMoreOrEquals] then
+  else if Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq,
+          XoGtEq] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
@@ -1657,10 +1621,10 @@ begin
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if Op = TkPlus then
+  if Op = XoAdd then
     Result^.TypePtr := PrimitiveTypes.PtString
-  else if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
-          TkMoreOrEquals] then
+  else if Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq,
+          XoGtEq] then
          Result^.TypePtr := PrimitiveTypes.PtBoolean
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
@@ -1672,8 +1636,8 @@ begin
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if Op in [TkEquals, TkNotEquals, TkLessthan, TkMorethan, TkLessOrEquals,
-     TkMoreOrEquals] then
+  if Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq,
+     XoGtEq] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
@@ -1685,7 +1649,7 @@ begin
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;
   Result^.IsFunctionResult := Left^.IsFunctionResult or Right^.IsFunctionResult;
-  if Op in [TkEquals, TkNotEquals] then
+  if Op in [XoEq, XoNe] then
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   else ErrorInvalidOperator2(Left, Right, Op)
 end;
@@ -1693,12 +1657,12 @@ end;
 function _ExBinOpSetCmp;
 begin
   Result := _NewExpr(XcBinaryOp);
-  if Op = TkIn then
+  if Op = XoIn then
   begin
     Left := ExCoerce(Left, Right^.TypePtr^.ElementTypePtr);
     Result^.TypePtr := PrimitiveTypes.PtBoolean
   end
-  else if Op in [TkEquals, TkNotEquals, TkLessOrEquals, TkMoreOrEquals] then
+  else if Op in [XoEq, XoNe, XoLtEq, XoGtEq] then
   begin
     _ExSetCoerceToCommon(Left, Right);
     Result^.TypePtr := PrimitiveTypes.PtBoolean
@@ -1753,33 +1717,33 @@ end;
 { Also, if the shortcut was taken, returns the result in the Left expression }
 { and frees the Right expression. }
 function _ExBinOpShortcut(var Left, Right : TExpression;
-                          Op : TLxTokenId) : boolean;
+                          Op : TExOperator) : boolean;
 var Use : (UseLeft, UseRight, Keep);
 begin
   Use := Keep;
   case Op of 
     { X + 0 -> X ; 0 + X -> X }
-    TkPlus : if _ExIsZero(Left) then Use := UseRight
-             else if _ExIsZero(Right) then Use := UseLeft;
+    XoAdd : if _ExIsZero(Left) then Use := UseRight
+            else if _ExIsZero(Right) then Use := UseLeft;
     { X - 0 -> X }
-    TkMinus : if _ExIsZero(Right) then Use := UseLeft;
+    XoSub : if _ExIsZero(Right) then Use := UseLeft;
     { X * 1 -> X ; 1 * X -> X}
-    TkAsterisk : if _ExIsOne(Left) then Use := UseRight
-                 else if _ExIsOne(Right) then Use := UseLeft;
+    XoMul : if _ExIsOne(Left) then Use := UseRight
+            else if _ExIsOne(Right) then Use := UseLeft;
     { X / 1 -> X }
-    TkSlash : if _ExIsOne(Right) then Use := UseLeft;
+    XoDivReal : if _ExIsOne(Right) then Use := UseLeft;
     { X div 1 -> X }
-    TkDiv : if _ExIsOne(Right) then Use := UseLeft;
+    XoDivInt : if _ExIsOne(Right) then Use := UseLeft;
     { false AND X -> false ; X AND true -> X ; true AND X -> X }
-    TkAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
+    XoAnd : if _ExIsFalse(Left) or _ExIsTrue(Right) then Use := UseLeft
             else if _ExIsTrue(Left) then Use := UseRight;
     { true OR X -> true ; X OR false -> X ; false OR X -> X }
-    TkOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
+    XoOr : if _ExIsTrue(Left) or _ExIsFalse(Right) then Use := UseLeft
            else if _ExIsFalse(Left) then Use := UseRight;
     { X shl 0 -> X }
-    TkShl : if _ExIsZero(Right) then Use := UseLeft;
+    XoShl : if _ExIsZero(Right) then Use := UseLeft;
     { X shr 0 -> X }
-    TkShr : if _ExIsZero(Right) then Use := UseLeft;
+    XoShr : if _ExIsZero(Right) then Use := UseLeft;
   end;
   case Use of 
     UseLeft :

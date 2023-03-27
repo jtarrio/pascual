@@ -3,26 +3,7 @@ const
   MaxRecordFields = 32;
   MaxFnArgs = 8;
 
-type 
-  TLxTokenId = (TkUnknown, TkEof, TkComment, TkIdentifier, TkInteger, TkReal,
-                TkString, TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals,
-                TkLessthan, TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma,
-                TkColon, TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
-                TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAt, TkAnd,
-                TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
-                TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
-                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkShl, TkShr,
-                TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith, TkXor);
-  TLxPos = record
-    Row, Col : integer
-  end;
-  TLxToken = record
-    Id : TLxTokenId;
-    Value : string;
-    Pos : TLxPos
-  end;
-
+type
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
@@ -78,14 +59,19 @@ type
     ReadArgs : ^TExReadArgs;
     WriteArgs : ^TExWriteArgs
   end;
+  TExOperator = (XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod, XoNeg,
+                 XoAnd, XoOr, XoXor, XoNot, XoShl, XoShr,
+                 XoIn,
+                 XoEq, XoNe, XoLt, XoGt, XoLtEq, XoGtEq,
+                 XoOrd, XoPred, XoSucc);
   TExUnaryOp = record
     Parent : TExpression;
-    Op : TLxTokenId
+    Op : TExOperator
   end;
   TExBinaryOp = record
     Left : TExpression;
     Right : TExpression;
-    Op : TLxTokenId
+    Op : TExOperator
   end;
 
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,

@@ -883,7 +883,7 @@ begin
   else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
-    Expr := ExUnaryOp(PsFactor, TkNot);
+    Expr := ExUnaryOp(PsFactor, XoNot);
   end
   else if Lexer.Token.Id = TkAt then
   begin
@@ -898,16 +898,44 @@ begin
   PsFactor := Expr
 end;
 
+function PsOperator : TExOperator;
+var OpToken : TLxTokenId;
+begin
+  OpToken := Lexer.Token.Id;
+  case OpToken of
+    TkPlus: Result := XoAdd;
+    TkMinus: Result := XoSub;
+    TkAsterisk: Result := XoMul;
+    TkSlash: Result := XoDivReal;
+    TkDiv: Result := XoDivInt;
+    TkMod: Result := XoMod;
+    TkAnd: Result := XoAnd;
+    TkOr: Result := XoOr;
+    TkXor: Result := XoXor;
+    TkNot: Result := XoNot;
+    TkShl: Result := XoShl;
+    TkShr: Result := XoShr;
+    TkIn: Result := XoIn;
+    TkEquals: Result := XoEq;
+    TkNotEquals: Result := XoNe;
+    TkLessthan: Result := XoLt;
+    TkMorethan: Result := XoGt;
+    TkLessOrEquals: Result := XoLtEq;
+    TkMoreOrEquals: Result := XoGtEq;
+    else CompileError('Expected an operator, got ' + LxTokenName(OpToken))
+  end;
+  ReadToken
+end;
+
 function PsTerm : TExpression;
 var 
-  Op : TLxTokenId;
+  Op : TExOperator;
   Expr : TExpression;
 begin
   Expr := PsFactor;
   while IsOpMultiplying(Lexer.Token) do
   begin
-    Op := Lexer.Token.Id;
-    ReadToken;
+    Op := PsOperator;
     Expr := ExBinaryOp(Expr, PsFactor, Op)
   end;
   PsTerm := Expr
@@ -916,18 +944,17 @@ end;
 function PsSimpleExpression : TExpression;
 var 
   Negative : boolean;
-  Op : TLxTokenId;
+  Op : TExOperator;
   Expr : TExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
   if Negative then ReadToken
   else SkipToken(TkPlus);
   Expr := PsTerm;
-  if Negative then Expr := ExUnaryOp(Expr, TkMinus);
+  if Negative then Expr := ExUnaryOp(Expr, XoNeg);
   while IsOpAdding(Lexer.Token) do
   begin
-    Op := Lexer.Token.Id;
-    ReadToken;
+    Op := PsOperator;
     Expr := ExBinaryOp(Expr, PsTerm, Op)
   end;
   PsSimpleExpression := Expr
@@ -935,14 +962,13 @@ end;
 
 function PsExpression;
 var 
-  Op : TLxTokenId;
+  Op : TExOperator;
   Expr : TExpression;
 begin
   Expr := PsSimpleExpression;
   while IsOpRelational(Lexer.Token) do
   begin
-    Op := Lexer.Token.Id;
-    ReadToken;
+    Op := PsOperator;
     Expr := ExBinaryOp(Expr, PsSimpleExpression, Op)
   end;
   PsExpression := Expr

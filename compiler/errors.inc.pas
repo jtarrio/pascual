@@ -3,15 +3,15 @@ begin
   Result := ExDescribe(Expr) + ' (' + TypeName(Expr^.TypePtr) + ')'
 end;
 
-procedure ErrorInvalidOperator(Expr : TExpression; Op : TLxTokenId);
+procedure ErrorInvalidOperator(Expr : TExpression; Op : TExOperator);
 begin
-  CompileError('Operator ' + LxTokenName(Op) +
-  ' is not valid in expression ' + ErrorDescribeExpr(Expr))
+  CompileError('Operator ''' + ExDescribeOperator(Op) +
+  ''' is not valid in expression ' + ErrorDescribeExpr(Expr))
 end;
 
-procedure ErrorInvalidOperator2(Left, Right : TExpression; Op : TLxTokenId);
+procedure ErrorInvalidOperator2(Left, Right : TExpression; Op : TExOperator);
 begin
-  CompileError('Invalid operator ' + LxTokenName(Op) + ' for ' +
+  CompileError('Invalid operator ''' + ExDescribeOperator(Op) + ''' for ' +
   ErrorDescribeExpr(Left) + ' and ' + ErrorDescribeExpr(Right))
 end;
 
