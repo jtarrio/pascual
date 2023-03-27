@@ -33,9 +33,11 @@ testdef '(A, B, C, D, E, F)' 'array[B..E] of integer' | is_valid
 testelem() {
   if [ -z "$4" ]
   then
-    echo "program foo; var Arr : $1; begin Arr[$2] := $3; write(Arr[$2]) end."
+    echo "{\$R+}
+          program foo; var Arr : $1; begin Arr[$2] := $3; write(Arr[$2]) end."
   else
-    echo "program foo; type T = $1; var Arr : $2;
+    echo "{\$R+}
+          program foo; type T = $1; var Arr : $2;
           begin Arr[$3] := $4; write(Arr[$3]) end."
   fi
 }
