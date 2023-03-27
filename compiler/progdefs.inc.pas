@@ -694,7 +694,7 @@ begin
   else TypeName := DeepTypeName(TypePtr, false)
 end;
 
-function AddConstant(Constant : TPsConstant) : TPsConstPtr;
+function AddConstant(const Constant : TPsConstant) : TPsConstPtr;
 var 
   ConstPtr : TPsConstPtr;
 begin
@@ -706,7 +706,7 @@ begin
   AddConstant := ConstPtr
 end;
 
-function AddVariable(VarDef : TPsVariable) : TPsVarPtr;
+function AddVariable(const VarDef : TPsVariable) : TPsVarPtr;
 var 
   VarPtr : TPsVarPtr;
 begin
@@ -756,7 +756,7 @@ begin
                            and (NamePtr^.FnPtr^.IsDeclaration)
 end;
 
-function AddFunction(Fun : TPsFunction) : TPsFnPtr;
+function AddFunction(const Fun : TPsFunction) : TPsFnPtr;
 var 
   NamePtr : TPsNamePtr;
   FnPtr : TPsFnPtr;
