@@ -70,7 +70,7 @@ typedef struct record6 {
 } TEXSETEXPRBOUNDSOBJ;
 typedef struct record7 {
   PInteger SIZE;
-  struct record13* VALUES[8];
+  struct record13* VALUES[16];
 } TEXFUNCTIONARGS;
 typedef struct record8 {
   struct record13* ARG;
@@ -256,7 +256,7 @@ typedef struct record22 {
 } TPSVARIABLE;
 typedef struct record23 {
   PInteger COUNT;
-  TPSVARIABLE DEFS[8];
+  TPSVARIABLE DEFS[16];
 } TPSFNARGS;
 typedef struct record24 {
   TPSFNARGS ARGS;
@@ -1610,10 +1610,10 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
             while (1) {
               {
                 if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
-                if (with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 6, "CONST ");
-                else if (with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, "VAR ");
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].NAME);
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, 0));
+                if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 6, "CONST ");
+                else if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, "VAR ");
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].NAME);
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, 0));
               }
               if (POS == last) break;
               ++POS;
@@ -1711,7 +1711,7 @@ PBoolean ISSAMEFUNCTIONDEFINITION(TPSFUNCTION* DECLPTR, TPSFUNCTION FUN) {
     if (first <= last) {
       POS = first;
       while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, FUN.ARGS.DEFS[subrange(POS, 1, 8) - 1].TYPEPTR) && DECL.ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE == FUN.ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE;
+        SAME = SAME && ISSAMETYPE(DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR) && DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE;
         if (POS == last) break;
         ++POS;
       }
@@ -2023,7 +2023,7 @@ PBoolean ARESAMEARGS(const TPSFNARGS *A, const TPSFNARGS *B) {
     if (first <= last) {
       POS = first;
       while (1) {
-        RESULT = RESULT && A->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE == B->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE && A->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT == B->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT && ISSAMETYPE(A->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR, B->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR);
+        RESULT = RESULT && A->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == B->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE && A->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT == B->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT && ISSAMETYPE(A->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, B->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
         if (POS == last) break;
         ++POS;
       }
@@ -2208,7 +2208,7 @@ void EXDISPOSE(TEXPRESSIONOBJ* *EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              EXDISPOSE(&(*EXPR)->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
+              EXDISPOSE(&(*EXPR)->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -2403,7 +2403,7 @@ TEXPRESSIONOBJ* EXCOPY(TEXPRESSIONOBJ* EXPR) {
           if (first <= last) {
             POS = first;
             while (1) {
-              COPY->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOPY(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
+              COPY->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
               if (POS == last) break;
               ++POS;
             }
@@ -2790,7 +2790,7 @@ PString EXDESCRIBE(TEXPRESSIONOBJ* EXPR) {
             while (1) {
               {
                 if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]));
+                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]));
               }
               if (POS == last) break;
               ++POS;
@@ -3211,18 +3211,18 @@ TEXPRESSIONOBJ* _EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, const TPSFNARGS *ARGDEFS
       POS = first;
       while (1) {
         {
-          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 8) - 1], ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR);
-          if (ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
-            if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]->ISADDRESSABLE) {
-              if (ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
-                RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1], RESULT);
-                FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1] = EXCOPY(RESULT->TMPVAR);
+          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 16) - 1], ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
+          if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
+            if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]->ISADDRESSABLE) {
+              if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
+                RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1], RESULT);
+                FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(RESULT->TMPVAR);
               }
-              else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1])));
+              else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1])));
             }
-            else if (!ARGDEFS->DEFS[subrange(POS, 1, 8) - 1].ISCONSTANT) {
-              ENSUREASSIGNABLEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
-              EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
+            else if (!ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
+              ENSUREASSIGNABLEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+              EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
             }
           }
         }
@@ -4437,11 +4437,11 @@ void PSARGUMENTS(TPSFNARGS *ARGS) {
     LASTARG = ARGS->COUNT;
     do {
       ARGS->COUNT = ARGS->COUNT + 1;
-      if (ARGS->COUNT > 8) COMPILEERROR(str_make(42, "Too many arguments declared for subroutine"));
-      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].ISCONSTANT = ISCONST;
-      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].ISREFERENCE = ISVAR || ISCONST;
-      ARGS->DEFS[subrange(ARGS->COUNT, 1, 8) - 1].WASINITIALIZED = 1;
+      if (ARGS->COUNT > 16) COMPILEERROR(str_make(42, "Too many arguments declared for subroutine"));
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].ISCONSTANT = ISCONST;
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].ISREFERENCE = ISVAR || ISCONST;
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].WASINITIALIZED = 1;
       WANTTOKEN2(TKCOLON, TKCOMMA);
       SKIPTOKEN(TKCOMMA);
     } while (!(LEXER.TOKEN.ID == TKCOLON));
@@ -4453,7 +4453,7 @@ void PSARGUMENTS(TPSFNARGS *ARGS) {
       if (first <= last) {
         ARG = first;
         while (1) {
-          ARGS->DEFS[subrange(ARG, 1, 8) - 1].TYPEPTR = TYPEPTR;
+          ARGS->DEFS[subrange(ARG, 1, 16) - 1].TYPEPTR = TYPEPTR;
           if (ARG == last) break;
           ++ARG;
         }
@@ -4753,7 +4753,7 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1]);
+        ADDVARIABLE(FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -4862,7 +4862,7 @@ TEXFUNCTIONARGS PSFUNCTIONARGS() {
     WANTTOKENANDREAD(TKLPAREN);
     while (LEXER.TOKEN.ID != TKRPAREN) {
       RESULT.SIZE = RESULT.SIZE + 1;
-      RESULT.VALUES[subrange(RESULT.SIZE, 1, 8) - 1] = PSEXPRESSION();
+      RESULT.VALUES[subrange(RESULT.SIZE, 1, 16) - 1] = PSEXPRESSION();
       WANTTOKEN2(TKCOMMA, TKRPAREN);
       SKIPTOKEN(TKCOMMA);
     }
@@ -5834,7 +5834,7 @@ TEXPRESSIONOBJ* _MODIO_FILEFUN_PARSE(TEXPRESSIONOBJ* FNEXPR) {
   FNPTR = FINDNAMEOFCLASS(&FNNAME, TNCFUNCTION, 1)->FNPTR;
   ARGS = PSFUNCTIONARGS();
   ARGS.SIZE = ARGS.SIZE + 1;
-  ARGS.VALUES[subrange(ARGS.SIZE, 1, 8) - 1] = EXBOOLEANCONSTANT(OPTIONS.CHECKIORESULT);
+  ARGS.VALUES[subrange(ARGS.SIZE, 1, 16) - 1] = EXBOOLEANCONSTANT(OPTIONS.CHECKIORESULT);
   RESULT = EXFUNCTIONCALL(EXFNREF(FNPTR), &ARGS);
   return RESULT;
 }
@@ -5850,8 +5850,8 @@ TEXPRESSIONOBJ* _MODIO_FILERESETFUN_PARSE(TEXPRESSIONOBJ* FNEXPR) {
   FNPTR = FINDNAMEOFCLASS(&FNNAME, TNCFUNCTION, 1)->FNPTR;
   ARGS = PSFUNCTIONARGS();
   ARGS.SIZE = ARGS.SIZE + 2;
-  ARGS.VALUES[subrange(ARGS.SIZE - 1, 1, 8) - 1] = EXINTEGERCONSTANT(0);
-  ARGS.VALUES[subrange(ARGS.SIZE, 1, 8) - 1] = EXBOOLEANCONSTANT(OPTIONS.CHECKIORESULT);
+  ARGS.VALUES[subrange(ARGS.SIZE - 1, 1, 16) - 1] = EXINTEGERCONSTANT(0);
+  ARGS.VALUES[subrange(ARGS.SIZE, 1, 16) - 1] = EXBOOLEANCONSTANT(OPTIONS.CHECKIORESULT);
   RESULT = EXFUNCTIONCALL(EXFNREF(FNPTR), &ARGS);
   return RESULT;
 }
@@ -6655,11 +6655,11 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ* EXPR) {
       while (1) {
         {
           if (POS != 1) _OUTCOMMA();
-          if (EXPR->FNEXPR->FNPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1].ISREFERENCE) {
-            ENSUREADDRESSABLEEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
-            _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
+          if (EXPR->FNEXPR->FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
+            ENSUREADDRESSABLEEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+            _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
           }
-          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[subrange(POS, 1, 8) - 1]);
+          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -7286,7 +7286,7 @@ void OUTNAMEANDFUNCTION(const PString *NAME, TPSTYPE* TYPEPTR) {
       while (1) {
         {
           if (POS != 1) _OUTCOMMA();
-          OUTVARIABLEDECLARATION(TYPEPTR->FNDEFPTR->ARGS.DEFS[subrange(POS, 1, 8) - 1]);
+          OUTVARIABLEDECLARATION(TYPEPTR->FNDEFPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -7401,7 +7401,7 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
       while (1) {
         {
           if (POS != 1) _OUTCOMMA();
-          OUTVARIABLEDECLARATION(DEF.ARGS.DEFS[subrange(POS, 1, 8) - 1]);
+          OUTVARIABLEDECLARATION(DEF.ARGS.DEFS[subrange(POS, 1, 16) - 1]);
         }
         if (POS == last) break;
         ++POS;

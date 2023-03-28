@@ -1,7 +1,7 @@
 const 
   MaxEnumVals = 128;
   MaxRecordFields = 32;
-  MaxFnArgs = 8;
+  MaxFnArgs = 16;
 
 type
   TPsTypePtr = ^TPsType;
