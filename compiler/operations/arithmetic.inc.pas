@@ -1,12 +1,3 @@
-function ExOpNeg(Expr : TExpression) : TExpression;
-forward;
-function ExOpAdd(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpSub(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpMul(Left, Right : TExpression) : TExpression;
-forward;
-
 function _ExOpAdd_Integers(Left, Right : TExpression) : TExpression;
 begin
   if ExIsImmediate(Left) and (Left^.Immediate.IntegerVal = 0) then

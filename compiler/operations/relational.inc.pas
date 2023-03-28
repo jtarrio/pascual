@@ -1,18 +1,3 @@
-function ExOpIn(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpEq(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpNe(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpLt(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpGt(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpLtEq(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpGtEq(Left, Right : TExpression) : TExpression;
-forward;
-
 function _ExOpEq_Booleans(Left, Right : TExpression) : TExpression;
 begin
   if ExIsImmediate(Left) and ExIsImmediate(Right) then

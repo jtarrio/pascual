@@ -1,12 +1,3 @@
-function ExOpNot(Expr : TExpression) : TExpression;
-forward;
-function ExOpAnd(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpOr(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpXor(Left, Right : TExpression) : TExpression;
-forward;
-
 function _ExOpNot_Boolean(Expr : TExpression) : TExpression;
 begin
   Result := Expr;

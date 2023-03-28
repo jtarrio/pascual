@@ -1,8 +1,3 @@
-function ExOpShl(Left, Right : TExpression) : TExpression;
-forward;
-function ExOpShr(Left, Right : TExpression) : TExpression;
-forward;
-
 function _ExOpShl_Integers(Left, Right : TExpression) : TExpression;
 begin
   if ExIsImmediate(Left) and ExIsImmediate(Right) then
