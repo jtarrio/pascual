@@ -1243,7 +1243,9 @@ begin
 end;
 
 procedure ReadToken;
-var Stop : boolean;
+var
+  Stop : boolean;
+  PrevStack : TLxIncludeStack;
 begin
   repeat
     LxReadToken;
@@ -1251,10 +1253,12 @@ begin
     if Lexer.Token.Id = TkComment then
       if (Length(Lexer.Token.Value) >= 2) and (Lexer.Token.Value[1] = '$') then
         ExecuteDirective(Lexer.Token.Value);
-    if (Lexer.Token.Id = TkEof) and Lexer.Prev.Exists then
+    if (Lexer.Token.Id = TkEof) and (Lexer.IncludeStack <> nil) then
     begin
-      Lexer.Input := Lexer.Prev.Input;
-      Lexer.Prev.Exists := false;
+      Lexer.Input := Lexer.IncludeStack^.Input;
+      PrevStack := Lexer.IncludeStack;
+      Lexer.IncludeStack := PrevStack^.Prev;
+      dispose(PrevStack);
       Stop := false
     end
   until Stop;

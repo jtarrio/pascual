@@ -22,16 +22,18 @@ type
     Name : string;
     Pos : TLxPos
   end;
+  TLxIncludeStack = ^TLxIncludeStackElem;
+  TLxIncludeStackElem = record
+    Input : TLxInputFile;
+    Prev : TLxIncludeStack
+  end;
 
 var 
   Lexer : record
     Line : string;
     Token : TLxToken;
     Input : TLxInputFile;
-    Prev : record
-      Exists : boolean;
-      Input : TLxInputFile
-    end
+    IncludeStack : TLxIncludeStack
   end;
 
 function LxTokenName(Id : TLxTokenId) : string;
@@ -333,7 +335,7 @@ begin
   Lexer.Input.Name := '-';
   Lexer.Input.Pos.Row := 0;
   Lexer.Input.Pos.Col := 0;
-  Lexer.Prev.Exists := false;
+  Lexer.IncludeStack := nil
 end;
 
 procedure LxOpen(Filename : string);
@@ -344,11 +346,12 @@ begin
 end;
 
 procedure LxInclude(Filename : string);
+var NewStack : TLxIncludeStack;
 begin
-  if Lexer.Prev.Exists then
-    CompileError('Include files cannot be recursive');
-  Lexer.Prev.Exists := true;
-  Lexer.Prev.Input := Lexer.Input;
+  new(NewStack);
+  NewStack^.Input := Lexer.Input;
+  NewStack^.Prev := Lexer.IncludeStack;
+  Lexer.IncludeStack := NewStack;
   Lexer.Input.Pos.Row := 0;
   Lexer.Input.Pos.Col := 0;
   LxOpen(Filename);
