@@ -32,16 +32,16 @@ void SHOWREPEATUNTIL() {
   I = 0;
   do {
     I = I + 1;
-  } while (!(I == 5));
+  } while (I != 5);
   I = 0;
   do {
     I = I + 1;
     Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-  } while (!(I == 5));
+  } while (I != 5);
   I = 10;
   do {
     I = I + 1;
-  } while (!(I == 5));
+  } while (I != 5);
   do {
   } while (1);
 }
