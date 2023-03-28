@@ -401,23 +401,33 @@ begin
   end
 end;
 
-procedure _OutExFunctionCall(Expr : TExpression);
+procedure _OutExFunctionCallArgs(const ArgDefs : TPsFnArgs;
+                                 const ArgValues : TExFunctionArgs);
 var Pos : integer;
 begin
-  _OutExpressionParens(Expr^.FnExpr, Expr);
   write(Codegen.Output, '(');
-  for Pos := 1 to Expr^.CallArgs.Size do
+  for Pos := 1 to ArgValues.Size do
   begin
     if Pos <> 1 then _OutComma;
-    if Expr^.FnExpr^.FnPtr^.Args.Defs[Pos].IsReference then
+    if ArgDefs.Defs[Pos].IsReference then
     begin
-      EnsureAddressableExpr(Expr^.CallArgs.Values[Pos]);
-      _OutAddress(Expr^.CallArgs.Values[Pos])
+      EnsureAddressableExpr(ArgValues.Values[Pos]);
+      _OutAddress(ArgValues.Values[Pos])
     end
     else
-      OutExpression(Expr^.CallArgs.Values[Pos])
+      OutExpression(ArgValues.Values[Pos])
   end;
   write(Codegen.Output, ')')
+end;
+
+procedure _OutExFunctionCall(Expr : TExpression);
+begin
+  _OutExpressionParens(Expr^.FnExpr, Expr);
+  if Expr^.FnExpr^.Cls = XcFnRef then
+    _OutExFunctionCallArgs(Expr^.FnExpr^.FnPtr^.Args, Expr^.CallArgs)
+  else
+    _OutExFunctionCallArgs(Expr^.FnExpr^.TypePtr^.FnDefPtr^.Args,
+                           Expr^.CallArgs)
 end;
 
 procedure _OutDispose(Expr : TExpression);
