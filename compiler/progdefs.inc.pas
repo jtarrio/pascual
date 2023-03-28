@@ -484,6 +484,11 @@ begin
   IsFunctionType := _TypeHasClass(TypePtr, TtcFunction)
 end;
 
+function IsFunctionyType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := IsFunctionType(TypePtr) or IsNilType(TypePtr)
+end;
+
 function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
 begin
   IsOrdinalType := IsBooleanType(TypePtr)
@@ -1093,7 +1098,8 @@ begin
   end
 end;
 
-function MakeRangeType(TypePtr : TPsTypePtr; First, Last : integer) : TPsTypePtr;
+function MakeRangeType(TypePtr : TPsTypePtr;
+                       First, Last : integer) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
@@ -1192,7 +1198,7 @@ begin
 end;
 
 function MakeFunctionType(const Args : TPsFnArgs;
-                         ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
+                          ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
 var Def : TPsDefPtr;
 begin
   Result := nil;

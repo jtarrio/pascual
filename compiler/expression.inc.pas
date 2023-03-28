@@ -1060,6 +1060,8 @@ begin
          ExCoerce := ExToReal(Expr)
   else if IsNilType(Expr^.TypePtr) and IsPointeryType(TypePtr) then
          ExCoerce := Expr
+  else if IsNilType(Expr^.TypePtr) and IsFunctionyType(TypePtr) then
+         ExCoerce := Expr
   else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
          ExCoerce := _ExCoerceSet(Expr, TypePtr)
   else
