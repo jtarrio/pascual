@@ -338,6 +338,20 @@ begin
   Lexer.IncludeStack := nil
 end;
 
+function _LxResolveFilename(const Current, New : string) : string;
+var Slash : integer;
+begin
+  if (Current = '-') or (New[1] = '/') then Result := New
+  else
+  begin
+    Slash := Length(Current);
+    while (Slash > 0) and (Current[Slash] <> '/') do
+      Slash := Slash - 1;
+    if Slash = 0 then Result := New
+    else Result := Copy(Current, 1, Slash) + New
+  end
+end;
+
 procedure LxOpen(Filename : string);
 begin
   Lexer.Input.Name := Filename;
@@ -345,7 +359,7 @@ begin
   Reset(Lexer.Input.Src)
 end;
 
-procedure LxInclude(Filename : string);
+procedure LxInclude(const Filename : string);
 var NewStack : TLxIncludeStack;
 begin
   new(NewStack);
@@ -354,5 +368,5 @@ begin
   Lexer.IncludeStack := NewStack;
   Lexer.Input.Pos.Row := 0;
   Lexer.Input.Pos.Col := 0;
-  LxOpen(Filename);
+  LxOpen(_LxResolveFilename(Lexer.Input.Name, Filename));
 end;
