@@ -11,7 +11,8 @@ pascual: bootstrap $(RTDIR)/libpascual.a compiler.pas \
 				 lexer.inc.pas parser.inc.pas \
 				 progdefs.forward.inc.pas progdefs.inc.pas pseudofuns.forward.inc.pas \
 				 pseudofuns.inc.pas typedefs.inc.pas \
-				 modules/io.inc.pas modules/math.inc.pas modules/strings.inc.pas
+				 modules/*.pas \
+				 operations/*.pas
 	PC=./bootstrap PINCDIR=$(RTDIR) PLIBDIR=$(RTDIR) ./pascualc compiler.pas -o pascual
 
 .PHONY: clean

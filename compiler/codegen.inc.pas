@@ -319,9 +319,7 @@ var LowBound : integer;
   Size : TExpression;
 begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
-  Size := ExBinaryOp(PfOrd(ExCopy(Index)),
-          ExIntegerConstant(LowBound),
-          XoSub);
+  Size := ExOpSub(PfOrd(ExCopy(Index)), ExIntegerConstant(LowBound));
   OutExpression(Size);
   ExDispose(Size)
 end;
@@ -1456,16 +1454,16 @@ begin
     end
     else
     begin
-      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), XoSub);
+      TmpExpr := ExOpSub(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1));
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
     end
   end
   else
   begin
-    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), XoSub);
+    TmpExpr := ExOpSub(ExCopy(Expr^.PseudoFnCall.Arg1),
+               ExIntegerConstant(1));
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
@@ -1487,16 +1485,15 @@ begin
     end
     else
     begin
-      TmpExpr := ExBinaryOp(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
-                 ExIntegerConstant(1), XoAdd);
+      TmpExpr := ExOpAdd(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+                 ExIntegerConstant(1));
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
     end
   end
   else
   begin
-    TmpExpr := ExBinaryOp(ExCopy(Expr^.PseudoFnCall.Arg1),
-               ExIntegerConstant(1), XoAdd);
+    TmpExpr := ExOpAdd(ExCopy(Expr^.PseudoFnCall.Arg1), ExIntegerConstant(1));
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
@@ -1616,7 +1613,7 @@ var TmpExpr : TExpression;
 begin
   OutEndSameLine;
   write(Codegen.Output, ' while (');
-  TmpExpr := ExUnaryOp(ExCopy(Expr), XoNot);
+  TmpExpr := ExOpNot(ExCopy(Expr));
   OutExpression(TmpExpr);
   ExDispose(TmpExpr);
   write(Codegen.Output, ');');

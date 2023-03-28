@@ -883,7 +883,7 @@ begin
   else if Lexer.Token.Id = TkNot then
   begin
     WantTokenAndRead(TkNot);
-    Expr := ExUnaryOp(PsFactor, XoNot);
+    Expr := ExOpNot(PsFactor);
   end
   else if Lexer.Token.Id = TkAt then
   begin
@@ -898,45 +898,43 @@ begin
   PsFactor := Expr
 end;
 
-function PsOperator : TExOperator;
-var OpToken : TLxTokenId;
+function PsBinaryOp(Left, Right : TExpression;
+                    Op : TLxTokenId) : TExpression;
 begin
-  OpToken := Lexer.Token.Id;
-  case OpToken of
-    TkPlus: Result := XoAdd;
-    TkMinus: Result := XoSub;
-    TkAsterisk: Result := XoMul;
-    TkSlash: Result := XoDivReal;
-    TkDiv: Result := XoDivInt;
-    TkMod: Result := XoMod;
-    TkAnd: Result := XoAnd;
-    TkOr: Result := XoOr;
-    TkXor: Result := XoXor;
-    TkNot: Result := XoNot;
-    TkShl: Result := XoShl;
-    TkShr: Result := XoShr;
-    TkIn: Result := XoIn;
-    TkEquals: Result := XoEq;
-    TkNotEquals: Result := XoNe;
-    TkLessthan: Result := XoLt;
-    TkMorethan: Result := XoGt;
-    TkLessOrEquals: Result := XoLtEq;
-    TkMoreOrEquals: Result := XoGtEq;
-    else CompileError('Expected an operator, got ' + LxTokenName(OpToken))
+  case Op of 
+    TkPlus: Result := ExOpAdd(Left, Right);
+    TkMinus: Result := ExOpSub(Left, Right);
+    TkAsterisk: Result := ExOpMul(Left, Right);
+    TkSlash: Result := ExOpDivReal(Left, Right);
+    TkDiv: Result := ExOpDivInt(Left, Right);
+    TkMod: Result := ExOpMod(Left, Right);
+    TkAnd: Result := ExOpAnd(Left, Right);
+    TkOr: Result := ExOpOr(Left, Right);
+    TkXor: Result := ExOpXor(Left, Right);
+    TkShl: Result := ExOpShl(Left, Right);
+    TkShr: Result := ExOpShr(Left, Right);
+    TkIn: Result := ExOpIn(Left, Right);
+    TkEquals: Result := ExOpEq(Left, Right);
+    TkNotEquals: Result := ExOpNe(Left, Right);
+    TkLessthan: Result := ExOpLt(Left, Right);
+    TkMorethan: Result := ExOpGt(Left, Right);
+    TkLessOrEquals: Result := ExOpLtEq(Left, Right);
+    TkMoreOrEquals: Result := ExOpGtEq(Left, Right);
+    else CompileError('Expected an operator, got ' + LxTokenName(Op))
   end;
-  ReadToken
 end;
 
 function PsTerm : TExpression;
 var 
-  Op : TExOperator;
+  Op : TLxTokenId;
   Expr : TExpression;
 begin
   Expr := PsFactor;
   while IsOpMultiplying(Lexer.Token) do
   begin
-    Op := PsOperator;
-    Expr := ExBinaryOp(Expr, PsFactor, Op)
+    Op := Lexer.Token.Id;
+    ReadToken;
+    Expr := PsBinaryOp(Expr, PsFactor, Op)
   end;
   PsTerm := Expr
 end;
@@ -944,32 +942,34 @@ end;
 function PsSimpleExpression : TExpression;
 var 
   Negative : boolean;
-  Op : TExOperator;
+  Op : TLxTokenId;
   Expr : TExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
   if Negative then ReadToken
   else SkipToken(TkPlus);
   Expr := PsTerm;
-  if Negative then Expr := ExUnaryOp(Expr, XoNeg);
+  if Negative then Expr := ExOpNeg(Expr);
   while IsOpAdding(Lexer.Token) do
   begin
-    Op := PsOperator;
-    Expr := ExBinaryOp(Expr, PsTerm, Op)
+    Op := Lexer.Token.Id;
+    ReadToken;
+    Expr := PsBinaryOp(Expr, PsTerm, Op)
   end;
   PsSimpleExpression := Expr
 end;
 
 function PsExpression;
 var 
-  Op : TExOperator;
+  Op : TLxTokenId;
   Expr : TExpression;
 begin
   Expr := PsSimpleExpression;
   while IsOpRelational(Lexer.Token) do
   begin
-    Op := PsOperator;
-    Expr := ExBinaryOp(Expr, PsSimpleExpression, Op)
+    Op := Lexer.Token.Id;
+    ReadToken;
+    Expr := PsBinaryOp(Expr, PsSimpleExpression, Op)
   end;
   PsExpression := Expr
 end;

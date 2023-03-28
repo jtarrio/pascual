@@ -70,6 +70,12 @@ begin
     ErrorForExpr('Expected a string', Expr)
 end;
 
+procedure EnsureNumericExpr(Expr : TExpression);
+begin
+  if not IsNumericType(Expr^.TypePtr) then
+    ErrorForExpr('Expected a numeric expression', Expr)
+end;
+
 procedure EnsureIntegerExpr(Expr : TExpression);
 begin
   if not IsIntegerType(Expr^.TypePtr) then

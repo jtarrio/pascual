@@ -13,13 +13,6 @@ forward;
 procedure ExMarkInitialized(Lhs : TExpression);
 forward;
 
-function ExUnaryOp(Parent : TExpression; Op : TExOperator) : TExpression;
-forward;
-
-function ExBinaryOp(Left, Right : TExpression;
-                    Op : TExOperator) : TExpression;
-forward;
-
 function ExGetOrdinal(Expr : TExpression) : integer;
 forward;
 

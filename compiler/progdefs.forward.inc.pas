@@ -17,3 +17,5 @@ function IsStringType(TypePtr : TPsTypePtr) : boolean;
 forward;
 function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
 forward;
+function IsNumericType(TypePtr : TPsTypePtr) : boolean;
+forward;
