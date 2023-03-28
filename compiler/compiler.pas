@@ -22,16 +22,10 @@ forward;
 {$I progdefs.inc.pas}
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
-{$I operations/util.inc.pas}
-{$I operations/arithmetic.inc.pas}
-{$I operations/bitwise.inc.pas}
-{$I operations/logical.inc.pas}
-{$I operations/relational.inc.pas}
+{$I operations/operations.inc.pas}
 {$I parser.inc.pas}
 {$I pseudofuns.inc.pas}
-{$I modules/io.inc.pas}
-{$I modules/math.inc.pas}
-{$I modules/strings.inc.pas}
+{$I modules/modules.inc.pas}
 {$I globals.inc.pas}
 {$I codegen.inc.pas}
 
