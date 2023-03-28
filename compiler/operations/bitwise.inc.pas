@@ -1,39 +1,38 @@
-function _ExOpShl_Integers(Left, Right : TExpression) : TExpression;
+function _ExOpBitwise_Integers(Left, Right : TExpression;
+                               Op : TExOperator) : TExpression;
 begin
-  if ExIsImmediate(Left) and ExIsImmediate(Right) then
+  if ExIsImmediate(Right) and (Right^.Immediate.IntegerVal = 0) then
+  begin
+    ExDispose(Right);
+    Result := Left;
+  end
+  else if ExIsImmediate(Left) and ExIsImmediate(Right) then
   begin
     Result := Left;
-    Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shl
-                                    Right^.Immediate.IntegerVal;
+    case Op of 
+      XoShl:
+             Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shl
+                                             Right^.Immediate.IntegerVal;
+      XoShr:
+             Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shr
+                                             Right^.Immediate.IntegerVal;
+    end;
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoShl, PrimitiveTypes.PtInteger)
-end;
-
-function _ExOpShr_Integers(Left, Right : TExpression) : TExpression;
-begin
-  if ExIsImmediate(Left) and ExIsImmediate(Right) then
-  begin
-    Result := Left;
-    Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shr
-                                    Right^.Immediate.IntegerVal;
-    ExDispose(Right)
-  end
-  else
-    Result := _ExOp_MakeBinary(Left, Right, XoShr, PrimitiveTypes.PtInteger)
+    Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtInteger)
 end;
 
 function ExOpShl(Left, Right : TExpression) : TExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpShl_Integers(Left, Right)
+    Result := _ExOpBitwise_Integers(Left, Right, XoShl)
   else ErrorInvalidOperator2(Left, Right, XoShl)
 end;
 
 function ExOpShr(Left, Right : TExpression) : TExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpShr_Integers(Left, Right)
+    Result := _ExOpBitwise_Integers(Left, Right, XoShr)
   else ErrorInvalidOperator2(Left, Right, XoShr)
 end;
