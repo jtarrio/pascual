@@ -365,12 +365,20 @@ end;
 function _DescribeUnaryOpExpr(Expr : TExpression) : string;
 var UseParens : boolean;
 begin
-  Result := ExDescribeOperator(Expr^.Unary.Op);
-  if Expr^.Unary.Op <> XoNeg then Result := Result + ' ';
-  UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
-  if UseParens then Result := Result + '(';
-  Result := Result + ExDescribe(Expr^.Unary.Parent);
-  if UseParens then Result := Result + ')';
+  if Expr^.Unary.Op in [XoOrd, XoPred, XoSucc] then
+  begin
+    Result := ExDescribeOperator(Expr^.Unary.Op) + '(' +
+              ExDescribe(Expr^.Unary.Parent) + ')'
+  end
+  else
+  begin
+    Result := ExDescribeOperator(Expr^.Unary.Op);
+    if Expr^.Unary.Op <> XoNeg then Result := Result + ' ';
+    UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
+    if UseParens then Result := Result + '(';
+    Result := Result + ExDescribe(Expr^.Unary.Parent);
+    if UseParens then Result := Result + ')'
+  end
 end;
 
 function _DescribeBinaryOpExpr(Expr : TExpression) : string;

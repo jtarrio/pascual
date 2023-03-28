@@ -276,9 +276,9 @@ begin
   while Bounds <> nil do
   begin
     write(Codegen.Output, 'set_set(');
-    First := PfOrd(ExCoerce(ExCopy(Bounds^.First), ElementTypePtr));
+    First := ExOpOrd(ExCoerce(ExCopy(Bounds^.First), ElementTypePtr));
     if Bounds^.Last = nil then Last := ExCopy(First)
-    else Last := PfOrd(ExCoerce(ExCopy(Bounds^.Last), ElementTypePtr));
+    else Last := ExOpOrd(ExCoerce(ExCopy(Bounds^.Last), ElementTypePtr));
     OutExpression(First);
     _OutComma;
     OutExpression(Last);
@@ -319,7 +319,7 @@ var LowBound : integer;
   Size : TExpression;
 begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
-  Size := ExOpSub(PfOrd(ExCopy(Index)), ExIntegerConstant(LowBound));
+  Size := ExOpSub(ExOpOrd(ExCopy(Index)), ExIntegerConstant(LowBound));
   OutExpression(Size);
   ExDispose(Size)
 end;
@@ -454,13 +454,10 @@ begin
   with Expr^.PseudoFnCall do
     if PseudoFnPtr = PseudoFuns.Dispose then _OutDispose(Expr)
     else if PseudoFnPtr = PseudoFuns.New then _OutNew(Expr)
-    else if PseudoFnPtr = PseudoFuns.Ord then _OutOrd(Expr)
-    else if PseudoFnPtr = PseudoFuns.Pred then _OutPred(Expr)
     else if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Sizeof then _OutSizeof(Expr)
     else if PseudoFnPtr = PseudoFuns.Str then _OutStr(Expr)
-    else if PseudoFnPtr = PseudoFuns.Succ then _OutSucc(Expr)
     else if PseudoFnPtr = PseudoFuns.Val then _OutVal(Expr)
     else if PseudoFnPtr = PseudoFuns.Write then _OutWrite(Expr)
     else if PseudoFnPtr = PseudoFuns.Writeln then _OutWrite(Expr)
@@ -469,12 +466,24 @@ end;
 
 procedure _OutExUnaryOp(Expr : TExpression);
 begin
-  if Expr^.Unary.Op = XoNeg then write(Codegen.Output, '-')
+  if Expr^.Unary.Op = XoOrd then _OutOrd(Expr)
+  else if Expr^.Unary.Op = XoPred then _OutPred(Expr)
+  else if Expr^.Unary.Op = XoSucc then _OutSucc(Expr)
+  else if Expr^.Unary.Op = XoNeg then
+  begin
+    write(Codegen.Output, '-');
+    _OutExpressionParens(Expr^.Unary.Parent, Expr)
+  end
   else if (Expr^.Unary.Op = XoNot) and IsBooleanType(Expr^.TypePtr) then
-         write(Codegen.Output, '!')
+  begin
+    write(Codegen.Output, '!');
+    _OutExpressionParens(Expr^.Unary.Parent, Expr)
+  end
   else if (Expr^.Unary.Op = XoNot) and IsIntegerType(Expr^.TypePtr) then
-         write(Codegen.Output, '~');
-  _OutExpressionParens(Expr^.Unary.Parent, Expr)
+  begin
+    write(Codegen.Output, '~');
+    _OutExpressionParens(Expr^.Unary.Parent, Expr)
+  end
 end;
 
 function _IsArithmeticOp(Op : TExOperator) : boolean;
@@ -1429,32 +1438,32 @@ end;
 
 procedure _OutOrd(Expr : TExpression);
 begin
-  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
-  if IsCharType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsCharType(Expr^.Unary.Parent^.TypePtr) then
   begin
     write(Codegen.Output, '(int)');
-    _OutExpressionParensPrec(Expr^.PseudoFnCall.Arg1, 2)
+    _OutExpressionParensPrec(Expr^.Unary.Parent, 2)
   end
-  else OutExpression(Expr^.PseudoFnCall.Arg1)
+  else OutExpression(Expr^.Unary.Parent)
 end;
 
 procedure _OutPred(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
-  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
-  if IsBoundedType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
     if Options.CheckBounds then
     begin
       write(Codegen.Output, 'pred(');
-      OutExpression(Expr^.PseudoFnCall.Arg1);
+      OutExpression(Expr^.Unary.Parent);
       _OutComma;
-      _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
+      _OutBounds(Expr^.Unary.Parent^.TypePtr);
       write(Codegen.Output, ')')
     end
     else
     begin
-      TmpExpr := ExOpSub(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExOpSub(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
                  ExIntegerConstant(1));
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
@@ -1462,7 +1471,7 @@ begin
   end
   else
   begin
-    TmpExpr := ExOpSub(ExCopy(Expr^.PseudoFnCall.Arg1),
+    TmpExpr := ExOpSub(ExCopy(Expr^.Unary.Parent),
                ExIntegerConstant(1));
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
@@ -1472,20 +1481,20 @@ end;
 procedure _OutSucc(Expr : TExpression);
 var TmpExpr : TExpression;
 begin
-  EnsureOrdinalExpr(Expr^.PseudoFnCall.Arg1);
-  if IsBoundedType(Expr^.PseudoFnCall.Arg1^.TypePtr) then
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
     if Options.CheckBounds then
     begin
       write(Codegen.Output, 'succ(');
-      OutExpression(Expr^.PseudoFnCall.Arg1);
+      OutExpression(Expr^.Unary.Parent);
       _OutComma;
-      _OutBounds(Expr^.PseudoFnCall.Arg1^.TypePtr);
+      _OutBounds(Expr^.Unary.Parent^.TypePtr);
       write(Codegen.Output, ')')
     end
     else
     begin
-      TmpExpr := ExOpAdd(PfOrd(ExCopy(Expr^.PseudoFnCall.Arg1)),
+      TmpExpr := ExOpAdd(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
                  ExIntegerConstant(1));
       OutExpression(TmpExpr);
       ExDispose(TmpExpr)
@@ -1493,7 +1502,7 @@ begin
   end
   else
   begin
-    TmpExpr := ExOpAdd(ExCopy(Expr^.PseudoFnCall.Arg1), ExIntegerConstant(1));
+    TmpExpr := ExOpAdd(ExCopy(Expr^.Unary.Parent), ExIntegerConstant(1));
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end

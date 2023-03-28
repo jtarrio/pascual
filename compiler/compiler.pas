@@ -15,14 +15,14 @@ forward;
 
 {$I typedefs.inc.pas}
 {$I expression.forward.inc.pas}
-{$I pseudofuns.forward.inc.pas}
+{$I operations/forward.inc.pas}
 {$I progdefs.forward.inc.pas}
 {$I errors.inc.pas}
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
-{$I operations/operations.inc.pas}
+{$I operations/define.inc.pas}
 {$I parser.inc.pas}
 {$I pseudofuns.inc.pas}
 {$I modules/modules.inc.pas}

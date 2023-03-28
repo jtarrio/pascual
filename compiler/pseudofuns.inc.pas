@@ -73,69 +73,13 @@ end;
 function PfOrd_Parse(FnExpr : TExpression) : TExpression;
 begin
   ExDispose(FnExpr);
-  Result := PfOrd(_Pf_Unary_Parse)
-end;
-
-function PfOrd(Arg : TExpression) : TExpression;
-begin
-  EnsureOrdinalExpr(Arg);
-  if ExIsImmediate(Arg) then
-  begin
-    with Arg^.Immediate do
-      case Cls of 
-        XicBoolean : if BooleanVal then Result := ExIntegerConstant(1)
-                     else Result := ExIntegerConstant(0);
-        XicInteger: Result := ExIntegerConstant(IntegerVal);
-        XicChar: Result := ExIntegerConstant(Ord(CharVal));
-        XicEnum: Result := ExIntegerConstant(EnumOrdinal);
-        else ErrorForExpr('Expected an ordinal', Arg)
-      end;
-    ExDispose(Arg)
-  end
-  else
-  begin
-    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Ord));
-    Result^.PseudoFnCall.Arg1 := Arg;
-    Result^.TypePtr := PrimitiveTypes.PtInteger
-  end
+  Result := ExOpOrd(_Pf_Unary_Parse)
 end;
 
 function PfPred_Parse(FnExpr : TExpression) : TExpression;
 begin
   ExDispose(FnExpr);
-  Result := PfPred(_Pf_Unary_Parse)
-end;
-
-function PfPred(Arg : TExpression) : TExpression;
-var OutOfBounds : boolean;
-begin
-  EnsureOrdinalExpr(Arg);
-  if ExIsImmediate(Arg) then
-  begin
-    OutOfBounds := false;
-    with Arg^.Immediate do
-      case Cls of 
-        XicBoolean : if BooleanVal then Result := ExBooleanConstant(false)
-                     else OutOfBounds := true;
-        XicInteger: Result := ExIntegerConstant(IntegerVal - 1);
-        XicChar: if Ord(CharVal) > 0 then
-                   Result := ExCharConstant(Pred(CharVal))
-                 else OutOfBounds := true;
-        XicEnum: if EnumOrdinal > 0 then
-                   Result := ExEnumConstant(Pred(EnumOrdinal), Arg^.TypePtr)
-                 else OutOfBounds := true;
-        else ErrorForExpr('Expected an ordinal', Arg)
-      end;
-    if OutOfBounds then
-      ErrorForExpr('Predecessor for argument would be out of bounds', Arg);
-    ExDispose(Arg)
-  end
-  else
-  begin
-    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Pred));
-    Result^.PseudoFnCall.Arg1 := Arg;
-    Result^.TypePtr := Arg^.TypePtr
-  end
+  Result := ExOpPred(_Pf_Unary_Parse)
 end;
 
 function PfRandom_Parse(FnExpr : TExpression) : TExpression;
@@ -165,39 +109,7 @@ end;
 function PfSucc_Parse(FnExpr : TExpression) : TExpression;
 begin
   ExDispose(FnExpr);
-  Result := PfSucc(_Pf_Unary_Parse)
-end;
-
-function PfSucc(Arg : TExpression) : TExpression;
-var OutOfBounds : boolean;
-begin
-  EnsureOrdinalExpr(Arg);
-  if ExIsImmediate(Arg) then
-  begin
-    OutOfBounds := false;
-    with Arg^.Immediate do
-      case Cls of 
-        XicBoolean : if not BooleanVal then Result := ExBooleanConstant(true)
-                     else OutOfBounds := true;
-        XicInteger: Result := ExIntegerConstant(IntegerVal + 1);
-        XicChar: if Ord(CharVal) < 255 then
-                   Result := ExCharConstant(Succ(CharVal))
-                 else OutOfBounds := true;
-        XicEnum: if EnumOrdinal < EnumPtr^.Size - 1 then
-                   Result := ExEnumConstant(Succ(EnumOrdinal), Arg^.TypePtr)
-                 else OutOfBounds := true;
-        else ErrorForExpr('Expected an ordinal', Arg)
-      end;
-    if OutOfBounds then
-      ErrorForExpr('Successor for argument would be out of bounds', Arg);
-    ExDispose(Arg)
-  end
-  else
-  begin
-    Result := ExPseudoFnCall(ExPseudoFn(PseudoFuns.Succ));
-    Result^.PseudoFnCall.Arg1 := Arg;
-    Result^.TypePtr := Arg^.TypePtr
-  end
+  Result := ExOpSucc(_Pf_Unary_Parse)
 end;
 
 function Pf_Unary_Describe(Expr : TExpression) : string;

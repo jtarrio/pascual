@@ -5,7 +5,7 @@ var
     PtEmptySet : TPsTypePtr
   end;
   PseudoFuns : record
-    Dispose, New, Ord, Pred, Read, Readln, Sizeof, Str, Succ, Val, Write,
+    Dispose, New, Read, Readln, Sizeof, Str, Val, Write,
     Writeln : TPsPseudoFnPtr
   end;
 

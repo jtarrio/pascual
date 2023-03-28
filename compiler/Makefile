@@ -9,7 +9,7 @@ pascual: bootstrap $(RTDIR)/libpascual.a compiler.pas \
          codegen.defs.inc.pas codegen.inc.pas errors.inc.pas \
 				 expression.forward.inc.pas expression.inc.pas globals.inc.pas \
 				 lexer.inc.pas parser.inc.pas \
-				 progdefs.forward.inc.pas progdefs.inc.pas pseudofuns.forward.inc.pas \
+				 progdefs.forward.inc.pas progdefs.inc.pas \
 				 pseudofuns.inc.pas typedefs.inc.pas \
 				 modules/*.pas \
 				 operations/*.pas

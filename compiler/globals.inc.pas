@@ -20,9 +20,9 @@ begin
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
   { Ordinal subroutines }
-  PseudoFuns.Ord := AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Unary_Describe);
-  PseudoFuns.Pred := AddPseudoFn('PRED', @PfPred_Parse, @Pf_Unary_Describe);
-  PseudoFuns.Succ := AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('PRED', @PfPred_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
 
   { Memory subroutines }
   PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse,
