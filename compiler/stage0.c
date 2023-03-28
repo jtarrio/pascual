@@ -11,26 +11,16 @@ void COMPILEERROR(PString MSG);
 void INTERNALERROR(PString MSG);
 void COMPILEWARNING(PString MSG);
 
-typedef enum __attribute__((__packed__)) enum1 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAT, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
+typedef struct record15* TPSTYPEPTR;
+typedef struct record16* TPSENUMPTR;
+typedef struct record20* TPSVARPTR;
+typedef struct record23* TPSFNPTR;
+typedef struct record24* TPSPSEUDOFNPTR;
+typedef struct record3* TEXSETIMMBOUNDS;
+typedef struct record4* TEXSETEXPRBOUNDS;
+typedef struct record11* TEXPRESSION;
+typedef enum __attribute__((__packed__)) enum1 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
 typedef struct record2 {
-  PInteger ROW;
-  PInteger COL;
-} TLXPOS;
-typedef struct record3 {
-  TLXTOKENID ID;
-  PString VALUE;
-  TLXPOS POS;
-} TLXTOKEN;
-typedef struct record17* TPSTYPEPTR;
-typedef struct record18* TPSENUMPTR;
-typedef struct record22* TPSVARPTR;
-typedef struct record25* TPSFNPTR;
-typedef struct record26* TPSPSEUDOFNPTR;
-typedef struct record5* TEXSETIMMBOUNDS;
-typedef struct record6* TEXSETEXPRBOUNDS;
-typedef struct record13* TEXPRESSION;
-typedef enum __attribute__((__packed__)) enum2 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
-typedef struct record4 {
   TEXIMMEDIATECLASS CLS;
   union {
     struct {
@@ -50,60 +40,61 @@ typedef struct record4 {
     };
     struct {
       PInteger ENUMORDINAL;
-      struct record18* ENUMPTR;
+      struct record16* ENUMPTR;
     };
     struct {
-      struct record5* SETBOUNDS;
-      struct record17* SETOFTYPEPTR;
+      struct record3* SETBOUNDS;
+      struct record15* SETOFTYPEPTR;
     };
   };
 } TEXIMMEDIATE;
-typedef struct record5 {
+typedef struct record3 {
   PInteger FIRST;
   PInteger LAST;
-  struct record5* NEXT;
+  struct record3* NEXT;
 } TEXSETIMMBOUNDSOBJ;
-typedef struct record6 {
-  struct record13* FIRST;
-  struct record13* LAST;
-  struct record6* NEXT;
+typedef struct record4 {
+  struct record11* FIRST;
+  struct record11* LAST;
+  struct record4* NEXT;
 } TEXSETEXPRBOUNDSOBJ;
-typedef struct record7 {
+typedef struct record5 {
   PInteger SIZE;
-  struct record13* VALUES[16];
+  struct record11* VALUES[16];
 } TEXFUNCTIONARGS;
-typedef struct record8 {
-  struct record13* ARG;
-  struct record8* NEXT;
+typedef struct record6 {
+  struct record11* ARG;
+  struct record6* NEXT;
 } TEXREADARGS;
-typedef struct record9 {
-  struct record13* ARG;
-  struct record13* WIDTH;
-  struct record13* PREC;
-  struct record9* NEXT;
+typedef struct record7 {
+  struct record11* ARG;
+  struct record11* WIDTH;
+  struct record11* PREC;
+  struct record7* NEXT;
 } TEXWRITEARGS;
-typedef struct record10 {
-  struct record26* PSEUDOFNPTR;
-  struct record13* ARG1;
-  struct record13* ARG2;
-  struct record13* ARG3;
-  struct record13* ARG4;
-  struct record17* TYPEARG;
+typedef struct record8 {
+  struct record24* PSEUDOFNPTR;
+  struct record11* ARG1;
+  struct record11* ARG2;
+  struct record11* ARG3;
+  struct record11* ARG4;
+  struct record15* TYPEARG;
   TEXREADARGS* READARGS;
   TEXWRITEARGS* WRITEARGS;
 } TEXPSEUDOFNCALL;
-typedef struct record11 {
-  struct record13* PARENT;
-  TLXTOKENID OP;
+typedef enum __attribute__((__packed__)) enum2 { XOADD, XOSUB, XOMUL, XODIVREAL, XODIVINT, XOMOD, XONEG, XOAND, XOOR, XOXOR, XONOT, XOSHL, XOSHR, XOIN, XOEQ, XONE, XOLT, XOGT, XOLTEQ, XOGTEQ, XOORD, XOPRED, XOSUCC } TEXOPERATOR;
+typedef struct record9 {
+  struct record11* PARENT;
+  TEXOPERATOR OP;
 } TEXUNARYOP;
-typedef struct record12 {
-  struct record13* LEFT;
-  struct record13* RIGHT;
-  TLXTOKENID OP;
+typedef struct record10 {
+  struct record11* LEFT;
+  struct record11* RIGHT;
+  TEXOPERATOR OP;
 } TEXBINARYOP;
 typedef enum __attribute__((__packed__)) enum3 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCWITHTMPVAR, XCSUBRANGE, XCSET, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCADDRESS, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCPSEUDOFNCALL, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
-typedef struct record13 {
-  struct record17* TYPEPTR;
+typedef struct record11 {
+  struct record15* TYPEPTR;
   PBoolean ISASSIGNABLE;
   PBoolean ISADDRESSABLE;
   PBoolean ISFUNCTIONRESULT;
@@ -113,53 +104,53 @@ typedef struct record13 {
       TEXIMMEDIATE IMMEDIATE;
     };
     struct {
-      struct record13* TOSTRPARENT;
+      struct record11* TOSTRPARENT;
     };
     struct {
-      struct record13* TOREALPARENT;
+      struct record11* TOREALPARENT;
     };
     struct {
-      struct record13* TMPVAR;
-      struct record13* TMPVARVALUE;
-      struct record13* TMPVARCHILD;
+      struct record11* TMPVAR;
+      struct record11* TMPVARVALUE;
+      struct record11* TMPVARCHILD;
     };
     struct {
-      struct record13* SUBRANGEPARENT;
+      struct record11* SUBRANGEPARENT;
     };
     struct {
-      struct record13* SETBASE;
+      struct record11* SETBASE;
       TEXSETEXPRBOUNDSOBJ* SETBOUNDS;
     };
     struct {
-      struct record22* VARPTR;
+      struct record20* VARPTR;
     };
     struct {
-      struct record13* RECEXPR;
+      struct record11* RECEXPR;
       PInteger RECFIELDNUM;
     };
     struct {
-      struct record13* ARRAYEXPR;
-      struct record13* ARRAYINDEX;
+      struct record11* ARRAYEXPR;
+      struct record11* ARRAYINDEX;
     };
     struct {
-      struct record13* POINTEREXPR;
+      struct record11* POINTEREXPR;
     };
     struct {
-      struct record13* ADDRESSEXPR;
+      struct record11* ADDRESSEXPR;
     };
     struct {
-      struct record13* STRINGEXPR;
-      struct record13* STRINGINDEX;
+      struct record11* STRINGEXPR;
+      struct record11* STRINGINDEX;
     };
     struct {
-      struct record25* FNPTR;
+      struct record23* FNPTR;
     };
     struct {
-      struct record13* FNEXPR;
+      struct record11* FNEXPR;
       TEXFUNCTIONARGS CALLARGS;
     };
     struct {
-      struct record26* PSEUDOFNPTR;
+      struct record24* PSEUDOFNPTR;
     };
     struct {
       TEXPSEUDOFNCALL PSEUDOFNCALL;
@@ -172,55 +163,55 @@ typedef struct record13 {
     };
   };
 } TEXPRESSIONOBJ;
-typedef struct record14 {
+typedef struct record12 {
   PString NAME;
 } TPSIDENTIFIER;
-typedef struct record20* TPSRECPTR;
-typedef struct record24* TPSFNDEFPTR;
-typedef struct record21* TPSCONSTPTR;
-typedef struct record27* TPSWITHVARPTR;
-typedef struct record28* TPSNAMEPTR;
+typedef struct record18* TPSRECPTR;
+typedef struct record22* TPSFNDEFPTR;
+typedef struct record19* TPSCONSTPTR;
+typedef struct record25* TPSWITHVARPTR;
+typedef struct record26* TPSNAMEPTR;
 typedef enum __attribute__((__packed__)) enum4 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCTEXT, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERUNKNOWN, TTCFUNCTION } TPSTYPECLASS;
-typedef struct record17 {
+typedef struct record15 {
   PString NAME;
-  struct record17* ALIASFOR;
+  struct record15* ALIASFOR;
   PBoolean WASUSED;
   TPSTYPECLASS CLS;
   union {
     struct {
-      struct record18* ENUMPTR;
+      struct record16* ENUMPTR;
     };
     struct {
-      struct record15 {
+      struct record13 {
         PInteger FIRST;
         PInteger LAST;
-        struct record17* BASETYPEPTR;
+        struct record15* BASETYPEPTR;
       } RANGEDEF;
     };
     struct {
-      struct record17* ELEMENTTYPEPTR;
+      struct record15* ELEMENTTYPEPTR;
     };
     struct {
-      struct record20* RECPTR;
+      struct record18* RECPTR;
     };
     struct {
-      struct record16 {
-        struct record17* INDEXTYPEPTR;
-        struct record17* VALUETYPEPTR;
+      struct record14 {
+        struct record15* INDEXTYPEPTR;
+        struct record15* VALUETYPEPTR;
       } ARRAYDEF;
     };
     struct {
-      struct record17* POINTEDTYPEPTR;
+      struct record15* POINTEDTYPEPTR;
     };
     struct {
       PString* TARGETNAME;
     };
     struct {
-      struct record24* FNDEFPTR;
+      struct record22* FNDEFPTR;
     };
   };
 } TPSTYPE;
-typedef struct record18 {
+typedef struct record16 {
   PInteger SIZE;
   PString VALUES[128];
   PInteger ID;
@@ -228,11 +219,11 @@ typedef struct record18 {
   PBoolean VALUESHAVEBEENOUTPUT;
   PInteger REFCOUNT;
 } TPSENUMDEF;
-typedef struct record19 {
+typedef struct record17 {
   PString NAME;
   TPSTYPE* TYPEPTR;
 } TPSRECORDFIELD;
-typedef struct record20 {
+typedef struct record18 {
   PInteger SIZE;
   TPSRECORDFIELD FIELDS[32];
   PInteger NUMVARIANTS;
@@ -242,11 +233,11 @@ typedef struct record20 {
   PBoolean HASBEENDEFINED;
   PInteger REFCOUNT;
 } TPSRECORDDEF;
-typedef struct record21 {
+typedef struct record19 {
   PString NAME;
   TEXPRESSIONOBJ* VALUE;
 } TPSCONSTANT;
-typedef struct record22 {
+typedef struct record20 {
   PString NAME;
   TPSTYPE* TYPEPTR;
   PBoolean ISREFERENCE;
@@ -254,16 +245,16 @@ typedef struct record22 {
   PBoolean WASINITIALIZED;
   PBoolean WASUSED;
 } TPSVARIABLE;
-typedef struct record23 {
+typedef struct record21 {
   PInteger COUNT;
   TPSVARIABLE DEFS[16];
 } TPSFNARGS;
-typedef struct record24 {
+typedef struct record22 {
   TPSFNARGS ARGS;
   TPSTYPE* RETURNTYPEPTR;
   PInteger REFCOUNT;
 } TPSFNDEF;
-typedef struct record25 {
+typedef struct record23 {
   PString NAME;
   PString EXTERNALNAME;
   TPSFNARGS ARGS;
@@ -273,16 +264,16 @@ typedef struct record25 {
 } TPSFUNCTION;
 typedef TEXPRESSIONOBJ* (*TPSPSEUDOFNPARSER)(TEXPRESSIONOBJ* FNEXPR);
 typedef PString (*TPSPSEUDOFNDESCRIPTOR)(TEXPRESSIONOBJ* FNEXPR);
-typedef struct record26 {
+typedef struct record24 {
   PString NAME;
   TPSPSEUDOFNPARSER PARSEFN;
   TPSPSEUDOFNDESCRIPTOR DESCRIBEFN;
 } TPSPSEUDOFN;
-typedef struct record27 {
+typedef struct record25 {
   TPSVARIABLE* VARPTR;
 } TPSWITHVAR;
 typedef enum __attribute__((__packed__)) enum5 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
-typedef struct record28 {
+typedef struct record26 {
   PString NAME;
   TPSNAMECLASS CLS;
   union {
@@ -308,16 +299,16 @@ typedef struct record28 {
   };
 } TPSNAME;
 typedef enum __attribute__((__packed__)) enum6 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
-typedef struct record29 {
+typedef struct record27 {
   PInteger ENUMCTR;
   PInteger RECORDCTR;
   PInteger TMPVARCTR;
 } TPSCOUNTERS;
-typedef struct record30* TPSDEFPTR;
+typedef struct record28* TPSDEFPTR;
 typedef enum __attribute__((__packed__)) enum7 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCPSEUDOFN, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
-typedef struct record30 {
-  struct record30* PREV;
-  struct record30* NEXT;
+typedef struct record28 {
+  struct record28* PREV;
+  struct record28* NEXT;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -348,14 +339,14 @@ typedef struct record30 {
     };
   };
 } TPSDEFENTRY;
-typedef struct record31 {
+typedef struct record29 {
   TPSDEFENTRY* LATEST;
   TPSFUNCTION* CURRENTFN;
   TPSCOUNTERS COUNTERS;
 } TPSDEFS;
 
-const char* enumvalues1[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAT", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKSHL", "TKSHR", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH", "TKXOR" };
-const char* enumvalues2[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
+const char* enumvalues1[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
+const char* enumvalues2[] = { "XOADD", "XOSUB", "XOMUL", "XODIVREAL", "XODIVINT", "XOMOD", "XONEG", "XOAND", "XOOR", "XOXOR", "XONOT", "XOSHL", "XOSHR", "XOIN", "XOEQ", "XONE", "XOLT", "XOGT", "XOLTEQ", "XOGTEQ", "XOORD", "XOPRED", "XOSUCC" };
 const char* enumvalues3[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCWITHTMPVAR", "XCSUBRANGE", "XCSET", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCADDRESS", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCPSEUDOFNCALL", "XCUNARYOP", "XCBINARYOP" };
 const char* enumvalues4[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERUNKNOWN", "TTCFUNCTION" };
 const char* enumvalues5[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
@@ -364,10 +355,9 @@ const char* enumvalues7[] = { "TDCNAME", "TDCTYPE", "TDCCONSTANT", "TDCVARIABLE"
 
 void EXDISPOSE(TEXPRESSIONOBJ* *EXPR);
 TEXPRESSIONOBJ* EXCOPY(TEXPRESSIONOBJ* EXPR);
+PString EXDESCRIBEOPERATOR(TEXOPERATOR OP);
 PString EXDESCRIBE(TEXPRESSIONOBJ* EXPR);
 void EXMARKINITIALIZED(TEXPRESSIONOBJ* LHS);
-TEXPRESSIONOBJ* EXUNARYOP(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP);
-TEXPRESSIONOBJ* EXBINARYOP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
 PInteger EXGETORDINAL(TEXPRESSIONOBJ* EXPR);
 TEXPRESSIONOBJ* EXGETANTIORDINAL(PInteger ORDINAL, TPSTYPE* TYPEPTR);
 TEXPRESSIONOBJ* PFORD(TEXPRESSIONOBJ* ARG);
@@ -382,7 +372,7 @@ PBoolean ISPOINTERTYPE(TPSTYPE* TYPEPTR);
 PBoolean ISSTRINGYTYPE(TPSTYPE* TYPEPTR);
 PBoolean ISSTRINGTYPE(TPSTYPE* TYPEPTR);
 PBoolean ISINTEGERTYPE(TPSTYPE* TYPEPTR);
-PString LXTOKENNAME(TLXTOKENID ID);
+PBoolean ISNUMERICTYPE(TPSTYPE* TYPEPTR);
 
 PString ERRORDESCRIBEEXPR(TEXPRESSIONOBJ* EXPR) {
   PString RESULT;
@@ -390,12 +380,12 @@ PString ERRORDESCRIBEEXPR(TEXPRESSIONOBJ* EXPR) {
   return RESULT;
 }
 
-void ERRORINVALIDOPERATOR(TEXPRESSIONOBJ* EXPR, TLXTOKENID OP) {
-  COMPILEERROR(CONCAT(CpLenPtr, 9, "Operator ", CpString, LXTOKENNAME(OP), CpLenPtr, 28, " is not valid in expression ", CpEnd | CpString, ERRORDESCRIBEEXPR(EXPR)));
+void ERRORINVALIDOPERATOR(TEXPRESSIONOBJ* EXPR, TEXOPERATOR OP) {
+  COMPILEERROR(CONCAT(CpLenPtr, 10, "Operator '", CpString, EXDESCRIBEOPERATOR(OP), CpLenPtr, 29, "' is not valid in expression ", CpEnd | CpString, ERRORDESCRIBEEXPR(EXPR)));
 }
 
-void ERRORINVALIDOPERATOR2(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  COMPILEERROR(CONCAT(CpLenPtr, 17, "Invalid operator ", CpString, LXTOKENNAME(OP), CpLenPtr, 5, " for ", CpString, ERRORDESCRIBEEXPR(LEFT), CpLenPtr, 5, " and ", CpEnd | CpString, ERRORDESCRIBEEXPR(RIGHT)));
+void ERRORINVALIDOPERATOR2(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TEXOPERATOR OP) {
+  COMPILEERROR(CONCAT(CpLenPtr, 18, "Invalid operator '", CpString, EXDESCRIBEOPERATOR(OP), CpLenPtr, 6, "' for ", CpString, ERRORDESCRIBEEXPR(LEFT), CpLenPtr, 5, " and ", CpEnd | CpString, ERRORDESCRIBEEXPR(RIGHT)));
 }
 
 void ERRORFORTYPE(const PString *MSG, TPSTYPE* GOT) {
@@ -462,6 +452,13 @@ void ENSURESTRINGEXPR(TEXPRESSIONOBJ* EXPR) {
   }
 }
 
+void ENSURENUMERICEXPR(TEXPRESSIONOBJ* EXPR) {
+  if (!ISNUMERICTYPE(EXPR->TYPEPTR)) {
+    PString tmp1 = str_make(29, "Expected a numeric expression");
+    ERRORFOREXPR(&tmp1, EXPR);
+  }
+}
+
 void ENSUREINTEGEREXPR(TEXPRESSIONOBJ* EXPR) {
   if (!ISINTEGERTYPE(EXPR->TYPEPTR)) {
     PString tmp1 = str_make(19, "Expected an integer");
@@ -490,11 +487,23 @@ void ENSUREADDRESSABLEEXPR(TEXPRESSIONOBJ* EXPR) {
   }
 }
 
+typedef enum __attribute__((__packed__)) enum8 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAT, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
+typedef struct record30 {
+  PInteger ROW;
+  PInteger COL;
+} TLXPOS;
+typedef struct record31 {
+  TLXTOKENID ID;
+  PString VALUE;
+  TLXPOS POS;
+} TLXTOKEN;
 typedef struct record32 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
+
+const char* enumvalues8[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAT", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKSHL", "TKSHR", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH", "TKXOR" };
 
 struct record34 {
   PString LINE;
@@ -509,7 +518,7 @@ struct record34 {
 PString LXTOKENNAME(TLXTOKENID ID) {
   PString RESULT;
   PString NAME;
-  STR_e(ID, enumvalues1, 0, &NAME);
+  STR_e(ID, enumvalues8, 0, &NAME);
   RESULT = NAME;
   return RESULT;
 }
@@ -647,8 +656,8 @@ void LXGETSTRING() {
   PChar CHR;
   PInteger POS;
   PInteger LAST;
-  enum __attribute__((__packed__)) enum8 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
-  const char* enumvalues8[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
+  enum __attribute__((__packed__)) enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, CARET, DONE } STATE;
+  const char* enumvalues9[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "CARET", "DONE" };
   POS = 0;
   STATE = NONE;
   do {
@@ -848,6 +857,7 @@ struct record35 {
   TPSTYPE* PTCHAR;
   TPSTYPE* PTSTRING;
   TPSTYPE* PTTEXT;
+  TPSTYPE* PTEMPTYSET;
 } PRIMITIVETYPES;
 struct record36 {
   TPSPSEUDOFN* DISPOSE;
@@ -899,12 +909,14 @@ void INITDEFS() {
   DEFS.CURRENTFN = PNil;
 }
 
-TPSENUMDEF* NEWENUM(TPSENUMDEF ENUM) {
+TPSENUMDEF* NEWENUM(const TPSENUMDEF *ENUM) {
   TPSENUMDEF* RESULT;
   RESULT = malloc(sizeof(TPSENUMDEF));
-  *RESULT = ENUM;
+  *RESULT = *ENUM;
   RESULT->ID = DEFCOUNTER(TCTENUM);
   RESULT->REFCOUNT = 1;
+  RESULT->HASBEENDEFINED = 0;
+  RESULT->VALUESHAVEBEENOUTPUT = 0;
   return RESULT;
 }
 
@@ -913,12 +925,13 @@ void DISPOSEENUM(TPSENUMDEF* PTR) {
   if (PTR->REFCOUNT == 0) free(PTR);
 }
 
-TPSRECORDDEF* NEWRECORD(TPSRECORDDEF REC) {
+TPSRECORDDEF* NEWRECORD(const TPSRECORDDEF *REC) {
   TPSRECORDDEF* RESULT;
   RESULT = malloc(sizeof(TPSRECORDDEF));
-  *RESULT = REC;
+  *RESULT = *REC;
   RESULT->ID = DEFCOUNTER(TCTRECORD);
   RESULT->REFCOUNT = 1;
+  RESULT->HASBEENDEFINED = 0;
   return RESULT;
 }
 
@@ -927,10 +940,9 @@ void DISPOSERECORD(TPSRECORDDEF* PTR) {
   if (PTR->REFCOUNT == 0) free(PTR);
 }
 
-TPSFNDEF* NEWFNDEF(TPSFNDEF FNDEF) {
+TPSFNDEF* NEWFNDEF() {
   TPSFNDEF* RESULT;
   RESULT = malloc(sizeof(TPSFNDEF));
-  *RESULT = FNDEF;
   RESULT->REFCOUNT = 1;
   return RESULT;
 }
@@ -1182,10 +1194,8 @@ TPSNAME* _ADDNAME(const PString *NAME, TPSNAMECLASS CLS) {
 
 TPSNAME* ADDTYPENAME(const PString *NAME, TPSTYPE* IDX) {
   TPSNAME* RESULT;
-  TPSNAME* DEF;
-  DEF = _ADDNAME(NAME, TNCTYPE);
-  DEF->TYPEPTR = IDX;
-  RESULT = DEF;
+  RESULT = _ADDNAME(NAME, TNCTYPE);
+  RESULT->TYPEPTR = IDX;
   return RESULT;
 }
 
@@ -1238,17 +1248,6 @@ TPSPSEUDOFN* ADDPSEUDOFN(const PString *NAME, TPSPSEUDOFNPARSER PARSE, TPSPSEUDO
   return RESULT;
 }
 
-TPSTYPE EMPTYTYPE() {
-  TPSTYPE RESULT;
-  TPSTYPE RET;
-  RET.NAME = str_make(0, "");
-  RET.CLS = TTCBOOLEAN;
-  RET.ALIASFOR = PNil;
-  RET.WASUSED = 0;
-  RESULT = RET;
-  return RESULT;
-}
-
 TPSTYPE COPYTYPE(TPSTYPE* TYPEPTR) {
   TPSTYPE RESULT;
   RESULT = *TYPEPTR;
@@ -1262,24 +1261,28 @@ TPSTYPE COPYTYPE(TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
-TPSTYPE TYPEOFCLASS(TPSTYPECLASS CLS) {
-  TPSTYPE RESULT;
-  TPSTYPE RET;
-  RET = EMPTYTYPE();
-  RET.CLS = CLS;
-  RESULT = RET;
+TPSTYPE* GETFUNDAMENTALTYPE(TPSTYPE* TYPEPTR) {
+  TPSTYPE* RESULT;
+  if (TYPEPTR != PNil && TYPEPTR->CLS == TTCRANGE) RESULT = TYPEPTR->RANGEDEF.BASETYPEPTR;
+  else RESULT = TYPEPTR;
+  return RESULT;
+}
+
+PBoolean _TYPEHASCLASS(TPSTYPE* TYPEPTR, TPSTYPECLASS CLS) {
+  PBoolean RESULT;
+  RESULT = TYPEPTR != PNil && GETFUNDAMENTALTYPE(TYPEPTR)->CLS == CLS;
   return RESULT;
 }
 
 PBoolean ISINTEGERTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCINTEGER;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCINTEGER);
   return RESULT;
 }
 
 PBoolean ISREALTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCREAL;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCREAL);
   return RESULT;
 }
 
@@ -1291,13 +1294,13 @@ PBoolean ISNUMERICTYPE(TPSTYPE* TYPEPTR) {
 
 PBoolean ISSTRINGTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCSTRING;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCSTRING);
   return RESULT;
 }
 
 PBoolean ISCHARTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCCHAR;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCCHAR);
   return RESULT;
 }
 
@@ -1309,19 +1312,19 @@ PBoolean ISSTRINGYTYPE(TPSTYPE* TYPEPTR) {
 
 PBoolean ISBOOLEANTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCBOOLEAN;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCBOOLEAN);
   return RESULT;
 }
 
 PBoolean ISTEXTTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCTEXT;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCTEXT);
   return RESULT;
 }
 
 PBoolean ISENUMTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCENUM;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCENUM);
   return RESULT;
 }
 
@@ -1331,40 +1334,33 @@ PBoolean ISRANGETYPE(TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
-TPSTYPE* GETFUNDAMENTALTYPE(TPSTYPE* TYPEPTR) {
-  TPSTYPE* RESULT;
-  while (ISRANGETYPE(TYPEPTR)) TYPEPTR = TYPEPTR->RANGEDEF.BASETYPEPTR;
-  RESULT = TYPEPTR;
-  return RESULT;
-}
-
 PBoolean ISSETTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCSET;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCSET);
   return RESULT;
 }
 
 PBoolean ISRECORDTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCRECORD;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCRECORD);
   return RESULT;
 }
 
 PBoolean ISARRAYTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCARRAY;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCARRAY);
   return RESULT;
 }
 
 PBoolean ISPOINTERTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCPOINTER;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCPOINTER);
   return RESULT;
 }
 
 PBoolean ISNILTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCNIL;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCNIL);
   return RESULT;
 }
 
@@ -1374,25 +1370,21 @@ PBoolean ISPOINTERYTYPE(TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
-TPSTYPE POINTERUNKNOWNTYPE(const PString *TARGETNAME) {
-  TPSTYPE RESULT;
-  TPSTYPE TYP;
-  TYP = TYPEOFCLASS(TTCPOINTERUNKNOWN);
-  TYP.TARGETNAME = malloc(sizeof(PString));
-  *TYP.TARGETNAME = *TARGETNAME;
-  RESULT = TYP;
-  return RESULT;
-}
-
 PBoolean ISPOINTERUNKNOWNTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCPOINTERUNKNOWN;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCPOINTERUNKNOWN);
   return RESULT;
 }
 
 PBoolean ISFUNCTIONTYPE(TPSTYPE* TYPEPTR) {
   PBoolean RESULT;
-  RESULT = TYPEPTR != PNil && TYPEPTR->CLS == TTCFUNCTION;
+  RESULT = _TYPEHASCLASS(TYPEPTR, TTCFUNCTION);
+  return RESULT;
+}
+
+PBoolean ISFUNCTIONYTYPE(TPSTYPE* TYPEPTR) {
+  PBoolean RESULT;
+  RESULT = ISFUNCTIONTYPE(TYPEPTR) || ISNILTYPE(TYPEPTR);
   return RESULT;
 }
 
@@ -1472,6 +1464,12 @@ PBoolean ISSAMETYPE(TPSTYPE* A, TPSTYPE* B) {
     while (B->ALIASFOR != PNil) B = B->ALIASFOR;
     RESULT = A == B || ISPOINTERTYPE(A) && ISPOINTERTYPE(B) && ISSAMETYPE(A->POINTEDTYPEPTR, B->POINTEDTYPEPTR) || ISRANGETYPE(A) && ISRANGETYPE(B) && ISSAMETYPE(GETFUNDAMENTALTYPE(A), GETFUNDAMENTALTYPE(B)) && GETTYPELOWBOUND(A) == GETTYPELOWBOUND(B) && GETTYPEHIGHBOUND(A) == GETTYPEHIGHBOUND(B) || ISSETTYPE(A) && ISSETTYPE(B) && ISSAMETYPE(A->ELEMENTTYPEPTR, B->ELEMENTTYPEPTR);
   }
+  return RESULT;
+}
+
+PBoolean ISFUNDAMENTALLYSAMETYPE(TPSTYPE* A, TPSTYPE* B) {
+  PBoolean RESULT;
+  RESULT = ISSAMETYPE(GETFUNDAMENTALTYPE(A), GETFUNDAMENTALTYPE(B));
   return RESULT;
 }
 
@@ -1639,50 +1637,24 @@ PString TYPENAME(TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
-TPSTYPE* ADDTYPE(TPSTYPE TYP) {
-  TPSTYPE* RESULT;
-  TPSTYPE* TYPEPTR;
-  PInteger ENUMPOS;
-  TYPEPTR = _ADDDEF(TDCTYPE)->TYPEPTR;
-  *TYPEPTR = TYP;
-  RESULT = TYPEPTR;
-  if (cmp_str(CoNotEq, CpStringPtr, &TYP.NAME, CpLenPtr, 0, "")) {
-    if (FINDNAMEINLOCALSCOPE(&TYP.NAME, 0) != PNil) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &TYP.NAME, CpEnd | CpLenPtr, 16, " already defined"));
-    ADDTYPENAME(&TYP.NAME, TYPEPTR);
-  }
-  if (TYP.CLS == TTCENUM && TYP.ALIASFOR == PNil) do {
-    PInteger first = 0;
-    PInteger last = TYP.ENUMPTR->SIZE - 1;
-    if (first <= last) {
-      ENUMPOS = first;
-      while (1) {
-        ADDENUMVALNAME(ENUMPOS, TYPEPTR);
-        if (ENUMPOS == last) break;
-        ++ENUMPOS;
-      }
-    }
-  } while(0);
-  return RESULT;
-}
-
-TPSCONSTANT* ADDCONSTANT(TPSCONSTANT CONSTANT) {
+TPSCONSTANT* ADDCONSTANT(const TPSCONSTANT *CONSTANT) {
   TPSCONSTANT* RESULT;
   TPSCONSTANT* CONSTPTR;
-  if (FINDNAMEINLOCALSCOPE(&CONSTANT.NAME, 0) != PNil) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &CONSTANT.NAME, CpEnd | CpLenPtr, 16, " already defined"));
+  if (FINDNAMEINLOCALSCOPE(&CONSTANT->NAME, 0) != PNil) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &CONSTANT->NAME, CpEnd | CpLenPtr, 16, " already defined"));
   CONSTPTR = _ADDDEF(TDCCONSTANT)->CONSTPTR;
-  ADDCONSTANTNAME(&CONSTANT.NAME, CONSTPTR);
-  *CONSTPTR = CONSTANT;
+  ADDCONSTANTNAME(&CONSTANT->NAME, CONSTPTR);
+  *CONSTPTR = *CONSTANT;
   RESULT = CONSTPTR;
   return RESULT;
 }
 
-TPSVARIABLE* ADDVARIABLE(TPSVARIABLE VARDEF) {
+TPSVARIABLE* ADDVARIABLE(const TPSVARIABLE *VARDEF) {
   TPSVARIABLE* RESULT;
   TPSVARIABLE* VARPTR;
-  if (FINDNAMEINLOCALSCOPE(&VARDEF.NAME, 0) != PNil) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &VARDEF.NAME, CpEnd | CpLenPtr, 16, " already defined"));
+  if (FINDNAMEINLOCALSCOPE(&VARDEF->NAME, 0) != PNil) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &VARDEF->NAME, CpEnd | CpLenPtr, 16, " already defined"));
   VARPTR = _ADDDEF(TDCVARIABLE)->VARPTR;
-  ADDVARIABLENAME(&VARDEF.NAME, VARPTR);
-  *VARPTR = VARDEF;
+  ADDVARIABLENAME(&VARDEF->NAME, VARPTR);
+  *VARPTR = *VARDEF;
   RESULT = VARPTR;
   return RESULT;
 }
@@ -1729,31 +1701,31 @@ PBoolean HASFORWARDDECLARATION(const PString *NAME) {
   return RESULT;
 }
 
-TPSFUNCTION* ADDFUNCTION(TPSFUNCTION FUN) {
+TPSFUNCTION* ADDFUNCTION(const TPSFUNCTION *FUN) {
   TPSFUNCTION* RESULT;
   TPSNAME* NAMEPTR;
   TPSFUNCTION* FNPTR;
   PBoolean ISPROCEDURE;
-  ISPROCEDURE = FUN.RETURNTYPEPTR == PNil;
-  NAMEPTR = FINDNAMEINLOCALSCOPE(&FUN.NAME, 0);
+  ISPROCEDURE = FUN->RETURNTYPEPTR == PNil;
+  NAMEPTR = FINDNAMEINLOCALSCOPE(&FUN->NAME, 0);
   if (NAMEPTR == PNil) {
     FNPTR = _ADDDEF(TDCFUNCTION)->FNPTR;
-    *FNPTR = FUN;
-    ADDFUNCTIONNAME(&FUN.NAME, FNPTR);
+    *FNPTR = *FUN;
+    ADDFUNCTIONNAME(&FUN->NAME, FNPTR);
   }
   else {
-    if (NAMEPTR->CLS != TNCFUNCTION || FUN.ISDECLARATION) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
+    if (NAMEPTR->CLS != TNCFUNCTION || FUN->ISDECLARATION) COMPILEERROR(CONCAT(CpLenPtr, 11, "Identifier ", CpStringPtr, &FUN->NAME, CpEnd | CpLenPtr, 16, " already defined"));
     FNPTR = NAMEPTR->FNPTR;
     if (FNPTR->ISDECLARATION) {
-      if (FUN.ARGS.COUNT == 0 && FUN.RETURNTYPEPTR == PNil || ISSAMEFUNCTIONDEFINITION(FNPTR, FUN)) FNPTR->ISDECLARATION = 0;
+      if (FUN->ARGS.COUNT == 0 && FUN->RETURNTYPEPTR == PNil || ISSAMEFUNCTIONDEFINITION(FNPTR, *FUN)) FNPTR->ISDECLARATION = 0;
       else {
-        if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
-        else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
+        if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN->NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
+        else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN->NAME, CpEnd | CpLenPtr, 42, " incompatible with its forward declaration"));
       }
     }
     else {
-      if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
-      else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN.NAME, CpEnd | CpLenPtr, 16, " already defined"));
+      if (ISPROCEDURE) COMPILEERROR(CONCAT(CpLenPtr, 10, "Procedure ", CpStringPtr, &FUN->NAME, CpEnd | CpLenPtr, 16, " already defined"));
+      else COMPILEERROR(CONCAT(CpLenPtr, 9, "Function ", CpStringPtr, &FUN->NAME, CpEnd | CpLenPtr, 16, " already defined"));
     }
   }
   RESULT = FNPTR;
@@ -1822,20 +1794,10 @@ TPSVARIABLE* ADDWITHVAR(TEXPRESSIONOBJ* BASE) {
   TMPVAR.ISREFERENCE = BASE->ISADDRESSABLE;
   TMPVAR.WASINITIALIZED = 1;
   TMPVAR.WASUSED = 1;
-  TMPVARPTR = ADDVARIABLE(TMPVAR);
+  TMPVARPTR = ADDVARIABLE(&TMPVAR);
   WITHVARPTR = _ADDDEF(TDCWITHVAR)->WITHVARPTR;
   WITHVARPTR->VARPTR = TMPVARPTR;
   RESULT = TMPVARPTR;
-  return RESULT;
-}
-
-TPSTYPE MAKETYPE(const PString *NAME, TPSTYPECLASS CLS) {
-  TPSTYPE RESULT;
-  TPSTYPE TYP;
-  TYP = EMPTYTYPE();
-  TYP.NAME = *NAME;
-  TYP.CLS = CLS;
-  RESULT = TYP;
   return RESULT;
 }
 
@@ -1875,7 +1837,7 @@ TPSVARIABLE* ADDTMPVARIABLE(const PString *PREFIX, TPSTYPE* TYPEPTR) {
   TPSVARIABLE* RESULT;
   PString VARNUM;
   STR_i(DEFCOUNTER(TCTTMPVAR), 0, &VARNUM);
-  RESULT = ADDVARIABLE(({ PString tmp1 = CONCAT(CpStringPtr, PREFIX, CpEnd | CpStringPtr, &VARNUM); MAKEVARIABLE(&tmp1, TYPEPTR); }));
+  RESULT = ({ TPSVARIABLE tmp2 = ({ PString tmp1 = CONCAT(CpStringPtr, PREFIX, CpEnd | CpStringPtr, &VARNUM); MAKEVARIABLE(&tmp1, TYPEPTR); }); ADDVARIABLE(&tmp2); });
   return RESULT;
 }
 
@@ -1995,20 +1957,144 @@ TPSFUNCTION MAKEFUNCTION3(const PString *NAME, TPSTYPE* RETTYPEPTR, TPSVARIABLE 
   return RESULT;
 }
 
-TPSTYPE* GETPOINTERTYPE(TPSTYPE* TYPEPTR) {
+TPSTYPE* _UNALIASTYPE(TPSTYPE* TYPEPTR) {
+  TPSTYPE* RESULT;
+  RESULT = TYPEPTR;
+  while (RESULT->ALIASFOR != PNil) RESULT = RESULT->ALIASFOR;
+  return RESULT;
+}
+
+TPSTYPE* _NEWTYPE(TPSTYPECLASS CLS) {
+  TPSTYPE* RESULT;
+  RESULT = _ADDDEF(TDCTYPE)->TYPEPTR;
+  RESULT->NAME = str_make(0, "");
+  RESULT->CLS = CLS;
+  RESULT->ALIASFOR = PNil;
+  RESULT->WASUSED = 0;
+  return RESULT;
+}
+
+TPSTYPE* MAKEBASETYPE(const PString *NAME, TPSTYPECLASS CLS) {
+  TPSTYPE* RESULT;
+  RESULT = _NEWTYPE(CLS);
+  RESULT->NAME = *NAME;
+  ADDTYPENAME(NAME, RESULT);
+  return RESULT;
+}
+
+TPSTYPE* MAKEENUMTYPE(const TPSENUMDEF *ENUM) {
+  TPSTYPE* RESULT;
+  PInteger POS;
+  RESULT = _NEWTYPE(TTCENUM);
+  RESULT->ENUMPTR = NEWENUM(ENUM);
+  RESULT->WASUSED = 1;
+  do {
+    PInteger first = 0;
+    PInteger last = RESULT->ENUMPTR->SIZE - 1;
+    if (first <= last) {
+      POS = first;
+      while (1) {
+        ADDENUMVALNAME(POS, RESULT);
+        if (POS == last) break;
+        ++POS;
+      }
+    }
+  } while(0);
+  return RESULT;
+}
+
+TPSTYPE* MAKERECORDTYPE(const TPSRECORDDEF *REC) {
+  TPSTYPE* RESULT;
+  RESULT = _NEWTYPE(TTCRECORD);
+  RESULT->RECPTR = NEWRECORD(REC);
+  return RESULT;
+}
+
+TPSTYPE* MAKEARRAYTYPE(TPSTYPE* INDEXTYPE, TPSTYPE* VALUETYPE) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  TPSTYPE TYP;
   RESULT = PNil;
   DEF = DEFS.LATEST;
   while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && ISPOINTERTYPE(DEF->TYPEPTR) && ISSAMETYPE(DEF->TYPEPTR->POINTEDTYPEPTR, TYPEPTR)) RESULT = DEF->TYPEPTR;
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCARRAY && ISSAMETYPE(DEF->TYPEPTR->ARRAYDEF.INDEXTYPEPTR, INDEXTYPE) && ISSAMETYPE(DEF->TYPEPTR->ARRAYDEF.VALUETYPEPTR, VALUETYPE)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
     DEF = DEF->PREV;
   }
   if (RESULT == PNil) {
-    TYP = TYPEOFCLASS(TTCPOINTER);
-    TYP.POINTEDTYPEPTR = TYPEPTR;
-    RESULT = ADDTYPE(TYP);
+    if (!ISBOUNDEDTYPE(INDEXTYPE)) {
+      PString tmp1 = str_make(51, "Array indices must belong to a bounded ordinal type");
+      ERRORFORTYPE(&tmp1, INDEXTYPE);
+    }
+    RESULT = _NEWTYPE(TTCARRAY);
+    RESULT->ARRAYDEF.INDEXTYPEPTR = INDEXTYPE;
+    RESULT->ARRAYDEF.VALUETYPEPTR = VALUETYPE;
+  }
+  return RESULT;
+}
+
+TPSTYPE* MAKERANGETYPE(TPSTYPE* TYPEPTR, PInteger FIRST, PInteger LAST) {
+  TPSTYPE* RESULT;
+  TPSDEFENTRY* DEF;
+  RESULT = PNil;
+  DEF = DEFS.LATEST;
+  while (DEF != PNil && RESULT == PNil) {
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCRANGE && ISSAMETYPE(DEF->TYPEPTR->RANGEDEF.BASETYPEPTR, TYPEPTR) && FIRST == DEF->TYPEPTR->RANGEDEF.FIRST && LAST == DEF->TYPEPTR->RANGEDEF.LAST) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+    DEF = DEF->PREV;
+  }
+  if (RESULT == PNil) {
+    if (FIRST > LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
+    RESULT = _NEWTYPE(TTCRANGE);
+    RESULT->RANGEDEF.FIRST = FIRST;
+    RESULT->RANGEDEF.LAST = LAST;
+    RESULT->RANGEDEF.BASETYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
+  }
+  return RESULT;
+}
+
+TPSTYPE* MAKEPOINTERTYPE(TPSTYPE* TYPEPTR) {
+  TPSTYPE* RESULT;
+  TPSDEFENTRY* DEF;
+  RESULT = PNil;
+  DEF = DEFS.LATEST;
+  while (DEF != PNil && RESULT == PNil) {
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCPOINTER && ISSAMETYPE(DEF->TYPEPTR->POINTEDTYPEPTR, TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+    DEF = DEF->PREV;
+  }
+  if (RESULT == PNil) {
+    RESULT = _NEWTYPE(TTCPOINTER);
+    RESULT->POINTEDTYPEPTR = TYPEPTR;
+  }
+  return RESULT;
+}
+
+TPSTYPE* MAKEPOINTERUNKNOWNTYPE(const PString *TARGETNAME) {
+  TPSTYPE* RESULT;
+  TPSDEFENTRY* DEF;
+  RESULT = PNil;
+  DEF = DEFS.LATEST;
+  while (DEF != PNil && RESULT == PNil) {
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCPOINTERUNKNOWN && cmp_str(CoEq, CpStringPtr, DEF->TYPEPTR->TARGETNAME, CpStringPtr, TARGETNAME)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+    DEF = DEF->PREV;
+  }
+  if (RESULT == PNil) {
+    RESULT = _NEWTYPE(TTCPOINTERUNKNOWN);
+    RESULT->TARGETNAME = malloc(sizeof(PString));
+    *RESULT->TARGETNAME = *TARGETNAME;
+  }
+  return RESULT;
+}
+
+TPSTYPE* MAKESETTYPE(TPSTYPE* TYPEPTR) {
+  TPSTYPE* RESULT;
+  TPSDEFENTRY* DEF;
+  RESULT = PNil;
+  DEF = DEFS.LATEST;
+  while (DEF != PNil && RESULT == PNil) {
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCSET && ISSAMETYPE(DEF->TYPEPTR->ELEMENTTYPEPTR, TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+    DEF = DEF->PREV;
+  }
+  if (RESULT == PNil) {
+    RESULT = _NEWTYPE(TTCSET);
+    RESULT->ELEMENTTYPEPTR = TYPEPTR;
   }
   return RESULT;
 }
@@ -2032,22 +2118,32 @@ PBoolean ARESAMEARGS(const TPSFNARGS *A, const TPSFNARGS *B) {
   return RESULT;
 }
 
-TPSTYPE* GETFUNCTIONTYPE(TPSFUNCTION* FNPTR) {
+TPSTYPE* MAKEFUNCTIONTYPE(const TPSFNARGS *ARGS, TPSTYPE* RETURNTYPEPTR) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  TPSTYPE TYP;
   RESULT = PNil;
   DEF = DEFS.LATEST;
   while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && ISFUNCTIONTYPE(DEF->TYPEPTR) && ISSAMETYPE(DEF->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, FNPTR->RETURNTYPEPTR) && ARESAMEARGS(&DEF->TYPEPTR->FNDEFPTR->ARGS, &FNPTR->ARGS)) RESULT = DEF->TYPEPTR;
+    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCFUNCTION && ISSAMETYPE(DEF->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, RETURNTYPEPTR) && ARESAMEARGS(&DEF->TYPEPTR->FNDEFPTR->ARGS, ARGS)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
     DEF = DEF->PREV;
   }
   if (RESULT == PNil) {
-    TYP = TYPEOFCLASS(TTCFUNCTION);
-    TYP.FNDEFPTR->RETURNTYPEPTR = FNPTR->RETURNTYPEPTR;
-    TYP.FNDEFPTR->ARGS = FNPTR->ARGS;
-    RESULT = ADDTYPE(TYP);
+    RESULT = _NEWTYPE(TTCFUNCTION);
+    RESULT->FNDEFPTR = NEWFNDEF();
+    RESULT->FNDEFPTR->RETURNTYPEPTR = RETURNTYPEPTR;
+    RESULT->FNDEFPTR->ARGS = *ARGS;
   }
+  return RESULT;
+}
+
+TPSTYPE* MAKEALIASTYPE(const PString *NAME, TPSTYPE* TYPEPTR) {
+  TPSTYPE* RESULT;
+  TYPEPTR = _UNALIASTYPE(TYPEPTR);
+  RESULT = _NEWTYPE(TYPEPTR->CLS);
+  *RESULT = COPYTYPE(TYPEPTR);
+  RESULT->NAME = *NAME;
+  RESULT->ALIASFOR = TYPEPTR;
+  ADDTYPENAME(NAME, RESULT);
   return RESULT;
 }
 
@@ -2492,144 +2588,52 @@ PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ* EXPR) {
   }
   return RESULT;
 }
+const PInteger _EXPRECEDENCES[18] = { 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, -1, -1 };
+const PInteger _EXOPPRECEDENCES[23] = { 4, 4, 4, 3, 3, 3, 4, 3, 4, 4, 3, 3, 5, 5, 5, 5, 5, 5, 1, 1, 1 };
+const PString _EXOPNAMES[23] = { str_of('+'), str_of('-'), str_of('*'), str_of('/'), str_make(3, "DIV"), str_make(3, "MOD"), str_of('-'), str_make(3, "AND"), str_make(2, "OR"), str_make(3, "XOR"), str_make(3, "NOT"), str_make(3, "SHL"), str_make(3, "SHR"), str_make(2, "IN"), str_of('='), str_make(2, "<>"), str_of('<'), str_of('>'), str_make(2, "<="), str_make(2, ">="), str_make(3, "ORD"), str_make(4, "PRED"), str_make(4, "SUCC") };
 
 PInteger _EXPRPRECEDENCE(TEXPRESSIONOBJ* EXPR) {
   PInteger RESULT;
-  switch (EXPR->CLS) {
-    case XCIMMEDIATE:
-      RESULT = 0;
-      break;
-    case XCTOSTRING:
-      RESULT = _EXPRPRECEDENCE(EXPR->TOSTRPARENT);
-      break;
-    case XCTOREAL:
-      RESULT = _EXPRPRECEDENCE(EXPR->TOREALPARENT);
-      break;
-    case XCWITHTMPVAR:
-      RESULT = _EXPRPRECEDENCE(EXPR->TMPVARCHILD);
-      break;
-    case XCSUBRANGE:
-      RESULT = _EXPRPRECEDENCE(EXPR->SUBRANGEPARENT);
-      break;
-    case XCSET:
-      RESULT = 0;
-      break;
-    case XCVARIABLE:
-      RESULT = 0;
-      break;
-    case XCFIELD:
-      RESULT = 1;
-      break;
-    case XCARRAY:
-      RESULT = 1;
-      break;
-    case XCPOINTER:
-      RESULT = 1;
-      break;
-    case XCADDRESS:
-      RESULT = 1;
-      break;
-    case XCSTRINGCHAR:
-      RESULT = 1;
-      break;
-    case XCFNREF:
-      RESULT = 0;
-      break;
-    case XCFNCALL:
-      RESULT = 1;
-      break;
-    case XCPSEUDOFNREF:
-      RESULT = 0;
-      break;
-    case XCPSEUDOFNCALL:
-      RESULT = 1;
-      break;
-    case XCUNARYOP:
-      switch (EXPR->UNARY.OP) {
-        case TKMINUS:
-          RESULT = 4;
-          break;
-        case TKNOT:
-          RESULT = 2;
-          break;
-        default:
-          break;
-      }
-      break;
-    case XCBINARYOP:
-      switch (EXPR->BINARY.OP) {
-        case TKPLUS:
-          RESULT = 4;
-          break;
-        case TKMINUS:
-          RESULT = 4;
-          break;
-        case TKASTERISK:
-          RESULT = 3;
-          break;
-        case TKDIV:
-          RESULT = 3;
-          break;
-        case TKAND:
-          RESULT = 3;
-          break;
-        case TKOR:
-          RESULT = 4;
-          break;
-        case TKXOR:
-          RESULT = 4;
-          break;
-        case TKSHL:
-          RESULT = 3;
-          break;
-        case TKSHR:
-          RESULT = 3;
-          break;
-        case TKIN:
-          RESULT = 5;
-          break;
-        case TKEQUALS:
-          RESULT = 5;
-          break;
-        case TKNOTEQUALS:
-          RESULT = 5;
-          break;
-        case TKLESSTHAN:
-          RESULT = 5;
-          break;
-        case TKMORETHAN:
-          RESULT = 5;
-          break;
-        case TKLESSOREQUALS:
-          RESULT = 5;
-          break;
-        case TKMOREOREQUALS:
-          RESULT = 5;
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
+  RESULT = _EXPRECEDENCES[EXPR->CLS];
+  if (RESULT < 0) {
+    switch (EXPR->CLS) {
+      case XCTOSTRING:
+        RESULT = _EXPRPRECEDENCE(EXPR->TOSTRPARENT);
+        break;
+      case XCTOREAL:
+        RESULT = _EXPRPRECEDENCE(EXPR->TOREALPARENT);
+        break;
+      case XCWITHTMPVAR:
+        RESULT = _EXPRPRECEDENCE(EXPR->TMPVARCHILD);
+        break;
+      case XCSUBRANGE:
+        RESULT = _EXPRPRECEDENCE(EXPR->SUBRANGEPARENT);
+        break;
+      case XCUNARYOP:
+        RESULT = _EXOPPRECEDENCES[EXPR->UNARY.OP];
+        break;
+      case XCBINARYOP:
+        RESULT = _EXOPPRECEDENCES[EXPR->BINARY.OP];
+        break;
+      default:
+        break;
+    }
   }
+  if (RESULT < 0) COMPILEERROR(str_make(33, "Unknown precedence for expression"));
+  return RESULT;
+}
+
+PString EXDESCRIBEOPERATOR(TEXOPERATOR OP) {
+  PString RESULT;
+  RESULT = _EXOPNAMES[OP];
   return RESULT;
 }
 
 PString _DESCRIBEUNARYOPEXPR(TEXPRESSIONOBJ* EXPR) {
   PString RESULT;
   PBoolean USEPARENS;
-  switch (EXPR->UNARY.OP) {
-    case TKMINUS:
-      RESULT = str_of('-');
-      break;
-    case TKNOT:
-      RESULT = str_make(4, "not ");
-      break;
-    default:
-      INTERNALERROR(str_make(31, "Cannot describe unary operation"));
-      break;
-  }
+  RESULT = EXDESCRIBEOPERATOR(EXPR->UNARY.OP);
+  if (EXPR->UNARY.OP != XONEG) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ' ');
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->UNARY.PARENT);
   if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
   RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->UNARY.PARENT));
@@ -2645,62 +2649,7 @@ PString _DESCRIBEBINARYOPEXPR(TEXPRESSIONOBJ* EXPR) {
   else RESULT = str_make(0, "");
   RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.LEFT));
   if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
-  switch (EXPR->BINARY.OP) {
-    case TKPLUS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " + ");
-      break;
-    case TKMINUS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " - ");
-      break;
-    case TKASTERISK:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " * ");
-      break;
-    case TKSLASH:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " / ");
-      break;
-    case TKDIV:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " div ");
-      break;
-    case TKAND:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " and ");
-      break;
-    case TKOR:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " or ");
-      break;
-    case TKXOR:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " xor ");
-      break;
-    case TKSHL:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " shl ");
-      break;
-    case TKSHR:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 5, " shr ");
-      break;
-    case TKIN:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " in ");
-      break;
-    case TKEQUALS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " = ");
-      break;
-    case TKNOTEQUALS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " <> ");
-      break;
-    case TKLESSTHAN:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " < ");
-      break;
-    case TKMORETHAN:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 3, " > ");
-      break;
-    case TKLESSOREQUALS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " <= ");
-      break;
-    case TKMOREOREQUALS:
-      RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " >= ");
-      break;
-    default:
-      INTERNALERROR(CONCAT(CpLenPtr, 46, "Cannot describe binary operation for operator ", CpString, LXTOKENNAME(EXPR->BINARY.OP), CpLenPtr, 14, " and operands ", CpString, EXDESCRIBE(EXPR->BINARY.LEFT), CpLenPtr, 5, " and ", CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.RIGHT)));
-      break;
-  }
+  RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, ' ', CpString, EXDESCRIBEOPERATOR(EXPR->BINARY.OP), CpEnd | CpChar, ' ');
   USEPARENS = _EXPRPRECEDENCE(EXPR) < _EXPRPRECEDENCE(EXPR->BINARY.RIGHT);
   if (USEPARENS) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
   RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->BINARY.RIGHT));
@@ -2968,14 +2917,10 @@ PBoolean EXISIMMEDIATEOFCLASS(TEXPRESSIONOBJ* EXPR, TEXIMMEDIATECLASS CLS) {
 
 TEXPRESSIONOBJ* EXSET() {
   TEXPRESSIONOBJ* RESULT;
-  TPSTYPE SETTYPE;
-  SETTYPE = EMPTYTYPE();
-  SETTYPE.CLS = TTCSET;
-  SETTYPE.ELEMENTTYPEPTR = PNil;
   RESULT = _EXIMMEDIATE(XICSET);
   RESULT->IMMEDIATE.SETBOUNDS = PNil;
   RESULT->IMMEDIATE.SETOFTYPEPTR = PNil;
-  RESULT->TYPEPTR = ADDTYPE(SETTYPE);
+  RESULT->TYPEPTR = PRIMITIVETYPES.PTEMPTYSET;
   return RESULT;
 }
 
@@ -2989,13 +2934,13 @@ TEXPRESSIONOBJ* EXSETADDRANGE(TEXPRESSIONOBJ* SETEXPR, TEXPRESSIONOBJ* FIRST, TE
   if (ELEMENTTYPEPTR == PNil) {
     ELEMENTTYPEPTR = GETFUNDAMENTALTYPE(FIRST->TYPEPTR);
     SETEXPR->IMMEDIATE.SETOFTYPEPTR = ELEMENTTYPEPTR;
-    SETEXPR->TYPEPTR->ELEMENTTYPEPTR = ELEMENTTYPEPTR;
+    SETEXPR->TYPEPTR = MAKESETTYPE(FIRST->TYPEPTR);
   }
-  if (!ISSAMETYPE(GETFUNDAMENTALTYPE(FIRST->TYPEPTR), ELEMENTTYPEPTR)) {
+  if (!ISFUNDAMENTALLYSAMETYPE(FIRST->TYPEPTR, ELEMENTTYPEPTR)) {
     PString tmp1 = CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR));
     ERRORFOREXPR(&tmp1, FIRST);
   }
-  if (LAST != PNil && !ISSAMETYPE(GETFUNDAMENTALTYPE(LAST->TYPEPTR), ELEMENTTYPEPTR) && !ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) {
+  if (LAST != PNil && !ISFUNDAMENTALLYSAMETYPE(LAST->TYPEPTR, ELEMENTTYPEPTR) && !ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) {
     PString tmp2 = CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR));
     ERRORFOREXPR(&tmp2, LAST);
   }
@@ -3158,7 +3103,7 @@ TEXPRESSIONOBJ* EXADDRESSOF(TEXPRESSIONOBJ* PARENT) {
   TEXPRESSIONOBJ* RESULT;
   RESULT = _NEWEXPR(XCADDRESS);
   RESULT->ADDRESSEXPR = PARENT;
-  if (PARENT->CLS == XCFNREF) RESULT->TYPEPTR = GETFUNCTIONTYPE(PARENT->FNPTR);
+  if (PARENT->CLS == XCFNREF) RESULT->TYPEPTR = MAKEFUNCTIONTYPE(&PARENT->FNPTR->ARGS, PARENT->FNPTR->RETURNTYPEPTR);
   else {
     ENSUREADDRESSABLEEXPR(PARENT);
     ENSUREASSIGNABLEEXPR(PARENT);
@@ -3166,7 +3111,7 @@ TEXPRESSIONOBJ* EXADDRESSOF(TEXPRESSIONOBJ* PARENT) {
       PString tmp1 = str_make(19, "Expected a variable");
       ERRORFOREXPR(&tmp1, PARENT);
     }
-    RESULT->TYPEPTR = GETPOINTERTYPE(PARENT->TYPEPTR);
+    RESULT->TYPEPTR = MAKEPOINTERTYPE(PARENT->TYPEPTR);
   }
   return RESULT;
 }
@@ -3273,810 +3218,6 @@ TEXPRESSIONOBJ* EXPSEUDOFNCALL(TEXPRESSIONOBJ* EXPR) {
   return RESULT;
 }
 
-void _EXSETCOERCETOCOMMON(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
-  TPSTYPE* LEFTTYPE;
-  TPSTYPE* RIGHTTYPE;
-  LEFTTYPE = LEFT->TYPEPTR;
-  RIGHTTYPE = RIGHT->TYPEPTR;
-  if (LEFTTYPE->ELEMENTTYPEPTR == PNil || EXISIMMEDIATE(LEFT)) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
-  else if (RIGHTTYPE->ELEMENTTYPEPTR == PNil || EXISIMMEDIATE(RIGHT)) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
-  else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(CONCAT(CpLenPtr, 30, "Type mismatch: cannot combine ", CpString, TYPENAME(LEFT->TYPEPTR), CpLenPtr, 6, " with ", CpEnd | CpString, TYPENAME(RIGHT->TYPEPTR)));
-}
-
-TEXPRESSIONOBJ* _EXSETUNION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
-  TEXPRESSIONOBJ* RESULT;
-  TEXSETIMMBOUNDSOBJ* NEWBDS;
-  TEXSETIMMBOUNDSOBJ* OLDBDS;
-  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-  NEWBDS = PNil;
-  OLDBDS = LEFT->IMMEDIATE.SETBOUNDS;
-  while (OLDBDS != PNil) {
-    NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
-    OLDBDS = OLDBDS->NEXT;
-  }
-  OLDBDS = RIGHT->IMMEDIATE.SETBOUNDS;
-  while (OLDBDS != PNil) {
-    NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
-    OLDBDS = OLDBDS->NEXT;
-  }
-  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
-  EXDISPOSE(&LEFT);
-  EXDISPOSE(&RIGHT);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXSETDIFFERENCE(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
-  TEXPRESSIONOBJ* RESULT;
-  TEXSETIMMBOUNDSOBJ* LTBDS;
-  TEXSETIMMBOUNDSOBJ* RTBDS;
-  TEXSETIMMBOUNDSOBJ* NEWBDS;
-  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
-  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
-  NEWBDS = PNil;
-  while (LTBDS != PNil && RTBDS != PNil) {
-    if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
-    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) LTBDS->FIRST = RTBDS->LAST + 1;
-    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) LTBDS = LTBDS->NEXT;
-    else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
-      LTBDS->FIRST = RTBDS->LAST + 1;
-    }
-    else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
-      LTBDS = LTBDS->NEXT;
-    }
-    else {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
-      LTBDS = LTBDS->NEXT;
-    }
-  }
-  while (LTBDS != PNil) {
-    NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
-    LTBDS = LTBDS->NEXT;
-  }
-  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
-  EXDISPOSE(&LEFT);
-  EXDISPOSE(&RIGHT);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXSETINTERSECTION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
-  TEXPRESSIONOBJ* RESULT;
-  TEXSETIMMBOUNDSOBJ* LTBDS;
-  TEXSETIMMBOUNDSOBJ* RTBDS;
-  TEXSETIMMBOUNDSOBJ* NEWBDS;
-  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
-  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
-  NEWBDS = PNil;
-  while (LTBDS != PNil && RTBDS != PNil) {
-    if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
-    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->LAST);
-      RTBDS = RTBDS->NEXT;
-    }
-    else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
-      LTBDS = LTBDS->NEXT;
-    }
-    else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, RTBDS->LAST);
-      RTBDS = RTBDS->NEXT;
-    }
-    else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
-      NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, LTBDS->LAST);
-      LTBDS = LTBDS->NEXT;
-    }
-    else LTBDS = LTBDS->NEXT;
-  }
-  RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
-  EXDISPOSE(&LEFT);
-  EXDISPOSE(&RIGHT);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXSETEQUALS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, PBoolean NEGATE) {
-  TEXPRESSIONOBJ* RESULT;
-  TEXSETIMMBOUNDSOBJ* LTBDS;
-  TEXSETIMMBOUNDSOBJ* RTBDS;
-  PBoolean EQUALS;
-  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
-  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
-  EQUALS = 1;
-  while (LTBDS != PNil && RTBDS != PNil && EQUALS) {
-    EQUALS = RTBDS->FIRST == LTBDS->FIRST && RTBDS->LAST == LTBDS->LAST;
-    LTBDS = LTBDS->NEXT;
-    RTBDS = RTBDS->NEXT;
-  }
-  EQUALS = EQUALS && LTBDS == PNil && RTBDS == PNil;
-  if (NEGATE) EQUALS = !EQUALS;
-  RESULT = EXBOOLEANCONSTANT(EQUALS);
-  EXDISPOSE(&LEFT);
-  EXDISPOSE(&RIGHT);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXSETSUBSET(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
-  TEXPRESSIONOBJ* RESULT;
-  TEXSETIMMBOUNDSOBJ* LTBDS;
-  TEXSETIMMBOUNDSOBJ* RTBDS;
-  PBoolean SUBSET;
-  _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-  LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
-  RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
-  SUBSET = 1;
-  while (LTBDS != PNil && RTBDS != PNil && SUBSET) {
-    if (LTBDS->LAST < RTBDS->FIRST) LTBDS = LTBDS->NEXT;
-    else if (LTBDS->FIRST <= RTBDS->FIRST && LTBDS->LAST >= RTBDS->LAST) RTBDS = RTBDS->NEXT;
-    else SUBSET = 0;
-  }
-  SUBSET = SUBSET && RTBDS == PNil;
-  RESULT = EXBOOLEANCONSTANT(SUBSET);
-  EXDISPOSE(&LEFT);
-  EXDISPOSE(&RIGHT);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXSETIN(TEXPRESSIONOBJ* NEEDLE, TEXPRESSIONOBJ* HAYSTACK) {
-  TEXPRESSIONOBJ* RESULT;
-  TPSTYPE* ELEMTYPE;
-  TEXPRESSIONOBJ* IMMSET;
-  TEXPRESSIONOBJ* EXPRSET;
-  TEXSETIMMBOUNDSOBJ* IMMBOUNDS;
-  TEXSETEXPRBOUNDSOBJ* EXPRBOUNDS;
-  TEXPRESSIONOBJ* COND;
-  TPSVARIABLE* TMPVAR;
-  TEXPRESSIONOBJ* WANTED;
-  ELEMTYPE = HAYSTACK->TYPEPTR->ELEMENTTYPEPTR;
-  if (ELEMTYPE == PNil) ELEMTYPE = NEEDLE->TYPEPTR;
-  else NEEDLE = EXCOERCE(NEEDLE, ELEMTYPE);
-  if (NEEDLE->ISFUNCTIONRESULT) {
-    TMPVAR = ({ PString tmp1 = str_make(4, "elem"); ADDTMPVARIABLE(&tmp1, ELEMTYPE); });
-    WANTED = EXVARIABLE(TMPVAR);
-  }
-  else {
-    TMPVAR = PNil;
-    WANTED = NEEDLE;
-  }
-  RESULT = EXBOOLEANCONSTANT(0);
-  if (EXISIMMEDIATE(HAYSTACK)) {
-    IMMSET = HAYSTACK;
-    EXPRSET = PNil;
-  }
-  else {
-    IMMSET = HAYSTACK->SETBASE;
-    EXPRSET = HAYSTACK;
-  }
-  if (IMMSET != PNil) {
-    IMMBOUNDS = IMMSET->IMMEDIATE.SETBOUNDS;
-    while (IMMBOUNDS != PNil) {
-      if (IMMBOUNDS->FIRST == IMMBOUNDS->LAST) COND = EXBINARYOP(EXCOPY(WANTED), EXGETANTIORDINAL(IMMBOUNDS->FIRST, ELEMTYPE), TKEQUALS);
-      else COND = EXBINARYOP(EXBINARYOP(EXGETANTIORDINAL(IMMBOUNDS->FIRST, ELEMTYPE), EXCOPY(WANTED), TKLESSOREQUALS), EXBINARYOP(EXCOPY(WANTED), EXGETANTIORDINAL(IMMBOUNDS->LAST, ELEMTYPE), TKLESSOREQUALS), TKAND);
-      RESULT = EXBINARYOP(RESULT, COND, TKOR);
-      IMMBOUNDS = IMMBOUNDS->NEXT;
-    }
-  }
-  if (EXPRSET != PNil) {
-    EXPRBOUNDS = EXPRSET->SETBOUNDS;
-    while (EXPRBOUNDS != PNil) {
-      if (EXPRBOUNDS->LAST == PNil) COND = EXBINARYOP(EXCOPY(WANTED), EXCOPY(EXPRBOUNDS->FIRST), TKEQUALS);
-      else COND = EXBINARYOP(EXBINARYOP(EXCOPY(EXPRBOUNDS->FIRST), EXCOPY(WANTED), TKLESSOREQUALS), EXBINARYOP(EXCOPY(WANTED), EXCOPY(EXPRBOUNDS->LAST), TKLESSOREQUALS), TKAND);
-      RESULT = EXBINARYOP(RESULT, COND, TKOR);
-      EXPRBOUNDS = EXPRBOUNDS->NEXT;
-    }
-  }
-  if (TMPVAR != PNil) {
-    RESULT = EXWITHTMPVAR(WANTED, NEEDLE, RESULT);
-  }
-  else EXDISPOSE(&NEEDLE);
-  EXDISPOSE(&HAYSTACK);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXUNOPIMM(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXUNOPCMP(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP);
-
-TEXPRESSIONOBJ* EXUNARYOP(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  if (TKPLUS <= OP && OP <= TKMINUS) {
-    if (!ISNUMERICTYPE(PARENT->TYPEPTR)) ERRORINVALIDOPERATOR(PARENT, OP);
-  }
-  else if (OP == TKNOT) {
-    if (!ISBOOLEANTYPE(PARENT->TYPEPTR) && !ISINTEGERTYPE(PARENT->TYPEPTR)) ERRORINVALIDOPERATOR(PARENT, OP);
-  }
-  else ERRORINVALIDOPERATOR(PARENT, OP);
-  if (EXISIMMEDIATE(PARENT)) RESULT = _EXUNOPIMM(PARENT, OP);
-  else RESULT = _EXUNOPCMP(PARENT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXUNOPIMM(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  if (OP == TKMINUS && EXISIMMEDIATEOFCLASS(PARENT, XICINTEGER)) PARENT->IMMEDIATE.INTEGERVAL = -PARENT->IMMEDIATE.INTEGERVAL;
-  else if (OP == TKPLUS && EXISIMMEDIATEOFCLASS(PARENT, XICINTEGER)) ;
-  else if (OP == TKMINUS && EXISIMMEDIATEOFCLASS(PARENT, XICREAL)) PARENT->IMMEDIATE.REALVAL = -PARENT->IMMEDIATE.REALVAL;
-  else if (OP == TKPLUS && EXISIMMEDIATEOFCLASS(PARENT, XICREAL)) ;
-  else if (OP == TKNOT && EXISIMMEDIATEOFCLASS(PARENT, XICBOOLEAN)) PARENT->IMMEDIATE.BOOLEANVAL = !PARENT->IMMEDIATE.BOOLEANVAL;
-  else if (OP == TKNOT && EXISIMMEDIATEOFCLASS(PARENT, XICINTEGER)) PARENT->IMMEDIATE.INTEGERVAL = ~PARENT->IMMEDIATE.INTEGERVAL;
-  else INTERNALERROR(str_make(33, "Invalid immediate unary operation"));
-  RESULT = PARENT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXUNOPCMP(TEXPRESSIONOBJ* PARENT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCUNARYOP);
-  RESULT->UNARY.PARENT = PARENT;
-  RESULT->UNARY.OP = OP;
-  RESULT->TYPEPTR = PARENT->TYPEPTR;
-  RESULT->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPBOOLIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPINTIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPNUMIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPSTRIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPENUMIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPSETIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPBOOLCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPINTCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPNUMCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPSTRCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPENUMCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPPTRCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-TEXPRESSIONOBJ* _EXBINOPSETCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP);
-PBoolean _EXBINOPSHORTCUT(TEXPRESSIONOBJ* *LEFT, TEXPRESSIONOBJ* *RIGHT, TLXTOKENID OP);
-
-TEXPRESSIONOBJ* EXBINARYOP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PBoolean IMMEDIATE;
-  LEFT = EXOUTRANGE(LEFT);
-  RIGHT = EXOUTRANGE(RIGHT);
-  IMMEDIATE = EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT);
-  if (_EXBINOPSHORTCUT(&LEFT, &RIGHT, OP)) {
-    RESULT = LEFT;
-  }
-  else if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) {
-    if (IMMEDIATE) RESULT = _EXBINOPBOOLIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPBOOLCMP(LEFT, RIGHT, OP);
-  }
-  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) {
-    if (IMMEDIATE) RESULT = _EXBINOPINTIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPINTCMP(LEFT, RIGHT, OP);
-  }
-  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) {
-    if (IMMEDIATE) RESULT = _EXBINOPNUMIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPNUMCMP(LEFT, RIGHT, OP);
-  }
-  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) {
-    if (IMMEDIATE) RESULT = _EXBINOPSTRIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPSTRCMP(LEFT, RIGHT, OP);
-  }
-  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) {
-    if (IMMEDIATE) RESULT = _EXBINOPENUMIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPENUMCMP(LEFT, RIGHT, OP);
-  }
-  else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXBINOPPTRCMP(LEFT, RIGHT, OP);
-  else if (ISSETTYPE(RIGHT->TYPEPTR)) {
-    if (EXISIMMEDIATE(RIGHT) && (EXISIMMEDIATE(LEFT) || !ISSETTYPE(LEFT->TYPEPTR))) RESULT = _EXBINOPSETIMM(LEFT, RIGHT, OP);
-    else if (OP == TKIN && RIGHT->CLS == XCSET) RESULT = _EXBINOPSETIMM(LEFT, RIGHT, OP);
-    else RESULT = _EXBINOPSETCMP(LEFT, RIGHT, OP);
-  }
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPBOOLIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PBoolean LT;
-  PBoolean RT;
-  LT = LEFT->IMMEDIATE.BOOLEANVAL;
-  RT = RIGHT->IMMEDIATE.BOOLEANVAL;
-  switch (OP) {
-    case TKAND:
-      LT = LT && RT;
-      break;
-    case TKOR:
-      LT = LT || RT;
-      break;
-    case TKXOR:
-      LT = LT != RT;
-      break;
-    case TKEQUALS:
-      LT = LT == RT;
-      break;
-    case TKNOTEQUALS:
-      LT = LT != RT;
-      break;
-    case TKLESSTHAN:
-      LT = LT < RT;
-      break;
-    case TKMORETHAN:
-      LT = LT > RT;
-      break;
-    case TKLESSOREQUALS:
-      LT = LT <= RT;
-      break;
-    case TKMOREOREQUALS:
-      LT = LT >= RT;
-      break;
-    default:
-      ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-      break;
-  }
-  LEFT->IMMEDIATE.BOOLEANVAL = LT;
-  LEFT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  LEFT->ISASSIGNABLE = 0;
-  LEFT->ISADDRESSABLE = 0;
-  EXDISPOSE(&RIGHT);
-  RESULT = LEFT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPINTIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PInteger LT;
-  PInteger RT;
-  PBoolean BO;
-  LT = LEFT->IMMEDIATE.INTEGERVAL;
-  RT = RIGHT->IMMEDIATE.INTEGERVAL;
-  switch (OP) {
-    case TKPLUS:
-      LT = LT + RT;
-      break;
-    case TKMINUS:
-      LT = LT - RT;
-      break;
-    case TKASTERISK:
-      LT = LT * RT;
-      break;
-    case TKDIV:
-      LT = LT / RT;
-      break;
-    case TKMOD:
-      LT = LT % RT;
-      break;
-    case TKAND:
-      LT = LT & RT;
-      break;
-    case TKOR:
-      LT = LT | RT;
-      break;
-    case TKXOR:
-      LT = LT ^ RT;
-      break;
-    case TKSHL:
-      LT = LT << RT;
-      break;
-    case TKSHR:
-      LT = LT >> RT;
-      break;
-    default:
-      {
-        LEFT->IMMEDIATE.CLS = XICBOOLEAN;
-        switch (OP) {
-          case TKEQUALS:
-            BO = LT == RT;
-            break;
-          case TKNOTEQUALS:
-            BO = LT != RT;
-            break;
-          case TKLESSTHAN:
-            BO = LT < RT;
-            break;
-          case TKMORETHAN:
-            BO = LT > RT;
-            break;
-          case TKLESSOREQUALS:
-            BO = LT <= RT;
-            break;
-          case TKMOREOREQUALS:
-            BO = LT >= RT;
-            break;
-          default:
-            ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-            break;
-        }
-      }
-      break;
-  }
-  if (EXISIMMEDIATEOFCLASS(LEFT, XICINTEGER)) {
-    LEFT->IMMEDIATE.INTEGERVAL = LT;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
-  }
-  else {
-    LEFT->IMMEDIATE.BOOLEANVAL = BO;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  }
-  LEFT->ISASSIGNABLE = 0;
-  LEFT->ISADDRESSABLE = 0;
-  EXDISPOSE(&RIGHT);
-  RESULT = LEFT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPNUMIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PReal LT;
-  PReal RT;
-  PBoolean BO;
-  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
-  LT = LEFT->IMMEDIATE.REALVAL;
-  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
-  RT = RIGHT->IMMEDIATE.REALVAL;
-  switch (OP) {
-    case TKPLUS:
-      LT = LT + RT;
-      break;
-    case TKMINUS:
-      LT = LT - RT;
-      break;
-    case TKASTERISK:
-      LT = LT * RT;
-      break;
-    case TKSLASH:
-      LT = LT / RT;
-      break;
-    default:
-      {
-        LEFT->IMMEDIATE.CLS = XICBOOLEAN;
-        switch (OP) {
-          case TKEQUALS:
-            BO = LT == RT;
-            break;
-          case TKNOTEQUALS:
-            BO = LT != RT;
-            break;
-          case TKLESSTHAN:
-            BO = LT < RT;
-            break;
-          case TKMORETHAN:
-            BO = LT > RT;
-            break;
-          case TKLESSOREQUALS:
-            BO = LT <= RT;
-            break;
-          case TKMOREOREQUALS:
-            BO = LT >= RT;
-            break;
-          default:
-            ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-            break;
-        }
-      }
-      break;
-  }
-  if (EXISIMMEDIATEOFCLASS(LEFT, XICREAL)) {
-    LEFT->IMMEDIATE.REALVAL = LT;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTREAL;
-  }
-  else {
-    LEFT->IMMEDIATE.BOOLEANVAL = BO;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  }
-  LEFT->ISASSIGNABLE = 0;
-  LEFT->ISADDRESSABLE = 0;
-  EXDISPOSE(&RIGHT);
-  RESULT = LEFT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPSTRIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PString LT;
-  PString RT;
-  PBoolean BO;
-  if (EXISIMMEDIATEOFCLASS(LEFT, XICCHAR)) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
-  else LT = LEFT->IMMEDIATE.STRINGVAL;
-  if (EXISIMMEDIATEOFCLASS(RIGHT, XICCHAR)) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
-  else RT = RIGHT->IMMEDIATE.STRINGVAL;
-  if (OP == TKPLUS) {
-    LEFT->IMMEDIATE.CLS = XICSTRING;
-    LT = CONCAT(CpStringPtr, &LT, CpEnd | CpStringPtr, &RT);
-  }
-  else {
-    LEFT->IMMEDIATE.CLS = XICBOOLEAN;
-    switch (OP) {
-      case TKEQUALS:
-        BO = cmp_str(CoEq, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      case TKNOTEQUALS:
-        BO = cmp_str(CoNotEq, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      case TKLESSTHAN:
-        BO = cmp_str(CoBefore, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      case TKMORETHAN:
-        BO = cmp_str(CoAfter, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      case TKLESSOREQUALS:
-        BO = cmp_str(CoBeforeOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      case TKMOREOREQUALS:
-        BO = cmp_str(CoAfterOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
-        break;
-      default:
-        ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-        break;
-    }
-  }
-  if (EXISIMMEDIATEOFCLASS(LEFT, XICSTRING)) {
-    LEFT->IMMEDIATE.STRINGVAL = LT;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTSTRING;
-  }
-  else {
-    LEFT->IMMEDIATE.BOOLEANVAL = BO;
-    LEFT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  }
-  LEFT->ISASSIGNABLE = 0;
-  LEFT->ISADDRESSABLE = 0;
-  EXDISPOSE(&RIGHT);
-  RESULT = LEFT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPENUMIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  PInteger LT;
-  PInteger RT;
-  PBoolean BO;
-  LT = LEFT->IMMEDIATE.ENUMORDINAL;
-  RT = RIGHT->IMMEDIATE.ENUMORDINAL;
-  switch (OP) {
-    case TKEQUALS:
-      BO = LT == RT;
-      break;
-    case TKNOTEQUALS:
-      BO = LT != RT;
-      break;
-    case TKLESSTHAN:
-      BO = LT < RT;
-      break;
-    case TKMORETHAN:
-      BO = LT > RT;
-      break;
-    case TKLESSOREQUALS:
-      BO = LT <= RT;
-      break;
-    case TKMOREOREQUALS:
-      BO = LT >= RT;
-      break;
-    default:
-      ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-      break;
-  }
-  LEFT->IMMEDIATE.CLS = XICBOOLEAN;
-  LEFT->IMMEDIATE.BOOLEANVAL = BO;
-  LEFT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  LEFT->ISASSIGNABLE = 0;
-  LEFT->ISADDRESSABLE = 0;
-  EXDISPOSE(&RIGHT);
-  RESULT = LEFT;
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPSETIMM(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) switch (OP) {
-    case TKPLUS:
-      RESULT = _EXSETUNION(LEFT, RIGHT);
-      break;
-    case TKMINUS:
-      RESULT = _EXSETDIFFERENCE(LEFT, RIGHT);
-      break;
-    case TKASTERISK:
-      RESULT = _EXSETINTERSECTION(LEFT, RIGHT);
-      break;
-    case TKEQUALS:
-      RESULT = _EXSETEQUALS(LEFT, RIGHT, 0);
-      break;
-    case TKNOTEQUALS:
-      RESULT = _EXSETEQUALS(LEFT, RIGHT, 1);
-      break;
-    case TKMOREOREQUALS:
-      RESULT = _EXSETSUBSET(LEFT, RIGHT);
-      break;
-    case TKLESSOREQUALS:
-      RESULT = _EXSETSUBSET(RIGHT, LEFT);
-      break;
-    default:
-      ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-      break;
-  }
-  else if (OP == TKIN) RESULT = _EXSETIN(LEFT, RIGHT);
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPBOOLCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS || OP == TKAND || OP == TKOR || OP == TKXOR) {
-    RESULT = _NEWEXPR(XCBINARYOP);
-    RESULT->BINARY.LEFT = LEFT;
-    RESULT->BINARY.RIGHT = RIGHT;
-    RESULT->BINARY.OP = OP;
-    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-    RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  }
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPINTCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  RESULT->BINARY.LEFT = LEFT;
-  RESULT->BINARY.RIGHT = RIGHT;
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (TKPLUS <= OP && OP <= TKASTERISK || OP == TKAND || OP == TKDIV || OP == TKMOD || OP == TKOR || TKSHL <= OP && OP <= TKSHR || OP == TKXOR) RESULT->TYPEPTR = PRIMITIVETYPES.PTINTEGER;
-  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPNUMCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  RESULT->BINARY.LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
-  RESULT->BINARY.RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (TKPLUS <= OP && OP <= TKSLASH) RESULT->TYPEPTR = PRIMITIVETYPES.PTREAL;
-  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPSTRCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  RESULT->BINARY.LEFT = LEFT;
-  RESULT->BINARY.RIGHT = RIGHT;
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKPLUS) RESULT->TYPEPTR = PRIMITIVETYPES.PTSTRING;
-  else if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPENUMCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  RESULT->BINARY.LEFT = LEFT;
-  RESULT->BINARY.RIGHT = RIGHT;
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPPTRCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  RESULT->BINARY.LEFT = LEFT;
-  RESULT->BINARY.RIGHT = RIGHT;
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  if (OP == TKEQUALS || OP == TKNOTEQUALS) RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, OP);
-  return RESULT;
-}
-
-TEXPRESSIONOBJ* _EXBINOPSETCMP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
-  TEXPRESSIONOBJ* RESULT;
-  RESULT = _NEWEXPR(XCBINARYOP);
-  if (OP == TKIN) {
-    LEFT = EXCOERCE(LEFT, RIGHT->TYPEPTR->ELEMENTTYPEPTR);
-    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  }
-  else if (OP == TKEQUALS || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS) {
-    _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
-  }
-  else {
-    _EXSETCOERCETOCOMMON(LEFT, RIGHT);
-    RESULT->TYPEPTR = LEFT->TYPEPTR;
-  }
-  RESULT->BINARY.LEFT = LEFT;
-  RESULT->BINARY.RIGHT = RIGHT;
-  RESULT->BINARY.OP = OP;
-  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
-  return RESULT;
-}
-
-PBoolean _EXISZERO(TEXPRESSIONOBJ* EXPR) {
-  PBoolean RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 0 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL ==  0.00000000000000E+000;
-  return RESULT;
-}
-
-PBoolean _EXISONE(TEXPRESSIONOBJ* EXPR) {
-  PBoolean RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICINTEGER) && EXPR->IMMEDIATE.INTEGERVAL == 1 || EXISIMMEDIATEOFCLASS(EXPR, XICREAL) && (double)EXPR->IMMEDIATE.INTEGERVAL ==  1.00000000000000E+000;
-  return RESULT;
-}
-
-PBoolean _EXISTRUE(TEXPRESSIONOBJ* EXPR) {
-  PBoolean RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && EXPR->IMMEDIATE.BOOLEANVAL;
-  return RESULT;
-}
-
-PBoolean _EXISFALSE(TEXPRESSIONOBJ* EXPR) {
-  PBoolean RESULT;
-  RESULT = EXISIMMEDIATEOFCLASS(EXPR, XICBOOLEAN) && !EXPR->IMMEDIATE.BOOLEANVAL;
-  return RESULT;
-}
-
-PBoolean _EXBINOPSHORTCUT(TEXPRESSIONOBJ* *LEFT, TEXPRESSIONOBJ* *RIGHT, TLXTOKENID OP) {
-  PBoolean RESULT;
-  enum __attribute__((__packed__)) enum8 { USELEFT, USERIGHT, KEEP } USE;
-  const char* enumvalues8[] = { "USELEFT", "USERIGHT", "KEEP" };
-  USE = KEEP;
-  switch (OP) {
-    case TKPLUS:
-      if (_EXISZERO(*LEFT)) USE = USERIGHT;
-      else if (_EXISZERO(*RIGHT)) USE = USELEFT;
-      break;
-    case TKMINUS:
-      if (_EXISZERO(*RIGHT)) USE = USELEFT;
-      break;
-    case TKASTERISK:
-      if (_EXISONE(*LEFT)) USE = USERIGHT;
-      else if (_EXISONE(*RIGHT)) USE = USELEFT;
-      break;
-    case TKSLASH:
-      if (_EXISONE(*RIGHT)) USE = USELEFT;
-      break;
-    case TKDIV:
-      if (_EXISONE(*RIGHT)) USE = USELEFT;
-      break;
-    case TKAND:
-      if (_EXISFALSE(*LEFT) || _EXISTRUE(*RIGHT)) USE = USELEFT;
-      else if (_EXISTRUE(*LEFT)) USE = USERIGHT;
-      break;
-    case TKOR:
-      if (_EXISTRUE(*LEFT) || _EXISFALSE(*RIGHT)) USE = USELEFT;
-      else if (_EXISFALSE(*LEFT)) USE = USERIGHT;
-      break;
-    case TKSHL:
-      if (_EXISZERO(*RIGHT)) USE = USELEFT;
-      break;
-    case TKSHR:
-      if (_EXISZERO(*RIGHT)) USE = USELEFT;
-      break;
-    default:
-      break;
-  }
-  switch (USE) {
-    case USELEFT:
-      {
-        EXDISPOSE(RIGHT);
-        RESULT = 1;
-      }
-      break;
-    case USERIGHT:
-      {
-        EXDISPOSE(LEFT);
-        *LEFT = *RIGHT;
-        RESULT = 1;
-      }
-      break;
-    case KEEP:
-      RESULT = 0;
-      break;
-    default:
-      break;
-  }
-  return RESULT;
-}
-
 PInteger EXGETORDINAL(TEXPRESSIONOBJ* EXPR) {
   PInteger RESULT;
   if (!EXISIMMEDIATE(EXPR)) {
@@ -4160,16 +3301,26 @@ TEXPRESSIONOBJ* EXRERANGE(TEXPRESSIONOBJ* EXPR, TPSTYPE* TYPEPTR) {
   return RESULT;
 }
 
+void EXSETCOERCETOCOMMON(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TPSTYPE* LEFTTYPE;
+  TPSTYPE* RIGHTTYPE;
+  LEFTTYPE = LEFT->TYPEPTR;
+  RIGHTTYPE = RIGHT->TYPEPTR;
+  if (LEFTTYPE->ELEMENTTYPEPTR == PNil || EXISIMMEDIATE(LEFT)) LEFTTYPE->ELEMENTTYPEPTR = RIGHTTYPE->ELEMENTTYPEPTR;
+  else if (RIGHTTYPE->ELEMENTTYPEPTR == PNil || EXISIMMEDIATE(RIGHT)) RIGHTTYPE->ELEMENTTYPEPTR = LEFTTYPE->ELEMENTTYPEPTR;
+  else if (!ISSAMETYPE(LEFTTYPE, RIGHTTYPE)) COMPILEERROR(CONCAT(CpLenPtr, 30, "Type mismatch: cannot combine ", CpString, TYPENAME(LEFT->TYPEPTR), CpLenPtr, 6, " with ", CpEnd | CpString, TYPENAME(RIGHT->TYPEPTR)));
+}
+
 TEXPRESSIONOBJ* _EXCOERCESET(TEXPRESSIONOBJ* EXPR, TPSTYPE* TYPEPTR) {
   TEXPRESSIONOBJ* RESULT;
-  enum __attribute__((__packed__)) enum8 { PASS, REJECT, REPLACE } OUTCOME;
+  enum __attribute__((__packed__)) enum9 { PASS, REJECT, REPLACE } OUTCOME;
   TPSTYPE* EXPRELEMTYPE;
   TPSTYPE* DESTELEMTYPE;
-  const char* enumvalues8[] = { "PASS", "REJECT", "REPLACE" };
+  const char* enumvalues9[] = { "PASS", "REJECT", "REPLACE" };
   EXPRELEMTYPE = EXPR->TYPEPTR->ELEMENTTYPEPTR;
   DESTELEMTYPE = TYPEPTR->ELEMENTTYPEPTR;
   if (EXPRELEMTYPE == PNil) OUTCOME = REPLACE;
-  else if (!ISSAMETYPE(GETFUNDAMENTALTYPE(EXPRELEMTYPE), GETFUNDAMENTALTYPE(DESTELEMTYPE))) OUTCOME = REJECT;
+  else if (!ISFUNDAMENTALLYSAMETYPE(EXPRELEMTYPE, DESTELEMTYPE)) OUTCOME = REJECT;
   else if (EXISIMMEDIATE(EXPR)) OUTCOME = REPLACE;
   else if (EXPR->CLS == XCSET) OUTCOME = REPLACE;
   else if (GETTYPELOWBOUND(EXPRELEMTYPE) == GETTYPELOWBOUND(DESTELEMTYPE) && GETTYPEHIGHBOUND(EXPRELEMTYPE) == GETTYPEHIGHBOUND(DESTELEMTYPE)) OUTCOME = PASS;
@@ -4199,16 +3350,17 @@ TEXPRESSIONOBJ* _EXCOERCESET(TEXPRESSIONOBJ* EXPR, TPSTYPE* TYPEPTR) {
 
 TEXPRESSIONOBJ* EXCOERCE(TEXPRESSIONOBJ* EXPR, TPSTYPE* TYPEPTR) {
   TEXPRESSIONOBJ* RESULT;
-  if (ISRANGETYPE(EXPR->TYPEPTR) && ISSAMETYPE(TYPEPTR, GETFUNDAMENTALTYPE(EXPR->TYPEPTR))) RESULT = EXOUTRANGE(EXPR);
-  else if (ISRANGETYPE(TYPEPTR) && ISSAMETYPE(GETFUNDAMENTALTYPE(TYPEPTR), EXPR->TYPEPTR)) RESULT = EXSUBRANGE(EXPR, TYPEPTR);
-  else if (ISRANGETYPE(EXPR->TYPEPTR) && ISRANGETYPE(TYPEPTR) && ISSAMETYPE(GETFUNDAMENTALTYPE(EXPR->TYPEPTR), GETFUNDAMENTALTYPE(TYPEPTR))) RESULT = EXRERANGE(EXPR, TYPEPTR);
+  if (ISFUNDAMENTALLYSAMETYPE(EXPR->TYPEPTR, TYPEPTR)) {
+    if (ISRANGETYPE(EXPR->TYPEPTR) && ISRANGETYPE(TYPEPTR)) RESULT = EXRERANGE(EXPR, TYPEPTR);
+    else if (ISRANGETYPE(EXPR->TYPEPTR)) RESULT = EXOUTRANGE(EXPR);
+    else if (ISRANGETYPE(TYPEPTR)) RESULT = EXSUBRANGE(EXPR, TYPEPTR);
+    else RESULT = EXPR;
+  }
   else if (ISCHARTYPE(EXPR->TYPEPTR) && ISSTRINGTYPE(TYPEPTR)) RESULT = EXTOSTRING(EXPR);
   else if (ISINTEGERTYPE(EXPR->TYPEPTR) && ISREALTYPE(TYPEPTR)) RESULT = EXTOREAL(EXPR);
-  else if (ISSAMETYPE(EXPR->TYPEPTR, TYPEPTR)) RESULT = EXPR;
   else if (ISNILTYPE(EXPR->TYPEPTR) && ISPOINTERYTYPE(TYPEPTR)) RESULT = EXPR;
-  else if (ISSETTYPE(EXPR->TYPEPTR) && ISSETTYPE(TYPEPTR)) {
-    RESULT = _EXCOERCESET(EXPR, TYPEPTR);
-  }
+  else if (ISNILTYPE(EXPR->TYPEPTR) && ISFUNCTIONYTYPE(TYPEPTR)) RESULT = EXPR;
+  else if (ISSETTYPE(EXPR->TYPEPTR) && ISSETTYPE(TYPEPTR)) RESULT = _EXCOERCESET(EXPR, TYPEPTR);
   else {
     PString tmp1 = CONCAT(CpLenPtr, 22, "Cannot treat value as ", CpEnd | CpString, TYPENAME(TYPEPTR));
     ERRORFOREXPR(&tmp1, EXPR);
@@ -4234,6 +3386,1236 @@ void EXMARKINITIALIZED(TEXPRESSIONOBJ* LHS) {
       break;
   }
   if (LHS->CLS == XCVARIABLE) LHS->VARPTR->WASINITIALIZED = 1;
+}
+
+TEXPRESSIONOBJ* _EXOP_MAKEUNARY(TEXPRESSIONOBJ* EXPR, TEXOPERATOR OP, TPSTYPE* RESULTTYPE) {
+  TEXPRESSIONOBJ* RESULT;
+  RESULT = _NEWEXPR(XCUNARYOP);
+  RESULT->UNARY.PARENT = EXPR;
+  RESULT->UNARY.OP = OP;
+  RESULT->TYPEPTR = RESULTTYPE;
+  RESULT->ISFUNCTIONRESULT = EXPR->ISFUNCTIONRESULT;
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOP_MAKEBINARY(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TEXOPERATOR OP, TPSTYPE* RESULTTYPE) {
+  TEXPRESSIONOBJ* RESULT;
+  RESULT = _NEWEXPR(XCBINARYOP);
+  RESULT->BINARY.LEFT = LEFT;
+  RESULT->BINARY.RIGHT = RIGHT;
+  RESULT->BINARY.OP = OP;
+  RESULT->TYPEPTR = RESULTTYPE;
+  RESULT->ISFUNCTIONRESULT = LEFT->ISFUNCTIONRESULT || RIGHT->ISFUNCTIONRESULT;
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPNEG(TEXPRESSIONOBJ* EXPR);
+TEXPRESSIONOBJ* EXOPADD(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPSUB(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPMUL(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+
+TEXPRESSIONOBJ* _EXOPADD_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.INTEGERVAL == 0) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == 0) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL + RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOADD, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPSUB_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.INTEGERVAL == 0) {
+    EXDISPOSE(&LEFT);
+    RESULT = EXOPNEG(RIGHT);
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == 0) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL - RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOSUB, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPMUL_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.INTEGERVAL == 1) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.INTEGERVAL == -1) {
+    EXDISPOSE(&LEFT);
+    RESULT = EXOPNEG(RIGHT);
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == 1) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == -1) {
+    EXDISPOSE(&RIGHT);
+    RESULT = EXOPNEG(LEFT);
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL * RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOMUL, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPDIV_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == 1) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.INTEGERVAL == -1) {
+    EXDISPOSE(&RIGHT);
+    RESULT = EXOPNEG(LEFT);
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL / RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XODIVINT, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPMOD_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL % RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOMOD, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPADD_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.REALVAL ==  0.00000000000000E+000) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL ==  0.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.REALVAL = LEFT->IMMEDIATE.REALVAL + RIGHT->IMMEDIATE.REALVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOADD, PRIMITIVETYPES.PTREAL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPSUB_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.REALVAL ==  0.00000000000000E+000) {
+    EXDISPOSE(&LEFT);
+    RESULT = EXOPNEG(RIGHT);
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL ==  0.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.REALVAL = LEFT->IMMEDIATE.REALVAL - RIGHT->IMMEDIATE.REALVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOSUB, PRIMITIVETYPES.PTREAL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPMUL_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.REALVAL ==  1.00000000000000E+000) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.REALVAL == -1.00000000000000E+000) {
+    EXDISPOSE(&LEFT);
+    RESULT = EXOPNEG(RIGHT);
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL ==  1.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL == -1.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = EXOPNEG(LEFT);
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.REALVAL = LEFT->IMMEDIATE.REALVAL * RIGHT->IMMEDIATE.REALVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOMUL, PRIMITIVETYPES.PTREAL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPDIV_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL ==  1.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->IMMEDIATE.REALVAL == -1.00000000000000E+000) {
+    EXDISPOSE(&RIGHT);
+    RESULT = EXOPNEG(LEFT);
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.REALVAL = LEFT->IMMEDIATE.REALVAL / RIGHT->IMMEDIATE.REALVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XODIVREAL, PRIMITIVETYPES.PTREAL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPADD_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATEOFCLASS(LEFT, XICSTRING) && cmp_str(CoEq, CpStringPtr, &LEFT->IMMEDIATE.STRINGVAL, CpLenPtr, 0, "")) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATEOFCLASS(RIGHT, XICSTRING) && cmp_str(CoEq, CpStringPtr, &RIGHT->IMMEDIATE.STRINGVAL, CpLenPtr, 0, "")) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.STRINGVAL = CONCAT(CpStringPtr, &LT, CpEnd | CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICSTRING;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTSTRING;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOADD, PRIMITIVETYPES.PTSTRING);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPUNION_SETS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXSETIMMBOUNDSOBJ* NEWBDS;
+  TEXSETIMMBOUNDSOBJ* OLDBDS;
+  EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  if (EXISIMMEDIATE(LEFT) && LEFT->SETBOUNDS == PNil) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->SETBOUNDS == PNil) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    NEWBDS = PNil;
+    OLDBDS = LEFT->IMMEDIATE.SETBOUNDS;
+    while (OLDBDS != PNil) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
+      OLDBDS = OLDBDS->NEXT;
+    }
+    OLDBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+    while (OLDBDS != PNil) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, OLDBDS->FIRST, OLDBDS->LAST);
+      OLDBDS = OLDBDS->NEXT;
+    }
+    RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+    EXDISPOSE(&LEFT);
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOADD, LEFT->TYPEPTR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPDIFFERENCE_SETS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXSETIMMBOUNDSOBJ* LTBDS;
+  TEXSETIMMBOUNDSOBJ* RTBDS;
+  TEXSETIMMBOUNDSOBJ* NEWBDS;
+  EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  if (EXISIMMEDIATE(LEFT) && LEFT->SETBOUNDS == PNil) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->SETBOUNDS == PNil) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+    RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+    NEWBDS = PNil;
+    while (LTBDS != PNil && RTBDS != PNil) {
+      if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
+      else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) LTBDS->FIRST = RTBDS->LAST + 1;
+      else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) LTBDS = LTBDS->NEXT;
+      else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
+        LTBDS->FIRST = RTBDS->LAST + 1;
+      }
+      else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->FIRST - 1);
+        LTBDS = LTBDS->NEXT;
+      }
+      else {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+        LTBDS = LTBDS->NEXT;
+      }
+    }
+    while (LTBDS != PNil) {
+      NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+      LTBDS = LTBDS->NEXT;
+    }
+    RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+    EXDISPOSE(&LEFT);
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOSUB, LEFT->TYPEPTR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPINTERSECTION_SETS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXSETIMMBOUNDSOBJ* LTBDS;
+  TEXSETIMMBOUNDSOBJ* RTBDS;
+  TEXSETIMMBOUNDSOBJ* NEWBDS;
+  EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  if (EXISIMMEDIATE(LEFT) && LEFT->SETBOUNDS == PNil) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(RIGHT) && RIGHT->SETBOUNDS == PNil) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+    RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+    NEWBDS = PNil;
+    while (LTBDS != PNil && RTBDS != PNil) {
+      if (RTBDS->LAST < LTBDS->FIRST) RTBDS = RTBDS->NEXT;
+      else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, RTBDS->LAST);
+        RTBDS = RTBDS->NEXT;
+      }
+      else if (RTBDS->FIRST <= LTBDS->FIRST && RTBDS->LAST >= LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, LTBDS->FIRST, LTBDS->LAST);
+        LTBDS = LTBDS->NEXT;
+      }
+      else if (RTBDS->FIRST > LTBDS->FIRST && RTBDS->LAST < LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, RTBDS->LAST);
+        RTBDS = RTBDS->NEXT;
+      }
+      else if (RTBDS->FIRST < LTBDS->LAST && RTBDS->LAST >= LTBDS->LAST) {
+        NEWBDS = EXSETADDBOUNDS(NEWBDS, RTBDS->FIRST, LTBDS->LAST);
+        LTBDS = LTBDS->NEXT;
+      }
+      else LTBDS = LTBDS->NEXT;
+    }
+    RESULT = EXSETCONSTANT(NEWBDS, LEFT->TYPEPTR);
+    EXDISPOSE(&LEFT);
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOMUL, LEFT->TYPEPTR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPNEG(TEXPRESSIONOBJ* EXPR) {
+  TEXPRESSIONOBJ* RESULT;
+  ENSURENUMERICEXPR(EXPR);
+  if (EXISIMMEDIATE(EXPR)) {
+    {
+      TEXIMMEDIATE *with1 = &EXPR->IMMEDIATE;
+      if (with1->CLS == XICINTEGER) with1->INTEGERVAL = -with1->INTEGERVAL;
+      else with1->REALVAL = -with1->REALVAL;
+    }
+    RESULT = EXPR;
+  }
+  else RESULT = _EXOP_MAKEUNARY(EXPR, XONEG, EXPR->TYPEPTR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPADD(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPADD_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPADD_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPADD_STRINGS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPUNION_SETS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOADD);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPSUB(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPSUB_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPSUB_NUMBERS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPDIFFERENCE_SETS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOSUB);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPMUL(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPMUL_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPMUL_NUMBERS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPINTERSECTION_SETS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOMUL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPDIVREAL(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPDIV_NUMBERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XODIVREAL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPDIVINT(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPDIV_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XODIVINT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPMOD(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPMOD_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOMOD);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPSHL(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPSHR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+
+TEXPRESSIONOBJ* _EXOPSHL_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL << RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOSHL, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPSHR_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL >> RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOSHR, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPSHL(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPSHL_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOSHL);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPSHR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPSHR_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOSHR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPNOT(TEXPRESSIONOBJ* EXPR);
+TEXPRESSIONOBJ* EXOPAND(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPOR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPXOR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+
+TEXPRESSIONOBJ* _EXOPAND_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.BOOLEANVAL == 0) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.BOOLEANVAL == 1) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL && RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOAND, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPOR_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.BOOLEANVAL == 1) {
+    EXDISPOSE(&RIGHT);
+    RESULT = LEFT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && LEFT->IMMEDIATE.BOOLEANVAL == 0) {
+    EXDISPOSE(&LEFT);
+    RESULT = RIGHT;
+  }
+  else if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL || RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOOR, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPXOR_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL != RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOXOR, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPAND_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL & RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOAND, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPOR_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL | RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOOR, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPXOR_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.INTEGERVAL = LEFT->IMMEDIATE.INTEGERVAL ^ RIGHT->IMMEDIATE.INTEGERVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOXOR, PRIMITIVETYPES.PTINTEGER);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPNOT(TEXPRESSIONOBJ* EXPR) {
+  TEXPRESSIONOBJ* RESULT;
+  if (!ISBOOLEANTYPE(EXPR->TYPEPTR) && !ISINTEGERTYPE(EXPR->TYPEPTR)) {
+    PString tmp1 = str_make(32, "Expected a boolean or an integer");
+    ERRORFOREXPR(&tmp1, EXPR);
+  }
+  if (EXISIMMEDIATE(EXPR)) {
+    {
+      TEXIMMEDIATE *with2 = &EXPR->IMMEDIATE;
+      if (with2->CLS == XICBOOLEAN) with2->BOOLEANVAL = !with2->BOOLEANVAL;
+      else with2->INTEGERVAL = ~with2->INTEGERVAL;
+    }
+    RESULT = EXPR;
+  }
+  else RESULT = _EXOP_MAKEUNARY(EXPR, XONOT, EXPR->TYPEPTR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPAND(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPAND_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPAND_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOADD);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPOR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPOR_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPOR_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOOR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPXOR(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPXOR_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPXOR_INTEGERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOXOR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPIN(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPNE(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPLT(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPGT(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPLTEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+TEXPRESSIONOBJ* EXOPGTEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT);
+
+TEXPRESSIONOBJ* _EXOPEQ_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL == RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL != RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLT_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL < RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGT_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL > RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLTEQ_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL <= RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_BOOLEANS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.BOOLEANVAL >= RIGHT->IMMEDIATE.BOOLEANVAL;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL == RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL != RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLT_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL < RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGT_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL > RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLTEQ_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL <= RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_INTEGERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.INTEGERVAL >= RIGHT->IMMEDIATE.INTEGERVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL == RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL != RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLT_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL < RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGT_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL > RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLTEQ_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL <= RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_NUMBERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  LEFT = EXCOERCE(LEFT, PRIMITIVETYPES.PTREAL);
+  RIGHT = EXCOERCE(RIGHT, PRIMITIVETYPES.PTREAL);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.REALVAL >= RIGHT->IMMEDIATE.REALVAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoEq, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoNotEq, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLT_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoBefore, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGT_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoAfter, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLTEQ_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoBeforeOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_STRINGS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  PString LT;
+  PString RT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    if (LEFT->IMMEDIATE.CLS == XICCHAR) LT = str_of(LEFT->IMMEDIATE.CHARVAL);
+    else LT = LEFT->IMMEDIATE.STRINGVAL;
+    if (RIGHT->IMMEDIATE.CLS == XICCHAR) RT = str_of(RIGHT->IMMEDIATE.CHARVAL);
+    else RT = RIGHT->IMMEDIATE.STRINGVAL;
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = cmp_str(CoAfterOrEq, CpStringPtr, &LT, CpStringPtr, &RT);
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL == RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL != RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLT_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL < RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGT_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL > RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGT, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPLTEQ_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL <= RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOLTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_ENUMS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    RESULT = LEFT;
+    RESULT->IMMEDIATE.BOOLEANVAL = LEFT->IMMEDIATE.ENUMORDINAL >= RIGHT->IMMEDIATE.ENUMORDINAL;
+    RESULT->IMMEDIATE.CLS = XICBOOLEAN;
+    RESULT->TYPEPTR = PRIMITIVETYPES.PTBOOLEAN;
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_SETS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXSETIMMBOUNDSOBJ* LTBDS;
+  TEXSETIMMBOUNDSOBJ* RTBDS;
+  PBoolean EQUALS;
+  EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+    RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+    EQUALS = 1;
+    while (LTBDS != PNil && RTBDS != PNil && EQUALS) {
+      EQUALS = RTBDS->FIRST == LTBDS->FIRST && RTBDS->LAST == LTBDS->LAST;
+      LTBDS = LTBDS->NEXT;
+      RTBDS = RTBDS->NEXT;
+    }
+    EQUALS = EQUALS && LTBDS == PNil && RTBDS == PNil;
+    RESULT = EXBOOLEANCONSTANT(EQUALS);
+    EXDISPOSE(&LEFT);
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPGTEQ_SETS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  TEXSETIMMBOUNDSOBJ* LTBDS;
+  TEXSETIMMBOUNDSOBJ* RTBDS;
+  PBoolean ISGTEQ;
+  EXSETCOERCETOCOMMON(LEFT, RIGHT);
+  if (EXISIMMEDIATE(LEFT) && EXISIMMEDIATE(RIGHT)) {
+    LTBDS = LEFT->IMMEDIATE.SETBOUNDS;
+    RTBDS = RIGHT->IMMEDIATE.SETBOUNDS;
+    ISGTEQ = 1;
+    while (LTBDS != PNil && RTBDS != PNil && ISGTEQ) {
+      if (LTBDS->LAST < RTBDS->FIRST) LTBDS = LTBDS->NEXT;
+      else if (LTBDS->FIRST <= RTBDS->FIRST && LTBDS->LAST >= RTBDS->LAST) RTBDS = RTBDS->NEXT;
+      else ISGTEQ = 0;
+    }
+    ISGTEQ = ISGTEQ && RTBDS == PNil;
+    RESULT = EXBOOLEANCONSTANT(ISGTEQ);
+    EXDISPOSE(&LEFT);
+    EXDISPOSE(&RIGHT);
+  }
+  else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOGTEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPIN_IMPL(TEXPRESSIONOBJ* NEEDLE, TEXPRESSIONOBJ* HAYSTACK) {
+  TEXPRESSIONOBJ* RESULT;
+  TPSTYPE* ELEMTYPE;
+  TEXPRESSIONOBJ* IMMSET;
+  TEXPRESSIONOBJ* EXPRSET;
+  TEXSETIMMBOUNDSOBJ* IMMBOUNDS;
+  TEXSETEXPRBOUNDSOBJ* EXPRBOUNDS;
+  TEXPRESSIONOBJ* COND;
+  TPSVARIABLE* TMPVAR;
+  TEXPRESSIONOBJ* WANTED;
+  ELEMTYPE = HAYSTACK->TYPEPTR->ELEMENTTYPEPTR;
+  if (ELEMTYPE == PNil) ELEMTYPE = NEEDLE->TYPEPTR;
+  else NEEDLE = EXCOERCE(NEEDLE, ELEMTYPE);
+  if (NEEDLE->ISFUNCTIONRESULT) {
+    TMPVAR = ({ PString tmp1 = str_make(4, "elem"); ADDTMPVARIABLE(&tmp1, ELEMTYPE); });
+    WANTED = EXVARIABLE(TMPVAR);
+  }
+  else {
+    TMPVAR = PNil;
+    WANTED = NEEDLE;
+  }
+  RESULT = EXBOOLEANCONSTANT(0);
+  if (EXISIMMEDIATE(HAYSTACK)) {
+    IMMSET = HAYSTACK;
+    EXPRSET = PNil;
+  }
+  else {
+    IMMSET = HAYSTACK->SETBASE;
+    EXPRSET = HAYSTACK;
+  }
+  if (IMMSET != PNil) {
+    IMMBOUNDS = IMMSET->IMMEDIATE.SETBOUNDS;
+    while (IMMBOUNDS != PNil) {
+      if (IMMBOUNDS->FIRST == IMMBOUNDS->LAST) COND = EXOPEQ(EXCOPY(WANTED), EXGETANTIORDINAL(IMMBOUNDS->FIRST, ELEMTYPE));
+      else COND = EXOPAND(EXOPLTEQ(EXGETANTIORDINAL(IMMBOUNDS->FIRST, ELEMTYPE), EXCOPY(WANTED)), EXOPLTEQ(EXCOPY(WANTED), EXGETANTIORDINAL(IMMBOUNDS->LAST, ELEMTYPE)));
+      RESULT = EXOPOR(RESULT, COND);
+      IMMBOUNDS = IMMBOUNDS->NEXT;
+    }
+  }
+  if (EXPRSET != PNil) {
+    EXPRBOUNDS = EXPRSET->SETBOUNDS;
+    while (EXPRBOUNDS != PNil) {
+      if (EXPRBOUNDS->LAST == PNil) COND = EXOPEQ(EXCOPY(WANTED), EXCOPY(EXPRBOUNDS->FIRST));
+      else COND = EXOPAND(EXOPLTEQ(EXCOPY(EXPRBOUNDS->FIRST), EXCOPY(WANTED)), EXOPLTEQ(EXCOPY(WANTED), EXCOPY(EXPRBOUNDS->LAST)));
+      RESULT = EXOPOR(RESULT, COND);
+      EXPRBOUNDS = EXPRBOUNDS->NEXT;
+    }
+  }
+  if (TMPVAR != PNil) {
+    RESULT = EXWITHTMPVAR(WANTED, NEEDLE, RESULT);
+  }
+  else EXDISPOSE(&NEEDLE);
+  EXDISPOSE(&HAYSTACK);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPEQ_POINTERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOEQ, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* _EXOPNE_POINTERS(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XONE, PRIMITIVETYPES.PTBOOLEAN);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPIN(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISSETTYPE(RIGHT->TYPEPTR)) {
+    if (EXISIMMEDIATE(RIGHT) || RIGHT->CLS == XCSET) RESULT = _EXOPIN_IMPL(LEFT, RIGHT);
+    else RESULT = _EXOP_MAKEBINARY(LEFT, RIGHT, XOIN, PRIMITIVETYPES.PTBOOLEAN);
+  }
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOXOR);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPEQ_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPEQ_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPEQ_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPEQ_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPEQ_ENUMS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPEQ_SETS(LEFT, RIGHT);
+  else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPEQ_POINTERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOEQ);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPNE(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPNE_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPNE_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPNE_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPNE_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPNE_ENUMS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = EXOPNOT(_EXOPEQ_SETS(LEFT, RIGHT));
+  else if (AREPOINTERSCOMPATIBLE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPNE_POINTERS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XONE);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPLT(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLT_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLT_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLT_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLT_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPLT_ENUMS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOLT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPGT(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGT_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGT_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGT_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGT_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPGT_ENUMS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOGT);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPLTEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLTEQ_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLTEQ_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLTEQ_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPLTEQ_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPLTEQ_ENUMS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_SETS(RIGHT, LEFT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOLTEQ);
+  return RESULT;
+}
+
+TEXPRESSIONOBJ* EXOPGTEQ(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT) {
+  TEXPRESSIONOBJ* RESULT;
+  if (ISBOOLEANTYPE(LEFT->TYPEPTR) && ISBOOLEANTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_BOOLEANS(LEFT, RIGHT);
+  else if (ISINTEGERTYPE(LEFT->TYPEPTR) && ISINTEGERTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_INTEGERS(LEFT, RIGHT);
+  else if (ISNUMERICTYPE(LEFT->TYPEPTR) && ISNUMERICTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_NUMBERS(LEFT, RIGHT);
+  else if (ISSTRINGYTYPE(LEFT->TYPEPTR) && ISSTRINGYTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_STRINGS(LEFT, RIGHT);
+  else if (ISENUMTYPE(LEFT->TYPEPTR) && ISSAMETYPE(LEFT->TYPEPTR, RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_ENUMS(LEFT, RIGHT);
+  else if (ISSETTYPE(LEFT->TYPEPTR) && ISSETTYPE(RIGHT->TYPEPTR)) RESULT = _EXOPGTEQ_SETS(LEFT, RIGHT);
+  else ERRORINVALIDOPERATOR2(LEFT, RIGHT, XOGTEQ);
+  return RESULT;
 }
 
 void READTOKEN();
@@ -4300,12 +4682,9 @@ TEXPRESSIONOBJ* PSIMMEDIATE() {
 
 TPSTYPE* PSENUMERATEDTYPE() {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
   TPSENUMDEF ENUM;
   WANTTOKENANDREAD(TKLPAREN);
   ENUM.SIZE = 0;
-  ENUM.HASBEENDEFINED = 0;
-  ENUM.VALUESHAVEBEENOUTPUT = 0;
   do {
     ENUM.SIZE = ENUM.SIZE + 1;
     if (ENUM.SIZE > 128) COMPILEERROR(str_make(23, "Too many values in enum"));
@@ -4313,12 +4692,8 @@ TPSTYPE* PSENUMERATEDTYPE() {
     WANTTOKEN2(TKCOMMA, TKRPAREN);
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKRPAREN));
-  TYP = EMPTYTYPE();
-  TYP.CLS = TTCENUM;
-  TYP.ENUMPTR = NEWENUM(ENUM);
-  TYP.WASUSED = 1;
-  RESULT = ADDTYPE(TYP);
-  SKIPTOKEN(TKRPAREN);
+  WANTTOKENANDREAD(TKRPAREN);
+  RESULT = MAKEENUMTYPE(&ENUM);
   return RESULT;
 }
 
@@ -4405,19 +4780,15 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
 
 TPSTYPE* PSRECORDTYPE(PBoolean ISPACKED) {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
   TPSRECORDDEF REC;
   WANTTOKENANDREAD(TKRECORD);
   REC.SIZE = 0;
   REC.NUMVARIANTS = 0;
   REC.ISPACKED = ISPACKED;
-  REC.HASBEENDEFINED = 0;
   while (LEXER.TOKEN.ID != TKCASE && LEXER.TOKEN.ID != TKEND) PSRECORDFIELD(&REC, TKEND);
   if (LEXER.TOKEN.ID == TKCASE) PSRECORDVARIANTS(&REC);
   WANTTOKENANDREAD(TKEND);
-  TYP = TYPEOFCLASS(TTCRECORD);
-  TYP.RECPTR = NEWRECORD(REC);
-  RESULT = ADDTYPE(TYP);
+  RESULT = MAKERECORDTYPE(&REC);
   return RESULT;
 }
 
@@ -4473,63 +4844,50 @@ TPSTYPE* PSRESULTTYPE() {
 
 TPSTYPE* PSPROCEDURETYPE() {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
-  TPSFNDEF FN;
+  TPSFNARGS ARGS;
   WANTTOKENANDREAD(TKPROCEDURE);
-  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&FN.ARGS);
-  FN.RETURNTYPEPTR = PNil;
-  TYP = TYPEOFCLASS(TTCFUNCTION);
-  TYP.FNDEFPTR = NEWFNDEF(FN);
-  RESULT = ADDTYPE(TYP);
+  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&ARGS);
+  RESULT = MAKEFUNCTIONTYPE(&ARGS, PNil);
   return RESULT;
 }
 
 TPSTYPE* PSFUNCTIONTYPE() {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
-  TPSFNDEF FN;
+  TPSFNARGS ARGS;
+  TPSTYPE* RETURNTYPE;
   WANTTOKENANDREAD(TKFUNCTION);
   WANTTOKEN2(TKLPAREN, TKCOLON);
-  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&FN.ARGS);
+  if (LEXER.TOKEN.ID == TKLPAREN) PSARGUMENTS(&ARGS);
   WANTTOKENANDREAD(TKCOLON);
-  FN.RETURNTYPEPTR = PSRESULTTYPE();
-  TYP = TYPEOFCLASS(TTCFUNCTION);
-  TYP.FNDEFPTR = NEWFNDEF(FN);
-  RESULT = ADDTYPE(TYP);
+  RETURNTYPE = PSRESULTTYPE();
+  RESULT = MAKEFUNCTIONTYPE(&ARGS, RETURNTYPE);
+  return RESULT;
+}
+
+TPSTYPE* _PSARRAYTYPEINTERNAL() {
+  TPSTYPE* RESULT;
+  TPSTYPE* INDEXTYPE;
+  TPSTYPE* VALUETYPE;
+  INDEXTYPE = PSTYPEDENOTER();
+  WANTTOKEN2(TKCOMMA, TKRBRACKET);
+  if (LEXER.TOKEN.ID == TKCOMMA) {
+    WANTTOKENANDREAD(TKCOMMA);
+    VALUETYPE = _PSARRAYTYPEINTERNAL();
+  }
+  else {
+    WANTTOKENANDREAD(TKRBRACKET);
+    WANTTOKENANDREAD(TKOF);
+    VALUETYPE = PSTYPEDENOTER();
+  }
+  RESULT = MAKEARRAYTYPE(INDEXTYPE, VALUETYPE);
   return RESULT;
 }
 
 TPSTYPE* PSARRAYTYPE() {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
-  TPSTYPE* TYPEPTR;
-  TPSTYPE* NEWTYPEPTR;
-  TYP = TYPEOFCLASS(TTCARRAY);
-  TYP.ARRAYDEF.INDEXTYPEPTR = PNil;
-  TYP.ARRAYDEF.VALUETYPEPTR = PNil;
-  TYPEPTR = ADDTYPE(TYP);
-  RESULT = TYPEPTR;
   WANTTOKENANDREAD(TKARRAY);
   WANTTOKENANDREAD(TKLBRACKET);
-  do {
-    TYPEPTR->ARRAYDEF.INDEXTYPEPTR = PSTYPEDENOTER();
-    TYPEPTR->ARRAYDEF.INDEXTYPEPTR->WASUSED = 1;
-    if (!ISBOUNDEDTYPE(TYPEPTR->ARRAYDEF.INDEXTYPEPTR)) {
-      PString tmp1 = str_make(51, "Array indices must belong to a bounded ordinal type");
-      ERRORFORTYPE(&tmp1, TYPEPTR->ARRAYDEF.INDEXTYPEPTR);
-    }
-    WANTTOKEN2(TKCOMMA, TKRBRACKET);
-    if (LEXER.TOKEN.ID == TKCOMMA) {
-      NEWTYPEPTR = ADDTYPE(TYP);
-      TYPEPTR->ARRAYDEF.VALUETYPEPTR = NEWTYPEPTR;
-      TYPEPTR->ARRAYDEF.VALUETYPEPTR->WASUSED = 1;
-      TYPEPTR = NEWTYPEPTR;
-    }
-    SKIPTOKEN(TKCOMMA);
-  } while (!(LEXER.TOKEN.ID == TKRBRACKET));
-  WANTTOKENANDREAD(TKRBRACKET);
-  WANTTOKENANDREAD(TKOF);
-  TYPEPTR->ARRAYDEF.VALUETYPEPTR = PSTYPEDENOTER();
+  RESULT = _PSARRAYTYPEINTERNAL();
   return RESULT;
 }
 
@@ -4539,9 +4897,9 @@ TPSTYPE* PSPOINTERTYPE() {
   WANTTOKENANDREAD(TKCARET);
   WANTTOKEN(TKIDENTIFIER);
   NAMEPTR = FINDNAMEOFCLASS(&LEXER.TOKEN.VALUE, TNCTYPE, 0);
-  if (NAMEPTR == PNil) RESULT = ADDTYPE(POINTERUNKNOWNTYPE(&LEXER.TOKEN.VALUE));
+  if (NAMEPTR == PNil) RESULT = MAKEPOINTERUNKNOWNTYPE(&LEXER.TOKEN.VALUE);
   else {
-    RESULT = GETPOINTERTYPE(NAMEPTR->TYPEPTR);
+    RESULT = MAKEPOINTERTYPE(NAMEPTR->TYPEPTR);
     NAMEPTR->TYPEPTR->WASUSED = 1;
   }
   READTOKEN();
@@ -4552,7 +4910,6 @@ TPSTYPE* PSRANGETYPE() {
   TPSTYPE* RESULT;
   TEXPRESSIONOBJ* FIRST;
   TEXPRESSIONOBJ* LAST;
-  TPSTYPE TYP;
   FIRST = PSIMMEDIATE();
   WANTTOKENANDREAD(TKRANGE);
   LAST = PSIMMEDIATE();
@@ -4561,12 +4918,7 @@ TPSTYPE* PSRANGETYPE() {
     PString tmp1 = CONCAT(CpLenPtr, 9, "Expected ", CpEnd | CpString, TYPENAME(FIRST->TYPEPTR));
     ERRORFOREXPR(&tmp1, LAST);
   }
-  TYP = TYPEOFCLASS(TTCRANGE);
-  TYP.RANGEDEF.FIRST = EXGETORDINAL(FIRST);
-  TYP.RANGEDEF.LAST = EXGETORDINAL(LAST);
-  TYP.RANGEDEF.BASETYPEPTR = FIRST->TYPEPTR;
-  RESULT = ADDTYPE(TYP);
-  if (TYP.RANGEDEF.FIRST > TYP.RANGEDEF.LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
+  RESULT = MAKERANGETYPE(FIRST->TYPEPTR, EXGETORDINAL(FIRST), EXGETORDINAL(LAST));
   EXDISPOSE(&FIRST);
   EXDISPOSE(&LAST);
   return RESULT;
@@ -4574,20 +4926,19 @@ TPSTYPE* PSRANGETYPE() {
 
 TPSTYPE* PSSETTYPE() {
   TPSTYPE* RESULT;
-  TPSTYPE TYP;
+  TPSTYPE* ELEMENTTYPEPTR;
   WANTTOKENANDREAD(TKSET);
   WANTTOKENANDREAD(TKOF);
-  TYP = TYPEOFCLASS(TTCSET);
-  TYP.ELEMENTTYPEPTR = PSTYPEDENOTER();
-  RESULT = ADDTYPE(TYP);
-  if (!ISBOUNDEDTYPE(TYP.ELEMENTTYPEPTR)) {
+  ELEMENTTYPEPTR = PSTYPEDENOTER();
+  if (!ISBOUNDEDTYPE(ELEMENTTYPEPTR)) {
     PString tmp1 = str_make(47, "Set element types must be bounded ordinal types");
-    ERRORFORTYPE(&tmp1, TYP.ELEMENTTYPEPTR);
+    ERRORFORTYPE(&tmp1, ELEMENTTYPEPTR);
   }
-  if (GETBOUNDEDTYPESIZE(TYP.ELEMENTTYPEPTR) > 256) {
+  if (GETBOUNDEDTYPESIZE(ELEMENTTYPEPTR) > 256) {
     PString tmp2 = str_make(54, "Set element types may not contain more than 256 values");
-    ERRORFORTYPE(&tmp2, TYP.ELEMENTTYPEPTR);
+    ERRORFORTYPE(&tmp2, ELEMENTTYPEPTR);
   }
+  RESULT = MAKESETTYPE(ELEMENTTYPEPTR);
   return RESULT;
 }
 
@@ -4630,7 +4981,6 @@ void _RESOLVEPOINTERUNKNOWN(TPSTYPE* TYPEPTR) {
 void PSTYPEDEFINITIONS() {
   PString NAME;
   TPSTYPE* TYPEPTR;
-  TPSTYPE NEWTYPE;
   TPSDEFENTRY* CHECKPOINT;
   CHECKPOINT = DEFS.LATEST;
   WANTTOKENANDREAD(TKTYPE);
@@ -4638,11 +4988,8 @@ void PSTYPEDEFINITIONS() {
     NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
     WANTTOKENANDREAD(TKEQUALS);
     TYPEPTR = PSTYPEDENOTER();
-    NEWTYPE = COPYTYPE(TYPEPTR);
-    NEWTYPE.NAME = NAME;
-    NEWTYPE.ALIASFOR = TYPEPTR;
-    TYPEPTR = ADDTYPE(NEWTYPE);
     WANTTOKENANDREAD(TKSEMICOLON);
+    MAKEALIASTYPE(&NAME, TYPEPTR);
   } while (!(LEXER.TOKEN.ID != TKIDENTIFIER));
   OUTTYPEDEFINITIONSFROMCHECKPOINT(CHECKPOINT);
   OUTENUMVALUESFROMCHECKPOINT(CHECKPOINT);
@@ -4653,7 +5000,7 @@ void PSCONSTANT(const PString *NAME) {
   WANTTOKENANDREAD(TKEQUALS);
   CONSTANT.NAME = *NAME;
   CONSTANT.VALUE = PSIMMEDIATE();
-  ADDCONSTANT(CONSTANT);
+  ADDCONSTANT(&CONSTANT);
 }
 
 void PSCONSTANTVALUE(TPSTYPE* TYPEPTR) {
@@ -4683,7 +5030,7 @@ void PSTYPEDCONSTANT(const PString *NAME) {
   WANTTOKENANDREAD(TKCOLON);
   TYPEPTR = PSTYPEDENOTER();
   WANTTOKENANDREAD(TKEQUALS);
-  OUTCONSTANTDEFINITIONBEGIN(ADDVARIABLE(MAKETYPEDCONSTANT(NAME, TYPEPTR)));
+  OUTCONSTANTDEFINITIONBEGIN(({ TPSVARIABLE tmp1 = MAKETYPEDCONSTANT(NAME, TYPEPTR); ADDVARIABLE(&tmp1); }));
   PSCONSTANTVALUE(TYPEPTR);
   OUTCONSTANTDEFINITIONEND();
 }
@@ -4728,7 +5075,7 @@ void PSVARDEFINITIONS() {
       if (first <= last) {
         NUMNAMES = first;
         while (1) {
-          OUTVARIABLEDEFINITION(ADDVARIABLE(MAKEVARIABLE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR)));
+          OUTVARIABLEDEFINITION(({ TPSVARIABLE tmp1 = MAKEVARIABLE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR); ADDVARIABLE(&tmp1); }));
           if (NUMNAMES == last) break;
           ++NUMNAMES;
         }
@@ -4753,7 +5100,7 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
     if (first <= last) {
       POS = first;
       while (1) {
-        ADDVARIABLE(FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
+        ADDVARIABLE(&FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
         if (POS == last) break;
         ++POS;
       }
@@ -4762,7 +5109,7 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
   OUTFUNCTIONDEFINITION(FNPTR);
   OUTENUMVALUESFROMCHECKPOINT(CHECKPOINT);
   if (FNPTR->RETURNTYPEPTR != PNil) {
-    RESULTPTR = ADDVARIABLE(({ PString tmp1 = str_make(6, "RESULT"); MAKEVARIABLE(&tmp1, FNPTR->RETURNTYPEPTR); }));
+    RESULTPTR = ({ TPSVARIABLE tmp2 = ({ PString tmp1 = str_make(6, "RESULT"); MAKEVARIABLE(&tmp1, FNPTR->RETURNTYPEPTR); }); ADDVARIABLE(&tmp2); });
     RESULTPTR->WASUSED = 1;
     OUTVARIABLEDEFINITION(RESULTPTR);
   }
@@ -4792,9 +5139,9 @@ void PSPROCEDUREDEFINITION() {
     SKIPTOKEN(TKFORWARD);
     WANTTOKENANDREAD(TKSEMICOLON);
     DEF.ISDECLARATION = 1;
-    OUTFUNCTIONDECLARATION(ADDFUNCTION(DEF));
+    OUTFUNCTIONDECLARATION(ADDFUNCTION(&DEF));
   }
-  else PSFUNCTIONBODY(ADDFUNCTION(DEF));
+  else PSFUNCTIONBODY(ADDFUNCTION(&DEF));
 }
 
 void PSFUNCTIONDEFINITION() {
@@ -4815,9 +5162,9 @@ void PSFUNCTIONDEFINITION() {
     SKIPTOKEN(TKFORWARD);
     WANTTOKENANDREAD(TKSEMICOLON);
     DEF.ISDECLARATION = 1;
-    OUTFUNCTIONDECLARATION(ADDFUNCTION(DEF));
+    OUTFUNCTIONDECLARATION(ADDFUNCTION(&DEF));
   }
-  else PSFUNCTIONBODY(ADDFUNCTION(DEF));
+  else PSFUNCTIONBODY(ADDFUNCTION(&DEF));
 }
 
 void PSDEFINITIONS() {
@@ -4969,11 +5316,11 @@ PBoolean ISOPRELATIONAL(TLXTOKEN TOK) {
 
 PString PARSESTRING(const PString *PSTR) {
   PString RESULT;
-  enum __attribute__((__packed__)) enum8 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
+  enum __attribute__((__packed__)) enum9 { NONE, QUOTEDSTR, HASH, NUMCHARDEC, NUMCHARHEX, NUMCHARREADY, CARET, ERROR, DONE } STATE;
   PInteger POS;
   PChar CH;
   PInteger CHNUM;
-  const char* enumvalues8[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
+  const char* enumvalues9[] = { "NONE", "QUOTEDSTR", "HASH", "NUMCHARDEC", "NUMCHARHEX", "NUMCHARREADY", "CARET", "ERROR", "DONE" };
   RESULT = str_make(0, "");
   STATE = NONE;
   POS = 1;
@@ -5106,7 +5453,7 @@ TEXPRESSIONOBJ* PSFACTOR() {
   }
   else if (LEXER.TOKEN.ID == TKNOT) {
     WANTTOKENANDREAD(TKNOT);
-    EXPR = EXUNARYOP(PSFACTOR(), TKNOT);
+    EXPR = EXOPNOT(PSFACTOR());
   }
   else if (LEXER.TOKEN.ID == TKAT) {
     WANTTOKENANDREAD(TKAT);
@@ -5120,6 +5467,70 @@ TEXPRESSIONOBJ* PSFACTOR() {
   return RESULT;
 }
 
+TEXPRESSIONOBJ* PSBINARYOP(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
+  TEXPRESSIONOBJ* RESULT;
+  switch (OP) {
+    case TKPLUS:
+      RESULT = EXOPADD(LEFT, RIGHT);
+      break;
+    case TKMINUS:
+      RESULT = EXOPSUB(LEFT, RIGHT);
+      break;
+    case TKASTERISK:
+      RESULT = EXOPMUL(LEFT, RIGHT);
+      break;
+    case TKSLASH:
+      RESULT = EXOPDIVREAL(LEFT, RIGHT);
+      break;
+    case TKDIV:
+      RESULT = EXOPDIVINT(LEFT, RIGHT);
+      break;
+    case TKMOD:
+      RESULT = EXOPMOD(LEFT, RIGHT);
+      break;
+    case TKAND:
+      RESULT = EXOPAND(LEFT, RIGHT);
+      break;
+    case TKOR:
+      RESULT = EXOPOR(LEFT, RIGHT);
+      break;
+    case TKXOR:
+      RESULT = EXOPXOR(LEFT, RIGHT);
+      break;
+    case TKSHL:
+      RESULT = EXOPSHL(LEFT, RIGHT);
+      break;
+    case TKSHR:
+      RESULT = EXOPSHR(LEFT, RIGHT);
+      break;
+    case TKIN:
+      RESULT = EXOPIN(LEFT, RIGHT);
+      break;
+    case TKEQUALS:
+      RESULT = EXOPEQ(LEFT, RIGHT);
+      break;
+    case TKNOTEQUALS:
+      RESULT = EXOPNE(LEFT, RIGHT);
+      break;
+    case TKLESSTHAN:
+      RESULT = EXOPLT(LEFT, RIGHT);
+      break;
+    case TKMORETHAN:
+      RESULT = EXOPGT(LEFT, RIGHT);
+      break;
+    case TKLESSOREQUALS:
+      RESULT = EXOPLTEQ(LEFT, RIGHT);
+      break;
+    case TKMOREOREQUALS:
+      RESULT = EXOPGTEQ(LEFT, RIGHT);
+      break;
+    default:
+      COMPILEERROR(CONCAT(CpLenPtr, 26, "Expected an operator, got ", CpEnd | CpString, LXTOKENNAME(OP)));
+      break;
+  }
+  return RESULT;
+}
+
 TEXPRESSIONOBJ* PSTERM() {
   TEXPRESSIONOBJ* RESULT;
   TLXTOKENID OP;
@@ -5128,7 +5539,7 @@ TEXPRESSIONOBJ* PSTERM() {
   while (ISOPMULTIPLYING(LEXER.TOKEN)) {
     OP = LEXER.TOKEN.ID;
     READTOKEN();
-    EXPR = EXBINARYOP(EXPR, PSFACTOR(), OP);
+    EXPR = PSBINARYOP(EXPR, PSFACTOR(), OP);
   }
   RESULT = EXPR;
   return RESULT;
@@ -5143,11 +5554,11 @@ TEXPRESSIONOBJ* PSSIMPLEEXPRESSION() {
   if (NEGATIVE) READTOKEN();
   else SKIPTOKEN(TKPLUS);
   EXPR = PSTERM();
-  if (NEGATIVE) EXPR = EXUNARYOP(EXPR, TKMINUS);
+  if (NEGATIVE) EXPR = EXOPNEG(EXPR);
   while (ISOPADDING(LEXER.TOKEN)) {
     OP = LEXER.TOKEN.ID;
     READTOKEN();
-    EXPR = EXBINARYOP(EXPR, PSTERM(), OP);
+    EXPR = PSBINARYOP(EXPR, PSTERM(), OP);
   }
   RESULT = EXPR;
   return RESULT;
@@ -5161,7 +5572,7 @@ TEXPRESSIONOBJ* PSEXPRESSION() {
   while (ISOPRELATIONAL(LEXER.TOKEN)) {
     OP = LEXER.TOKEN.ID;
     READTOKEN();
-    EXPR = EXBINARYOP(EXPR, PSSIMPLEEXPRESSION(), OP);
+    EXPR = PSBINARYOP(EXPR, PSSIMPLEEXPRESSION(), OP);
   }
   RESULT = EXPR;
   return RESULT;
@@ -5436,7 +5847,6 @@ TEXPRESSIONOBJ* _PF_UNARY_PARSE() {
 
 PString _PF_FUN_OVERLOAD(const PString *NAMEPREFIX, TPSTYPE* TYPEPTR) {
   PString RESULT;
-  TYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
   if (ISBOOLEANTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, NAMEPREFIX, CpEnd | CpLenPtr, 2, "_b");
   else if (ISINTEGERTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, NAMEPREFIX, CpEnd | CpLenPtr, 2, "_i");
   else if (ISREALTYPE(TYPEPTR)) RESULT = CONCAT(CpStringPtr, NAMEPREFIX, CpEnd | CpLenPtr, 2, "_r");
@@ -5859,19 +6269,28 @@ TEXPRESSIONOBJ* _MODIO_FILERESETFUN_PARSE(TEXPRESSIONOBJ* FNEXPR) {
 void _ADDIOPROC1(PString NAME, TPSVARIABLE ARG1) {
   ADDPSEUDOFN(&NAME, &_MODIO_FILEFUN_PARSE, &PF_INDEF_DESCRIBE);
   _UPFIRST(&NAME);
-  ADDFUNCTION(MAKEPROCEDURE2(&NAME, ARG1, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); })));
+  {
+    TPSFUNCTION tmp2 = MAKEPROCEDURE2(&NAME, ARG1, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); }));
+    ADDFUNCTION(&tmp2);
+  }
 }
 
 void _ADDIOPROC2(PString NAME, TPSVARIABLE ARG1, TPSVARIABLE ARG2) {
   ADDPSEUDOFN(&NAME, &_MODIO_FILEFUN_PARSE, &PF_INDEF_DESCRIBE);
   _UPFIRST(&NAME);
-  ADDFUNCTION(MAKEPROCEDURE3(&NAME, ARG1, ARG2, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); })));
+  {
+    TPSFUNCTION tmp2 = MAKEPROCEDURE3(&NAME, ARG1, ARG2, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); }));
+    ADDFUNCTION(&tmp2);
+  }
 }
 
 void _ADDIOFUN1(PString NAME, TPSTYPE* RETTYPE, TPSVARIABLE ARG1) {
   ADDPSEUDOFN(&NAME, &_MODIO_FILEFUN_PARSE, &PF_INDEF_DESCRIBE);
   _UPFIRST(&NAME);
-  ADDFUNCTION(MAKEFUNCTION2(&NAME, RETTYPE, ARG1, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); })));
+  {
+    TPSFUNCTION tmp2 = MAKEFUNCTION2(&NAME, RETTYPE, ARG1, ({ PString tmp1 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp1, PRIMITIVETYPES.PTBOOLEAN); }));
+    ADDFUNCTION(&tmp2);
+  }
 }
 
 void _ADDFILEPROC(PString NAME) {
@@ -5881,7 +6300,10 @@ void _ADDFILEPROC(PString NAME) {
 void _ADDFILERESETPROC(PString NAME) {
   ADDPSEUDOFN(&NAME, &_MODIO_FILERESETFUN_PARSE, &PF_INDEF_DESCRIBE);
   _UPFIRST(&NAME);
-  ADDFUNCTION(MAKEPROCEDURE3(&NAME, ({ PString tmp1 = str_of('F'); MAKEVARARG(&tmp1, PRIMITIVETYPES.PTTEXT); }), ({ PString tmp2 = str_make(10, "BLOCK_SIZE"); MAKEARG(&tmp2, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp3 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp3, PRIMITIVETYPES.PTBOOLEAN); })));
+  {
+    TPSFUNCTION tmp4 = MAKEPROCEDURE3(&NAME, ({ PString tmp1 = str_of('F'); MAKEVARARG(&tmp1, PRIMITIVETYPES.PTTEXT); }), ({ PString tmp2 = str_make(10, "BLOCK_SIZE"); MAKEARG(&tmp2, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp3 = str_make(12, "DIE_ON_ERROR"); MAKEARG(&tmp3, PRIMITIVETYPES.PTBOOLEAN); }));
+    ADDFUNCTION(&tmp4);
+  }
 }
 
 void _ADDFILEPROC1(PString NAME, TPSVARIABLE ARG1) {
@@ -5901,31 +6323,43 @@ void _ADDCONSTFILEFUN(PString NAME, TPSTYPE* RETURNTYPEPTR) {
 }
 
 void REGISTERGLOBALS_IO() {
-  ADDVARIABLE(({ PString tmp1 = str_make(5, "INPUT"); MAKEVARIABLE(&tmp1, PRIMITIVETYPES.PTTEXT); }));
-  ADDVARIABLE(({ PString tmp2 = str_make(6, "OUTPUT"); MAKEVARIABLE(&tmp2, PRIMITIVETYPES.PTTEXT); }));
-  ADDVARIABLE(({ PString tmp3 = str_make(6, "STDERR"); MAKEVARIABLE(&tmp3, PRIMITIVETYPES.PTTEXT); }));
-  PSEUDOFUNS.READ = ({ PString tmp4 = str_make(4, "READ"); ADDPSEUDOFN(&tmp4, &_MODIOREAD_PARSE, &PF_INDEF_DESCRIBE); });
-  PSEUDOFUNS.READLN = ({ PString tmp5 = str_make(6, "READLN"); ADDPSEUDOFN(&tmp5, &_MODIOREAD_PARSE, &PF_INDEF_DESCRIBE); });
-  PSEUDOFUNS.WRITE = ({ PString tmp6 = str_make(5, "WRITE"); ADDPSEUDOFN(&tmp6, &_MODIOWRITE_PARSE, &PF_INDEF_DESCRIBE); });
-  PSEUDOFUNS.WRITELN = ({ PString tmp7 = str_make(7, "WRITELN"); ADDPSEUDOFN(&tmp7, &_MODIOWRITE_PARSE, &PF_INDEF_DESCRIBE); });
-  _ADDFILEPROC1(str_make(6, "ASSIGN"), ({ PString tmp8 = str_make(4, "NAME"); MAKECONSTARG(&tmp8, PRIMITIVETYPES.PTSTRING); }));
+  {
+    TPSVARIABLE tmp2 = ({ PString tmp1 = str_make(5, "INPUT"); MAKEVARIABLE(&tmp1, PRIMITIVETYPES.PTTEXT); });
+    ADDVARIABLE(&tmp2);
+  }
+  {
+    TPSVARIABLE tmp4 = ({ PString tmp3 = str_make(6, "OUTPUT"); MAKEVARIABLE(&tmp3, PRIMITIVETYPES.PTTEXT); });
+    ADDVARIABLE(&tmp4);
+  }
+  {
+    TPSVARIABLE tmp6 = ({ PString tmp5 = str_make(6, "STDERR"); MAKEVARIABLE(&tmp5, PRIMITIVETYPES.PTTEXT); });
+    ADDVARIABLE(&tmp6);
+  }
+  PSEUDOFUNS.READ = ({ PString tmp7 = str_make(4, "READ"); ADDPSEUDOFN(&tmp7, &_MODIOREAD_PARSE, &PF_INDEF_DESCRIBE); });
+  PSEUDOFUNS.READLN = ({ PString tmp8 = str_make(6, "READLN"); ADDPSEUDOFN(&tmp8, &_MODIOREAD_PARSE, &PF_INDEF_DESCRIBE); });
+  PSEUDOFUNS.WRITE = ({ PString tmp9 = str_make(5, "WRITE"); ADDPSEUDOFN(&tmp9, &_MODIOWRITE_PARSE, &PF_INDEF_DESCRIBE); });
+  PSEUDOFUNS.WRITELN = ({ PString tmp10 = str_make(7, "WRITELN"); ADDPSEUDOFN(&tmp10, &_MODIOWRITE_PARSE, &PF_INDEF_DESCRIBE); });
+  _ADDFILEPROC1(str_make(6, "ASSIGN"), ({ PString tmp11 = str_make(4, "NAME"); MAKECONSTARG(&tmp11, PRIMITIVETYPES.PTSTRING); }));
   _ADDFILEPROC(str_make(5, "CLOSE"));
   _ADDFILEFUN(str_make(3, "EOF"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDFILEFUN(str_make(4, "EOLN"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDCONSTFILEFUN(str_make(7, "FILEPOS"), PRIMITIVETYPES.PTINTEGER);
   _ADDCONSTFILEFUN(str_make(8, "FILESIZE"), PRIMITIVETYPES.PTINTEGER);
   _ADDFILEPROC(str_make(5, "FLUSH"));
-  ADDFUNCTION(({ PString tmp9 = str_make(8, "IORESULT"); MAKEFUNCTION0(&tmp9, PRIMITIVETYPES.PTINTEGER); }));
+  {
+    TPSFUNCTION tmp13 = ({ PString tmp12 = str_make(8, "IORESULT"); MAKEFUNCTION0(&tmp12, PRIMITIVETYPES.PTINTEGER); });
+    ADDFUNCTION(&tmp13);
+  }
   _ADDFILERESETPROC(str_make(5, "RESET"));
   _ADDFILERESETPROC(str_make(7, "REWRITE"));
-  _ADDFILEPROC1(str_make(4, "SEEK"), ({ PString tmp10 = str_make(3, "POS"); MAKEARG(&tmp10, PRIMITIVETYPES.PTINTEGER); }));
+  _ADDFILEPROC1(str_make(4, "SEEK"), ({ PString tmp14 = str_make(3, "POS"); MAKEARG(&tmp14, PRIMITIVETYPES.PTINTEGER); }));
   _ADDFILEFUN(str_make(7, "SEEKEOF"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDFILEFUN(str_make(8, "SEEKEOLN"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDDIRPROC(str_make(5, "CHDIR"));
   _ADDFILEPROC(str_make(5, "ERASE"));
-  _ADDIOPROC2(str_make(6, "GETDIR"), ({ PString tmp11 = str_make(5, "DRIVE"); MAKEARG(&tmp11, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp12 = str_make(3, "DIR"); MAKEVARARG(&tmp12, PRIMITIVETYPES.PTSTRING); }));
+  _ADDIOPROC2(str_make(6, "GETDIR"), ({ PString tmp15 = str_make(5, "DRIVE"); MAKEARG(&tmp15, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp16 = str_make(3, "DIR"); MAKEVARARG(&tmp16, PRIMITIVETYPES.PTSTRING); }));
   _ADDDIRPROC(str_make(5, "MKDIR"));
-  _ADDFILEPROC1(str_make(6, "RENAME"), ({ PString tmp13 = str_make(4, "NAME"); MAKECONSTARG(&tmp13, PRIMITIVETYPES.PTSTRING); }));
+  _ADDFILEPROC1(str_make(6, "RENAME"), ({ PString tmp17 = str_make(4, "NAME"); MAKECONSTARG(&tmp17, PRIMITIVETYPES.PTSTRING); }));
   _ADDDIRPROC(str_make(5, "RMDIR"));
 }
 
@@ -5942,30 +6376,78 @@ TEXPRESSIONOBJ* _MODMATH_SQR_PARSE(TEXPRESSIONOBJ* FNEXPR) {
 }
 
 void REGISTERGLOBALS_MATH() {
-  ADDCONSTANT(({ PString tmp1 = str_make(2, "PI"); MAKECONSTANT(&tmp1, EXREALCONSTANT( 3.14159265358979E+000)); }));
   {
-    PString tmp2 = str_make(3, "ABS");
-    ADDPSEUDOFN(&tmp2, &_MODMATH_ABS_PARSE, &PF_UNARY_DESCRIBE);
+    TPSCONSTANT tmp2 = ({ PString tmp1 = str_make(2, "PI"); MAKECONSTANT(&tmp1, EXREALCONSTANT( 3.14159265358979E+000)); });
+    ADDCONSTANT(&tmp2);
   }
   {
-    PString tmp3 = str_make(3, "SQR");
-    ADDPSEUDOFN(&tmp3, &_MODMATH_SQR_PARSE, &PF_UNARY_DESCRIBE);
+    PString tmp3 = str_make(3, "ABS");
+    ADDPSEUDOFN(&tmp3, &_MODMATH_ABS_PARSE, &PF_UNARY_DESCRIBE);
   }
-  ADDFUNCTION(({ PString tmp5 = str_make(5, "ABS_i"); MAKEFUNCTION1(&tmp5, PRIMITIVETYPES.PTINTEGER, ({ PString tmp4 = str_make(3, "NUM"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp7 = str_make(5, "ABS_r"); MAKEFUNCTION1(&tmp7, PRIMITIVETYPES.PTREAL, ({ PString tmp6 = str_make(3, "NUM"); MAKEARG(&tmp6, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp9 = str_make(6, "ARCTAN"); MAKEFUNCTION1(&tmp9, PRIMITIVETYPES.PTREAL, ({ PString tmp8 = str_make(3, "TAN"); MAKEARG(&tmp8, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp11 = str_make(3, "COS"); MAKEFUNCTION1(&tmp11, PRIMITIVETYPES.PTREAL, ({ PString tmp10 = str_make(5, "ANGLE"); MAKEARG(&tmp10, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp13 = str_make(3, "EXP"); MAKEFUNCTION1(&tmp13, PRIMITIVETYPES.PTREAL, ({ PString tmp12 = str_make(3, "POW"); MAKEARG(&tmp12, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp15 = str_make(4, "FRAC"); MAKEFUNCTION1(&tmp15, PRIMITIVETYPES.PTREAL, ({ PString tmp14 = str_of('X'); MAKEARG(&tmp14, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp17 = str_make(3, "INT"); MAKEFUNCTION1(&tmp17, PRIMITIVETYPES.PTREAL, ({ PString tmp16 = str_of('X'); MAKEARG(&tmp16, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp19 = str_make(2, "LN"); MAKEFUNCTION1(&tmp19, PRIMITIVETYPES.PTREAL, ({ PString tmp18 = str_of('X'); MAKEARG(&tmp18, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp21 = str_make(3, "ODD"); MAKEFUNCTION1(&tmp21, PRIMITIVETYPES.PTBOOLEAN, ({ PString tmp20 = str_of('X'); MAKEARG(&tmp20, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp23 = str_make(5, "ROUND"); MAKEFUNCTION1(&tmp23, PRIMITIVETYPES.PTINTEGER, ({ PString tmp22 = str_of('X'); MAKEARG(&tmp22, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp25 = str_make(3, "SIN"); MAKEFUNCTION1(&tmp25, PRIMITIVETYPES.PTREAL, ({ PString tmp24 = str_make(5, "ANGLE"); MAKEARG(&tmp24, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp27 = str_make(5, "SQR_i"); MAKEFUNCTION1(&tmp27, PRIMITIVETYPES.PTINTEGER, ({ PString tmp26 = str_make(3, "NUM"); MAKEARG(&tmp26, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp29 = str_make(5, "SQR_r"); MAKEFUNCTION1(&tmp29, PRIMITIVETYPES.PTREAL, ({ PString tmp28 = str_make(3, "NUM"); MAKEARG(&tmp28, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp31 = str_make(4, "SQRT"); MAKEFUNCTION1(&tmp31, PRIMITIVETYPES.PTREAL, ({ PString tmp30 = str_of('X'); MAKEARG(&tmp30, PRIMITIVETYPES.PTREAL); })); }));
-  ADDFUNCTION(({ PString tmp33 = str_make(5, "TRUNC"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTINTEGER, ({ PString tmp32 = str_of('X'); MAKEARG(&tmp32, PRIMITIVETYPES.PTREAL); })); }));
+  {
+    PString tmp4 = str_make(3, "SQR");
+    ADDPSEUDOFN(&tmp4, &_MODMATH_SQR_PARSE, &PF_UNARY_DESCRIBE);
+  }
+  {
+    TPSFUNCTION tmp7 = ({ PString tmp6 = str_make(5, "ABS_i"); MAKEFUNCTION1(&tmp6, PRIMITIVETYPES.PTINTEGER, ({ PString tmp5 = str_make(3, "NUM"); MAKEARG(&tmp5, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp7);
+  }
+  {
+    TPSFUNCTION tmp10 = ({ PString tmp9 = str_make(5, "ABS_r"); MAKEFUNCTION1(&tmp9, PRIMITIVETYPES.PTREAL, ({ PString tmp8 = str_make(3, "NUM"); MAKEARG(&tmp8, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp10);
+  }
+  {
+    TPSFUNCTION tmp13 = ({ PString tmp12 = str_make(6, "ARCTAN"); MAKEFUNCTION1(&tmp12, PRIMITIVETYPES.PTREAL, ({ PString tmp11 = str_make(3, "TAN"); MAKEARG(&tmp11, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp13);
+  }
+  {
+    TPSFUNCTION tmp16 = ({ PString tmp15 = str_make(3, "COS"); MAKEFUNCTION1(&tmp15, PRIMITIVETYPES.PTREAL, ({ PString tmp14 = str_make(5, "ANGLE"); MAKEARG(&tmp14, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp16);
+  }
+  {
+    TPSFUNCTION tmp19 = ({ PString tmp18 = str_make(3, "EXP"); MAKEFUNCTION1(&tmp18, PRIMITIVETYPES.PTREAL, ({ PString tmp17 = str_make(3, "POW"); MAKEARG(&tmp17, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp19);
+  }
+  {
+    TPSFUNCTION tmp22 = ({ PString tmp21 = str_make(4, "FRAC"); MAKEFUNCTION1(&tmp21, PRIMITIVETYPES.PTREAL, ({ PString tmp20 = str_of('X'); MAKEARG(&tmp20, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp22);
+  }
+  {
+    TPSFUNCTION tmp25 = ({ PString tmp24 = str_make(3, "INT"); MAKEFUNCTION1(&tmp24, PRIMITIVETYPES.PTREAL, ({ PString tmp23 = str_of('X'); MAKEARG(&tmp23, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp25);
+  }
+  {
+    TPSFUNCTION tmp28 = ({ PString tmp27 = str_make(2, "LN"); MAKEFUNCTION1(&tmp27, PRIMITIVETYPES.PTREAL, ({ PString tmp26 = str_of('X'); MAKEARG(&tmp26, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp28);
+  }
+  {
+    TPSFUNCTION tmp31 = ({ PString tmp30 = str_make(3, "ODD"); MAKEFUNCTION1(&tmp30, PRIMITIVETYPES.PTBOOLEAN, ({ PString tmp29 = str_of('X'); MAKEARG(&tmp29, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp31);
+  }
+  {
+    TPSFUNCTION tmp34 = ({ PString tmp33 = str_make(5, "ROUND"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTINTEGER, ({ PString tmp32 = str_of('X'); MAKEARG(&tmp32, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp34);
+  }
+  {
+    TPSFUNCTION tmp37 = ({ PString tmp36 = str_make(3, "SIN"); MAKEFUNCTION1(&tmp36, PRIMITIVETYPES.PTREAL, ({ PString tmp35 = str_make(5, "ANGLE"); MAKEARG(&tmp35, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp37);
+  }
+  {
+    TPSFUNCTION tmp40 = ({ PString tmp39 = str_make(5, "SQR_i"); MAKEFUNCTION1(&tmp39, PRIMITIVETYPES.PTINTEGER, ({ PString tmp38 = str_make(3, "NUM"); MAKEARG(&tmp38, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp40);
+  }
+  {
+    TPSFUNCTION tmp43 = ({ PString tmp42 = str_make(5, "SQR_r"); MAKEFUNCTION1(&tmp42, PRIMITIVETYPES.PTREAL, ({ PString tmp41 = str_make(3, "NUM"); MAKEARG(&tmp41, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp43);
+  }
+  {
+    TPSFUNCTION tmp46 = ({ PString tmp45 = str_make(4, "SQRT"); MAKEFUNCTION1(&tmp45, PRIMITIVETYPES.PTREAL, ({ PString tmp44 = str_of('X'); MAKEARG(&tmp44, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp46);
+  }
+  {
+    TPSFUNCTION tmp49 = ({ PString tmp48 = str_make(5, "TRUNC"); MAKEFUNCTION1(&tmp48, PRIMITIVETYPES.PTINTEGER, ({ PString tmp47 = str_of('X'); MAKEARG(&tmp47, PRIMITIVETYPES.PTREAL); })); });
+    ADDFUNCTION(&tmp49);
+  }
 }
 
 TEXPRESSIONOBJ* _MODSTRINGS_CONCAT_PARSE(TEXPRESSIONOBJ* FNEXPR) {
@@ -5978,7 +6460,7 @@ TEXPRESSIONOBJ* _MODSTRINGS_CONCAT_PARSE(TEXPRESSIONOBJ* FNEXPR) {
     OPERAND = PSEXPRESSION();
     ENSURESTRINGYEXPR(OPERAND);
     if (RESULT == PNil) RESULT = OPERAND;
-    else RESULT = EXBINARYOP(RESULT, OPERAND, TKPLUS);
+    else RESULT = EXOPADD(RESULT, OPERAND);
     WANTTOKEN2(TKCOMMA, TKRPAREN);
     SKIPTOKEN(TKCOMMA);
   } while (!(LEXER.TOKEN.ID == TKRPAREN));
@@ -6071,48 +6553,100 @@ void REGISTERGLOBALS_STRINGS() {
   }
   PSEUDOFUNS.STR = ({ PString tmp2 = str_make(3, "STR"); ADDPSEUDOFN(&tmp2, &_MODSTRINGS_STR_PARSE, &_MODSTRINGS_STR_DESCRIBE); });
   PSEUDOFUNS.VAL = ({ PString tmp3 = str_make(3, "VAL"); ADDPSEUDOFN(&tmp3, &_MODSTRINGS_VAL_PARSE, &PF_TERNARY_DESCRIBE); });
-  ADDFUNCTION(({ PString tmp5 = str_make(3, "CHR"); MAKEFUNCTION1(&tmp5, PRIMITIVETYPES.PTCHAR, ({ PString tmp4 = str_make(3, "POS"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp9 = str_make(4, "COPY"); MAKEFUNCTION3(&tmp9, PRIMITIVETYPES.PTSTRING, ({ PString tmp6 = str_make(3, "STR"); MAKECONSTARG(&tmp6, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp7 = str_make(3, "POS"); MAKEARG(&tmp7, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp8 = str_make(3, "NUM"); MAKEARG(&tmp8, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp13 = str_make(6, "DELETE"); MAKEPROCEDURE3(&tmp13, ({ PString tmp10 = str_make(3, "STR"); MAKEVARARG(&tmp10, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp11 = str_make(3, "POS"); MAKEARG(&tmp11, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp12 = str_make(3, "NUM"); MAKEARG(&tmp12, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp17 = str_make(6, "INSERT"); MAKEPROCEDURE3(&tmp17, ({ PString tmp14 = str_make(3, "INS"); MAKECONSTARG(&tmp14, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp15 = str_make(6, "TARGET"); MAKEVARARG(&tmp15, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp16 = str_make(3, "POS"); MAKEARG(&tmp16, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp19 = str_make(6, "LENGTH"); MAKEFUNCTION1(&tmp19, PRIMITIVETYPES.PTINTEGER, ({ PString tmp18 = str_make(3, "STR"); MAKECONSTARG(&tmp18, PRIMITIVETYPES.PTSTRING); })); }));
-  ADDFUNCTION(({ PString tmp21 = str_make(9, "LOWERCASE"); MAKEFUNCTION1(&tmp21, PRIMITIVETYPES.PTCHAR, ({ PString tmp20 = str_make(3, "CHR"); MAKEARG(&tmp20, PRIMITIVETYPES.PTCHAR); })); }));
-  ADDFUNCTION(({ PString tmp24 = str_make(3, "POS"); MAKEFUNCTION2(&tmp24, PRIMITIVETYPES.PTINTEGER, ({ PString tmp22 = str_make(6, "NEEDLE"); MAKECONSTARG(&tmp22, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp23 = str_make(8, "HAYSTACK"); MAKECONSTARG(&tmp23, PRIMITIVETYPES.PTSTRING); })); }));
-  ADDFUNCTION(({ PString tmp26 = str_make(6, "UPCASE"); MAKEFUNCTION1(&tmp26, PRIMITIVETYPES.PTCHAR, ({ PString tmp25 = str_make(3, "CHR"); MAKEARG(&tmp25, PRIMITIVETYPES.PTCHAR); })); }));
+  {
+    TPSFUNCTION tmp6 = ({ PString tmp5 = str_make(3, "CHR"); MAKEFUNCTION1(&tmp5, PRIMITIVETYPES.PTCHAR, ({ PString tmp4 = str_make(3, "POS"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp6);
+  }
+  {
+    TPSFUNCTION tmp11 = ({ PString tmp10 = str_make(4, "COPY"); MAKEFUNCTION3(&tmp10, PRIMITIVETYPES.PTSTRING, ({ PString tmp7 = str_make(3, "STR"); MAKECONSTARG(&tmp7, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp8 = str_make(3, "POS"); MAKEARG(&tmp8, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp9 = str_make(3, "NUM"); MAKEARG(&tmp9, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp11);
+  }
+  {
+    TPSFUNCTION tmp16 = ({ PString tmp15 = str_make(6, "DELETE"); MAKEPROCEDURE3(&tmp15, ({ PString tmp12 = str_make(3, "STR"); MAKEVARARG(&tmp12, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp13 = str_make(3, "POS"); MAKEARG(&tmp13, PRIMITIVETYPES.PTINTEGER); }), ({ PString tmp14 = str_make(3, "NUM"); MAKEARG(&tmp14, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp16);
+  }
+  {
+    TPSFUNCTION tmp21 = ({ PString tmp20 = str_make(6, "INSERT"); MAKEPROCEDURE3(&tmp20, ({ PString tmp17 = str_make(3, "INS"); MAKECONSTARG(&tmp17, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp18 = str_make(6, "TARGET"); MAKEVARARG(&tmp18, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp19 = str_make(3, "POS"); MAKEARG(&tmp19, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp21);
+  }
+  {
+    TPSFUNCTION tmp24 = ({ PString tmp23 = str_make(6, "LENGTH"); MAKEFUNCTION1(&tmp23, PRIMITIVETYPES.PTINTEGER, ({ PString tmp22 = str_make(3, "STR"); MAKECONSTARG(&tmp22, PRIMITIVETYPES.PTSTRING); })); });
+    ADDFUNCTION(&tmp24);
+  }
+  {
+    TPSFUNCTION tmp27 = ({ PString tmp26 = str_make(9, "LOWERCASE"); MAKEFUNCTION1(&tmp26, PRIMITIVETYPES.PTCHAR, ({ PString tmp25 = str_make(3, "CHR"); MAKEARG(&tmp25, PRIMITIVETYPES.PTCHAR); })); });
+    ADDFUNCTION(&tmp27);
+  }
+  {
+    TPSFUNCTION tmp31 = ({ PString tmp30 = str_make(3, "POS"); MAKEFUNCTION2(&tmp30, PRIMITIVETYPES.PTINTEGER, ({ PString tmp28 = str_make(6, "NEEDLE"); MAKECONSTARG(&tmp28, PRIMITIVETYPES.PTSTRING); }), ({ PString tmp29 = str_make(8, "HAYSTACK"); MAKECONSTARG(&tmp29, PRIMITIVETYPES.PTSTRING); })); });
+    ADDFUNCTION(&tmp31);
+  }
+  {
+    TPSFUNCTION tmp34 = ({ PString tmp33 = str_make(6, "UPCASE"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTCHAR, ({ PString tmp32 = str_make(3, "CHR"); MAKEARG(&tmp32, PRIMITIVETYPES.PTCHAR); })); });
+    ADDFUNCTION(&tmp34);
+  }
 }
 
 void STARTGLOBALSCOPE() {
   TPSDEFENTRY* DEF;
   INITDEFS();
-  PRIMITIVETYPES.PTNIL = ADDTYPE(({ PString tmp1 = str_make(3, "NIL"); MAKETYPE(&tmp1, TTCNIL); }));
-  PRIMITIVETYPES.PTBOOLEAN = ADDTYPE(({ PString tmp2 = str_make(7, "BOOLEAN"); MAKETYPE(&tmp2, TTCBOOLEAN); }));
-  PRIMITIVETYPES.PTINTEGER = ADDTYPE(({ PString tmp3 = str_make(7, "INTEGER"); MAKETYPE(&tmp3, TTCINTEGER); }));
-  PRIMITIVETYPES.PTREAL = ADDTYPE(({ PString tmp4 = str_make(4, "REAL"); MAKETYPE(&tmp4, TTCREAL); }));
-  PRIMITIVETYPES.PTCHAR = ADDTYPE(({ PString tmp5 = str_make(4, "CHAR"); MAKETYPE(&tmp5, TTCCHAR); }));
-  PRIMITIVETYPES.PTSTRING = ADDTYPE(({ PString tmp6 = str_make(6, "STRING"); MAKETYPE(&tmp6, TTCSTRING); }));
-  PRIMITIVETYPES.PTTEXT = ADDTYPE(({ PString tmp7 = str_make(4, "TEXT"); MAKETYPE(&tmp7, TTCTEXT); }));
-  ADDCONSTANT(({ PString tmp8 = str_make(5, "FALSE"); MAKECONSTANT(&tmp8, EXBOOLEANCONSTANT(0)); }));
-  ADDCONSTANT(({ PString tmp9 = str_make(4, "TRUE"); MAKECONSTANT(&tmp9, EXBOOLEANCONSTANT(1)); }));
-  ADDCONSTANT(({ PString tmp10 = str_make(6, "MAXINT"); MAKECONSTANT(&tmp10, EXINTEGERCONSTANT(32767)); }));
-  PSEUDOFUNS.ORD = ({ PString tmp11 = str_make(3, "ORD"); ADDPSEUDOFN(&tmp11, &PFORD_PARSE, &PF_UNARY_DESCRIBE); });
-  PSEUDOFUNS.PRED = ({ PString tmp12 = str_make(4, "PRED"); ADDPSEUDOFN(&tmp12, &PFPRED_PARSE, &PF_UNARY_DESCRIBE); });
-  PSEUDOFUNS.SUCC = ({ PString tmp13 = str_make(4, "SUCC"); ADDPSEUDOFN(&tmp13, &PFSUCC_PARSE, &PF_UNARY_DESCRIBE); });
-  PSEUDOFUNS.DISPOSE = ({ PString tmp14 = str_make(7, "DISPOSE"); ADDPSEUDOFN(&tmp14, &PFDISPOSE_PARSE, &PF_UNARY_DESCRIBE); });
-  PSEUDOFUNS.NEW = ({ PString tmp15 = str_make(3, "NEW"); ADDPSEUDOFN(&tmp15, &PFNEW_PARSE, &PF_UNARY_DESCRIBE); });
-  PSEUDOFUNS.SIZEOF = ({ PString tmp16 = str_make(6, "SIZEOF"); ADDPSEUDOFN(&tmp16, &PFSIZEOF_PARSE, &PFSIZEOF_DESCRIBE); });
+  PRIMITIVETYPES.PTNIL = ({ PString tmp1 = str_make(3, "NIL"); MAKEBASETYPE(&tmp1, TTCNIL); });
+  PRIMITIVETYPES.PTBOOLEAN = ({ PString tmp2 = str_make(7, "BOOLEAN"); MAKEBASETYPE(&tmp2, TTCBOOLEAN); });
+  PRIMITIVETYPES.PTINTEGER = ({ PString tmp3 = str_make(7, "INTEGER"); MAKEBASETYPE(&tmp3, TTCINTEGER); });
+  PRIMITIVETYPES.PTREAL = ({ PString tmp4 = str_make(4, "REAL"); MAKEBASETYPE(&tmp4, TTCREAL); });
+  PRIMITIVETYPES.PTCHAR = ({ PString tmp5 = str_make(4, "CHAR"); MAKEBASETYPE(&tmp5, TTCCHAR); });
+  PRIMITIVETYPES.PTSTRING = ({ PString tmp6 = str_make(6, "STRING"); MAKEBASETYPE(&tmp6, TTCSTRING); });
+  PRIMITIVETYPES.PTTEXT = ({ PString tmp7 = str_make(4, "TEXT"); MAKEBASETYPE(&tmp7, TTCTEXT); });
+  PRIMITIVETYPES.PTEMPTYSET = MAKESETTYPE(PNil);
+  {
+    TPSCONSTANT tmp9 = ({ PString tmp8 = str_make(5, "FALSE"); MAKECONSTANT(&tmp8, EXBOOLEANCONSTANT(0)); });
+    ADDCONSTANT(&tmp9);
+  }
+  {
+    TPSCONSTANT tmp11 = ({ PString tmp10 = str_make(4, "TRUE"); MAKECONSTANT(&tmp10, EXBOOLEANCONSTANT(1)); });
+    ADDCONSTANT(&tmp11);
+  }
+  {
+    TPSCONSTANT tmp13 = ({ PString tmp12 = str_make(6, "MAXINT"); MAKECONSTANT(&tmp12, EXINTEGERCONSTANT(32767)); });
+    ADDCONSTANT(&tmp13);
+  }
+  PSEUDOFUNS.ORD = ({ PString tmp14 = str_make(3, "ORD"); ADDPSEUDOFN(&tmp14, &PFORD_PARSE, &PF_UNARY_DESCRIBE); });
+  PSEUDOFUNS.PRED = ({ PString tmp15 = str_make(4, "PRED"); ADDPSEUDOFN(&tmp15, &PFPRED_PARSE, &PF_UNARY_DESCRIBE); });
+  PSEUDOFUNS.SUCC = ({ PString tmp16 = str_make(4, "SUCC"); ADDPSEUDOFN(&tmp16, &PFSUCC_PARSE, &PF_UNARY_DESCRIBE); });
+  PSEUDOFUNS.DISPOSE = ({ PString tmp17 = str_make(7, "DISPOSE"); ADDPSEUDOFN(&tmp17, &PFDISPOSE_PARSE, &PF_UNARY_DESCRIBE); });
+  PSEUDOFUNS.NEW = ({ PString tmp18 = str_make(3, "NEW"); ADDPSEUDOFN(&tmp18, &PFNEW_PARSE, &PF_UNARY_DESCRIBE); });
+  PSEUDOFUNS.SIZEOF = ({ PString tmp19 = str_make(6, "SIZEOF"); ADDPSEUDOFN(&tmp19, &PFSIZEOF_PARSE, &PFSIZEOF_DESCRIBE); });
   REGISTERGLOBALS_IO();
   REGISTERGLOBALS_MATH();
   REGISTERGLOBALS_STRINGS();
   {
-    PString tmp17 = str_make(6, "RANDOM");
-    ADDPSEUDOFN(&tmp17, &PFRANDOM_PARSE, &PF_INDEF_DESCRIBE);
+    PString tmp20 = str_make(6, "RANDOM");
+    ADDPSEUDOFN(&tmp20, &PFRANDOM_PARSE, &PF_INDEF_DESCRIBE);
   }
-  ADDFUNCTION(({ PString tmp19 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp19, ({ PString tmp18 = str_make(4, "CODE"); MAKEARG(&tmp18, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp20 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp20, PRIMITIVETYPES.PTINTEGER); }));
-  ADDFUNCTION(({ PString tmp22 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp22, PRIMITIVETYPES.PTSTRING, ({ PString tmp21 = str_of('I'); MAKEARG(&tmp21, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp23 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp23, PRIMITIVETYPES.PTREAL); }));
-  ADDFUNCTION(({ PString tmp25 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp25, PRIMITIVETYPES.PTINTEGER, ({ PString tmp24 = str_make(3, "NUM"); MAKEARG(&tmp24, PRIMITIVETYPES.PTINTEGER); })); }));
-  ADDFUNCTION(({ PString tmp26 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp26); }));
+  {
+    TPSFUNCTION tmp23 = ({ PString tmp22 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp22, ({ PString tmp21 = str_make(4, "CODE"); MAKEARG(&tmp21, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp23);
+  }
+  {
+    TPSFUNCTION tmp25 = ({ PString tmp24 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp24, PRIMITIVETYPES.PTINTEGER); });
+    ADDFUNCTION(&tmp25);
+  }
+  {
+    TPSFUNCTION tmp28 = ({ PString tmp27 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp27, PRIMITIVETYPES.PTSTRING, ({ PString tmp26 = str_of('I'); MAKEARG(&tmp26, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp28);
+  }
+  {
+    TPSFUNCTION tmp30 = ({ PString tmp29 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp29, PRIMITIVETYPES.PTREAL); });
+    ADDFUNCTION(&tmp30);
+  }
+  {
+    TPSFUNCTION tmp33 = ({ PString tmp32 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp32, PRIMITIVETYPES.PTINTEGER, ({ PString tmp31 = str_make(3, "NUM"); MAKEARG(&tmp31, PRIMITIVETYPES.PTINTEGER); })); });
+    ADDFUNCTION(&tmp33);
+  }
+  {
+    TPSFUNCTION tmp35 = ({ PString tmp34 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp34); });
+    ADDFUNCTION(&tmp35);
+  }
   DEF = DEFS.LATEST;
   while (DEF != PNil) {
     switch (DEF->CLS) {
@@ -6136,9 +6670,9 @@ void STARTGLOBALSCOPE() {
   STARTTEMPORARYSCOPE();
 }
 
-typedef enum __attribute__((__packed__)) enum8 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
+typedef enum __attribute__((__packed__)) enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTENUMVAL, TOTFUNDEC, TOTFUNDEF } TOUTPUTTYPE;
 
-const char* enumvalues8[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
+const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
 struct record37 {
   PFile OUTPUT;
@@ -6275,66 +6809,66 @@ PInteger _BINOPPREC(TEXPRESSIONOBJ* EXPR) {
   ISSETLEFT = ISSETTYPE(EXPR->BINARY.LEFT->TYPEPTR);
   ISSETRIGHT = ISSETTYPE(EXPR->BINARY.RIGHT->TYPEPTR);
   switch (EXPR->BINARY.OP) {
-    case TKPLUS:
+    case XOADD:
       if (ISSTRINGYTYPE(EXPR->TYPEPTR)) RESULT = 1;
       else RESULT = 4;
       break;
-    case TKMINUS:
+    case XOSUB:
       RESULT = 4;
       break;
-    case TKASTERISK:
+    case XOMUL:
       RESULT = 3;
       break;
-    case TKSLASH:
+    case XODIVREAL:
       RESULT = 3;
       break;
-    case TKDIV:
+    case XODIVINT:
       RESULT = 3;
       break;
-    case TKMOD:
+    case XOMOD:
       RESULT = 3;
       break;
-    case TKAND:
+    case XOAND:
       if (ISBOOLEANTYPE(EXPR->TYPEPTR)) RESULT = 11;
       else RESULT = 8;
       break;
-    case TKOR:
+    case XOOR:
       if (ISBOOLEANTYPE(EXPR->TYPEPTR)) RESULT = 12;
       else RESULT = 10;
       break;
-    case TKXOR:
+    case XOXOR:
       if (ISBOOLEANTYPE(EXPR->TYPEPTR)) RESULT = 7;
       else RESULT = 9;
       break;
-    case TKSHL:
+    case XOSHL:
       RESULT = 5;
       break;
-    case TKSHR:
+    case XOSHR:
       RESULT = 5;
       break;
-    case TKIN:
+    case XOIN:
       if (EXISIMMEDIATE(EXPR->BINARY.RIGHT)) RESULT = 12;
       else RESULT = 1;
       break;
-    case TKEQUALS:
+    case XOEQ:
       if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
       else RESULT = 7;
       break;
-    case TKNOTEQUALS:
+    case XONE:
       if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
       else RESULT = 7;
       break;
-    case TKLESSTHAN:
+    case XOLT:
       RESULT = 6;
       break;
-    case TKMORETHAN:
+    case XOGT:
       RESULT = 6;
       break;
-    case TKLESSOREQUALS:
+    case XOLTEQ:
       if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
       else RESULT = 6;
       break;
-    case TKMOREOREQUALS:
+    case XOGTEQ:
       if (ISSETLEFT && ISSETRIGHT) RESULT = 1;
       else RESULT = 6;
       break;
@@ -6576,7 +7110,7 @@ void _OUTARRAYINDEX(TEXPRESSIONOBJ* INDEX, TPSTYPE* TYPEPTR) {
   PInteger LOWBOUND;
   TEXPRESSIONOBJ* SIZE;
   LOWBOUND = GETTYPELOWBOUND(TYPEPTR->ARRAYDEF.INDEXTYPEPTR);
-  SIZE = EXBINARYOP(PFORD(EXCOPY(INDEX)), EXINTEGERCONSTANT(LOWBOUND), TKMINUS);
+  SIZE = EXOPSUB(PFORD(EXCOPY(INDEX)), EXINTEGERCONSTANT(LOWBOUND));
   OUTEXPRESSION(SIZE);
   EXDISPOSE(&SIZE);
 }
@@ -6643,23 +7177,22 @@ void _OUTEXSTRINGCHAR(TEXPRESSIONOBJ* EXPR) {
   }
 }
 
-void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ* EXPR) {
+void _OUTEXFUNCTIONCALLARGS(const TPSFNARGS *ARGDEFS, const TEXFUNCTIONARGS *ARGVALUES) {
   PInteger POS;
-  _OUTEXPRESSIONPARENS(EXPR->FNEXPR, EXPR);
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '(');
   do {
     PInteger first = 1;
-    PInteger last = EXPR->CALLARGS.SIZE;
+    PInteger last = ARGVALUES->SIZE;
     if (first <= last) {
       POS = first;
       while (1) {
         {
           if (POS != 1) _OUTCOMMA();
-          if (EXPR->FNEXPR->FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
-            ENSUREADDRESSABLEEXPR(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
-            _OUTADDRESS(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+          if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
+            ENSUREADDRESSABLEEXPR(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
+            _OUTADDRESS(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
           }
-          else OUTEXPRESSION(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+          else OUTEXPRESSION(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
         }
         if (POS == last) break;
         ++POS;
@@ -6667,6 +7200,12 @@ void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ* EXPR) {
     }
   } while(0);
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
+}
+
+void _OUTEXFUNCTIONCALL(TEXPRESSIONOBJ* EXPR) {
+  _OUTEXPRESSIONPARENS(EXPR->FNEXPR, EXPR);
+  if (EXPR->FNEXPR->CLS == XCFNREF) _OUTEXFUNCTIONCALLARGS(&EXPR->FNEXPR->FNPTR->ARGS, &EXPR->CALLARGS);
+  else _OUTEXFUNCTIONCALLARGS(&EXPR->FNEXPR->TYPEPTR->FNDEFPTR->ARGS, &EXPR->CALLARGS);
 }
 
 void _OUTDISPOSE(TEXPRESSIONOBJ* EXPR);
@@ -6700,37 +7239,37 @@ void _OUTEXPSEUDOFNCALL(TEXPRESSIONOBJ* EXPR) {
 }
 
 void _OUTEXUNARYOP(TEXPRESSIONOBJ* EXPR) {
-  if (EXPR->UNARY.OP == TKMINUS) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '-');
-  else if (EXPR->UNARY.OP == TKNOT && ISBOOLEANTYPE(EXPR->TYPEPTR)) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '!');
-  else if (EXPR->UNARY.OP == TKNOT && ISINTEGERTYPE(EXPR->TYPEPTR)) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '~');
+  if (EXPR->UNARY.OP == XONEG) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '-');
+  else if (EXPR->UNARY.OP == XONOT && ISBOOLEANTYPE(EXPR->TYPEPTR)) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '!');
+  else if (EXPR->UNARY.OP == XONOT && ISINTEGERTYPE(EXPR->TYPEPTR)) Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '~');
   _OUTEXPRESSIONPARENS(EXPR->UNARY.PARENT, EXPR);
 }
 
-PBoolean _ISARITHMETICOP(TLXTOKENID OP) {
+PBoolean _ISARITHMETICOP(TEXOPERATOR OP) {
   PBoolean RESULT;
-  RESULT = TKPLUS <= OP && OP <= TKSLASH || OP == TKDIV || OP == TKMOD;
+  RESULT = XOADD <= OP && OP <= XOMOD;
   return RESULT;
 }
 
-PString _GETARITHMETICOP(TLXTOKENID OP) {
+PString _GETARITHMETICOP(TEXOPERATOR OP) {
   PString RESULT;
   switch (OP) {
-    case TKPLUS:
+    case XOADD:
       RESULT = str_of('+');
       break;
-    case TKMINUS:
+    case XOSUB:
       RESULT = str_of('-');
       break;
-    case TKASTERISK:
+    case XOMUL:
       RESULT = str_of('*');
       break;
-    case TKSLASH:
+    case XODIVREAL:
       RESULT = str_of('/');
       break;
-    case TKDIV:
+    case XODIVINT:
       RESULT = str_of('/');
       break;
-    case TKMOD:
+    case XOMOD:
       RESULT = str_of('%');
       break;
     default:
@@ -6739,63 +7278,87 @@ PString _GETARITHMETICOP(TLXTOKENID OP) {
   return RESULT;
 }
 
-PBoolean _ISLOGICALORBITWISEOP(TLXTOKENID OP) {
+PBoolean _ISLOGICALORBITWISEOP(TEXOPERATOR OP) {
   PBoolean RESULT;
-  RESULT = OP == TKAND || OP == TKOR || OP == TKXOR;
+  RESULT = XOAND <= OP && OP <= XOXOR;
   return RESULT;
 }
 
-PBoolean _ISBITWISEOP(TLXTOKENID OP) {
+PBoolean _ISBITWISEOP(TEXOPERATOR OP) {
   PBoolean RESULT;
-  RESULT = TKSHL <= OP && OP <= TKSHR;
+  RESULT = XOSHL <= OP && OP <= XOSHR;
   return RESULT;
 }
 
-PString _GETLOGICALOP(TLXTOKENID OP) {
-  PString RESULT;
-  if (OP == TKAND) RESULT = str_make(2, "&&");
-  else if (OP == TKOR) RESULT = str_make(2, "||");
-  else if (OP == TKXOR) RESULT = str_make(2, "!=");
-  else INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented logical operator ", CpEnd | CpString, LXTOKENNAME(OP)));
-  return RESULT;
-}
-
-PString _GETBITWISEOP(TLXTOKENID OP) {
-  PString RESULT;
-  if (OP == TKAND) RESULT = str_of('&');
-  else if (OP == TKOR) RESULT = str_of('|');
-  else if (OP == TKXOR) RESULT = str_of('^');
-  else if (OP == TKSHL) RESULT = str_make(2, "<<");
-  else if (OP == TKSHR) RESULT = str_make(2, ">>");
-  else INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented bitwise operator ", CpEnd | CpString, LXTOKENNAME(OP)));
-  return RESULT;
-}
-
-PBoolean _ISRELATIONALOP(TLXTOKENID OP) {
-  PBoolean RESULT;
-  RESULT = TKEQUALS <= OP && OP <= TKMORETHAN || TKNOTEQUALS <= OP && OP <= TKMOREOREQUALS;
-  return RESULT;
-}
-
-PString _GETRELATIONALOP(TLXTOKENID OP) {
+PString _GETLOGICALOP(TEXOPERATOR OP) {
   PString RESULT;
   switch (OP) {
-    case TKEQUALS:
-      RESULT = str_make(2, "==");
+    case XOAND:
+      RESULT = str_make(2, "&&");
       break;
-    case TKNOTEQUALS:
+    case XOOR:
+      RESULT = str_make(2, "||");
+      break;
+    case XOXOR:
       RESULT = str_make(2, "!=");
       break;
-    case TKLESSTHAN:
+    default:
+      INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented logical operator ", CpEnd | CpString, EXDESCRIBEOPERATOR(OP)));
+      break;
+  }
+  return RESULT;
+}
+
+PString _GETBITWISEOP(TEXOPERATOR OP) {
+  PString RESULT;
+  switch (OP) {
+    case XOAND:
+      RESULT = str_of('&');
+      break;
+    case XOOR:
+      RESULT = str_of('|');
+      break;
+    case XOXOR:
+      RESULT = str_of('^');
+      break;
+    case XOSHL:
+      RESULT = str_make(2, "<<");
+      break;
+    case XOSHR:
+      RESULT = str_make(2, ">>");
+      break;
+    default:
+      INTERNALERROR(CONCAT(CpLenPtr, 31, "Unimplemented bitwise operator ", CpEnd | CpString, EXDESCRIBEOPERATOR(OP)));
+      break;
+  }
+  return RESULT;
+}
+
+PBoolean _ISRELATIONALOP(TEXOPERATOR OP) {
+  PBoolean RESULT;
+  RESULT = XOEQ <= OP && OP <= XOGTEQ;
+  return RESULT;
+}
+
+PString _GETRELATIONALOP(TEXOPERATOR OP) {
+  PString RESULT;
+  switch (OP) {
+    case XOEQ:
+      RESULT = str_make(2, "==");
+      break;
+    case XONE:
+      RESULT = str_make(2, "!=");
+      break;
+    case XOLT:
       RESULT = str_of('<');
       break;
-    case TKMORETHAN:
+    case XOGT:
       RESULT = str_of('>');
       break;
-    case TKLESSOREQUALS:
+    case XOLTEQ:
       RESULT = str_make(2, "<=");
       break;
-    case TKMOREOREQUALS:
+    case XOGTEQ:
       RESULT = str_make(2, ">=");
       break;
     default:
@@ -6804,19 +7367,19 @@ PString _GETRELATIONALOP(TLXTOKENID OP) {
   return RESULT;
 }
 
-void _OUTEXSETOPERATION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID OP) {
+void _OUTEXSETOPERATION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TEXOPERATOR OP) {
   TPSTYPE* ELEMTYPEPTR;
   PInteger LOWBOUND;
   PInteger HIGHBOUND;
   PInteger LOWBOUNDBYTE;
   PInteger SETSIZE;
   ELEMTYPEPTR = RIGHT->TYPEPTR->ELEMENTTYPEPTR;
-  if (OP == TKLESSOREQUALS) _OUTEXSETOPERATION(RIGHT, LEFT, TKMOREOREQUALS);
-  else if (OP == TKNOTEQUALS) {
+  if (OP == XOLTEQ) _OUTEXSETOPERATION(RIGHT, LEFT, XOGTEQ);
+  else if (OP == XONE) {
     Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '!');
-    _OUTEXSETOPERATION(LEFT, RIGHT, TKEQUALS);
+    _OUTEXSETOPERATION(LEFT, RIGHT, XOEQ);
   }
-  else if (OP == TKIN) {
+  else if (OP == XOIN) {
     LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
     Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, "set_in(");
     OUTEXPRESSION(LEFT);
@@ -6830,14 +7393,14 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID 
     LOWBOUND = GETTYPELOWBOUND(ELEMTYPEPTR);
     HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
     SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
-    if (OP == TKEQUALS) {
+    if (OP == XOEQ) {
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 11, "set_equals(");
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, ".bits, ");
       _OUTEXPRESSIONPARENSPREC(RIGHT, 1);
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 7, ".bits, ", RwpInt, SETSIZE, RwpChar | RwpEnd, ')');
     }
-    else if (OP == TKMOREOREQUALS) {
+    else if (OP == XOGTEQ) {
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 15, "set_issuperset(");
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, ".bits, ");
@@ -6847,17 +7410,17 @@ void _OUTEXSETOPERATION(TEXPRESSIONOBJ* LEFT, TEXPRESSIONOBJ* RIGHT, TLXTOKENID 
     else {
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 7, "({ PSet", RwpInt, SETSIZE * 8, RwpLenPtr | RwpEnd, 6, " dst; ");
       switch (OP) {
-        case TKPLUS:
+        case XOADD:
           Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 10, "set_union(");
           break;
-        case TKMINUS:
+        case XOSUB:
           Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 15, "set_difference(");
           break;
-        case TKASTERISK:
+        case XOMUL:
           Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 17, "set_intersection(");
           break;
         default:
-          INTERNALERROR(CONCAT(CpLenPtr, 44, "Materialized set operation not implemented: ", CpEnd | CpString, LXTOKENNAME(OP)));
+          INTERNALERROR(CONCAT(CpLenPtr, 44, "Materialized set operation not implemented: ", CpEnd | CpString, EXDESCRIBEOPERATOR(OP)));
           break;
       }
       _OUTEXPRESSIONPARENSPREC(LEFT, 1);
@@ -6890,7 +7453,7 @@ void _OUTCMPCONCATARG(TEXPRESSIONOBJ* EXPR) {
 
 void _OUTCONCATARGS(TEXPRESSIONOBJ* EXPR, PBoolean LAST) {
   if (!ISSTRINGYTYPE(EXPR->TYPEPTR)) INTERNALERROR(CONCAT(CpLenPtr, 28, "Expected a stringy type for ", CpEnd | CpString, EXDESCRIBE(EXPR)));
-  else if (EXPR->CLS != XCBINARYOP || EXPR->BINARY.OP != TKPLUS) {
+  else if (EXPR->CLS != XCBINARYOP || EXPR->BINARY.OP != XOADD) {
     if (LAST) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 8, "CpEnd | ");
     _OUTCMPCONCATARG(EXPR);
     if (!LAST) _OUTCOMMA();
@@ -6921,7 +7484,7 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ* EXPR) {
         _OUTEXPRESSIONPARENSEXTRA(with1->RIGHT, EXPR);
       }
       else if (ISSTRINGYTYPE(with1->LEFT->TYPEPTR) && ISSTRINGYTYPE(with1->RIGHT->TYPEPTR)) {
-        if (with1->OP == TKPLUS) {
+        if (with1->OP == XOADD) {
           Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, "CONCAT(");
           _OUTCONCATARGS(EXPR, 1);
           Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
@@ -6935,22 +7498,22 @@ void _OUTEXBINARYOP(TEXPRESSIONOBJ* EXPR) {
         else {
           Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 8, "cmp_str(");
           switch (with1->OP) {
-            case TKEQUALS:
+            case XOEQ:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 6, "CoEq, ");
               break;
-            case TKNOTEQUALS:
+            case XONE:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 9, "CoNotEq, ");
               break;
-            case TKLESSTHAN:
+            case XOLT:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 10, "CoBefore, ");
               break;
-            case TKMORETHAN:
+            case XOGT:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 9, "CoAfter, ");
               break;
-            case TKLESSOREQUALS:
+            case XOLTEQ:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 14, "CoBeforeOrEq, ");
               break;
-            case TKMOREOREQUALS:
+            case XOGTEQ:
               Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 13, "CoAfterOrEq, ");
               break;
             default:
@@ -7098,8 +7661,8 @@ void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY* CHECKPOINT) {
 
 PString _GETRANGETYPE(TPSTYPE* TYPEPTR) {
   PString RESULT;
-  typedef enum __attribute__((__packed__)) enum9 { U8, S8, U16, S16, U32, S32 } TYPES;
-  const char* enumvalues9[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
+  typedef enum __attribute__((__packed__)) enum10 { U8, S8, U16, S16, U32, S32 } TYPES;
+  const char* enumvalues10[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
   const PString NAMES[6] = { str_make(6, "PBits8"), str_make(7, "PBits8S"), str_make(7, "PBits16"), str_make(8, "PBits16S"), str_make(7, "PBits32"), str_make(8, "PBits32S") };
   const PInteger LOWLIMITS[6] = { 0, -128, 0, -32768, 0, -0 };
   const PInteger HIGHLIMITS[6] = { 255, 127, 65535, 32767, -1, 2147483647 };
@@ -7443,7 +8006,6 @@ void OUTPROGRAMHEADING(PString NAME) {
 
 PChar SHORTTYPENAME(TPSTYPE* TYPEPTR) {
   PChar RESULT;
-  TYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
   if (ISBOOLEANTYPE(TYPEPTR)) RESULT = 'b';
   else if (ISINTEGERTYPE(TYPEPTR)) RESULT = 'i';
   else if (ISREALTYPE(TYPEPTR)) RESULT = 'r';
@@ -7710,48 +8272,48 @@ void _OUTORD(TEXPRESSIONOBJ* EXPR) {
 void _OUTPRED(TEXPRESSIONOBJ* EXPR) {
   TEXPRESSIONOBJ* TMPEXPR;
   ENSUREORDINALEXPR(EXPR->PSEUDOFNCALL.ARG1);
-  if (ISINTEGERTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
-    TMPEXPR = EXBINARYOP(EXCOPY(EXPR->PSEUDOFNCALL.ARG1), EXINTEGERCONSTANT(1), TKMINUS);
-    OUTEXPRESSION(TMPEXPR);
-    EXDISPOSE(&TMPEXPR);
-  }
-  else {
-    if (!OPTIONS.CHECKBOUNDS) {
-      TMPEXPR = EXBINARYOP(PFORD(EXCOPY(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1), TKMINUS);
-      OUTEXPRESSION(TMPEXPR);
-      EXDISPOSE(&TMPEXPR);
-    }
-    else {
+  if (ISBOUNDEDTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
+    if (OPTIONS.CHECKBOUNDS) {
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 5, "pred(");
       OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
       _OUTCOMMA();
       _OUTBOUNDS(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR);
       Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
     }
+    else {
+      TMPEXPR = EXOPSUB(PFORD(EXCOPY(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1));
+      OUTEXPRESSION(TMPEXPR);
+      EXDISPOSE(&TMPEXPR);
+    }
+  }
+  else {
+    TMPEXPR = EXOPSUB(EXCOPY(EXPR->PSEUDOFNCALL.ARG1), EXINTEGERCONSTANT(1));
+    OUTEXPRESSION(TMPEXPR);
+    EXDISPOSE(&TMPEXPR);
   }
 }
 
 void _OUTSUCC(TEXPRESSIONOBJ* EXPR) {
   TEXPRESSIONOBJ* TMPEXPR;
   ENSUREORDINALEXPR(EXPR->PSEUDOFNCALL.ARG1);
-  if (ISINTEGERTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
-    TMPEXPR = EXBINARYOP(EXCOPY(EXPR->PSEUDOFNCALL.ARG1), EXINTEGERCONSTANT(1), TKPLUS);
-    OUTEXPRESSION(TMPEXPR);
-    EXDISPOSE(&TMPEXPR);
-  }
-  else {
-    if (!OPTIONS.CHECKBOUNDS) {
-      TMPEXPR = EXBINARYOP(PFORD(EXCOPY(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1), TKPLUS);
-      OUTEXPRESSION(TMPEXPR);
-      EXDISPOSE(&TMPEXPR);
-    }
-    else {
+  if (ISBOUNDEDTYPE(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR)) {
+    if (OPTIONS.CHECKBOUNDS) {
       Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 5, "succ(");
       OUTEXPRESSION(EXPR->PSEUDOFNCALL.ARG1);
       _OUTCOMMA();
       _OUTBOUNDS(EXPR->PSEUDOFNCALL.ARG1->TYPEPTR);
       Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
     }
+    else {
+      TMPEXPR = EXOPADD(PFORD(EXCOPY(EXPR->PSEUDOFNCALL.ARG1)), EXINTEGERCONSTANT(1));
+      OUTEXPRESSION(TMPEXPR);
+      EXDISPOSE(&TMPEXPR);
+    }
+  }
+  else {
+    TMPEXPR = EXOPADD(EXCOPY(EXPR->PSEUDOFNCALL.ARG1), EXINTEGERCONSTANT(1));
+    OUTEXPRESSION(TMPEXPR);
+    EXDISPOSE(&TMPEXPR);
   }
 }
 
@@ -7854,7 +8416,7 @@ void OUTREPEATEND(TEXPRESSIONOBJ* EXPR) {
   TEXPRESSIONOBJ* TMPEXPR;
   OUTENDSAMELINE();
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 8, " while (");
-  TMPEXPR = EXUNARYOP(EXCOPY(EXPR), TKNOT);
+  TMPEXPR = EXOPNOT(EXCOPY(EXPR));
   OUTEXPRESSION(TMPEXPR);
   EXDISPOSE(&TMPEXPR);
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, ");");
@@ -8031,9 +8593,9 @@ void PARSECMDLINE() {
   PString INPUTFILE;
   PString OUTPUTFILE;
   PBoolean SUPPRESSWARNINGS;
-  enum __attribute__((__packed__)) enum9 { FLAGNONE, FLAGOUTPUT } FLAG;
+  enum __attribute__((__packed__)) enum10 { FLAGNONE, FLAGOUTPUT } FLAG;
   PString PARAM;
-  const char* enumvalues9[] = { "FLAGNONE", "FLAGOUTPUT" };
+  const char* enumvalues10[] = { "FLAGNONE", "FLAGOUTPUT" };
   INPUTFILE = str_make(0, "");
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
