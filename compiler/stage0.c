@@ -882,7 +882,7 @@ void LXOPEN(PString FILENAME) {
 
 void LXINCLUDE(const PString *FILENAME) {
   TLXINCLUDESTACKELEM* NEWSTACK;
-  NEWSTACK = malloc(sizeof(TLXINCLUDESTACKELEM));
+  New((void**)&NEWSTACK, sizeof(TLXINCLUDESTACKELEM));
   NEWSTACK->INPUT = LEXER.INPUT;
   NEWSTACK->PREV = LEXER.INCLUDESTACK;
   LEXER.INCLUDESTACK = NEWSTACK;
@@ -948,7 +948,7 @@ void INITDEFS() {
 
 TPSENUMDEF* NEWENUM(const TPSENUMDEF *ENUM) {
   TPSENUMDEF* RESULT;
-  RESULT = malloc(sizeof(TPSENUMDEF));
+  New((void**)&RESULT, sizeof(TPSENUMDEF));
   *RESULT = *ENUM;
   RESULT->ID = DEFCOUNTER(TCTENUM);
   RESULT->REFCOUNT = 1;
@@ -959,12 +959,12 @@ TPSENUMDEF* NEWENUM(const TPSENUMDEF *ENUM) {
 
 void DISPOSEENUM(TPSENUMDEF* PTR) {
   PTR->REFCOUNT = PTR->REFCOUNT - 1;
-  if (PTR->REFCOUNT == 0) free(PTR);
+  if (PTR->REFCOUNT == 0) Dispose((void**)&PTR);
 }
 
 TPSRECORDDEF* NEWRECORD(const TPSRECORDDEF *REC) {
   TPSRECORDDEF* RESULT;
-  RESULT = malloc(sizeof(TPSRECORDDEF));
+  New((void**)&RESULT, sizeof(TPSRECORDDEF));
   *RESULT = *REC;
   RESULT->ID = DEFCOUNTER(TCTRECORD);
   RESULT->REFCOUNT = 1;
@@ -974,49 +974,49 @@ TPSRECORDDEF* NEWRECORD(const TPSRECORDDEF *REC) {
 
 void DISPOSERECORD(TPSRECORDDEF* PTR) {
   PTR->REFCOUNT = PTR->REFCOUNT - 1;
-  if (PTR->REFCOUNT == 0) free(PTR);
+  if (PTR->REFCOUNT == 0) Dispose((void**)&PTR);
 }
 
 TPSFNDEF* NEWFNDEF() {
   TPSFNDEF* RESULT;
-  RESULT = malloc(sizeof(TPSFNDEF));
+  New((void**)&RESULT, sizeof(TPSFNDEF));
   RESULT->REFCOUNT = 1;
   return RESULT;
 }
 
 void DISPOSEFNDEF(TPSFNDEF* PTR) {
   PTR->REFCOUNT = PTR->REFCOUNT - 1;
-  if (PTR->REFCOUNT == 0) free(PTR);
+  if (PTR->REFCOUNT == 0) Dispose((void**)&PTR);
 }
 
 TPSDEFENTRY* _NEWDEF(TPSDEFCLASS CLS) {
   TPSDEFENTRY* RESULT;
   TPSDEFENTRY* DEF;
-  DEF = malloc(sizeof(TPSDEFENTRY));
+  New((void**)&DEF, sizeof(TPSDEFENTRY));
   DEF->PREV = PNil;
   DEF->NEXT = PNil;
   DEF->CLS = CLS;
   switch (CLS) {
     case TDCNAME:
-      DEF->NAMEPTR = malloc(sizeof(TPSNAME));
+      New((void**)&DEF->NAMEPTR, sizeof(TPSNAME));
       break;
     case TDCTYPE:
-      DEF->TYPEPTR = malloc(sizeof(TPSTYPE));
+      New((void**)&DEF->TYPEPTR, sizeof(TPSTYPE));
       break;
     case TDCCONSTANT:
-      DEF->CONSTPTR = malloc(sizeof(TPSCONSTANT));
+      New((void**)&DEF->CONSTPTR, sizeof(TPSCONSTANT));
       break;
     case TDCVARIABLE:
-      DEF->VARPTR = malloc(sizeof(TPSVARIABLE));
+      New((void**)&DEF->VARPTR, sizeof(TPSVARIABLE));
       break;
     case TDCFUNCTION:
-      DEF->FNPTR = malloc(sizeof(TPSFUNCTION));
+      New((void**)&DEF->FNPTR, sizeof(TPSFUNCTION));
       break;
     case TDCPSEUDOFN:
-      DEF->PSEUDOFNPTR = malloc(sizeof(TPSPSEUDOFN));
+      New((void**)&DEF->PSEUDOFNPTR, sizeof(TPSPSEUDOFN));
       break;
     case TDCWITHVAR:
-      DEF->WITHVARPTR = malloc(sizeof(TPSWITHVAR));
+      New((void**)&DEF->WITHVARPTR, sizeof(TPSWITHVAR));
       break;
     case TDCSCOPEBOUNDARY:
       {
@@ -1035,36 +1035,36 @@ void _DISPOSETYPE(TPSTYPE* *TYPEPTR) {
   if ((*TYPEPTR)->CLS == TTCENUM) DISPOSEENUM((*TYPEPTR)->ENUMPTR);
   else if ((*TYPEPTR)->CLS == TTCRECORD) DISPOSERECORD((*TYPEPTR)->RECPTR);
   else if ((*TYPEPTR)->CLS == TTCFUNCTION) DISPOSEFNDEF((*TYPEPTR)->FNDEFPTR);
-  free(*TYPEPTR);
+  Dispose((void**)&(*TYPEPTR));
 }
 
 void _DISPOSEDEF(TPSDEFENTRY* DEF) {
   switch (DEF->CLS) {
     case TDCNAME:
-      free(DEF->NAMEPTR);
+      Dispose((void**)&DEF->NAMEPTR);
       break;
     case TDCTYPE:
       _DISPOSETYPE(&DEF->TYPEPTR);
       break;
     case TDCCONSTANT:
-      free(DEF->CONSTPTR);
+      Dispose((void**)&DEF->CONSTPTR);
       break;
     case TDCVARIABLE:
-      free(DEF->VARPTR);
+      Dispose((void**)&DEF->VARPTR);
       break;
     case TDCFUNCTION:
-      free(DEF->FNPTR);
+      Dispose((void**)&DEF->FNPTR);
       break;
     case TDCPSEUDOFN:
-      free(DEF->PSEUDOFNPTR);
+      Dispose((void**)&DEF->PSEUDOFNPTR);
       break;
     case TDCWITHVAR:
-      free(DEF->WITHVARPTR);
+      Dispose((void**)&DEF->WITHVARPTR);
       break;
     default:
       break;
   }
-  free(DEF);
+  Dispose((void**)&DEF);
 }
 
 void _CHECKUNUSEDSYMBOLS(TPSDEFENTRY* DEF) {
@@ -1289,7 +1289,7 @@ TPSTYPE COPYTYPE(TPSTYPE* TYPEPTR) {
   TPSTYPE RESULT;
   RESULT = *TYPEPTR;
   if (RESULT.CLS == TTCPOINTERUNKNOWN) {
-    RESULT.TARGETNAME = malloc(sizeof(PString));
+    New((void**)&RESULT.TARGETNAME, sizeof(PString));
     *RESULT.TARGETNAME = *TYPEPTR->TARGETNAME;
   }
   else if (RESULT.CLS == TTCENUM) RESULT.ENUMPTR->REFCOUNT = RESULT.ENUMPTR->REFCOUNT + 1;
@@ -2120,7 +2120,7 @@ TPSTYPE* MAKEPOINTERUNKNOWNTYPE(const PString *TARGETNAME) {
   }
   if (RESULT == PNil) {
     RESULT = _NEWTYPE(TTCPOINTERUNKNOWN);
-    RESULT->TARGETNAME = malloc(sizeof(PString));
+    New((void**)&RESULT->TARGETNAME, sizeof(PString));
     *RESULT->TARGETNAME = *TARGETNAME;
   }
   return RESULT;
@@ -2232,7 +2232,7 @@ void OUTPROGRAMEND();
 
 TEXPRESSIONOBJ* _NEWEXPR(TEXPRESSIONCLASS CLS) {
   TEXPRESSIONOBJ* RESULT;
-  RESULT = malloc(sizeof(TEXPRESSIONOBJ));
+  New((void**)&RESULT, sizeof(TEXPRESSIONOBJ));
   RESULT->CLS = CLS;
   RESULT->ISASSIGNABLE = 0;
   RESULT->ISADDRESSABLE = 0;
@@ -2253,7 +2253,7 @@ void _DISPOSEPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL) {
   while (READARG != PNil) {
     NEXTREADARG = READARG->NEXT;
     EXDISPOSE(&READARG->ARG);
-    free(READARG);
+    Dispose((void**)&READARG);
     READARG = NEXTREADARG;
   }
   WRITEARG = CALL->WRITEARGS;
@@ -2262,7 +2262,7 @@ void _DISPOSEPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL) {
     EXDISPOSE(&WRITEARG->ARG);
     if (WRITEARG->WIDTH != PNil) EXDISPOSE(&WRITEARG->WIDTH);
     if (WRITEARG->PREC != PNil) EXDISPOSE(&WRITEARG->PREC);
-    free(WRITEARG);
+    Dispose((void**)&WRITEARG);
     WRITEARG = NEXTWRITEARG;
   }
 }
@@ -2272,7 +2272,7 @@ void _DISPOSEIMMEDIATE(TEXIMMEDIATE *IMM) {
   if (IMM->CLS == XICSET) {
     while (IMM->SETBOUNDS != PNil) {
       BOUNDS = IMM->SETBOUNDS->NEXT;
-      free(IMM->SETBOUNDS);
+      Dispose((void**)&IMM->SETBOUNDS);
       IMM->SETBOUNDS = BOUNDS;
     }
   }
@@ -2284,7 +2284,7 @@ void _DISPOSEBOUNDS(TEXSETEXPRBOUNDSOBJ* BOUNDS) {
     NEXT = BOUNDS->NEXT;
     EXDISPOSE(&BOUNDS->FIRST);
     if (BOUNDS->LAST != PNil) EXDISPOSE(&BOUNDS->LAST);
-    free(BOUNDS);
+    Dispose((void**)&BOUNDS);
     BOUNDS = NEXT;
   }
 }
@@ -2373,7 +2373,7 @@ void EXDISPOSE(TEXPRESSIONOBJ* *EXPR) {
     default:
       break;
   }
-  free(*EXPR);
+  Dispose((void**)&(*EXPR));
 }
 
 void _COPYPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL, TEXPSEUDOFNCALL *COPY) {
@@ -2394,11 +2394,11 @@ void _COPYPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL, TEXPSEUDOFNCALL *COPY) {
   while (READARG != PNil) {
     NEXTREADARG = READARG->NEXT;
     if (COPYREADARG == PNil) {
-      COPYREADARG = malloc(sizeof(TEXREADARGS));
+      New((void**)&COPYREADARG, sizeof(TEXREADARGS));
       COPY->READARGS = COPYREADARG;
     }
     else {
-      COPYREADARG->NEXT = malloc(sizeof(TEXREADARGS));
+      New((void**)&COPYREADARG->NEXT, sizeof(TEXREADARGS));
       COPYREADARG = COPYREADARG->NEXT;
     }
     COPYREADARG->NEXT = PNil;
@@ -2410,11 +2410,11 @@ void _COPYPSEUDOCALLEXPR(TEXPSEUDOFNCALL *CALL, TEXPSEUDOFNCALL *COPY) {
   while (WRITEARG != PNil) {
     NEXTWRITEARG = WRITEARG->NEXT;
     if (COPYWRITEARG == PNil) {
-      COPYWRITEARG = malloc(sizeof(TEXWRITEARGS));
+      New((void**)&COPYWRITEARG, sizeof(TEXWRITEARGS));
       COPY->WRITEARGS = COPYWRITEARG;
     }
     else {
-      COPYWRITEARG->NEXT = malloc(sizeof(TEXWRITEARGS));
+      New((void**)&COPYWRITEARG->NEXT, sizeof(TEXWRITEARGS));
       COPYWRITEARG = COPYWRITEARG->NEXT;
     }
     COPYWRITEARG->NEXT = PNil;
@@ -2432,13 +2432,13 @@ TEXIMMEDIATE _COPYIMMEDIATE(const TEXIMMEDIATE *IMM) {
   RESULT = *IMM;
   if (IMM->CLS == XICSET) {
     SRC = IMM->SETBOUNDS;
-    RESULT.SETBOUNDS = malloc(sizeof(TEXSETIMMBOUNDSOBJ));
+    New((void**)&RESULT.SETBOUNDS, sizeof(TEXSETIMMBOUNDSOBJ));
     DST = RESULT.SETBOUNDS;
     while (SRC != PNil) {
       *DST = *SRC;
       SRC = SRC->NEXT;
       if (SRC != PNil) {
-        DST->NEXT = malloc(sizeof(TEXSETIMMBOUNDSOBJ));
+        New((void**)&DST->NEXT, sizeof(TEXSETIMMBOUNDSOBJ));
         DST = DST->NEXT;
       }
     }
@@ -2454,11 +2454,11 @@ TEXSETEXPRBOUNDSOBJ* _COPYBOUNDS(TEXSETEXPRBOUNDSOBJ* BOUNDS) {
   DST = PNil;
   while (SRC != PNil) {
     if (DST == PNil) {
-      DST = malloc(sizeof(TEXSETEXPRBOUNDSOBJ));
+      New((void**)&DST, sizeof(TEXSETEXPRBOUNDSOBJ));
       RESULT = DST;
     }
     else {
-      DST->NEXT = malloc(sizeof(TEXSETEXPRBOUNDSOBJ));
+      New((void**)&DST->NEXT, sizeof(TEXSETEXPRBOUNDSOBJ));
       DST = DST->NEXT;
     }
     DST->FIRST = EXCOPY(SRC->FIRST);
@@ -2928,7 +2928,7 @@ TEXSETIMMBOUNDSOBJ* EXSETADDBOUNDS(TEXSETIMMBOUNDSOBJ* BOUNDS, PInteger FIRST, P
   THIS = BOUNDS;
   do {
     if (THIS == PNil || LAST + 1 < THIS->FIRST) {
-      NEWBOUNDS = malloc(sizeof(TEXSETIMMBOUNDSOBJ));
+      New((void**)&NEWBOUNDS, sizeof(TEXSETIMMBOUNDSOBJ));
       NEWBOUNDS->FIRST = FIRST;
       NEWBOUNDS->LAST = LAST;
       NEWBOUNDS->NEXT = THIS;
@@ -2945,7 +2945,7 @@ TEXSETIMMBOUNDSOBJ* EXSETADDBOUNDS(TEXSETIMMBOUNDSOBJ* BOUNDS, PInteger FIRST, P
     }
     else if (FIRST <= THIS->FIRST && LAST > THIS->LAST) {
       NEWBOUNDS = THIS->NEXT;
-      free(THIS);
+      Dispose((void**)&THIS);
       THIS = NEWBOUNDS;
       if (PREV == PNil) RESULT = NEWBOUNDS;
       else PREV->NEXT = NEWBOUNDS;
@@ -2954,7 +2954,7 @@ TEXSETIMMBOUNDSOBJ* EXSETADDBOUNDS(TEXSETIMMBOUNDSOBJ* BOUNDS, PInteger FIRST, P
     else if (FIRST > THIS->FIRST && FIRST <= THIS->LAST + 1 && LAST > THIS->LAST) {
       FIRST = THIS->FIRST;
       NEWBOUNDS = THIS->NEXT;
-      free(THIS);
+      Dispose((void**)&THIS);
       THIS = NEWBOUNDS;
       if (PREV == PNil) RESULT = NEWBOUNDS;
       else PREV->NEXT = NEWBOUNDS;
@@ -3034,7 +3034,7 @@ TEXPRESSIONOBJ* EXSETADDRANGE(TEXPRESSIONOBJ* SETEXPR, TEXPRESSIONOBJ* FIRST, TE
       EXPRSET->SETBOUNDS = PNil;
       EXPRSET->TYPEPTR = IMMSET->TYPEPTR;
     }
-    NEWBOUNDS = malloc(sizeof(TEXSETEXPRBOUNDSOBJ));
+    New((void**)&NEWBOUNDS, sizeof(TEXSETEXPRBOUNDSOBJ));
     NEWBOUNDS->FIRST = FIRST;
     NEWBOUNDS->LAST = LAST;
     NEWBOUNDS->NEXT = EXPRSET->SETBOUNDS;
@@ -4953,7 +4953,7 @@ void _RESOLVEPOINTERUNKNOWN(TPSTYPE* TYPEPTR) {
   TPSTYPE* TARGETPTR;
   if (ISPOINTERUNKNOWNTYPE(TYPEPTR)) {
     TARGETPTR = FINDNAMEOFCLASS(TYPEPTR->TARGETNAME, TNCTYPE, 1)->TYPEPTR;
-    free(TYPEPTR->TARGETNAME);
+    Dispose((void**)&TYPEPTR->TARGETNAME);
     TYPEPTR->CLS = TTCPOINTER;
     TYPEPTR->POINTEDTYPEPTR = TARGETPTR;
     TARGETPTR->WASUSED = 1;
@@ -5811,7 +5811,7 @@ void READTOKEN() {
       LEXER.INPUT = LEXER.INCLUDESTACK->INPUT;
       PREVSTACK = LEXER.INCLUDESTACK;
       LEXER.INCLUDESTACK = PREVSTACK->PREV;
-      free(PREVSTACK);
+      Dispose((void**)&PREVSTACK);
       STOP = 0;
     }
   } while (!STOP);
@@ -6005,11 +6005,11 @@ TEXPRESSIONOBJ* _MODIOREAD_PARSE(TEXPRESSIONOBJ* FNEXPR) {
       else {
         ENSUREASSIGNABLEEXPR(OUTVAR);
         if (READARG == PNil) {
-          RESULT->PSEUDOFNCALL.READARGS = malloc(sizeof(TEXREADARGS));
+          New((void**)&RESULT->PSEUDOFNCALL.READARGS, sizeof(TEXREADARGS));
           READARG = RESULT->PSEUDOFNCALL.READARGS;
         }
         else {
-          READARG->NEXT = malloc(sizeof(TEXREADARGS));
+          New((void**)&READARG->NEXT, sizeof(TEXREADARGS));
           READARG = READARG->NEXT;
         }
         READARG->NEXT = PNil;
@@ -6054,11 +6054,11 @@ TEXPRESSIONOBJ* _MODIOWRITE_PARSE(TEXPRESSIONOBJ* FNEXPR) {
       }
       else {
         if (WRITEARG == PNil) {
-          RESULT->PSEUDOFNCALL.WRITEARGS = malloc(sizeof(TEXWRITEARGS));
+          New((void**)&RESULT->PSEUDOFNCALL.WRITEARGS, sizeof(TEXWRITEARGS));
           WRITEARG = RESULT->PSEUDOFNCALL.WRITEARGS;
         }
         else {
-          WRITEARG->NEXT = malloc(sizeof(TEXWRITEARGS));
+          New((void**)&WRITEARG->NEXT, sizeof(TEXWRITEARGS));
           WRITEARG = WRITEARG->NEXT;
         }
         WRITEARG->ARG = OUTEXPR;
