@@ -13,9 +13,6 @@ var
   WriteArg, NextWriteArg : ^TExWriteArgs;
 begin
   if Call.Arg1 <> nil then ExDispose(Call.Arg1);
-  if Call.Arg2 <> nil then ExDispose(Call.Arg2);
-  if Call.Arg3 <> nil then ExDispose(Call.Arg3);
-  if Call.Arg4 <> nil then ExDispose(Call.Arg4);
   ReadArg := Call.ReadArgs;
   while ReadArg <> nil do
   begin
@@ -63,6 +60,13 @@ begin
   end
 end;
 
+procedure _DisposeWriteArg(var WriteArg : TExWriteArg);
+begin
+  ExDispose(WriteArg.Arg);
+  if WriteArg.Width <> nil then ExDispose(WriteArg.Width);
+  if WriteArg.Prec <> nil then ExDispose(WriteArg.Prec)
+end;
+
 procedure ExDispose;
 var Pos : integer;
 begin
@@ -103,6 +107,17 @@ begin
                   ExDispose(Expr^.CallArgs.Values[Pos]);
               end;
     XcPseudoFnCall: _DisposePseudoCallExpr(Expr^.PseudoFnCall);
+    XcConvertToStr:
+                    begin
+                      _DisposeWriteArg(Expr^.ToStrSrc);
+                      ExDispose(Expr^.ToStrDest)
+                    end;
+    XcConverttoVal:
+                    begin
+                      ExDispose(Expr^.ToValSrc);
+                      ExDispose(Expr^.ToValDest);
+                      ExDispose(Expr^.ToValCode)
+                    end;
     XcUnaryOp: ExDispose(Expr^.Unary.Parent);
     XcBinaryOp:
                 begin
@@ -120,10 +135,6 @@ var
 begin
   Copy.PseudoFnPtr := Call.PseudoFnPtr;
   if Call.Arg1 <> nil then Copy.Arg1 := ExCopy(Call.Arg1);
-  if Call.Arg2 <> nil then Copy.Arg2 := ExCopy(Call.Arg2);
-  if Call.Arg3 <> nil then Copy.Arg3 := ExCopy(Call.Arg3);
-  if Call.Arg4 <> nil then Copy.Arg4 := ExCopy(Call.Arg4);
-  Copy.TypeArg := Call.TypeArg;
   ReadArg := Call.ReadArgs;
   CopyReadArg := nil;
   while ReadArg <> nil do
@@ -215,6 +226,15 @@ begin
   end
 end;
 
+function _CopyWriteArg(const WriteArg : TExWriteArg) : TExWriteArg;
+begin
+  Result.Arg := ExCopy(WriteArg.Arg);
+  if WriteArg.Width = nil then Result.Width := nil
+  else Result.Width := ExCopy(WriteArg.Width);
+  if WriteArg.Prec = nil then Result.Prec := nil
+  else Result.Prec := ExCopy(WriteArg.Prec)
+end;
+
 function ExCopy;
 var 
   Copy : TExpression;
@@ -273,6 +293,17 @@ begin
     XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
                                         Copy^.PseudoFnCall);
     XcSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
+    XcConvertToStr:
+                    begin
+                      Copy^.ToStrSrc := _CopyWriteArg(Expr^.ToStrSrc);
+                      Copy^.ToStrDest := ExCopy(Expr^.ToStrDest)
+                    end;
+    XcConvertToVal:
+                    begin
+                      Copy^.ToValSrc := ExCopy(Expr^.ToValSrc);
+                      Copy^.ToValDest := ExCopy(Expr^.ToValDest);
+                      Copy^.ToValCode := ExCopy(Expr^.ToValCode)
+                    end;
     XcUnaryOp:
                begin
                  Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
@@ -468,6 +499,21 @@ begin
     XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
     XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
     XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
+    XcConvertToStr: with Expr^.ToStrSrc do
+                      if Width = nil then
+                        Result := 'STR(' + ExDescribe(Arg) + ', ' +
+                                  ExDescribe(Expr^.ToStrDest) + ')'
+                      else if Prec = nil then
+                             Result := 'STR(' + ExDescribe(Arg) + ':' +
+                                       ExDescribe(Width) + ', ' +
+                                       ExDescribe(Expr^.ToStrDest) + ')'
+                      else Result := 'STR(' + ExDescribe(Arg) + ':' +
+                                     ExDescribe(Width) + ':' +
+                                     ExDescribe(Prec) + ', ' +
+                                     ExDescribe(Expr^.ToStrDest) + ')';
+    XcConvertToVal: Result := 'VAL(' + ExDescribe(Expr^.ToValSrc) + ', ' +
+                              ExDescribe(Expr^.ToValDest) + ', ' +
+                              ExDescribe( Expr^.ToValCode) + ')';
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -950,10 +996,6 @@ begin
   Expr^.Cls := XcPseudoFnCall;
   Expr^.PseudoFnCall.PseudoFnPtr := Fn;
   Expr^.PseudoFnCall.Arg1 := nil;
-  Expr^.PseudoFnCall.Arg2 := nil;
-  Expr^.PseudoFnCall.Arg3 := nil;
-  Expr^.PseudoFnCall.Arg4 := nil;
-  Expr^.PseudoFnCall.TypeArg := nil;
   Expr^.PseudoFnCall.ReadArgs := nil;
   Expr^.PseudoFnCall.WriteArgs := nil;
   Result := Expr
@@ -964,6 +1006,25 @@ begin
   Result := _NewExpr(XcSizeof);
   Result^.SizeofTypePtr := TypePtr;
   Result^.TypePtr := PrimitiveTypes.PtInteger
+end;
+
+function ExConvertToStr(Src, Width, Prec, Dest : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcConvertToStr);
+  Result^.TypePtr := nil;
+  Result^.ToStrSrc.Arg := Src;
+  Result^.ToStrSrc.Width := Width;
+  Result^.ToStrSrc.Prec := Prec;
+  Result^.ToStrDest := Dest
+end;
+
+function ExConvertToVal(Src, Dest, Code : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcConvertToVal);
+  Result^.TypePtr := nil;
+  Result^.ToValSrc := Src;
+  Result^.ToValDest := Dest;
+  Result^.ToValCode := Code
 end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;

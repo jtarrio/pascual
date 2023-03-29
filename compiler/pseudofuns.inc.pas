@@ -127,24 +127,8 @@ begin
   Result := ExOpSucc(_Pf_Unary_Parse)
 end;
 
-function Pf_Ternary_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    Result := PseudoFnPtr^.Name + '(' + ExDescribe(Arg1) + ', ' +
-              ExDescribe(Arg2) + ', ' + ExDescribe(Arg3) + ')'
-end;
-
 function Pf_Indef_Describe(Expr : TExpression) : string;
 begin
   with Expr^.PseudoFnCall do
     Result := PseudoFnPtr^.Name + '(...)'
-end;
-
-function PfSizeof_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    if Arg1 <> nil then
-      Result := 'SIZEOF(' + ExDescribe(Arg1) + ')'
-    else
-      Result := 'SIZEOF(' + TypeName(TypeArg) + ')'
 end;

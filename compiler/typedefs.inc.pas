@@ -39,6 +39,11 @@ type
     Size : integer;
     Values : array[1..MaxFnArgs] of TExpression;
   end;
+  TExWriteArg = record
+    Arg : TExpression;
+    Width : TExpression;
+    Prec : TExpression
+  end;
   TExReadArgs = record
     Arg : TExpression;
     Next : ^TExReadArgs
@@ -52,10 +57,6 @@ type
   TExPseudoFnCall = record
     PseudoFnPtr : TPsPseudoFnPtr;
     Arg1 : TExpression;
-    Arg2 : TExpression;
-    Arg3 : TExpression;
-    Arg4 : TExpression;
-    TypeArg : TPsTypePtr;
     ReadArgs : ^TExReadArgs;
     WriteArgs : ^TExWriteArgs
   end;
@@ -78,7 +79,8 @@ type
                       XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
                       XcArray, XcPointer, XcAddress, XcStringChar,
                       XcFnRef, XcFnCall, XcPseudoFnRef, XcPseudoFnCall,
-                      XcSizeof, XcUnaryOp, XcBinaryOp);
+                      XcSizeof, XcConvertToStr, XcConvertToVal,
+                      XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
     IsAssignable : boolean;
@@ -110,6 +112,11 @@ type
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcSizeof : (SizeofTypePtr : TPsTypePtr);
+      XcConvertToStr : (ToStrSrc : TExWriteArg;
+                        ToStrDest : TExpression);
+      XcConvertToVal : (ToValSrc : TExpression;
+                        ToValDest : TExpression;
+                        ToValCode : TExpression);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
   end;

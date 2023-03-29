@@ -191,6 +191,8 @@ begin
     XcPseudoFnRef : Result := 0;
     XcPseudoFnCall : Result := 1;
     XcSizeof : Result := 1;
+    XcConvertToStr : Result := 1;
+    XcConvertToVal : Result := 1;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
@@ -439,10 +441,6 @@ end;
 
 procedure _OutRead(Expr : TExpression);
 forward;
-procedure _OutStr(Expr : TExpression);
-forward;
-procedure _OutVal(Expr : TExpression);
-forward;
 procedure _OutWrite(Expr : TExpression);
 forward;
 
@@ -523,8 +521,6 @@ begin
   with Expr^.PseudoFnCall do
     if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
-    else if PseudoFnPtr = PseudoFuns.Str then _OutStr(Expr)
-    else if PseudoFnPtr = PseudoFuns.Val then _OutVal(Expr)
     else if PseudoFnPtr = PseudoFuns.Write then _OutWrite(Expr)
     else if PseudoFnPtr = PseudoFuns.Writeln then _OutWrite(Expr)
     else InternalError('Unimplemented special function ' + ExDescribe(Expr))
@@ -819,6 +815,101 @@ begin
   write(Codegen.Output, ')')
 end;
 
+function ShortTypeName(TypePtr : TPsTypePtr) : char;
+begin
+  if IsBooleanType(TypePtr) then ShortTypeName := 'b'
+  else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
+  else if IsRealType(TypePtr) then ShortTypeName := 'r'
+  else if IsCharType(TypePtr) then ShortTypeName := 'c'
+  else if IsStringType(TypePtr) then ShortTypeName := 's'
+  else CompileError('Type ' + TypeName(TypePtr) + ' is not representable for ' +
+    'READ, WRITE, STR, or VAL')
+end;
+
+procedure _OutExConvertToStr(Expr : TExpression);
+var Src, Dst, Width, Prec : TExpression;
+begin
+  Src := Expr^.ToStrSrc.Arg;
+  Dst := Expr^.ToStrDest;
+  Width := Expr^.ToStrSrc.Width;
+  Prec := Expr^.ToStrSrc.Prec;
+  if IsEnumType(Src^.TypePtr) then
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'STR_e(');
+    OutExpression(Src);
+    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id);
+    _OutComma;
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    _OutComma;
+    _OutAddress(Dst);
+    write(Codegen.Output, ')')
+  end
+  else if IsRealType(Src^.TypePtr) then
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'STR_r(');
+    OutExpression(Src);
+    _OutComma;
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    _OutComma;
+    if Prec <> nil then OutExpression(Prec)
+    else write(Codegen.Output, '-1');
+    _OutComma;
+    _OutAddress(Dst);
+    write(Codegen.Output, ')')
+  end
+  else
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
+    OutExpression(Src);
+    _OutComma;
+    if Width <> nil then OutExpression(Width)
+    else write(Codegen.Output, '0');
+    _OutComma;
+    _OutAddress(Dst);
+    write(Codegen.Output, ')')
+  end
+end;
+
+procedure _OutExConvertToVal(Expr : TExpression);
+var Src, Dst, Code, TmpExpr : TExpression;
+begin
+  Src := Expr^.ToValSrc;
+  Dst := Expr^.ToValDest;
+  Code := Expr^.ToValCode;
+  if IsEnumType(Dst^.TypePtr) then
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'VAL_e(');
+    _OutAddress(Src);
+    _OutComma;
+    _OutAddress(Dst);
+    _OutComma;
+    TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
+    OutExpression(TmpExpr);
+    ExDispose(TmpExpr);
+    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id);
+    _OutComma;
+    _OutAddress(Code);
+    write(Codegen.Output, ')')
+  end
+  else
+  begin
+    _OutIndent;
+    write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(');
+    _OutAddress(Src);
+    _OutComma;
+    _OutAddress(Dst);
+    _OutComma;
+    _OutAddress(Code);
+    write(Codegen.Output, ')')
+  end
+end;
+
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -858,6 +949,8 @@ begin
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
     XcSizeof: _OutExSizeof(Expr);
+    XcConvertToStr: _OutExConvertToStr(Expr);
+    XcConvertToVal: _OutExConvertToVal(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -1261,17 +1354,6 @@ begin
   _OutNewline
 end;
 
-function ShortTypeName(TypePtr : TPsTypePtr) : char;
-begin
-  if IsBooleanType(TypePtr) then ShortTypeName := 'b'
-  else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
-  else if IsRealType(TypePtr) then ShortTypeName := 'r'
-  else if IsCharType(TypePtr) then ShortTypeName := 'c'
-  else if IsStringType(TypePtr) then ShortTypeName := 's'
-  else CompileError('Type ' + TypeName(TypePtr) + ' is not representable for ' +
-    'READ, WRITE, STR, or VAL')
-end;
-
 procedure _OutRead(Expr : TExpression);
 var 
   Src : TExpression;
@@ -1392,95 +1474,6 @@ begin
   end;
   write(Codegen.Output, ');');
   _OutNewline
-end;
-
-procedure _OutStr(Expr : TExpression);
-var Src, Dst, Width, Prec : TExpression;
-begin
-  Src := Expr^.PseudoFnCall.Arg1;
-  Dst := Expr^.PseudoFnCall.Arg2;
-  Width := Expr^.PseudoFnCall.Arg3;
-  Prec := Expr^.PseudoFnCall.Arg4;
-  if IsEnumType(Src^.TypePtr) then
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'STR_e(');
-    OutExpression(Src);
-    write(Codegen.Output, ', enumvalues', Src^.TypePtr^.EnumPtr^.Id);
-    _OutComma;
-    if Width <> nil then OutExpression(Width)
-    else write(Codegen.Output, '0');
-    _OutComma;
-    _OutAddress(Dst);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end
-  else if IsRealType(Src^.TypePtr) then
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'STR_r(');
-    OutExpression(Src);
-    _OutComma;
-    if Width <> nil then OutExpression(Width)
-    else write(Codegen.Output, '0');
-    _OutComma;
-    if Prec <> nil then OutExpression(Prec)
-    else write(Codegen.Output, '-1');
-    _OutComma;
-    _OutAddress(Dst);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end
-  else
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'STR_', ShortTypeName(Src^.TypePtr), '(');
-    OutExpression(Src);
-    _OutComma;
-    if Width <> nil then OutExpression(Width)
-    else write(Codegen.Output, '0');
-    _OutComma;
-    _OutAddress(Dst);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end
-end;
-
-procedure _OutVal(Expr : TExpression);
-var Src, Dst, Code, TmpExpr : TExpression;
-begin
-  Src := Expr^.PseudoFnCall.Arg1;
-  Dst := Expr^.PseudoFnCall.Arg2;
-  Code := Expr^.PseudoFnCall.Arg3;
-  if IsEnumType(Dst^.TypePtr) then
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'VAL_e(');
-    _OutAddress(Src);
-    _OutComma;
-    _OutAddress(Dst);
-    _OutComma;
-    TmpExpr := ExIntegerConstant(Dst^.TypePtr^.EnumPtr^.Size);
-    OutExpression(TmpExpr);
-    ExDispose(TmpExpr);
-    write(Codegen.Output, ', enumvalues', Dst^.TypePtr^.EnumPtr^.Id);
-    _OutComma;
-    _OutAddress(Code);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end
-  else
-  begin
-    _OutIndent;
-    write(Codegen.Output, 'VAL_', ShortTypeName(Dst^.TypePtr), '(');
-    _OutAddress(Src);
-    _OutComma;
-    _OutAddress(Dst);
-    _OutComma;
-    _OutAddress(Code);
-    write(Codegen.Output, ');');
-    _OutNewline
-  end
 end;
 
 procedure OutAssign;

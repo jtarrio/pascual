@@ -45,26 +45,8 @@ begin
      and not IsRealType(Src^.TypePtr) and not IsEnumType(Src^.TypePtr) then
     ErrorForExpr('Invalid type for source of STR', Src);
   ExMarkInitialized(Dest);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Src;
-  Result^.PseudoFnCall.Arg2 := Dest;
-  Result^.PseudoFnCall.Arg3 := Width;
-  Result^.PseudoFnCall.Arg4 := Prec
-end;
-
-function _ModStrings_Str_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    if Arg3 = nil then
-      Result := 'STR(' + ExDescribe(Arg1) + ', ' + ExDescribe(Arg2) + ')'
-    else if Arg4 = nil then
-           Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                     ExDescribe(Arg3) + ', ' +
-                     ExDescribe(Arg2) + ')'
-    else Result := 'STR(' + ExDescribe(Arg1) + ':' +
-                   ExDescribe(Arg3) + ':' +
-                   ExDescribe(Arg4) + ', ' +
-                   ExDescribe(Arg2) + ')'
+  ExDispose(FnExpr);
+  Result := ExConvertToStr(Src, Width, Prec, Dest)
 end;
 
 function _ModStrings_Val_Parse(FnExpr : TExpression) : TExpression;
@@ -87,20 +69,16 @@ begin
   EnsureIntegerExpr(Code);
   ExMarkInitialized(Dest);
   ExMarkInitialized(Code);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Src;
-  Result^.PseudoFnCall.Arg2 := Dest;
-  Result^.PseudoFnCall.Arg3 := Code;
+  ExDispose(FnExpr);
+  Result := ExConvertToVal(Src, Dest, Code)
 end;
 
 procedure RegisterGlobals_Strings;
 begin
   { Character and String subroutines }
   AddPseudoFn('CONCAT', @_ModStrings_Concat_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Str := AddPseudoFn('STR', @_ModStrings_Str_Parse, 
-                    @_ModStrings_Str_Describe);
-  PseudoFuns.Val := AddPseudoFn('VAL', @_ModStrings_Val_Parse, 
-                    @Pf_Ternary_Describe);
+  AddPseudoFn('STR', @_ModStrings_Str_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('VAL', @_ModStrings_Val_Parse, @Pf_Indef_Describe);
   AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,
