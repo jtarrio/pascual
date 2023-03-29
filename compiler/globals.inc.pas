@@ -29,7 +29,8 @@ begin
   AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
   AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
   AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
-  AddFunction(MakeProcedure1('Dispose', MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));
+  AddFunction(MakeProcedure1('Dispose',
+              MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));
   AddFunction(MakeProcedure2('New',
               MakeVarArg('PTR', PrimitiveTypes.PtRawPtr),
               MakeArg('SIZE', PrimitiveTypes.PtInteger)));
