@@ -5,8 +5,7 @@ var
     PtEmptySet : TPsTypePtr
   end;
   PseudoFuns : record
-    Dispose, New, Read, Readln, Sizeof, Str, Val, Write,
-    Writeln : TPsPseudoFnPtr
+    Read, Readln, Str, Val, Write, Writeln : TPsPseudoFnPtr
   end;
 
 function DefCounter(CounterType : TPsCounterType) : integer;

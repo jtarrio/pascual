@@ -52,22 +52,23 @@ end;
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
+  ExDispose(FnExpr);
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
   EnsurePointerExpr(Ptr);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Ptr
+  ExMarkInitialized(Ptr);
+  Result := ExPtrAlloc(TacDispose, Ptr)
 end;
 
 function PfNew_Parse(FnExpr : TExpression) : TExpression;
 var Ptr : TExpression;
 begin
+  ExDispose(FnExpr);
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
   EnsurePointerExpr(Ptr);
   ExMarkInitialized(Ptr);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := Ptr
+  Result := ExPtrAlloc(TacNew, Ptr)
 end;
 
 function PfOrd_Parse(FnExpr : TExpression) : TExpression;

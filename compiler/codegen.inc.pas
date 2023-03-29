@@ -190,6 +190,7 @@ begin
     XcPseudoFnRef : Result := 0;
     XcPseudoFnCall : Result := 1;
     XcSizeof : Result := 1;
+    XcPtrAlloc : Result := 0;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
@@ -431,10 +432,6 @@ begin
                            Expr^.CallArgs)
 end;
 
-procedure _OutDispose(Expr : TExpression);
-forward;
-procedure _OutNew(Expr : TExpression);
-forward;
 procedure _OutRead(Expr : TExpression);
 forward;
 procedure _OutStr(Expr : TExpression);
@@ -519,9 +516,7 @@ end;
 procedure _OutExPseudoFnCall(Expr : TExpression);
 begin
   with Expr^.PseudoFnCall do
-    if PseudoFnPtr = PseudoFuns.Dispose then _OutDispose(Expr)
-    else if PseudoFnPtr = PseudoFuns.New then _OutNew(Expr)
-    else if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
+    if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Str then _OutStr(Expr)
     else if PseudoFnPtr = PseudoFuns.Val then _OutVal(Expr)
@@ -819,6 +814,24 @@ begin
   write(Codegen.Output, ')')
 end;
 
+procedure _OutExPtrAlloc(Expr : TExpression);
+begin
+  _OutIndent;
+  if Expr^.AllocClass = TacNew then
+  begin
+    OutExpression(Expr^.AllocPtr);
+    write(Codegen.Output, ' = malloc(sizeof(');
+    OutTypeReference(Expr^.AllocPtr^.TypePtr^.PointedTypePtr);
+    write(Codegen.Output, '))')
+  end
+  else
+  begin
+    write(Codegen.Output, 'free(');
+    OutExpression(Expr^.AllocPtr);
+    write(Codegen.Output, ')');
+  end
+end;
+
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -857,6 +870,7 @@ begin
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
     XcSizeof: _OutExSizeof(Expr);
+    XcPtrAlloc: _OutExPtrAlloc(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -1477,29 +1491,6 @@ begin
     write(Codegen.Output, ');');
     _OutNewline
   end
-end;
-
-procedure _OutNew(Expr : TExpression);
-var Ptr : TExpression;
-begin
-  Ptr := Expr^.PseudoFnCall.Arg1;
-  _OutIndent;
-  OutExpression(Ptr);
-  write(Codegen.Output, ' = malloc(sizeof(');
-  OutTypeReference(Ptr^.TypePtr^.PointedTypePtr);
-  write(Codegen.Output, '));');
-  _OutNewline
-end;
-
-procedure _OutDispose(Expr : TExpression);
-var Ptr : TExpression;
-begin
-  Ptr := Expr^.PseudoFnCall.Arg1;
-  _OutIndent;
-  write(Codegen.Output, 'free(');
-  OutExpression(Ptr);
-  write(Codegen.Output, ');');
-  _OutNewline
 end;
 
 procedure OutAssign;

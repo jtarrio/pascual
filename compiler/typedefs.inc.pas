@@ -3,7 +3,7 @@ const
   MaxRecordFields = 64;
   MaxFnArgs = 16;
 
-type
+type 
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
@@ -73,11 +73,12 @@ type
     Right : TExpression;
     Op : TExOperator
   end;
+  TExAllocClass = (TacNew, TacDispose);
 
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,
                       XcSubrange, XcSet, XcVariable, XcField, XcArray,
                       XcPointer, XcAddress, XcStringChar, XcFnRef, XcFnCall,
-                      XcPseudoFnRef, XcPseudoFnCall, XcSizeof,
+                      XcPseudoFnRef, XcPseudoFnCall, XcSizeof, XcPtrAlloc,
                       XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
@@ -109,6 +110,7 @@ type
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcSizeof : (SizeofTypePtr : TPsTypePtr);
+      XcPtrAlloc : (AllocClass : TExAllocClass; AllocPtr : TExpression);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
   end;

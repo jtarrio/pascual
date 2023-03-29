@@ -67,47 +67,48 @@ procedure ExDispose;
 var Pos : integer;
 begin
   case Expr^.Cls of 
-    XcImmediate : _DisposeImmediate(Expr^.Immediate);
-    XcToString : ExDispose(Expr^.ToStrParent);
-    XcToReal : ExDispose(Expr^.ToRealParent);
-    XcWithTmpVar :
-                   begin
-                     ExDispose(Expr^.TmpVar);
-                     ExDispose(Expr^.TmpVarValue);
-                     ExDispose(Expr^.TmpVarChild);
-                   end;
-    XcSubrange : ExDispose(Expr^.SubrangeParent);
-    XcSet :
-            begin
-              ExDispose(Expr^.SetBase);
-              _DisposeBounds(Expr^.SetBounds);
-            end;
-    XcField : ExDispose(Expr^.RecExpr);
-    XcArray :
+    XcImmediate: _DisposeImmediate(Expr^.Immediate);
+    XcToString: ExDispose(Expr^.ToStrParent);
+    XcToReal: ExDispose(Expr^.ToRealParent);
+    XcWithTmpVar:
+                  begin
+                    ExDispose(Expr^.TmpVar);
+                    ExDispose(Expr^.TmpVarValue);
+                    ExDispose(Expr^.TmpVarChild);
+                  end;
+    XcSubrange: ExDispose(Expr^.SubrangeParent);
+    XcSet:
+           begin
+             ExDispose(Expr^.SetBase);
+             _DisposeBounds(Expr^.SetBounds);
+           end;
+    XcField: ExDispose(Expr^.RecExpr);
+    XcArray:
+             begin
+               ExDispose(Expr^.ArrayExpr);
+               ExDispose(Expr^.ArrayIndex);
+             end;
+    XcPointer: ExDispose(Expr^.PointerExpr);
+    XcAddress: ExDispose(Expr^.AddressExpr);
+    XcStringChar:
+                  begin
+                    ExDispose(Expr^.StringExpr);
+                    ExDispose(Expr^.StringIndex);
+                  end;
+    XcFnCall:
               begin
-                ExDispose(Expr^.ArrayExpr);
-                ExDispose(Expr^.ArrayIndex);
+                ExDispose(Expr^.FnExpr);
+                for Pos := 1 to Expr^.CallArgs.Size do
+                  ExDispose(Expr^.CallArgs.Values[Pos]);
               end;
-    XcPointer : ExDispose(Expr^.PointerExpr);
-    XcAddress : ExDispose(Expr^.AddressExpr);
-    XcStringChar :
-                   begin
-                     ExDispose(Expr^.StringExpr);
-                     ExDispose(Expr^.StringIndex);
-                   end;
-    XcFnCall :
-               begin
-                 ExDispose(Expr^.FnExpr);
-                 for Pos := 1 to Expr^.CallArgs.Size do
-                   ExDispose(Expr^.CallArgs.Values[Pos]);
-               end;
-    XcPseudoFnCall : _DisposePseudoCallExpr(Expr^.PseudoFnCall);
-    XcUnaryOp : ExDispose(Expr^.Unary.Parent);
-    XcBinaryOp :
-                 begin
-                   ExDispose(Expr^.Binary.Left);
-                   ExDispose(Expr^.Binary.Right);
-                 end;
+    XcPseudoFnCall: _DisposePseudoCallExpr(Expr^.PseudoFnCall);
+    XcPtrAlloc: ExDispose(Expr^.AllocPtr);
+    XcUnaryOp: ExDispose(Expr^.Unary.Parent);
+    XcBinaryOp:
+                begin
+                  ExDispose(Expr^.Binary.Left);
+                  ExDispose(Expr^.Binary.Right);
+                end;
   end;
   dispose(Expr);
 end;
@@ -270,6 +271,12 @@ begin
     XcPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
     XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
                                         Copy^.PseudoFnCall);
+    XcSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
+    XcPtrAlloc:
+                begin
+                  Copy^.AllocClass := Expr^.AllocClass;
+                  Copy^.AllocPtr := ExCopy(Expr^.AllocPtr)
+                end;
     XcUnaryOp:
                begin
                  Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
@@ -463,6 +470,10 @@ begin
     XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
     XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
     XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
+    XcPtrAlloc: if Expr^.AllocClass = TacNew then
+                  Result := 'NEW(' + ExDescribe(Expr^.AllocPtr) + ')'
+                else
+                  Result := 'DISPOSE(' + ExDescribe(Expr^.AllocPtr) + ')';
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -949,6 +960,14 @@ begin
   Result := _NewExpr(XcSizeof);
   Result^.SizeofTypePtr := TypePtr;
   Result^.TypePtr := PrimitiveTypes.PtInteger
+end;
+
+function ExPtrAlloc(Cls : TExAllocClass; Ptr : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcPtrAlloc);
+  Result^.AllocClass := Cls;
+  Result^.AllocPtr := Ptr;
+  Result^.TypePtr := nil
 end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;

@@ -25,11 +25,9 @@ begin
   AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
 
   { Memory subroutines }
-  PseudoFuns.Dispose := AddPseudoFn('DISPOSE', @PfDispose_Parse,
-                        @Pf_Unary_Describe);
-  PseudoFuns.New := AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
-  PseudoFuns.Sizeof := AddPseudoFn('SIZEOF', @PfSizeof_Parse,
-                       @PfSizeof_Describe);
+  AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
 
   RegisterGlobals_Io;
   RegisterGlobals_Math;
