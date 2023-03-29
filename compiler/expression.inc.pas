@@ -326,7 +326,7 @@ end;
 
 const _ExPrecedences : array[TExpressionClass] of integer 
                        = ( 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1,
-                          0, 1, -1, -1);
+                          0, 1, 1, -1, -1);
 const _ExOpPrecedences : array[TExOperator] of integer 
                          = (4, 4, 4, 3, 3, 3, 4,
                             3, 4, 4, 3, 3,
@@ -462,6 +462,7 @@ begin
               end;
     XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
     XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
+    XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -941,6 +942,13 @@ begin
   Expr^.PseudoFnCall.ReadArgs := nil;
   Expr^.PseudoFnCall.WriteArgs := nil;
   Result := Expr
+end;
+
+function ExSizeof(TypePtr : TPsTypePtr) : TExpression;
+begin
+  Result := _NewExpr(XcSizeof);
+  Result^.SizeofTypePtr := TypePtr;
+  Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;

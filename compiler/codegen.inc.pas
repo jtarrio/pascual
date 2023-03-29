@@ -12,6 +12,8 @@ var
 
 procedure OutVariableDeclaration(VarDef : TPsVariable);
 forward;
+procedure OutTypeReference(TypePtr : TPsTypePtr);
+forward;
 
 procedure _OutComma;
 begin
@@ -187,6 +189,7 @@ begin
     XcFnCall : Result := 1;
     XcPseudoFnRef : Result := 0;
     XcPseudoFnCall : Result := 1;
+    XcSizeof : Result := 1;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
@@ -432,22 +435,86 @@ procedure _OutDispose(Expr : TExpression);
 forward;
 procedure _OutNew(Expr : TExpression);
 forward;
-procedure _OutOrd(Expr : TExpression);
-forward;
-procedure _OutPred(Expr : TExpression);
-forward;
 procedure _OutRead(Expr : TExpression);
 forward;
-procedure _OutSizeof(Expr : TExpression);
-forward;
 procedure _OutStr(Expr : TExpression);
-forward;
-procedure _OutSucc(Expr : TExpression);
 forward;
 procedure _OutVal(Expr : TExpression);
 forward;
 procedure _OutWrite(Expr : TExpression);
 forward;
+
+procedure _OutOrd(Expr : TExpression);
+begin
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsCharType(Expr^.Unary.Parent^.TypePtr) then
+  begin
+    write(Codegen.Output, '(int)');
+    _OutExpressionParensPrec(Expr^.Unary.Parent, 2)
+  end
+  else OutExpression(Expr^.Unary.Parent)
+end;
+
+procedure _OutPred(Expr : TExpression);
+var TmpExpr : TExpression;
+begin
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
+  begin
+    if Options.CheckBounds then
+    begin
+      write(Codegen.Output, 'pred(');
+      OutExpression(Expr^.Unary.Parent);
+      _OutComma;
+      _OutBounds(Expr^.Unary.Parent^.TypePtr);
+      write(Codegen.Output, ')')
+    end
+    else
+    begin
+      TmpExpr := ExOpSub(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
+                 ExIntegerConstant(1));
+      OutExpression(TmpExpr);
+      ExDispose(TmpExpr)
+    end
+  end
+  else
+  begin
+    TmpExpr := ExOpSub(ExCopy(Expr^.Unary.Parent),
+               ExIntegerConstant(1));
+    OutExpression(TmpExpr);
+    ExDispose(TmpExpr)
+  end
+end;
+
+procedure _OutSucc(Expr : TExpression);
+var TmpExpr : TExpression;
+begin
+  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
+  begin
+    if Options.CheckBounds then
+    begin
+      write(Codegen.Output, 'succ(');
+      OutExpression(Expr^.Unary.Parent);
+      _OutComma;
+      _OutBounds(Expr^.Unary.Parent^.TypePtr);
+      write(Codegen.Output, ')')
+    end
+    else
+    begin
+      TmpExpr := ExOpAdd(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
+                 ExIntegerConstant(1));
+      OutExpression(TmpExpr);
+      ExDispose(TmpExpr)
+    end
+  end
+  else
+  begin
+    TmpExpr := ExOpAdd(ExCopy(Expr^.Unary.Parent), ExIntegerConstant(1));
+    OutExpression(TmpExpr);
+    ExDispose(TmpExpr)
+  end
+end;
 
 procedure _OutExPseudoFnCall(Expr : TExpression);
 begin
@@ -456,7 +523,6 @@ begin
     else if PseudoFnPtr = PseudoFuns.New then _OutNew(Expr)
     else if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
     else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
-    else if PseudoFnPtr = PseudoFuns.Sizeof then _OutSizeof(Expr)
     else if PseudoFnPtr = PseudoFuns.Str then _OutStr(Expr)
     else if PseudoFnPtr = PseudoFuns.Val then _OutVal(Expr)
     else if PseudoFnPtr = PseudoFuns.Write then _OutWrite(Expr)
@@ -746,6 +812,13 @@ begin
   write(Codegen.Output, '; })')
 end;
 
+procedure _OutExSizeof(Expr : TExpression);
+begin
+  write(Codegen.Output, 'sizeof(');
+  OutTypeReference(Expr^.SizeofTypePtr);
+  write(Codegen.Output, ')')
+end;
+
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -783,6 +856,7 @@ begin
     XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
+    XcSizeof: _OutExSizeof(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -1316,14 +1390,6 @@ begin
   _OutNewline
 end;
 
-procedure _OutSizeof(Expr : TExpression);
-begin
-  write(Codegen.Output, 'sizeof(');
-  if Expr^.PseudoFnCall.Arg1 <> nil then OutExpression(Expr^.PseudoFnCall.Arg1)
-  else OutTypeReference(Expr^.PseudoFnCall.TypeArg);
-  write(Codegen.Output, ')')
-end;
-
 procedure _OutStr(Expr : TExpression);
 var Src, Dst, Width, Prec : TExpression;
 begin
@@ -1434,78 +1500,6 @@ begin
   OutExpression(Ptr);
   write(Codegen.Output, ');');
   _OutNewline
-end;
-
-procedure _OutOrd(Expr : TExpression);
-begin
-  EnsureOrdinalExpr(Expr^.Unary.Parent);
-  if IsCharType(Expr^.Unary.Parent^.TypePtr) then
-  begin
-    write(Codegen.Output, '(int)');
-    _OutExpressionParensPrec(Expr^.Unary.Parent, 2)
-  end
-  else OutExpression(Expr^.Unary.Parent)
-end;
-
-procedure _OutPred(Expr : TExpression);
-var TmpExpr : TExpression;
-begin
-  EnsureOrdinalExpr(Expr^.Unary.Parent);
-  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
-  begin
-    if Options.CheckBounds then
-    begin
-      write(Codegen.Output, 'pred(');
-      OutExpression(Expr^.Unary.Parent);
-      _OutComma;
-      _OutBounds(Expr^.Unary.Parent^.TypePtr);
-      write(Codegen.Output, ')')
-    end
-    else
-    begin
-      TmpExpr := ExOpSub(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
-                 ExIntegerConstant(1));
-      OutExpression(TmpExpr);
-      ExDispose(TmpExpr)
-    end
-  end
-  else
-  begin
-    TmpExpr := ExOpSub(ExCopy(Expr^.Unary.Parent),
-               ExIntegerConstant(1));
-    OutExpression(TmpExpr);
-    ExDispose(TmpExpr)
-  end
-end;
-
-procedure _OutSucc(Expr : TExpression);
-var TmpExpr : TExpression;
-begin
-  EnsureOrdinalExpr(Expr^.Unary.Parent);
-  if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
-  begin
-    if Options.CheckBounds then
-    begin
-      write(Codegen.Output, 'succ(');
-      OutExpression(Expr^.Unary.Parent);
-      _OutComma;
-      _OutBounds(Expr^.Unary.Parent^.TypePtr);
-      write(Codegen.Output, ')')
-    end
-    else
-    begin
-      TmpExpr := ExOpAdd(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
-                 ExIntegerConstant(1));
-      OutExpression(TmpExpr);
-      ExDispose(TmpExpr)
-    end
-  end
-  else
-  begin
-    TmpExpr := ExOpAdd(ExCopy(Expr^.Unary.Parent), ExIntegerConstant(1));
-    OutExpression(TmpExpr);
-    ExDispose(TmpExpr)
-  end
 end;
 
 procedure OutAssign;

@@ -77,7 +77,8 @@ type
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,
                       XcSubrange, XcSet, XcVariable, XcField, XcArray,
                       XcPointer, XcAddress, XcStringChar, XcFnRef, XcFnCall,
-                      XcPseudoFnRef, XcPseudoFnCall, XcUnaryOp, XcBinaryOp);
+                      XcPseudoFnRef, XcPseudoFnCall, XcSizeof,
+                      XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
     IsAssignable : boolean;
@@ -107,6 +108,7 @@ type
                   CallArgs : TExFunctionArgs);
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
+      XcSizeof : (SizeofTypePtr : TPsTypePtr);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
   end;

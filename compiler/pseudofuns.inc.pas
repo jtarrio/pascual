@@ -92,16 +92,15 @@ var
   Id : TPsIdentifier;
   Found : TPsName;
 begin
+  ExDispose(FnExpr);
   WantTokenAndRead(TkLparen);
   Id := PsIdentifier;
   WantTokenAndRead(TkRparen);
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.TypePtr := PrimitiveTypes.PtInteger;
   Found := FindName(Id.Name, {Required=}true)^;
   if Found.Cls = TncVariable then
-    Result^.PseudoFnCall.Arg1 := ExVariable(Found.VarPtr)
+    Result := ExSizeof(Found.VarPtr^.TypePtr)
   else if Found.Cls = TncType then
-         Result^.PseudoFnCall.TypeArg := Found.TypePtr
+    Result := ExSizeof(Found.TypePtr)
   else
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
 end;
