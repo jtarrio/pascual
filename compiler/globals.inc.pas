@@ -21,13 +21,13 @@ begin
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
   { Ordinal subroutines }
-  AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Unary_Describe);
-  AddPseudoFn('PRED', @PfPred_Parse, @Pf_Unary_Describe);
-  AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('PRED', @PfPred_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Indef_Describe);
 
   { Memory subroutines }
-  AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
-  AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
+  AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('NEW', @PfNew_Parse, @Pf_Indef_Describe);
   AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
   AddFunction(MakeProcedure1('Dispose',
               MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));

@@ -127,12 +127,6 @@ begin
   Result := ExOpSucc(_Pf_Unary_Parse)
 end;
 
-function Pf_Unary_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    Result := PseudoFnPtr^.Name + '(' + ExDescribe(Arg1) + ')'
-end;
-
 function Pf_Ternary_Describe(Expr : TExpression) : string;
 begin
   with Expr^.PseudoFnCall do
