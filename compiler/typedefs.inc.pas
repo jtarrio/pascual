@@ -73,7 +73,6 @@ type
     Right : TExpression;
     Op : TExOperator
   end;
-  TExAllocClass = (TacNew, TacDispose);
 
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToAbsolute,
                       XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
