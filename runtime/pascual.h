@@ -1,8 +1,6 @@
 #ifndef __PASCUAL_H
 #define __PASCUAL_H
 
-#include <malloc.h>
-
 #include "file.h"
 #include "math.h"
 #include "os.h"
