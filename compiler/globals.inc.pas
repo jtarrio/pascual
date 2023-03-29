@@ -13,7 +13,7 @@ begin
   PrimitiveTypes.PtString := MakeBaseType('STRING', TtcString);
   PrimitiveTypes.PtText := MakeBaseType('TEXT', TtcText);
   PrimitiveTypes.PtEmptySet := MakeSetType(nil);
-  PrimitiveTypes.PtAbsolute := MakeBaseType('{absolute}', TtcAbsolute);
+  PrimitiveTypes.PtRawPtr := MakeBaseType('{raw pointer}', TtcRawPtr);
 
   { Mandatory constants }
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
@@ -29,9 +29,9 @@ begin
   AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Unary_Describe);
   AddPseudoFn('NEW', @PfNew_Parse, @Pf_Unary_Describe);
   AddPseudoFn('SIZEOF', @PfSizeof_Parse, @PfSizeof_Describe);
-  AddFunction(MakeProcedure1('Dispose', MakeVarArg('PTR', PrimitiveTypes.PtAbsolute)));
+  AddFunction(MakeProcedure1('Dispose', MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));
   AddFunction(MakeProcedure2('New',
-              MakeVarArg('PTR', PrimitiveTypes.PtAbsolute),
+              MakeVarArg('PTR', PrimitiveTypes.PtRawPtr),
               MakeArg('SIZE', PrimitiveTypes.PtInteger)));
 
   RegisterGlobals_Io;

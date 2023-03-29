@@ -175,7 +175,7 @@ begin
     XcImmediate : Result := 0;
     XcToString : Result := 0;
     XcToReal : Result := 2;
-    XcToAbsolute : Result := 2;
+    XcToRawPtr : Result := 2;
     XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcSet : Result := 0;
@@ -333,10 +333,10 @@ begin
   if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
   else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
          write(Codegen.Output, Expr^.VarPtr^.Name)
-  else if Expr^.Cls = XcToAbsolute then
+  else if Expr^.Cls = XcToRawPtr then
   begin
     write(Codegen.Output, '(void**)&');
-    _OutExpressionParensPrec(Expr^.ToAbsoluteParent, 1)
+    _OutExpressionParensPrec(Expr^.ToRawPtrParent, 1)
   end
   else
   begin
@@ -834,7 +834,7 @@ begin
                 write(Codegen.Output, '(double)');
                 OutExpression(Expr^.ToRealParent)
               end;
-    XcToAbsolute: OutExpression(Expr^.ToAbsoluteParent);
+    XcToRawPtr: OutExpression(Expr^.ToRawPtrParent);
     XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcSet: _OutExSet(Expr);
@@ -930,7 +930,7 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*')
   end
-  else if TypePtr^.Cls = TtcAbsolute then write(Codegen.Output, 'void*')
+  else if TypePtr^.Cls = TtcRawPtr then write(Codegen.Output, 'void*')
   else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
   else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'PInteger')
   else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
@@ -1093,7 +1093,7 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '* ', Name)
   end
-  else if TypePtr^.Cls = TtcAbsolute then
+  else if TypePtr^.Cls = TtcRawPtr then
          write(Codegen.Output, 'void* ', Name)
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
          write(Codegen.Output, TypePtr^.Name, ' ', Name)

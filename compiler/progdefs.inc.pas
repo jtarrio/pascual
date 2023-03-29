@@ -2,7 +2,7 @@ var
   Defs : TPsDefs;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText,
-    PtEmptySet, PtAbsolute : TPsTypePtr
+    PtEmptySet, PtRawPtr : TPsTypePtr
   end;
   PseudoFuns : record
     Read, Readln, Str, Val, Write, Writeln : TPsPseudoFnPtr
@@ -478,9 +478,9 @@ begin
   IsPointerUnknownType := _TypeHasClass(TypePtr, TtcPointerUnknown)
 end;
 
-function IsAbsoluteType(TypePtr : TPsTypePtr) : boolean;
+function IsRawPtrType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsAbsoluteType := _TypeHasClass(TypePtr, TtcAbsolute)
+  IsRawPtrType := _TypeHasClass(TypePtr, TtcRawPtr)
 end;
 
 function IsFunctionType(TypePtr : TPsTypePtr) : boolean;
