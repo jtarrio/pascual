@@ -50,25 +50,40 @@ begin
 end;
 
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
-var Ptr : TExpression;
+var
+  Ptr : TExpression;
+  FnPtr : TPsFnPtr;
+  Args : TExFunctionArgs;
 begin
-  ExDispose(FnExpr);
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
   EnsurePointerExpr(Ptr);
   ExMarkInitialized(Ptr);
-  Result := ExPtrAlloc(TacDispose, Ptr)
+
+  ExDispose(FnExpr);
+  Args.Size := 1;
+  Args.Values[1] := Ptr;
+  FnPtr := FindNameOfClass('Dispose', TncFunction, {Required=}true)^.FnPtr;
+  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
 end;
 
 function PfNew_Parse(FnExpr : TExpression) : TExpression;
-var Ptr : TExpression;
+var
+  Ptr : TExpression;
+  FnPtr : TPsFnPtr;
+  Args : TExFunctionArgs;
 begin
-  ExDispose(FnExpr);
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
   EnsurePointerExpr(Ptr);
   ExMarkInitialized(Ptr);
-  Result := ExPtrAlloc(TacNew, Ptr)
+
+  ExDispose(FnExpr);
+  Args.Size := 2;
+  Args.Values[1] := Ptr;
+  Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
+  FnPtr := FindNameOfClass('New', TncFunction, {Required=}true)^.FnPtr;
+  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
 end;
 
 function PfOrd_Parse(FnExpr : TExpression) : TExpression;

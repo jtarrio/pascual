@@ -175,6 +175,7 @@ begin
     XcImmediate : Result := 0;
     XcToString : Result := 0;
     XcToReal : Result := 2;
+    XcToAbsolute : Result := 2;
     XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcSet : Result := 0;
@@ -190,7 +191,6 @@ begin
     XcPseudoFnRef : Result := 0;
     XcPseudoFnCall : Result := 1;
     XcSizeof : Result := 1;
-    XcPtrAlloc : Result := 0;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
@@ -333,10 +333,15 @@ begin
   if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
   else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
          write(Codegen.Output, Expr^.VarPtr^.Name)
+  else if Expr^.Cls = XcToAbsolute then
+  begin
+    write(Codegen.Output, '(void**)&');
+    _OutExpressionParensPrec(Expr^.ToAbsoluteParent, 1)
+  end
   else
   begin
     write(Codegen.Output, '&');
-    _OutExpressionParensPrec(Expr, 2)
+    _OutExpressionParensPrec(Expr, 1)
   end
 end;
 
@@ -814,24 +819,6 @@ begin
   write(Codegen.Output, ')')
 end;
 
-procedure _OutExPtrAlloc(Expr : TExpression);
-begin
-  _OutIndent;
-  if Expr^.AllocClass = TacNew then
-  begin
-    OutExpression(Expr^.AllocPtr);
-    write(Codegen.Output, ' = malloc(sizeof(');
-    OutTypeReference(Expr^.AllocPtr^.TypePtr^.PointedTypePtr);
-    write(Codegen.Output, '))')
-  end
-  else
-  begin
-    write(Codegen.Output, 'free(');
-    OutExpression(Expr^.AllocPtr);
-    write(Codegen.Output, ')');
-  end
-end;
-
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -847,6 +834,7 @@ begin
                 write(Codegen.Output, '(double)');
                 OutExpression(Expr^.ToRealParent)
               end;
+    XcToAbsolute: OutExpression(Expr^.ToAbsoluteParent);
     XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcSet: _OutExSet(Expr);
@@ -870,7 +858,6 @@ begin
     XcFnCall: _OutExFunctionCall(Expr);
     XcPseudoFnCall: _OutExPseudoFnCall(Expr);
     XcSizeof: _OutExSizeof(Expr);
-    XcPtrAlloc: _OutExPtrAlloc(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -943,6 +930,7 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*')
   end
+  else if TypePtr^.Cls = TtcAbsolute then write(Codegen.Output, 'void*')
   else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
   else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'PInteger')
   else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
@@ -1105,6 +1093,8 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '* ', Name)
   end
+  else if TypePtr^.Cls = TtcAbsolute then
+         write(Codegen.Output, 'void* ', Name)
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
          write(Codegen.Output, TypePtr^.Name, ' ', Name)
   else if TypePtr^.Cls = TtcBoolean then

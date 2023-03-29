@@ -70,6 +70,7 @@ begin
     XcImmediate: _DisposeImmediate(Expr^.Immediate);
     XcToString: ExDispose(Expr^.ToStrParent);
     XcToReal: ExDispose(Expr^.ToRealParent);
+    XcToAbsolute: ExDispose(Expr^.ToAbsoluteParent);
     XcWithTmpVar:
                   begin
                     ExDispose(Expr^.TmpVar);
@@ -102,7 +103,6 @@ begin
                   ExDispose(Expr^.CallArgs.Values[Pos]);
               end;
     XcPseudoFnCall: _DisposePseudoCallExpr(Expr^.PseudoFnCall);
-    XcPtrAlloc: ExDispose(Expr^.AllocPtr);
     XcUnaryOp: ExDispose(Expr^.Unary.Parent);
     XcBinaryOp:
                 begin
@@ -229,6 +229,7 @@ begin
     XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     XcToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
+    XcToAbsolute: Copy^.ToAbsoluteParent := ExCopy(Expr^.ToAbsoluteParent);
     XcWithTmpVar :
                    begin
                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
@@ -272,11 +273,6 @@ begin
     XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
                                         Copy^.PseudoFnCall);
     XcSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
-    XcPtrAlloc:
-                begin
-                  Copy^.AllocClass := Expr^.AllocClass;
-                  Copy^.AllocPtr := ExCopy(Expr^.AllocPtr)
-                end;
     XcUnaryOp:
                begin
                  Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
@@ -354,6 +350,7 @@ begin
     case Expr^.Cls of 
       XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
       XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
+      XcToAbsolute: Result := _ExprPrecedence(Expr^.ToAbsoluteParent);
       XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
       XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
       XcUnaryOp: Result := _ExOpPrecedences[Expr^.Unary.Op];
@@ -443,6 +440,7 @@ begin
     XcImmediate: Result := _DescribeImmediate(Expr);
     XcToString: Result := ExDescribe(Expr^.ToStrParent);
     XcToReal: Result := ExDescribe(Expr^.ToRealParent);
+    XcToAbsolute: Result := ExDescribe(Expr^.ToAbsoluteParent);
     XcWithTmpVar: Result := _DescribeWithTmpVar(Expr);
     XcSubrange: Result := ExDescribe(Expr^.ToStrParent);
     XcSet: Result := _DescribeSet(Expr);
@@ -470,10 +468,6 @@ begin
     XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
     XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
     XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
-    XcPtrAlloc: if Expr^.AllocClass = TacNew then
-                  Result := 'NEW(' + ExDescribe(Expr^.AllocPtr) + ')'
-                else
-                  Result := 'DISPOSE(' + ExDescribe(Expr^.AllocPtr) + ')';
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -753,6 +747,16 @@ begin
   end;
 end;
 
+function ExToAbsolute(Parent : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcToAbsolute);
+  Result^.ToAbsoluteParent := Parent;
+  Result^.TypePtr := PrimitiveTypes.PtAbsolute;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult;
+  Result^.IsAssignable := Parent^.IsAssignable;
+  Result^.IsAddressable := Parent^.IsAddressable
+end;
+
 function ExWithTmpVar(TmpVar, Value, Child : TExpression) : TExpression;
 begin
   Result := _NewExpr(XcWithTmpVar);
@@ -962,14 +966,6 @@ begin
   Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
-function ExPtrAlloc(Cls : TExAllocClass; Ptr : TExpression) : TExpression;
-begin
-  Result := _NewExpr(XcPtrAlloc);
-  Result^.AllocClass := Cls;
-  Result^.AllocPtr := Ptr;
-  Result^.TypePtr := nil
-end;
-
 function ExGetOrdinal(Expr : TExpression) : integer;
 begin
   if not ExIsImmediate(Expr) then
@@ -1097,6 +1093,8 @@ begin
          ExCoerce := Expr
   else if IsNilType(Expr^.TypePtr) and IsFunctionyType(TypePtr) then
          ExCoerce := Expr
+  else if IsPointeryType(Expr^.TypePtr) and IsAbsoluteType(TypePtr) then
+         ExCoerce := ExToAbsolute(Expr)
   else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
          ExCoerce := _ExCoerceSet(Expr, TypePtr)
   else

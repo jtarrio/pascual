@@ -1,5 +1,7 @@
 #include "types.h"
 
+#include <malloc.h>
+
 #include "error.h"
 
 PInteger subrange(PInteger value, PInteger low, PInteger high) {
@@ -16,3 +18,7 @@ PInteger succ(PInteger value, PInteger low, PInteger high) {
   if (value == high) rt_error(reOutOfBounds);
   return value + 1;
 }
+
+void New(void** ptr, PInteger size) { *ptr = malloc(size); }
+
+void Dispose(void** ptr) { free(*ptr); }

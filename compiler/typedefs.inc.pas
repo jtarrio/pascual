@@ -75,11 +75,11 @@ type
   end;
   TExAllocClass = (TacNew, TacDispose);
 
-  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcWithTmpVar,
-                      XcSubrange, XcSet, XcVariable, XcField, XcArray,
-                      XcPointer, XcAddress, XcStringChar, XcFnRef, XcFnCall,
-                      XcPseudoFnRef, XcPseudoFnCall, XcSizeof, XcPtrAlloc,
-                      XcUnaryOp, XcBinaryOp);
+  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToAbsolute,
+                      XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
+                      XcArray, XcPointer, XcAddress, XcStringChar,
+                      XcFnRef, XcFnCall, XcPseudoFnRef, XcPseudoFnCall,
+                      XcSizeof, XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
     IsAssignable : boolean;
@@ -89,6 +89,7 @@ type
       XcImmediate : (Immediate : TExImmediate);
       XcToString : (ToStrParent : TExpression);
       XcToReal : (ToRealParent : TExpression);
+      XcToAbsolute : (ToAbsoluteParent : TExpression);
       XcWithTmpVar : (TmpVar : TExpression;
                       TmpVarValue : TExpression;
                       TmpVarChild : TExpression);
@@ -110,7 +111,6 @@ type
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
       XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcSizeof : (SizeofTypePtr : TPsTypePtr);
-      XcPtrAlloc : (AllocClass : TExAllocClass; AllocPtr : TExpression);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
   end;
@@ -127,7 +127,8 @@ type
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
-                  TtcPointer, TtcNil, TtcPointerUnknown, TtcFunction);
+                  TtcPointer, TtcNil, TtcPointerUnknown, TtcAbsolute,
+                  TtcFunction);
   TPsType = record
     Name : string;
     AliasFor : TPsTypePtr;
