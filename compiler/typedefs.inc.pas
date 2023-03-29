@@ -1,6 +1,6 @@
 const 
   MaxEnumVals = 128;
-  MaxRecordFields = 32;
+  MaxRecordFields = 64;
   MaxFnArgs = 16;
 
 type

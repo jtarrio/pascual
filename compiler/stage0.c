@@ -225,9 +225,9 @@ typedef struct record17 {
 } TPSRECORDFIELD;
 typedef struct record18 {
   PInteger SIZE;
-  TPSRECORDFIELD FIELDS[32];
+  TPSRECORDFIELD FIELDS[64];
   PInteger NUMVARIANTS;
-  PInteger VARIANTBOUNDS[32];
+  PInteger VARIANTBOUNDS[64];
   PBoolean ISPACKED;
   PInteger ID;
   PBoolean HASBEENDEFINED;
@@ -1597,8 +1597,8 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
         while (1) {
           {
             if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ',');
-            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR, 1));
-            RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, ':', CpEnd | CpStringPtr, &TYP.RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME);
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, DEEPTYPENAME(TYP.RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR, 1));
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, ':', CpEnd | CpStringPtr, &TYP.RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME);
           }
           if (POS == last) break;
           ++POS;
@@ -1759,7 +1759,7 @@ PInteger FINDFIELD(TPSTYPE* TYPEPTR, const PString *NAME, PBoolean REQUIRED) {
       RET = 0;
       POS = with1->SIZE;
       while (POS >= 1 && RET == 0) {
-        if (cmp_str(CoEq, CpStringPtr, NAME, CpStringPtr, &with1->FIELDS[subrange(POS, 1, 32) - 1].NAME)) RET = POS;
+        if (cmp_str(CoEq, CpStringPtr, NAME, CpStringPtr, &with1->FIELDS[subrange(POS, 1, 64) - 1].NAME)) RET = POS;
         POS = POS - 1;
       }
     }
@@ -1774,7 +1774,7 @@ TPSTYPE* FINDFIELDTYPE(TPSTYPE* TYPEPTR, const PString *NAME, PBoolean REQUIRED)
   PInteger POS;
   POS = FINDFIELD(TYPEPTR, NAME, REQUIRED);
   if (POS == 0) RESULT = PNil;
-  else RESULT = TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR;
+  else RESULT = TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR;
   return RESULT;
 }
 
@@ -2727,7 +2727,7 @@ PString EXDESCRIBE(TEXPRESSIONOBJ* EXPR) {
       RESULT = EXPR->VARPTR->NAME;
       break;
     case XCFIELD:
-      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->RECEXPR), CpChar, '.', CpEnd | CpStringPtr, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->RECEXPR), CpChar, '.', CpEnd | CpStringPtr, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 64) - 1].NAME);
       break;
     case XCARRAY:
       RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->ARRAYEXPR), CpChar, '[', CpString, EXDESCRIBE(EXPR->ARRAYINDEX), CpEnd | CpChar, ']');
@@ -3083,7 +3083,7 @@ TEXPRESSIONOBJ* EXFIELDACCESS(TEXPRESSIONOBJ* PARENT, PInteger FIELDNUM) {
   RESULT = _NEWEXPR(XCFIELD);
   RESULT->RECEXPR = PARENT;
   RESULT->RECFIELDNUM = FIELDNUM;
-  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[subrange(FIELDNUM, 1, 32) - 1].TYPEPTR;
+  RESULT->TYPEPTR = PARENT->TYPEPTR->RECPTR->FIELDS[subrange(FIELDNUM, 1, 64) - 1].TYPEPTR;
   RESULT->ISASSIGNABLE = PARENT->ISASSIGNABLE;
   RESULT->ISADDRESSABLE = PARENT->ISADDRESSABLE;
   RESULT->ISFUNCTIONRESULT = PARENT->ISFUNCTIONRESULT;
@@ -4754,7 +4754,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
         FIELD = first;
         while (1) {
           {
-            if (cmp_str(CoEq, CpStringPtr, &REC->FIELDS[subrange(FIELD, 1, 32) - 1].NAME, CpStringPtr, &NAME)) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
+            if (cmp_str(CoEq, CpStringPtr, &REC->FIELDS[subrange(FIELD, 1, 64) - 1].NAME, CpStringPtr, &NAME)) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
           }
           if (FIELD == last) break;
           ++FIELD;
@@ -4763,7 +4763,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     } while(0);
     REC->SIZE = REC->SIZE + 1;
     if (REC->SIZE > 32) COMPILEERROR(str_make(25, "Too many fields in record"));
-    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].NAME = NAME;
+    REC->FIELDS[subrange(REC->SIZE, 1, 64) - 1].NAME = NAME;
     WANTTOKEN2(TKCOMMA, TKCOLON);
     SKIPTOKEN(TKCOMMA);
   } while (LEXER.TOKEN.ID != TKCOLON);
@@ -4775,7 +4775,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
     if (first <= last) {
       FIELD = first;
       while (1) {
-        REC->FIELDS[subrange(FIELD, 1, 32) - 1].TYPEPTR = TYPEPTR;
+        REC->FIELDS[subrange(FIELD, 1, 64) - 1].TYPEPTR = TYPEPTR;
         if (FIELD == last) break;
         ++FIELD;
       }
@@ -4796,15 +4796,15 @@ void PSRECORDVARIANTS(TPSRECORDDEF *REC) {
     READTOKEN();
     TAGTYPE = PSTYPEIDENTIFIER();
     REC->SIZE = REC->SIZE + 1;
-    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].NAME = TAG.NAME;
-    REC->FIELDS[subrange(REC->SIZE, 1, 32) - 1].TYPEPTR = TAGTYPE;
+    REC->FIELDS[subrange(REC->SIZE, 1, 64) - 1].NAME = TAG.NAME;
+    REC->FIELDS[subrange(REC->SIZE, 1, 64) - 1].TYPEPTR = TAGTYPE;
   }
   else TAGTYPE = FINDNAMEOFCLASS(&TAG.NAME, TNCTYPE, 1)->TYPEPTR;
   ENSUREORDINALTYPE(TAGTYPE);
   WANTTOKENANDREAD(TKOF);
   do {
     REC->NUMVARIANTS = REC->NUMVARIANTS + 1;
-    REC->VARIANTBOUNDS[subrange(REC->NUMVARIANTS, 1, 32) - 1] = REC->SIZE + 1;
+    REC->VARIANTBOUNDS[subrange(REC->NUMVARIANTS, 1, 64) - 1] = REC->SIZE + 1;
     do {
       CASELABEL = EXCOERCE(PSIMMEDIATE(), TAGTYPE);
       EXDISPOSE(&CASELABEL);
@@ -7201,7 +7201,7 @@ void _OUTEXFIELDACCESS(TEXPRESSIONOBJ* EXPR) {
         _OUTEXPRESSIONPARENS(EXPR->RECEXPR, EXPR);
         Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '.');
       }
-      Write(&CODEGEN.OUTPUT, 1, RwpStringPtr | RwpEnd, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 32) - 1].NAME);
+      Write(&CODEGEN.OUTPUT, 1, RwpStringPtr | RwpEnd, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 64) - 1].NAME);
     }
   }
 }
@@ -7804,7 +7804,7 @@ void OUTNAMEANDRECORD(const PString *NAME, TPSRECORDDEF* RECPTR) {
         POS = first;
         while (1) {
           {
-            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[subrange(NUMVARIANT + 1, 1, 32) - 1] == POS) {
+            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[subrange(NUMVARIANT + 1, 1, 64) - 1] == POS) {
               NUMVARIANT = NUMVARIANT + 1;
               if (NUMVARIANT == 1) {
                 _OUTINDENT();
@@ -7821,7 +7821,7 @@ void OUTNAMEANDRECORD(const PString *NAME, TPSRECORDDEF* RECPTR) {
               OUTBEGIN();
             }
             _OUTINDENT();
-            OUTNAMEANDTYPE(&RECPTR->FIELDS[subrange(POS, 1, 32) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 32) - 1].TYPEPTR);
+            OUTNAMEANDTYPE(&RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR);
             Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ';');
             _OUTNEWLINE();
           }
