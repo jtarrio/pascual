@@ -4762,7 +4762,7 @@ void PSRECORDFIELD(TPSRECORDDEF *REC, TLXTOKENID DELIMITER) {
       }
     } while(0);
     REC->SIZE = REC->SIZE + 1;
-    if (REC->SIZE > 32) COMPILEERROR(str_make(25, "Too many fields in record"));
+    if (REC->SIZE > 64) COMPILEERROR(str_make(25, "Too many fields in record"));
     REC->FIELDS[subrange(REC->SIZE, 1, 64) - 1].NAME = NAME;
     WANTTOKEN2(TKCOMMA, TKCOLON);
     SKIPTOKEN(TKCOMMA);
