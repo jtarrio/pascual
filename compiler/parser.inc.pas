@@ -9,17 +9,24 @@ end;
 
 procedure WantToken2(Id1, Id2 : TLxTokenId);
 begin
-  if (Lexer.Token.Id <> Id1) and (Lexer.Token.Id <> Id2) then
+  if not (Lexer.Token.Id in [Id1, Id2]) then
     CompileError('Wanted token ' + LxTokenName(Id1) + ' or ' +
     LxTokenName(Id2) + ', found ' + LxTokenStr)
 end;
 
 procedure WantToken3(Id1, Id2, Id3 : TLxTokenId);
 begin
-  if (Lexer.Token.Id <> Id1)
-     and (Lexer.Token.Id <> Id2) and (Lexer.Token.Id <> Id3) then
+  if not (Lexer.Token.Id in [Id1, Id2, Id3]) then
     CompileError('Wanted token ' + LxTokenName(Id1) + ', ' + LxTokenName(Id2) +
     ', or ' + LxTokenName(Id3) + ', found ' + LxTokenStr)
+end;
+
+procedure WantToken4(Id1, Id2, Id3, Id4 : TLxTokenId);
+begin
+  if not (Lexer.Token.Id in [Id1, Id2, Id3, Id4]) then
+    CompileError('Wanted token ' + LxTokenName(Id1) + ', ' + LxTokenName(Id2) +
+    ', ' + LxTokenName(Id3) +', or ' + LxTokenName(Id4) + ', found ' +
+    LxTokenStr)
 end;
 
 procedure WantTokenAndRead(Id : TLxTokenId);
@@ -193,11 +200,16 @@ begin
       Args.Defs[Args.Count].IsConstant := IsConst;
       Args.Defs[Args.Count].IsReference := IsVar or IsConst;
       Args.Defs[Args.Count].WasInitialized := true;
-      WantToken2(TkColon, TkComma);
+      WantToken4(TkComma, TkColon, TkSemicolon, TkRparen);
       SkipToken(TkComma)
-    until Lexer.Token.Id = TkColon;
-    SkipToken(TkColon);
-    TypePtr := PsTypeIdentifier;
+    until Lexer.Token.Id in [TkColon, TkSemicolon, TkRparen];
+    if Lexer.Token.Id = TkColon then
+    begin
+      SkipToken(TkColon);
+      TypePtr := PsTypeIdentifier;
+    end
+    else if IsVar then TypePtr := nil
+    else CompileError('Untyped parameters must be pass-by-reference');
     for Arg := LastArg + 1 to Args.Count do
       Args.Defs[Arg].TypePtr := TypePtr;
     WantToken2(TkSemicolon, TkRparen);

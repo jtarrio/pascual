@@ -395,6 +395,18 @@ echo 'program foo;
       begin writeln(maxint) end;
       begin end.' | is_valid
 echo 'program foo;
+      procedure Proc(var A);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(var A, B);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
+      procedure Proc(var A, B; C : integer);
+      begin writeln(maxint) end;
+      begin end.' | is_valid
+echo 'program foo;
       procedure Proc(const A : integer);
       begin writeln(maxint) end;
       begin end.' | is_valid
@@ -494,6 +506,18 @@ echo 'program foo;
       begin end.' | is_valid
 echo 'program foo;
       function Func(var A, B : integer) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(var A) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(var A, B) : integer;
+      begin Func := maxint end;
+      begin end.' | is_valid
+echo 'program foo;
+      function Func(var A, B; C : integer) : integer;
       begin Func := maxint end;
       begin end.' | is_valid
 echo 'program foo;
