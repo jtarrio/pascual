@@ -1054,7 +1054,7 @@ begin
       OutDeclareAndAssign(Lhs^.TmpVar^.VarPtr, Lhs^.TmpVarValue);
       Lhs := Lhs^.TmpVarChild
     end;
-    if (Lhs^.Cls = XcFnCall) or (Lhs^.TypePtr = nil) then OutProcedureCall(Lhs)
+    if Lhs^.IsStatement then OutExpressionStatement(Lhs)
     else if Lexer.Token.Id = TkEquals then
            CompileError('Invalid statement' +
                         ' (maybe you wrote ''='' instead of '':=''?)')

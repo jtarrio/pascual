@@ -4,7 +4,8 @@ begin
   Result^.Cls := Cls;
   Result^.IsAssignable := false;
   Result^.IsAddressable := false;
-  Result^.IsFunctionResult := false
+  Result^.IsFunctionResult := false;
+  Result^.IsStatement := false;
 end;
 
 procedure _DisposeImmediate(var Imm : TExImmediate);
@@ -942,6 +943,7 @@ begin
   FnCall^.CallArgs.Size := Args.Size;
   FnCall^.TypePtr := ReturnTypePtr;
   FnCall^.IsFunctionResult := true;
+  FnCall^.IsStatement := true;
   Result := FnCall;
   for Pos := 1 to Args.Size do
   begin
@@ -1007,7 +1009,8 @@ begin
   Result^.ToStrSrc.Arg := Src;
   Result^.ToStrSrc.Width := Width;
   Result^.ToStrSrc.Prec := Prec;
-  Result^.ToStrDest := Dest
+  Result^.ToStrDest := Dest;
+  Result^.IsStatement := true
 end;
 
 function ExConvertToVal(Src, Dest, Code : TExpression) : TExpression;
@@ -1016,7 +1019,8 @@ begin
   Result^.TypePtr := nil;
   Result^.ToValSrc := Src;
   Result^.ToValDest := Dest;
-  Result^.ToValCode := Code
+  Result^.ToValCode := Code;
+  Result^.IsStatement := true
 end;
 
 function ExRead(ReadFile : TExpression; Args : TExReadArgList;
@@ -1026,7 +1030,8 @@ begin
   Result^.TypePtr := nil;
   Result^.ReadFile := ReadFile;
   Result^.ReadArgs := Args;
-  Result^.ReadLn := NewLine
+  Result^.ReadLn := NewLine;
+  Result^.IsStatement := true
 end;
 
 function ExWrite(WriteFile : TExpression; Args : TExWriteArgList;
@@ -1036,7 +1041,8 @@ begin
   Result^.TypePtr := nil;
   Result^.WriteFile := WriteFile;
   Result^.WriteArgs := Args;
-  Result^.WriteLn := NewLine
+  Result^.WriteLn := NewLine;
+  Result^.IsStatement := true
 end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;

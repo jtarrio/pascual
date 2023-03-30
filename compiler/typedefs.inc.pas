@@ -80,6 +80,7 @@ type
     IsAssignable : boolean;
     IsAddressable : boolean;
     IsFunctionResult : boolean;
+    IsStatement : boolean;
     case Cls : TExpressionClass of 
       XcImmediate : (Immediate : TExImmediate);
       XcToString : (ToStrParent : TExpression);

@@ -1660,7 +1660,7 @@ begin
   _OutNewline
 end;
 
-procedure OutProcedureCall;
+procedure OutExpressionStatement;
 begin
   _OutIndent;
   OutExpression(Expr);
