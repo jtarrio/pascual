@@ -363,7 +363,7 @@ end;
 function CopyType(TypePtr : TPsTypePtr) : TPsType;
 begin
   Result := TypePtr^;
-  if Result.Cls = TtcPointerUnknown then
+  if Result.Cls = TtcPointerForward then
   begin
     new(Result.TargetName);
     Result.TargetName^ := TypePtr^.TargetName^
@@ -469,9 +469,9 @@ begin
   IsPointeryType := IsPointerType(TypePtr) or IsNilType(TypePtr)
 end;
 
-function IsPointerUnknownType(TypePtr : TPsTypePtr) : boolean;
+function IsPointerForwardType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsPointerUnknownType := _TypeHasClass(TypePtr, TtcPointerUnknown)
+  IsPointerForwardType := _TypeHasClass(TypePtr, TtcPointerForward)
 end;
 
 function IsRawPtrType(TypePtr : TPsTypePtr) : boolean;
@@ -1134,7 +1134,7 @@ begin
   end
 end;
 
-function MakePointerUnknownType(const TargetName : string) : TPsTypePtr;
+function MakePointerForwardType(const TargetName : string) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
@@ -1142,14 +1142,14 @@ begin
   Def := Defs.Latest;
   while (Def <> nil) and (Result = nil) do
   begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerUnknown)
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerForward)
        and (Def^.TypePtr^.TargetName^ = TargetName) then
       Result := _UnaliasType(Def^.TypePtr);
     Def := Def^.Prev
   end;
   if Result = nil then
   begin
-    Result := _NewType(TtcPointerUnknown);
+    Result := _NewType(TtcPointerForward);
     new(Result^.TargetName);
     Result^.TargetName^ := TargetName
   end

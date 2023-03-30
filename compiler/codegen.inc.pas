@@ -1352,7 +1352,7 @@ begin
   begin
     if Def^.Cls = TdcType then
     begin
-      _ResolvePointerUnknown(Def^.TypePtr);
+      _ResolvePointerForward(Def^.TypePtr);
       if Def^.TypePtr^.AliasFor <> nil then OutTypeDefinition(Def^.TypePtr)
     end;
     Def := Def^.Next

@@ -264,7 +264,7 @@ begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
   NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
-  if NamePtr = nil then Result := MakePointerUnknownType(Lexer.Token.Value)
+  if NamePtr = nil then Result := MakePointerForwardType(Lexer.Token.Value)
   else
   begin
     Result := MakePointerType(NamePtr^.TypePtr);
@@ -336,11 +336,11 @@ begin
     CompileError('Expected type denoter, found ' + LxTokenStr);
 end;
 
-procedure _ResolvePointerUnknown(TypePtr : TPsTypePtr);
+procedure _ResolvePointerForward(TypePtr : TPsTypePtr);
 var 
   TargetPtr : TPsTypePtr;
 begin
-  if IsPointerUnknownType(TypePtr) then
+  if IsPointerForwardType(TypePtr) then
   begin
     TargetPtr := FindNameOfClass(TypePtr^.TargetName^,
                  TncType, {Required=}true)^.TypePtr;

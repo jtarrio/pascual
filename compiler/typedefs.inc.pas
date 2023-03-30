@@ -132,7 +132,7 @@ type
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
-                  TtcPointer, TtcNil, TtcPointerUnknown, TtcRawPtr,
+                  TtcPointer, TtcNil, TtcPointerForward, TtcRawPtr,
                   TtcFunction);
   TPsType = record
     Name : string;
@@ -151,7 +151,7 @@ type
                   ValueTypePtr : TPsTypePtr;
                   end);
       TtcPointer : (PointedTypePtr : TPsTypePtr);
-      TtcPointerUnknown : (TargetName : ^string);
+      TtcPointerForward : (TargetName : ^string);
       TtcFunction : (FnDefPtr : TPsFnDefPtr);
   end;
   TPsEnumDef = record
