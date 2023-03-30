@@ -13,7 +13,8 @@ begin
   PrimitiveTypes.PtString := MakeBaseType('STRING', TtcString);
   PrimitiveTypes.PtText := MakeBaseType('TEXT', TtcText);
   PrimitiveTypes.PtEmptySet := MakeSetType(nil);
-  PrimitiveTypes.PtRawPtr := MakeBaseType('{raw pointer}', TtcRawPtr);
+  PrimitiveTypes.PtUntypedPtr := AddTypeName('POINTER', 
+                                 MakePointerType(nil))^.TypePtr;
 
   { Mandatory constants }
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));
@@ -30,9 +31,9 @@ begin
   AddPseudoFn('NEW', @PfNew_Parse);
   AddPseudoFn('SIZEOF', @PfSizeof_Parse);
   AddFunction(MakeProcedure1('Dispose',
-              MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));
+              MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr)));
   AddFunction(MakeProcedure2('New',
-              MakeVarArg('PTR', PrimitiveTypes.PtRawPtr),
+              MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr),
               MakeArg('SIZE', PrimitiveTypes.PtInteger)));
 
   RegisterGlobals_Io;

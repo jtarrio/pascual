@@ -77,7 +77,7 @@ begin
     XcImmediate: _DisposeImmediate(Expr^.Immediate);
     XcToString: ExDispose(Expr^.ToStrParent);
     XcToReal: ExDispose(Expr^.ToRealParent);
-    XcToRawPtr: ExDispose(Expr^.ToRawPtrParent);
+    XcToUntypedPtr: ExDispose(Expr^.ToUntypedPtrParent);
     XcWithTmpVar:
                   begin
                     ExDispose(Expr^.TmpVar);
@@ -252,7 +252,7 @@ begin
     XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     XcToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
-    XcToRawPtr: Copy^.ToRawPtrParent := ExCopy(Expr^.ToRawPtrParent);
+    XcToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.ToUntypedPtrParent);
     XcWithTmpVar :
                    begin
                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
@@ -385,7 +385,7 @@ begin
     case Expr^.Cls of 
       XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
       XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
-      XcToRawPtr: Result := _ExprPrecedence(Expr^.ToRawPtrParent);
+      XcToUntypedPtr: Result := _ExprPrecedence(Expr^.ToUntypedPtrParent);
       XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
       XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
       XcUnaryOp: Result := _ExOpPrecedences[Expr^.Unary.Op];
@@ -475,7 +475,7 @@ begin
     XcImmediate: Result := _DescribeImmediate(Expr);
     XcToString: Result := ExDescribe(Expr^.ToStrParent);
     XcToReal: Result := ExDescribe(Expr^.ToRealParent);
-    XcToRawPtr: Result := ExDescribe(Expr^.ToRawPtrParent);
+    XcToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
     XcWithTmpVar: Result := _DescribeWithTmpVar(Expr);
     XcSubrange: Result := ExDescribe(Expr^.ToStrParent);
     XcSet: Result := _DescribeSet(Expr);
@@ -800,11 +800,11 @@ begin
   end;
 end;
 
-function ExToRawPtr(Parent : TExpression) : TExpression;
+function ExToUntypedPtr(Parent : TExpression) : TExpression;
 begin
-  Result := _NewExpr(XcToRawPtr);
-  Result^.ToRawPtrParent := Parent;
-  Result^.TypePtr := PrimitiveTypes.PtRawPtr;
+  Result := _NewExpr(XcToUntypedPtr);
+  Result^.ToUntypedPtrParent := Parent;
+  Result^.TypePtr := PrimitiveTypes.PtUntypedPtr;
   Result^.IsFunctionResult := Parent^.IsFunctionResult;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsAddressable := Parent^.IsAddressable
@@ -1172,10 +1172,12 @@ begin
          ExCoerce := Expr
   else if IsNilType(Expr^.TypePtr) and IsFunctionyType(TypePtr) then
          ExCoerce := Expr
-  else if IsPointeryType(Expr^.TypePtr) and IsRawPtrType(TypePtr) then
-         ExCoerce := ExToRawPtr(Expr)
+  else if IsPointeryType(Expr^.TypePtr) and IsUntypedPtrType(TypePtr) then
+         ExCoerce := ExToUntypedPtr(Expr)
   else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
          ExCoerce := _ExCoerceSet(Expr, TypePtr)
+  else if IsUntyped(TypePtr) then
+         ExCoerce := Expr
   else
     ErrorForExpr('Cannot treat value as ' + TypeName(TypePtr), Expr)
 end;

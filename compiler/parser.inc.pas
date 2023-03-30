@@ -48,7 +48,7 @@ begin
   WantToken(TkIdentifier);
   Result := FindNameOfClass(Lexer.Token.Value,
             TncType, {Required=}true)^.TypePtr;
-  Result^.WasUsed := true;
+  if Result <> nil then Result^.WasUsed := true;
   ReadToken
 end;
 

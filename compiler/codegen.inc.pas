@@ -175,7 +175,7 @@ begin
     XcImmediate : Result := 0;
     XcToString : Result := 0;
     XcToReal : Result := 2;
-    XcToRawPtr : Result := 2;
+    XcToUntypedPtr : Result := _Precedence(Expr^.ToUntypedPtrParent);
     XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcSet : Result := 0;
@@ -336,10 +336,10 @@ begin
   if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
   else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
          write(Codegen.Output, Expr^.VarPtr^.Name)
-  else if Expr^.Cls = XcToRawPtr then
+  else if IsUntypedPtrType(Expr^.TypePtr) then
   begin
     write(Codegen.Output, '(void**)&');
-    _OutExpressionParensPrec(Expr^.ToRawPtrParent, 1)
+    _OutExpressionParensPrec(Expr, 1)
   end
   else
   begin
@@ -1032,7 +1032,7 @@ begin
                 write(Codegen.Output, '(double)');
                 OutExpression(Expr^.ToRealParent)
               end;
-    XcToRawPtr: OutExpression(Expr^.ToRawPtrParent);
+    XcToUntypedPtr: OutExpression(Expr^.ToUntypedPtrParent);
     XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcSet: _OutExSet(Expr);
@@ -1131,7 +1131,6 @@ begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*')
   end
-  else if TypePtr^.Cls = TtcRawPtr then write(Codegen.Output, 'void*')
   else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
   else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'PInteger')
   else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
@@ -1287,37 +1286,37 @@ begin
 end;
 
 procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
+var Sp : string;
 begin
-  if TypePtr = nil then write(Codegen.Output, 'void ', Name)
+  if Name[1] <> '*' then Sp := ' ' else Sp := '';
+  if TypePtr = nil then write(Codegen.Output, 'void', Sp, Name)
   else if TypePtr^.Cls = TtcPointer then
   begin
     OutTypeReference(TypePtr^.PointedTypePtr);
-    write(Codegen.Output, '* ', Name)
+    write(Codegen.Output, '*', Sp, Name)
   end
-  else if TypePtr^.Cls = TtcRawPtr then
-         write(Codegen.Output, 'void* ', Name)
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
-         write(Codegen.Output, TypePtr^.Name, ' ', Name)
+         write(Codegen.Output, TypePtr^.Name, Sp, Name)
   else if TypePtr^.Cls = TtcBoolean then
-         write(Codegen.Output, 'PBoolean ', Name)
+         write(Codegen.Output, 'PBoolean', Sp, Name)
   else if TypePtr^.Cls = TtcInteger then
-         write(Codegen.Output, 'PInteger ', Name)
+         write(Codegen.Output, 'PInteger', Sp, Name)
   else if TypePtr^.Cls = TtcReal then
-         write(Codegen.Output, 'PReal ', Name)
+         write(Codegen.Output, 'PReal', Sp, Name)
   else if TypePtr^.Cls = TtcChar then
-         write(Codegen.Output, 'PChar ', Name)
+         write(Codegen.Output, 'PChar', Sp, Name)
   else if TypePtr^.Cls = TtcString then
-         write(Codegen.Output, 'PString ', Name)
+         write(Codegen.Output, 'PString', Sp, Name)
   else if TypePtr^.Cls = TtcText then
-         write(Codegen.Output, 'PFile ', Name)
+         write(Codegen.Output, 'PFile', Sp, Name)
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then
-         write(Codegen.Output, _GetRangeType(TypePtr), ' ', Name)
+         write(Codegen.Output, _GetRangeType(TypePtr), Sp, Name)
   else if TypePtr^.Cls = TtcSet then
   begin
     _OutSetTypeName(TypePtr);
-    write(Codegen.Output, ' ', Name)
+    write(Codegen.Output, Sp, Name)
   end
   else if TypePtr^.Cls = TtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
@@ -1385,7 +1384,7 @@ begin
     else
       write(Codegen.Output, 'const ')
   end;
-  if VarDef.IsReference then Name := '*' + Name;
+  if VarDef.IsReference then Name := '* ' + Name;
   OutNameAndType(Name, VarDef.TypePtr)
 end;
 

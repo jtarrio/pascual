@@ -2,7 +2,7 @@ var
   Defs : TPsDefs;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText,
-    PtEmptySet, PtRawPtr : TPsTypePtr
+    PtEmptySet, PtUntypedPtr : TPsTypePtr
   end;
 
 function DefCounter(CounterType : TPsCounterType) : integer;
@@ -384,6 +384,11 @@ begin
     Result := TypePtr
 end;
 
+function IsUntyped(TypePtr : TPstypePtr) : boolean;
+begin
+  Result := TypePtr = nil
+end;
+
 function _TypeHasClass(TypePtr : TPsTypePtr; Cls : TPsTypeClass) : boolean;
 begin
   Result := (TypePtr <> nil) and (GetFundamentalType(TypePtr)^.Cls = Cls)
@@ -474,9 +479,9 @@ begin
   IsPointerForwardType := _TypeHasClass(TypePtr, TtcPointerForward)
 end;
 
-function IsRawPtrType(TypePtr : TPsTypePtr) : boolean;
+function IsUntypedPtrType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsRawPtrType := _TypeHasClass(TypePtr, TtcRawPtr)
+  Result := IsPointerType(TypePtr) and (TypePtr^.PointedTypePtr = nil)
 end;
 
 function IsFunctionType(TypePtr : TPsTypePtr) : boolean;
@@ -612,53 +617,59 @@ begin
 end;
 
 function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
-var 
-  Typ : TPsType;
-  Pos : integer;
+var Pos : integer;
 begin
-  repeat
-    Typ := TypePtr^;
-    TypePtr := Typ.AliasFor
-  until not UseOriginal or (TypePtr = nil);
-  if Typ.Name <> '' then Result := Typ.Name
-  else if Typ.Cls = TtcEnum then
+  if UseOriginal and (TypePtr <> nil) then
+    while TypePtr^.AliasFor <> nil do
+      TypePtr := TypePtr^.AliasFor;
+  if TypePtr = nil then Result := 'untyped'
+  else if TypePtr^.Name <> '' then Result := TypePtr^.Name
+  else if TypePtr^.Cls = TtcEnum then
   begin
     Result := '(';
-    for Pos := 0 to Typ.EnumPtr^.Size - 1 do
+    for Pos := 0 to TypePtr^.EnumPtr^.Size - 1 do
     begin
       if Pos <> 0 then
         Result := Result + ',';
-      Result := Result + Typ.EnumPtr^.Values[Pos]
+      Result := Result + TypePtr^.EnumPtr^.Values[Pos]
     end;
     Result := Result + ')'
   end
-  else if Typ.Cls = TtcRange then
-         Result := _AntiOrdinal(Typ.RangeDef.First, Typ.RangeDef.BaseTypePtr) +
-                   '..' + _AntiOrdinal(Typ.RangeDef.Last, Typ.RangeDef.
-                   BaseTypePtr)
-  else if Typ.Cls = TtcSet then
+  else if TypePtr^.Cls = TtcRange then
+         Result := _AntiOrdinal(TypePtr^.RangeDef.First,
+                   TypePtr^.RangeDef.BaseTypePtr) +
+                   '..' + _AntiOrdinal(TypePtr^.RangeDef.Last,
+                   TypePtr^.RangeDef.BaseTypePtr)
+  else if TypePtr^.Cls = TtcSet then
   begin
-    if Typ.ElementTypePtr = nil then Result := 'SET OF []'
-    else Result := 'SET OF ' + DeepTypeName(Typ.ElementTypePtr, false)
+    if TypePtr^.ElementTypePtr = nil then Result := 'SET OF []'
+    else Result := 'SET OF ' + DeepTypeName(TypePtr^.ElementTypePtr, false)
   end
-  else if Typ.Cls = TtcRecord then
+  else if TypePtr^.Cls = TtcRecord then
   begin
     Result := 'RECORD ';
-    for Pos := 1 to Typ.RecPtr^.Size do
+    for Pos := 1 to TypePtr^.RecPtr^.Size do
     begin
-      if Pos <> 1 then Result := Result + ',';
-      Result := Result + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, false) +
-                ':' + Typ.RecPtr^.Fields[Pos].Name
+      if Pos <> 1 then Result := Result + '; ';
+      Result := Result +
+                DeepTypeName(TypePtr^.RecPtr^.Fields[Pos].TypePtr, false) +
+                ':' + TypePtr^.RecPtr^.Fields[Pos].Name
     end;
     Result := Result + ' END'
   end
-  else if Typ.Cls = TtcArray then
-         Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
-                   '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false)
-  else if Typ.Cls = TtcPointer then
-         Result := '^' + DeepTypeName(Typ.PointedTypePtr, UseOriginal)
-  else if Typ.Cls = TtcFunction then
-         with Typ.FnDefPtr^ do
+  else if TypePtr^.Cls = TtcArray then
+         Result := 'ARRAY [' +
+                   DeepTypeName(TypePtr^.ArrayDef.IndexTypePtr, false) +
+                   '] OF ' + DeepTypeName(TypePtr^.ArrayDef.ValueTypePtr, false)
+  else if TypePtr^.Cls = TtcPointer then
+  begin
+    if TypePtr^.PointedTypePtr = nil then Result := 'POINTER'
+    else Result := '^' + DeepTypeName(TypePtr^.PointedTypePtr, UseOriginal)
+  end
+  else if TypePtr^.Cls = TtcPointerForward then
+         Result := '^' + TypePtr^.TargetName^
+  else if TypePtr^.Cls = TtcFunction then
+         with TypePtr^.FnDefPtr^ do
   begin
     if ReturnTypePtr = nil then Result := 'PROCEDURE'
     else Result := 'FUNCTION';
@@ -680,15 +691,14 @@ begin
   end
   else
   begin
-    Str(Typ.Cls, Result);
+    Str(TypePtr^.Cls, Result);
     CompileError('Could not get name for type of class ' + Result)
   end
 end;
 
 function TypeName(TypePtr : TPsTypePtr) : string;
 begin
-  if TypePtr = nil then TypeName := '(none)'
-  else TypeName := DeepTypeName(TypePtr, false)
+  Result := DeepTypeName(TypePtr, false)
 end;
 
 function AddConstant(const Constant : TPsConstant) : TPsConstPtr;

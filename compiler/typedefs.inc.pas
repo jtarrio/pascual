@@ -69,7 +69,7 @@ type
     Op : TExOperator
   end;
 
-  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToRawPtr,
+  TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToUntypedPtr,
                       XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
                       XcArray, XcPointer, XcAddress, XcStringChar,
                       XcFnRef, XcFnCall, XcPseudoFnRef, XcSizeof,
@@ -85,7 +85,7 @@ type
       XcImmediate : (Immediate : TExImmediate);
       XcToString : (ToStrParent : TExpression);
       XcToReal : (ToRealParent : TExpression);
-      XcToRawPtr : (ToRawPtrParent : TExpression);
+      XcToUntypedPtr : (ToUntypedPtrParent : TExpression);
       XcWithTmpVar : (TmpVar : TExpression;
                       TmpVarValue : TExpression;
                       TmpVarChild : TExpression);
@@ -133,8 +133,7 @@ type
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
-                  TtcPointer, TtcNil, TtcPointerForward, TtcRawPtr,
-                  TtcFunction);
+                  TtcPointer, TtcNil, TtcPointerForward, TtcFunction);
   TPsType = record
     Name : string;
     AliasFor : TPsTypePtr;
