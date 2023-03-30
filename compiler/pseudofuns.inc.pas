@@ -49,6 +49,25 @@ begin
   end
 end;
 
+function Pf_WriteArg_Parse : TExWriteArg;
+begin
+  Result.Width := nil;
+  Result.Prec := nil;
+  Result.Arg := PsExpression;
+  if not IsTextType(Result.Arg^.TypePtr) and (Lexer.Token.Id = TkColon) then
+  begin
+    WantTokenAndRead(TkColon);
+    Result.Width := PsExpression;
+    EnsureIntegerExpr(Result.Width);
+    if IsRealType(Result.Arg^.TypePtr) and (Lexer.Token.Id = TkColon) then
+    begin
+      WantTokenAndRead(TkColon);
+      Result.Prec := PsExpression;
+      EnsureIntegerExpr(Result.Prec)
+    end
+  end
+end;
+
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var
   Ptr : TExpression;
@@ -125,10 +144,4 @@ function PfSucc_Parse(FnExpr : TExpression) : TExpression;
 begin
   ExDispose(FnExpr);
   Result := ExOpSucc(_Pf_Unary_Parse)
-end;
-
-function Pf_Indef_Describe(Expr : TExpression) : string;
-begin
-  with Expr^.PseudoFnCall do
-    Result := PseudoFnPtr^.Name + '(...)'
 end;

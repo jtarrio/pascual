@@ -21,14 +21,14 @@ begin
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
   { Ordinal subroutines }
-  AddPseudoFn('ORD', @PfOrd_Parse, @Pf_Indef_Describe);
-  AddPseudoFn('PRED', @PfPred_Parse, @Pf_Indef_Describe);
-  AddPseudoFn('SUCC', @PfSucc_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('ORD', @PfOrd_Parse);
+  AddPseudoFn('PRED', @PfPred_Parse);
+  AddPseudoFn('SUCC', @PfSucc_Parse);
 
   { Memory subroutines }
-  AddPseudoFn('DISPOSE', @PfDispose_Parse, @Pf_Indef_Describe);
-  AddPseudoFn('NEW', @PfNew_Parse, @Pf_Indef_Describe);
-  AddPseudoFn('SIZEOF', @PfSizeof_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('DISPOSE', @PfDispose_Parse);
+  AddPseudoFn('NEW', @PfNew_Parse);
+  AddPseudoFn('SIZEOF', @PfSizeof_Parse);
   AddFunction(MakeProcedure1('Dispose',
               MakeVarArg('PTR', PrimitiveTypes.PtRawPtr)));
   AddFunction(MakeProcedure2('New',
@@ -40,7 +40,7 @@ begin
   RegisterGlobals_Strings;
 
   { Misc subroutines }
-  AddPseudoFn('RANDOM', @PfRandom_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('RANDOM', @PfRandom_Parse);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));

@@ -67,8 +67,6 @@ procedure OutForEnd(Iter : TExpression; Ascending : boolean);
 forward;
 procedure OutProcedureCall(Expr : TExpression);
 forward;
-procedure OutPseudoProcCall(Expr : TExpression);
-forward;
 procedure OutEmptyStatement;
 forward;
 procedure OutProgramHeading(Name : string);

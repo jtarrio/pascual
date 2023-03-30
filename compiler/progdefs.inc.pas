@@ -4,9 +4,6 @@ var
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText,
     PtEmptySet, PtRawPtr : TPsTypePtr
   end;
-  PseudoFuns : record
-    Read, Readln, Val, Write, Writeln : TPsPseudoFnPtr
-  end;
 
 function DefCounter(CounterType : TPsCounterType) : integer;
 begin
@@ -352,15 +349,14 @@ begin
   AddEnumValName := Def
 end;
 
-function AddPseudoFn(const Name : string; Parse : TPsPseudoFnParser;
-                     Describe : TPsPseudoFnDescriptor) : TPsPseudoFnPtr;
+function AddPseudoFn(const Name : string;
+                     Parse : TPsPseudoFnParser) : TPsPseudoFnPtr;
 var Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncPseudoFn);
   Def^.PseudoFnPtr := _AddDef(TdcPseudoFn)^.PseudoFnPtr;
   Def^.PseudoFnPtr^.Name := Name;
   Def^.PseudoFnPtr^.ParseFn := Parse;
-  Def^.PseudoFnPtr^.DescribeFn := Describe;
   Result := Def^.PseudoFnPtr
 end;
 

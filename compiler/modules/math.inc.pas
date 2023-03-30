@@ -15,8 +15,8 @@ begin
   AddConstant(MakeConstant('PI', ExRealConstant(3.141592653589793238)));
 
   { Math subroutines }
-  AddPseudoFn('ABS', @_ModMath_Abs_Parse, @Pf_Indef_Describe);
-  AddPseudoFn('SQR', @_ModMath_Sqr_Parse, @Pf_Indef_Describe);
+  AddPseudoFn('ABS', @_ModMath_Abs_Parse);
+  AddPseudoFn('SQR', @_ModMath_Sqr_Parse);
   AddFunction(MakeFunction1('ABS_i', PrimitiveTypes.PtInteger,
               MakeArg('NUM', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction1('ABS_r', PrimitiveTypes.PtReal,

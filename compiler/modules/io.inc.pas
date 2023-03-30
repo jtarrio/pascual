@@ -3,33 +3,36 @@
 function _ModIoRead_Parse(FnExpr : TExpression) : TExpression;
 var 
   First : boolean;
-  OutVar : TExpression;
-  ReadArg : ^TExReadArgs;
+  ReadVar : TExpression;
+  InFile : TExpression;
+  NewLine : boolean;
+  ArgList, ReadArg : TExReadArgList;
 begin
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('INPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
-  ReadArg := nil;
+  NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
+  ExDispose(FnExpr);
+  InFile := ExVariable(FindNameOfClass('INPUT',
+            TncVariable, {Required=}true)^.VarPtr);
+  ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
     First := true;
     WantTokenAndRead(TkLparen);
     while Lexer.Token.Id <> TkRparen do
     begin
-      OutVar := PsExpression;
-      if First and IsTextType(OutVar^.TypePtr) then
+      ReadVar := PsExpression;
+      if First and IsTextType(ReadVar^.TypePtr) then
       begin
-        EnsureAddressableExpr(OutVar);
-        ExDispose(Result^.PseudoFnCall.Arg1);
-        Result^.PseudoFnCall.Arg1 := OutVar
+        EnsureAddressableExpr(ReadVar);
+        ExDispose(InFile);
+        InFile := ReadVar
       end
       else
       begin
-        EnsureAssignableExpr(OutVar);
-        if ReadArg = nil then
+        EnsureAssignableExpr(ReadVar);
+        if ArgList = nil then
         begin
-          new(Result^.PseudoFnCall.ReadArgs);
-          ReadArg := Result^.PseudoFnCall.ReadArgs
+          new(ArgList);
+          ReadArg := ArgList
         end
         else
         begin
@@ -37,15 +40,16 @@ begin
           ReadArg := ReadArg^.Next;
         end;
         ReadArg^.Next := nil;
-        ReadArg^.Arg := OutVar;
-        ExMarkInitialized(OutVar)
+        ReadArg^.Dest := ReadVar;
+        ExMarkInitialized(ReadVar)
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
       First := false
     end;
     WantTokenAndRead(TkRparen)
-  end
+  end;
+  Result := ExRead(InFile, ArgList, NewLine)
 end;
 
 function _ModIoWrite_EvaluateZeroArg(Expr : TExpression) : TExpression;
@@ -62,62 +66,52 @@ end;
 function _ModIoWrite_Parse(FnExpr : TExpression) : TExpression;
 var 
   First : boolean;
-  OutExpr : TExpression;
-  WriteArg : ^TExWriteArgs;
+  WriteValue : TExWriteArg;
+  OutFile : TExpression;
+  NewLine : boolean;
+  ArgList, WriteArg : TExWriteArgList;
 begin
-  Result := ExPseudoFnCall(FnExpr);
-  Result^.PseudoFnCall.Arg1 := ExVariable(FindNameOfClass('OUTPUT',
+  NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
+  ExDispose(FnExpr);
+  OutFile := ExVariable(FindNameOfClass('OUTPUT',
                                TncVariable, {Required=}true)^.VarPtr);
-  WriteArg := nil;
+  ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
     First := true;
     WantTokenAndRead(TkLparen);
     while Lexer.Token.Id <> TkRparen do
     begin
-      OutExpr := _ModIoWrite_EvaluateZeroArg(PsExpression);
-      if First and IsTextType(OutExpr^.TypePtr) then
+      WriteValue := Pf_WriteArg_Parse;
+      WriteValue.Arg := _ModIoWrite_EvaluateZeroArg(WriteValue.Arg);
+      if First and IsTextType(WriteValue.Arg^.TypePtr) then
       begin
-        EnsureAddressableExpr(OutExpr);
-        ExDispose(Result^.PseudoFnCall.Arg1);
-        Result^.PseudoFnCall.Arg1 := OutExpr
+        EnsureAddressableExpr(WriteValue.Arg);
+        ExDispose(OutFile);
+        OutFile := WriteValue.Arg
       end
       else
       begin
-        if WriteArg = nil then
+        if ArgList = nil then
         begin
-          new(Result^.PseudoFnCall.WriteArgs);
-          WriteArg := Result^.PseudoFnCall.WriteArgs
+          new(ArgList);
+          WriteArg := ArgList
         end
         else
         begin
           new(WriteArg^.Next);
           WriteArg := WriteArg^.Next;
         end;
-        WriteArg^.Arg := OutExpr;
-        WriteArg^.Width := nil;
-        WriteArg^.Prec := nil;
-        WriteArg^.Next := nil;
-        if Lexer.Token.Id = TkColon then
-        begin
-          WantTokenAndRead(TkColon);
-          WriteArg^.Width := PsExpression;
-          EnsureIntegerExpr(WriteArg^.Width);
-          if IsRealType(WriteArg^.Arg^.TypePtr)
-             and (Lexer.Token.Id = TkColon) then
-          begin
-            WantTokenAndRead(TkColon);
-            WriteArg^.Prec := PsExpression;
-            EnsureIntegerExpr(WriteArg^.Prec);
-          end
-        end
+        WriteArg^.Value := WriteValue;
+        WriteArg^.Next := nil
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
       First := false
     end;
     WantTokenAndRead(TkRparen)
-  end
+  end;
+  Result := ExWrite(OutFile, ArgList, NewLine);
 end;
 
 procedure _UpFirst(var Str : string);
@@ -163,7 +157,7 @@ end;
 
 procedure _AddIoProc1(Name : string; Arg1 : TPsVariable);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse, @Pf_Indef_Describe);
+  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure2(Name, Arg1,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
@@ -171,7 +165,7 @@ end;
 
 procedure _AddIoProc2(Name : string; Arg1, Arg2 : TPsVariable);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse, @Pf_Indef_Describe);
+  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure3(Name, Arg1, Arg2,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
@@ -179,7 +173,7 @@ end;
 
 procedure _AddIoFun1(Name : string; RetType : TPsTypePtr; Arg1 : TPsVariable);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse, @Pf_Indef_Describe);
+  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeFunction2(Name, RetType, Arg1,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
@@ -192,12 +186,12 @@ end;
 
 procedure _AddFileResetProc(Name : string);
 begin
-  AddPseudoFn(Name, @_ModIo_FileResetFun_Parse, @Pf_Indef_Describe);
+  AddPseudoFn(Name, @_ModIo_FileResetFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure3(Name,
               MakeVarArg('F', PrimitiveTypes.PtText),
-              MakeArg('BLOCK_SIZE', PrimitiveTypes.PtInteger),
-              MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
+  MakeArg('BLOCK_SIZE', PrimitiveTypes.PtInteger),
+  MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
 procedure _AddFileProc1(Name : string; Arg1 : TPsVariable);
@@ -229,13 +223,10 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
 
   { I/O subroutines }
-  PseudoFuns.Read := AddPseudoFn('READ', @_ModIoRead_Parse, @Pf_Indef_Describe);
-  PseudoFuns.Readln := AddPseudoFn('READLN', @_ModIoRead_Parse,
-                       @Pf_Indef_Describe);
-  PseudoFuns.Write := AddPseudoFn('WRITE', @_ModIoWrite_Parse,
-                      @Pf_Indef_Describe);
-  PseudoFuns.Writeln := AddPseudoFn('WRITELN', @_ModIoWrite_Parse,
-                        @Pf_Indef_Describe);
+  AddPseudoFn('READ', @_ModIoRead_Parse);
+  AddPseudoFn('READLN', @_ModIoRead_Parse);
+  AddPseudoFn('WRITE', @_ModIoWrite_Parse);
+  AddPseudoFn('WRITELN', @_ModIoWrite_Parse);
   _AddFileProc1('ASSIGN', MakeConstArg('NAME', PrimitiveTypes.PtString));
   _AddFileProc('CLOSE');
   _AddFileFun('EOF', PrimitiveTypes.PtBoolean);
@@ -255,7 +246,7 @@ begin
   _AddFileProc('ERASE');
   _AddIoProc2('GETDIR',
               MakeArg('DRIVE', PrimitiveTypes.PtInteger),
-              MakeVarArg('DIR', PrimitiveTypes.PtString));
+  MakeVarArg('DIR', PrimitiveTypes.PtString));
   _AddDirProc('MKDIR');
   _AddFileProc1('RENAME',
                 MakeConstArg('NAME', PrimitiveTypes.PtString));

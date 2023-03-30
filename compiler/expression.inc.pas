@@ -7,32 +7,6 @@ begin
   Result^.IsFunctionResult := false
 end;
 
-procedure _DisposePseudoCallExpr(var Call : TExPseudoFnCall);
-var 
-  ReadArg, NextReadArg : ^TExReadArgs;
-  WriteArg, NextWriteArg : ^TExWriteArgs;
-begin
-  if Call.Arg1 <> nil then ExDispose(Call.Arg1);
-  ReadArg := Call.ReadArgs;
-  while ReadArg <> nil do
-  begin
-    NextReadArg := ReadArg^.Next;
-    ExDispose(ReadArg^.Arg);
-    dispose(ReadArg);
-    ReadArg := NextReadArg
-  end;
-  WriteArg := Call.WriteArgs;
-  while WriteArg <> nil do
-  begin
-    NextWriteArg := WriteArg^.Next;
-    ExDispose(WriteArg^.Arg);
-    if WriteArg^.Width <> nil then ExDispose(WriteArg^.Width);
-    if WriteArg^.Prec <> nil then ExDispose(WriteArg^.Prec);
-    dispose(WriteArg);
-    WriteArg := NextWriteArg
-  end
-end;
-
 procedure _DisposeImmediate(var Imm : TExImmediate);
 var Bounds : TExSetImmBounds;
 begin
@@ -65,6 +39,34 @@ begin
   ExDispose(WriteArg.Arg);
   if WriteArg.Width <> nil then ExDispose(WriteArg.Width);
   if WriteArg.Prec <> nil then ExDispose(WriteArg.Prec)
+end;
+
+procedure _DisposeReadExpr(var Expr : TExpression);
+var ReadArg, NextReadArg : TExReadArgList;
+begin
+  ExDispose(Expr^.ReadFile);
+  ReadArg := Expr^.ReadArgs;
+  while ReadArg <> nil do
+  begin
+    NextReadArg := ReadArg^.Next;
+    ExDispose(ReadArg^.Dest);
+    dispose(ReadArg);
+    ReadArg := NextReadArg
+  end
+end;
+
+procedure _DisposeWriteExpr(var Expr : TExpression);
+var WriteArg, NextWriteArg : TExWriteArgList;
+begin
+  ExDispose(Expr^.WriteFile);
+  WriteArg := Expr^.WriteArgs;
+  while WriteArg <> nil do
+  begin
+    NextWriteArg := WriteArg^.Next;
+    _DisposeWriteArg(WriteArg^.Value);
+    dispose(WriteArg);
+    WriteArg := NextWriteArg
+  end
 end;
 
 procedure ExDispose;
@@ -106,7 +108,6 @@ begin
                 for Pos := 1 to Expr^.CallArgs.Size do
                   ExDispose(Expr^.CallArgs.Values[Pos]);
               end;
-    XcPseudoFnCall: _DisposePseudoCallExpr(Expr^.PseudoFnCall);
     XcConvertToStr:
                     begin
                       _DisposeWriteArg(Expr^.ToStrSrc);
@@ -118,6 +119,8 @@ begin
                       ExDispose(Expr^.ToValDest);
                       ExDispose(Expr^.ToValCode)
                     end;
+    XcRead: _DisposeReadExpr(Expr);
+    XcWrite: _DisposeWriteExpr(Expr);
     XcUnaryOp: ExDispose(Expr^.Unary.Parent);
     XcBinaryOp:
                 begin
@@ -126,57 +129,6 @@ begin
                 end;
   end;
   dispose(Expr);
-end;
-
-procedure _CopyPseudoCallExpr(var Call, Copy : TExPseudoFnCall);
-var 
-  ReadArg, NextReadArg, CopyReadArg : ^TExReadArgs;
-  WriteArg, NextWriteArg, CopyWriteArg : ^TExWriteArgs;
-begin
-  Copy.PseudoFnPtr := Call.PseudoFnPtr;
-  if Call.Arg1 <> nil then Copy.Arg1 := ExCopy(Call.Arg1);
-  ReadArg := Call.ReadArgs;
-  CopyReadArg := nil;
-  while ReadArg <> nil do
-  begin
-    NextReadArg := ReadArg^.Next;
-    if CopyReadArg = nil then
-    begin
-      new(CopyReadArg);
-      Copy.ReadArgs := CopyReadArg
-    end
-    else
-    begin
-      new(CopyReadArg^.Next);
-      CopyReadArg := CopyReadArg^.Next;
-    end;
-    CopyReadArg^.Next := nil;
-    CopyReadArg^.Arg := ExCopy(ReadArg^.Arg);
-    ReadArg := NextReadArg
-  end;
-  WriteArg := Call.WriteArgs;
-  CopyWriteArg := nil;
-  while WriteArg <> nil do
-  begin
-    NextWriteArg := WriteArg^.Next;
-    if CopyWriteArg = nil then
-    begin
-      new(CopyWriteArg);
-      Copy.WriteArgs := CopyWriteArg
-    end
-    else
-    begin
-      new(CopyWriteArg^.Next);
-      CopyWriteArg := CopyWriteArg^.Next;
-    end;
-    CopyWriteArg^.Next := nil;
-    CopyWriteArg^.Arg := ExCopy(WriteArg^.Arg);
-    if WriteArg^.Width <> nil then
-      CopyWriteArg^.Width := ExCopy(WriteArg^.Width);
-    if WriteArg^.Prec <> nil then
-      CopyWriteArg^.Prec := ExCopy(WriteArg^.Prec);
-    WriteArg := NextWriteArg
-  end
 end;
 
 function _CopyImmediate(const Imm : TExImmediate) : TExImmediate;
@@ -235,6 +187,56 @@ begin
   else Result.Prec := ExCopy(WriteArg.Prec)
 end;
 
+procedure _CopyReadExpr(var Expr, Copy : TExpression);
+var Src, Dst : TExReadArgList;
+begin
+  Copy^.ReadFile := ExCopy(Expr^.ReadFile);
+  Copy^.ReadLn := Expr^.ReadLn;
+  Copy^.ReadArgs := nil;
+  Src := Expr^.ReadArgs;
+  while Src <> nil do
+  begin
+    if Copy^.ReadArgs = nil then
+    begin
+      new(Dst);
+      Copy^.ReadArgs := Dst
+    end
+    else
+    begin
+      new(Dst^.Next);
+      Dst := Dst^.Next;
+    end;
+    Dst^.Dest := ExCopy(Src^.Dest);
+    Dst^.Next := nil;
+    Src := Src^.Next
+  end
+end;
+
+procedure _CopyWriteExpr(var Expr, Copy : TExpression);
+var Src, Dst : TExWriteArgList;
+begin
+  Copy^.WriteFile := ExCopy(Expr^.WriteFile);
+  Copy^.WriteLn := Expr^.WriteLn;
+  Copy^.WriteArgs := nil;
+  Src := Expr^.WriteArgs;
+  while Src <> nil do
+  begin
+    if Copy^.WriteArgs = nil then
+    begin
+      new(Dst);
+      Copy^.WriteArgs := Dst
+    end
+    else
+    begin
+      new(Dst^.Next);
+      Dst := Dst^.Next;
+    end;
+    Dst^.Value := _CopyWriteArg(Src^.Value);
+    Dst^.Next := nil;
+    Src := Src^.Next
+  end
+end;
+
 function ExCopy;
 var 
   Copy : TExpression;
@@ -290,8 +292,6 @@ begin
                                                 .Values[Pos])
               end;
     XcPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
-    XcPseudoFnCall: _CopyPseudoCallExpr(Expr^.PseudoFnCall,
-                                        Copy^.PseudoFnCall);
     XcSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
     XcConvertToStr:
                     begin
@@ -304,6 +304,8 @@ begin
                       Copy^.ToValDest := ExCopy(Expr^.ToValDest);
                       Copy^.ToValCode := ExCopy(Expr^.ToValCode)
                     end;
+    XcRead: _CopyReadExpr(Expr, Copy);
+    XcWrite: _CopyWriteExpr(Expr, Copy);
     XcUnaryOp:
                begin
                  Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
@@ -497,7 +499,6 @@ begin
                 Result := Result + ')'
               end;
     XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
-    XcPseudoFnCall: Result := Expr^.PseudoFnPtr^.DescribeFn(Expr);
     XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
     XcConvertToStr: with Expr^.ToStrSrc do
                       if Width = nil then
@@ -514,6 +515,10 @@ begin
     XcConvertToVal: Result := 'VAL(' + ExDescribe(Expr^.ToValSrc) + ', ' +
                               ExDescribe(Expr^.ToValDest) + ', ' +
                               ExDescribe( Expr^.ToValCode) + ')';
+    XcRead: if Expr^.ReadLn then Result := 'READLN(...)'
+            else Result := 'READ(...)';
+    XcWrite: if Expr^.WriteLn then Result := 'WRITELN(...)'
+             else Result := 'WRITE(...)';
     XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
     XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
@@ -987,20 +992,6 @@ begin
   Result^.PseudoFnPtr := SpecialFn
 end;
 
-function ExPseudoFnCall(Expr : TExpression) : TExpression;
-var Fn : TPsPseudoFnPtr;
-begin
-  if Expr^.Cls <> XcPseudoFnRef then
-    InternalError('Expected a pseudofunction, got ' + ExDescribe(Expr));
-  Fn := Expr^.PseudoFnPtr;
-  Expr^.Cls := XcPseudoFnCall;
-  Expr^.PseudoFnCall.PseudoFnPtr := Fn;
-  Expr^.PseudoFnCall.Arg1 := nil;
-  Expr^.PseudoFnCall.ReadArgs := nil;
-  Expr^.PseudoFnCall.WriteArgs := nil;
-  Result := Expr
-end;
-
 function ExSizeof(TypePtr : TPsTypePtr) : TExpression;
 begin
   Result := _NewExpr(XcSizeof);
@@ -1025,6 +1016,26 @@ begin
   Result^.ToValSrc := Src;
   Result^.ToValDest := Dest;
   Result^.ToValCode := Code
+end;
+
+function ExRead(ReadFile : TExpression; Args : TExReadArgList;
+                NewLine : boolean) : TExpression;
+begin
+  Result := _NewExpr(XcRead);
+  Result^.TypePtr := nil;
+  Result^.ReadFile := ReadFile;
+  Result^.ReadArgs := Args;
+  Result^.ReadLn := NewLine
+end;
+
+function ExWrite(WriteFile : TExpression; Args : TExWriteArgList;
+                 NewLine : boolean) : TExpression;
+begin
+  Result := _NewExpr(XcWrite);
+  Result^.TypePtr := nil;
+  Result^.WriteFile := WriteFile;
+  Result^.WriteArgs := Args;
+  Result^.WriteLn := NewLine
 end;
 
 function ExGetOrdinal(Expr : TExpression) : integer;

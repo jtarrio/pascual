@@ -44,21 +44,15 @@ type
     Width : TExpression;
     Prec : TExpression
   end;
-  TExReadArgs = record
-    Arg : TExpression;
-    Next : ^TExReadArgs
+  TExReadArgList = ^TExReadArgValue;
+  TExReadArgValue = record
+    Dest : TExpression;
+    Next : TExReadArgList
   end;
-  TExWriteArgs = record
-    Arg : TExpression;
-    Width : TExpression;
-    Prec : TExpression;
-    Next : ^TExWriteArgs
-  end;
-  TExPseudoFnCall = record
-    PseudoFnPtr : TPsPseudoFnPtr;
-    Arg1 : TExpression;
-    ReadArgs : ^TExReadArgs;
-    WriteArgs : ^TExWriteArgs
+  TExWriteArgList = ^TExWriteArgValue;
+  TExWriteArgValue = record
+    Value : TExWriteArg;
+    Next : TExWriteArgList
   end;
   TExOperator = (XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod, XoNeg,
                  XoAnd, XoOr, XoXor, XoNot, XoShl, XoShr,
@@ -78,8 +72,8 @@ type
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToRawPtr,
                       XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
                       XcArray, XcPointer, XcAddress, XcStringChar,
-                      XcFnRef, XcFnCall, XcPseudoFnRef, XcPseudoFnCall,
-                      XcSizeof, XcConvertToStr, XcConvertToVal,
+                      XcFnRef, XcFnCall, XcPseudoFnRef, XcSizeof,
+                      XcConvertToStr, XcConvertToVal, XcRead, XcWrite,
                       XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
     TypePtr : TPsTypePtr;
@@ -110,13 +104,18 @@ type
       XcFnCall : (FnExpr : TExpression;
                   CallArgs : TExFunctionArgs);
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
-      XcPseudoFnCall : (PseudoFnCall : TExPseudoFnCall);
       XcSizeof : (SizeofTypePtr : TPsTypePtr);
       XcConvertToStr : (ToStrSrc : TExWriteArg;
                         ToStrDest : TExpression);
       XcConvertToVal : (ToValSrc : TExpression;
                         ToValDest : TExpression;
                         ToValCode : TExpression);
+      XcRead : (ReadFile : TExpression;
+                ReadArgs : TExReadArgList;
+                ReadLn : boolean);
+      XcWrite : (WriteFile : TExpression;
+                 WriteArgs : TExWriteArgList;
+                 WriteLn : boolean);
       XcUnaryOp : (Unary : TExUnaryOp);
       XcBinaryOp : (Binary : TExBinaryOp);
   end;
@@ -207,11 +206,9 @@ type
     WasUsed : boolean
   end;
   TPsPseudoFnParser = function (FnExpr : TExpression) : TExpression;
-  TPsPseudoFnDescriptor = function (FnExpr : TExpression) : string;
   TPsPseudoFn = record
     Name : string;
-    ParseFn : TPsPseudoFnParser;
-    DescribeFn : TPsPseudoFnDescriptor;
+    ParseFn : TPsPseudoFnParser
   end;
   TPsWithVar = record
     VarPtr : TPsVarPtr

@@ -189,10 +189,11 @@ begin
     XcFnRef : Result := 0;
     XcFnCall : Result := 1;
     XcPseudoFnRef : Result := 0;
-    XcPseudoFnCall : Result := 1;
     XcSizeof : Result := 1;
     XcConvertToStr : Result := 1;
     XcConvertToVal : Result := 1;
+    XcRead : Result := 1;
+    XcWrite : Result := 1;
     XcUnaryOp : Result := 2;
     XcBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
@@ -439,11 +440,6 @@ begin
                            Expr^.CallArgs)
 end;
 
-procedure _OutRead(Expr : TExpression);
-forward;
-procedure _OutWrite(Expr : TExpression);
-forward;
-
 procedure _OutOrd(Expr : TExpression);
 begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
@@ -514,16 +510,6 @@ begin
     OutExpression(TmpExpr);
     ExDispose(TmpExpr)
   end
-end;
-
-procedure _OutExPseudoFnCall(Expr : TExpression);
-begin
-  with Expr^.PseudoFnCall do
-    if PseudoFnPtr = PseudoFuns.Read then _OutRead(Expr)
-    else if PseudoFnPtr = PseudoFuns.Readln then _OutRead(Expr)
-    else if PseudoFnPtr = PseudoFuns.Write then _OutWrite(Expr)
-    else if PseudoFnPtr = PseudoFuns.Writeln then _OutWrite(Expr)
-    else InternalError('Unimplemented special function ' + ExDescribe(Expr))
 end;
 
 procedure _OutExUnaryOp(Expr : TExpression);
@@ -910,6 +896,127 @@ begin
   end
 end;
 
+procedure _OutExRead(Expr : TExpression);
+var 
+  Src : TExpression;
+  ReadArg : TExReadArgList;
+  Linefeed : boolean;
+  TypePtr : TPsTypePtr;
+begin
+  Src := Expr^.ReadFile;
+  Linefeed := Expr^.Readln;
+  ReadArg := Expr^.ReadArgs;
+  _OutIndent;
+  write(Codegen.Output, 'Read(');
+  _OutAddress(Src);
+  _OutComma;
+  OutExpression(ExBooleanConstant(Options.CheckIoResult));
+  if ReadArg = nil then
+  begin
+    write(Codegen.Output, ', RwpEnd');
+    if Linefeed then write(Codegen.Output, ' | RwpLn')
+  end;
+  while ReadArg <> nil do
+  begin
+    TypePtr := GetFundamentalType(ReadArg^.Dest^.TypePtr);
+    case TypePtr^.Cls of 
+      TtcInteger: write(Codegen.Output, ', RwpInt');
+      TtcReal: write(Codegen.Output, ', RwpReal');
+      TtcChar: write(Codegen.Output, ', RwpChar');
+      TtcString: write(Codegen.Output, ', RwpString');
+      else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Dest)
+    end;
+    if ReadArg^.Next = nil then
+    begin
+      if Linefeed then write(Codegen.Output, ' | RwpLn');
+      write(Codegen.Output, ' | RwpEnd')
+    end;
+    _OutComma;
+    _OutAddress(ReadArg^.Dest);
+    ReadArg := ReadArg^.Next
+  end;
+  write(Codegen.Output, ')')
+end;
+
+procedure _OutExWrite(Expr : TExpression);
+var 
+  Dst : TExpression;
+  WriteArg : TExWriteArgList;
+  Linefeed : boolean;
+  TypePtr : TPsTypePtr;
+begin
+  Dst := Expr^.WriteFile;
+  Linefeed := Expr^.WriteLn;
+  WriteArg := Expr^.WriteArgs;
+  _OutIndent;
+  write(Codegen.Output, 'Write(');
+  _OutAddress(Dst);
+  _OutComma;
+  OutExpression(ExBooleanConstant(Options.CheckIoResult));
+  if WriteArg = nil then
+  begin
+    write(Codegen.Output, ', RwpEnd');
+    if Linefeed then write(Codegen.Output, ' | RwpLn')
+  end;
+  while WriteArg <> nil do
+  begin
+    TypePtr := GetFundamentalType(WriteArg^.Value.Arg^.TypePtr);
+    case TypePtr^.Cls of 
+      TtcBoolean: write(Codegen.Output, ', RwpBool');
+      TtcInteger: write(Codegen.Output, ', RwpInt');
+      TtcReal: write(Codegen.Output, ', RwpReal');
+      TtcChar: write(Codegen.Output, ', RwpChar');
+      TtcEnum: write(Codegen.Output, ', RwpEnum');
+      TtcString:
+                 begin
+                   if ExIsImmediate(WriteArg^.Value.Arg) then
+                     write(Codegen.Output, ', RwpLenPtr')
+                   else if WriteArg^.Value.Arg^.IsAddressable then
+                          write(Codegen.Output, ', RwpStringPtr')
+                   else
+                     write(Codegen.Output, ', RwpString')
+                 end;
+      else ErrorForExpr('Expression has invalid type for WRITE',
+                        WriteArg^.Value.Arg)
+    end;
+    if WriteArg^.Value.Width <> nil then write(Codegen.Output, ' | RwpWidth');
+    if IsRealType(TypePtr) and (WriteArg^.Value.Prec <> nil) then
+      write(Codegen.Output, ' | RwpPrec');
+    if WriteArg^.Next = nil then
+    begin
+      if Linefeed then write(Codegen.Output, ' | RwpLn');
+      write(Codegen.Output, ' | RwpEnd')
+    end;
+    if WriteArg^.Value.Width <> nil then
+    begin
+      _OutComma;
+      OutExpression(WriteArg^.Value.Width)
+    end;
+    if WriteArg^.Value.Prec <> nil then
+    begin
+      _OutComma;
+      OutExpression(WriteArg^.Value.Prec)
+    end;
+    _OutComma;
+    if IsStringType(WriteArg^.Value.Arg^.TypePtr)
+       and ExIsImmediate(WriteArg^.Value.Arg) then
+    begin
+      write(Codegen.Output, Length(WriteArg^.Value.Arg^.Immediate.StringVal));
+      _OutComma;
+      _OutCstring(WriteArg^.Value.Arg^.Immediate.StringVal)
+    end
+    else if IsStringType(WriteArg^.Value.Arg^.TypePtr)
+            and WriteArg^.Value.Arg^.IsAddressable then
+           _OutAddress(WriteArg^.Value.Arg)
+    else
+      OutExpression(WriteArg^.Value.Arg);
+    if IsEnumType(TypePtr) then
+      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
+    WriteArg := WriteArg^.Next
+  end;
+  write(Codegen.Output, ')')
+end;
+
 procedure OutExpression;
 begin
   case Expr^.Cls of 
@@ -947,10 +1054,11 @@ begin
     XcStringChar: _OutExStringChar(Expr);
     XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
     XcFnCall: _OutExFunctionCall(Expr);
-    XcPseudoFnCall: _OutExPseudoFnCall(Expr);
     XcSizeof: _OutExSizeof(Expr);
     XcConvertToStr: _OutExConvertToStr(Expr);
     XcConvertToVal: _OutExConvertToVal(Expr);
+    XcRead: _OutExRead(Expr);
+    XcWrite: _OutExWrite(Expr);
     XcUnaryOp: _OutExUnaryOp(Expr);
     XcBinaryOp: _OutExBinaryOp(Expr)
   end
@@ -1354,128 +1462,6 @@ begin
   _OutNewline
 end;
 
-procedure _OutRead(Expr : TExpression);
-var 
-  Src : TExpression;
-  ReadArg : ^TExReadArgs;
-  Linefeed : boolean;
-  TypePtr : TPsTypePtr;
-begin
-  Src := Expr^.PseudoFnCall.Arg1;
-  Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Readln;
-  ReadArg := Expr^.PseudoFnCall.ReadArgs;
-  _OutIndent;
-  write(Codegen.Output, 'Read(');
-  _OutAddress(Src);
-  _OutComma;
-  OutExpression(ExBooleanConstant(Options.CheckIoResult));
-  if ReadArg = nil then
-  begin
-    write(Codegen.Output, ', RwpEnd');
-    if Linefeed then write(Codegen.Output, ' | RwpLn')
-  end;
-  while ReadArg <> nil do
-  begin
-    TypePtr := GetFundamentalType(ReadArg^.Arg^.TypePtr);
-    case TypePtr^.Cls of 
-      TtcInteger: write(Codegen.Output, ', RwpInt');
-      TtcReal: write(Codegen.Output, ', RwpReal');
-      TtcChar: write(Codegen.Output, ', RwpChar');
-      TtcString: write(Codegen.Output, ', RwpString');
-      else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Arg)
-    end;
-    if ReadArg^.Next = nil then
-    begin
-      if Linefeed then write(Codegen.Output, ' | RwpLn');
-      write(Codegen.Output, ' | RwpEnd')
-    end;
-    _OutComma;
-    _OutAddress(ReadArg^.Arg);
-    ReadArg := ReadArg^.Next
-  end;
-  write(Codegen.Output, ');');
-  _OutNewline
-end;
-
-procedure _OutWrite(Expr : TExpression);
-var 
-  Dst : TExpression;
-  WriteArg : ^TExWriteArgs;
-  Linefeed : boolean;
-  TypePtr : TPsTypePtr;
-begin
-  Dst := Expr^.PseudoFnCall.Arg1;
-  Linefeed := Expr^.PseudoFnCall.PseudoFnPtr = PseudoFuns.Writeln;
-  WriteArg := Expr^.PseudoFnCall.WriteArgs;
-  _OutIndent;
-  write(Codegen.Output, 'Write(');
-  _OutAddress(Dst);
-  _OutComma;
-  OutExpression(ExBooleanConstant(Options.CheckIoResult));
-  if WriteArg = nil then
-  begin
-    write(Codegen.Output, ', RwpEnd');
-    if Linefeed then write(Codegen.Output, ' | RwpLn')
-  end;
-  while WriteArg <> nil do
-  begin
-    TypePtr := GetFundamentalType(WriteArg^.Arg^.TypePtr);
-    case TypePtr^.Cls of 
-      TtcBoolean: write(Codegen.Output, ', RwpBool');
-      TtcInteger: write(Codegen.Output, ', RwpInt');
-      TtcReal: write(Codegen.Output, ', RwpReal');
-      TtcChar: write(Codegen.Output, ', RwpChar');
-      TtcEnum: write(Codegen.Output, ', RwpEnum');
-      TtcString:
-                 begin
-                   if ExIsImmediate(WriteArg^.Arg) then
-                     write(Codegen.Output, ', RwpLenPtr')
-                   else if WriteArg^.Arg^.IsAddressable then
-                          write(Codegen.Output, ', RwpStringPtr')
-                   else
-                     write(Codegen.Output, ', RwpString')
-                 end;
-      else ErrorForExpr('Expression has invalid type for WRITE', WriteArg^.Arg)
-    end;
-    if WriteArg^.Width <> nil then write(Codegen.Output, ' | RwpWidth');
-    if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then
-      write(Codegen.Output, ' | RwpPrec');
-    if WriteArg^.Next = nil then
-    begin
-      if Linefeed then write(Codegen.Output, ' | RwpLn');
-      write(Codegen.Output, ' | RwpEnd')
-    end;
-    if WriteArg^.Width <> nil then
-    begin
-      _OutComma;
-      OutExpression(WriteArg^.Width)
-    end;
-    if IsRealType(TypePtr) and (WriteArg^.Prec <> nil) then
-    begin
-      _OutComma;
-      OutExpression(WriteArg^.Prec)
-    end;
-    _OutComma;
-    if IsStringType(WriteArg^.Arg^.TypePtr)
-       and ExIsImmediate(WriteArg^.Arg) then
-    begin
-      write(Codegen.Output, Length(WriteArg^.Arg^.Immediate.StringVal));
-      _OutComma;
-      _OutCstring(WriteArg^.Arg^.Immediate.StringVal)
-    end
-    else if IsStringType(WriteArg^.Arg^.TypePtr)
-            and WriteArg^.Arg^.IsAddressable then
-           _OutAddress(WriteArg^.Arg)
-    else
-      OutExpression(WriteArg^.Arg);
-    if IsEnumType(TypePtr) then
-      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
-    WriteArg := WriteArg^.Next
-  end;
-  write(Codegen.Output, ');');
-  _OutNewline
-end;
-
 procedure OutAssign;
 begin
   _OutIndent;
@@ -1680,11 +1666,6 @@ begin
   OutExpression(Expr);
   write(Codegen.Output, ';');
   _OutNewline
-end;
-
-procedure OutPseudoProcCall;
-begin
-  _OutExPseudoFnCall(Expr)
 end;
 
 procedure OutEmptyStatement;
