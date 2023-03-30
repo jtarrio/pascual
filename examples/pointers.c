@@ -23,7 +23,7 @@ PInteger MYINT;
 void ADDNODE(PInteger VALUE) {
   NODE* PREVROOT;
   PREVROOT = ROOTNODE;
-  ROOTNODE = malloc(sizeof(NODE));
+  New((void**)&ROOTNODE, sizeof(NODE));
   ROOTNODE->VALUE = VALUE;
   ROOTNODE->NEXT = PREVROOT;
   if (PREVROOT == PNil) ROOTNODE->PREV = PNil;
@@ -49,25 +49,25 @@ void DISPOSELIST() {
   NODE* NEXT;
   while (ROOTNODE != PNil) {
     NEXT = ROOTNODE->NEXT;
-    free(ROOTNODE);
+    Dispose((void**)&ROOTNODE);
     ROOTNODE = NEXT;
   }
 }
 
 void pascual_main() {
-  MYSTRPTR = malloc(sizeof(PString));
+  New((void**)&MYSTRPTR, sizeof(PString));
   *MYSTRPTR = str_make(3, "foo");
   Write(&OUTPUT, 1, RwpStringPtr | RwpLn | RwpEnd, MYSTRPTR);
-  free(MYSTRPTR);
-  MYRECPTR = malloc(sizeof(MYRECORD));
+  Dispose((void**)&MYSTRPTR);
+  New((void**)&MYRECPTR, sizeof(MYRECORD));
   MYRECPTR->A = 123;
   MYRECPTR->B = 1;
   Write(&OUTPUT, 1, RwpInt, MYRECPTR->A, RwpChar, ' ', RwpBool | RwpLn | RwpEnd, MYRECPTR->B);
-  free(MYRECPTR);
-  MYINTPTR = malloc(sizeof(PInteger));
+  Dispose((void**)&MYRECPTR);
+  New((void**)&MYINTPTR, sizeof(PInteger));
   *MYINTPTR = 42;
   Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
-  free(MYINTPTR);
+  Dispose((void**)&MYINTPTR);
   MYINT = 123456;
   MYINTPTR = &MYINT;
   Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, *MYINTPTR);
