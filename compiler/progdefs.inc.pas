@@ -655,8 +655,8 @@ begin
     for Pos := 1 to Typ.RecPtr^.Size do
     begin
       if Pos <> 1 then Result := Result + ',';
-      Result := Result + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, true);
-      Result := Result + ':' + Typ.RecPtr^.Fields[Pos].Name
+      Result := Result + DeepTypeName(Typ.RecPtr^.Fields[Pos].TypePtr, false) +
+                ':' + Typ.RecPtr^.Fields[Pos].Name
     end;
     Result := Result + ' END'
   end
@@ -664,7 +664,7 @@ begin
          Result := 'ARRAY [' + DeepTypeName(Typ.ArrayDef.IndexTypePtr, false) +
                    '] OF ' + DeepTypeName(Typ.ArrayDef.ValueTypePtr, false)
   else if Typ.Cls = TtcPointer then
-         Result := '^' + DeepTypeName(Typ.PointedTypePtr, true)
+         Result := '^' + DeepTypeName(Typ.PointedTypePtr, UseOriginal)
   else if Typ.Cls = TtcFunction then
          with Typ.FnDefPtr^ do
   begin
