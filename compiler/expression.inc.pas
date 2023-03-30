@@ -362,7 +362,7 @@ end;
 
 const _ExPrecedences : array[TExpressionClass] of integer 
                        = ( 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1,
-                          0, 1, 1, -1, -1);
+                          0, 1, 1, 1, 1, 1, 1, -1, -1);
 const _ExOpPrecedences : array[TExOperator] of integer 
                          = (4, 4, 4, 3, 3, 3, 4,
                             3, 4, 4, 3, 3,
