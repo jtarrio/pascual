@@ -567,22 +567,15 @@ begin
 end;
 
 function UnparseChar(Chr : char) : string;
-var 
-  ChNum : string;
 begin
   if Chr = '''' then Result := ''''''''''
-  else if Chr < ' ' then
-  begin
-    Str(Ord(Chr), ChNum);
-    Result := '#' + ChNum
-  end
+  else if Chr < ' ' then Result := '#' + IntToStr(Ord(Chr))
   else Result := '''' + Chr + ''''
 end;
 
 function UnparseString(const St : string) : string;
 var 
   Pos : integer;
-  ChNum : string;
   Quoted : boolean;
 begin
   Quoted := false;
@@ -596,8 +589,7 @@ begin
         Quoted := false;
         Result := Result + ''''
       end;
-      Str(Ord(St[Pos]), ChNum);
-      Result := Result + '#' + ChNum
+      Result := Result + '#' + IntToStr(Ord(St[Pos]))
     end
     else
     begin
@@ -861,15 +853,13 @@ end;
 
 function AddWithVar(Base : TExpression) : TPsVarPtr;
 var 
-  TmpVarNum : string;
   TmpVar : TPsVariable;
   TmpVarPtr : TPsVarPtr;
   WithVarPtr : TPsWithVarPtr;
 begin
   EnsureRecordExpr(Base);
 
-  Str(DefCounter(TctTmpVar), TmpVarNum);
-  TmpVar.Name := 'with' + TmpVarNum;
+  TmpVar.Name := 'with' + IntToStr(DefCounter(TctTmpVar));
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;
   TmpVar.IsReference := Base^.IsAddressable;
@@ -916,10 +906,9 @@ end;
 
 function AddTmpVariable(const Prefix : string;
                         TypePtr : TPsTypePtr) : TPsVarPtr;
-var VarNum : string;
 begin
-  Str(DefCounter(TctTmpVar), VarNum);
-  Result := AddVariable(MakeVariable(Prefix + VarNum, TypePtr))
+  Result := AddVariable(MakeVariable(Prefix + IntToStr(DefCounter(TctTmpVar)),
+            TypePtr))
 end;
 
 function _MakeArg(const Name : string; TypePtr : TPsTypePtr;

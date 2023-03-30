@@ -13,6 +13,11 @@ forward;
 procedure CompileWarning(Msg : string);
 forward;
 
+function IntToStr(Value : integer) : string;
+begin
+  Str(Value, Result)
+end;
+
 {$I typedefs.inc.pas}
 {$I expression.forward.inc.pas}
 {$I operations/forward.inc.pas}

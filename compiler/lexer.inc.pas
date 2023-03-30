@@ -45,12 +45,9 @@ begin
 end;
 
 function LxPosStr(Pos : TLxPos) : string;
-var 
-  Row, Col : string;
 begin
-  Str(Pos.Row, Row);
-  Str(Pos.Col, Col);
-  LxPosStr := 'row ' + Row + ' col ' + Col + ' in ' + Lexer.Input.Name;
+  LxPosStr := 'row ' + IntToStr(Pos.Row) + ' col ' + IntToStr(Pos.Col) +
+              ' in ' + Lexer.Input.Name;
 end;
 
 function LxWhereStr : string;

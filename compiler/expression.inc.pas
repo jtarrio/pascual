@@ -365,7 +365,8 @@ const _ExPrecedences : array[TExpressionClass] of integer
                           0, 1, 1, 1, 1, 1, 1, -1, -1);
 const _ExOpPrecedences : array[TExOperator] of integer 
                          = (4, 4, 4, 3, 3, 3, 4,
-                            3, 4, 4, 3, 3,
+                            3, 4, 4, 1, 3, 3,
+                            5,
                             5, 5, 5, 5, 5, 5,
                             1, 1, 1);
 const _ExOpNames : array[TExOperator] of string 

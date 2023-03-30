@@ -299,10 +299,10 @@ begin
   ElementTypePtr := PsTypeDenoter;
   if not IsBoundedType(ElementTypePtr) then
     ErrorForType('Set element types must be bounded ordinal types',
-                  ElementTypePtr);
+                 ElementTypePtr);
   if GetBoundedTypeSize(ElementTypePtr) > 256 then
     ErrorForType('Set element types may not contain more than 256 values',
-                  ElementTypePtr);
+                 ElementTypePtr);
   Result := MakeSetType(ElementTypePtr)
 end;
 
@@ -382,21 +382,27 @@ end;
 procedure PsConstantValue(TypePtr : TPsTypePtr);
 var 
   Expr : TExpression;
+  ConstSize, WantedSize : integer;
 begin
   if IsArrayType(TypePtr) then
   begin
     WantTokenAndRead(TkLparen);
-    TypePtr := TypePtr^.ArrayDef.ValueTypePtr;
+    ConstSize := 0;
     OutConstantArrayBegin;
     while Lexer.Token.Id <> TkRparen do
     begin
-      PsConstantValue(TypePtr);
+      ConstSize := ConstSize + 1;
+      PsConstantValue(TypePtr^.ArrayDef.ValueTypePtr);
       WantToken2(TkComma, TkRparen);
       if Lexer.Token.Id = TkComma then OutConstantArraySeparator;
       SkipToken(TkComma)
     end;
     OutConstantArrayEnd;
     WantTokenAndRead(TkRparen);
+    WantedSize := GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr);
+    if ConstSize <> WantedSize then
+      CompileError('Array constant has size ' + IntToStr(ConstSize) +
+      ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr))
   end
   else
   begin
@@ -1242,7 +1248,7 @@ begin
 end;
 
 procedure ReadToken;
-var
+var 
   Stop : boolean;
   PrevStack : TLxIncludeStack;
 begin
