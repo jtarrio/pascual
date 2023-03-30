@@ -54,6 +54,7 @@ begin
   Result.Width := nil;
   Result.Prec := nil;
   Result.Arg := PsExpression;
+  EnsureTypedExpr(Result.Arg);
   if not IsTextType(Result.Arg^.TypePtr) and (Lexer.Token.Id = TkColon) then
   begin
     WantTokenAndRead(TkColon);

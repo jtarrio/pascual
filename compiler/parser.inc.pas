@@ -1,6 +1,21 @@
 procedure ReadToken;
 forward;
 
+function PsTypeDenoter : TPsTypePtr;
+forward;
+
+function PsExpression : TExpression;
+forward;
+
+function PsVariable : TExpression;
+forward;
+
+procedure PsStatement;
+forward;
+
+procedure PsDefinitions;
+forward;
+
 procedure WantToken(Id : TLxTokenId);
 begin
   if Lexer.Token.Id <> Id then
@@ -47,9 +62,6 @@ begin
   if Lexer.Token.Id = Id then ReadToken
 end;
 
-function PsTypeDenoter : TPsTypePtr;
-forward;
-
 function PsTypeIdentifier : TPsTypePtr;
 begin
   WantToken(TkIdentifier);
@@ -63,9 +75,6 @@ function PsIdentifier : TPsIdentifier;
 begin
   Result.Name := GetTokenValueAndRead(TkIdentifier);
 end;
-
-function PsExpression : TExpression;
-forward;
 
 function PsImmediate : TExpression;
 var Expr : TExpression;
@@ -462,6 +471,7 @@ var
   NumNames : integer;
   Names : array[1..MaxVarNames] of string;
   TypePtr : TPsTypePtr;
+  Location : TExpression;
   Checkpoint : TPsDefPtr;
 begin
   Checkpoint := Defs.Latest;
@@ -478,19 +488,29 @@ begin
     until Lexer.Token.Id = TkColon;
     WantTokenAndRead(TkColon);
     TypePtr := PsTypeDenoter;
+    if Lexer.Token.Id = TkAbsolute then
+    begin
+      WantTokenAndRead(TkAbsolute);
+      Location := PsVariable;
+      EnsureAddressableExpr(Location);
+      if Location^.Cls = XcVariable then
+        Location^.VarPtr^.WasUsed := true
+    end
+    else Location := nil;
     WantTokenAndRead(TkSemicolon);
     for NumNames := 1 to NumNames do
-      OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
-                            TypePtr)));
+    begin
+      if Location = nil then
+        OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
+                              TypePtr)), nil)
+      else
+        OutVariableDefinition(AddVariable(MakeReference(Names[NumNames],
+                              TypePtr)), Location)
+    end;
+    if Location <> nil then ExDispose(Location)
   until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
-
-procedure PsStatement;
-forward;
-
-procedure PsDefinitions;
-forward;
 
 procedure PsFunctionBody(FnPtr : TPsFnPtr);
 var 
@@ -508,7 +528,7 @@ begin
   begin
     ResultPtr := AddVariable(MakeVariable('RESULT', FnPtr^.ReturnTypePtr));
     ResultPtr^.WasUsed := true;
-    OutVariableDefinition(ResultPtr);
+    OutVariableDefinition(ResultPtr, nil);
   end;
   PsDefinitions;
   WantTokenAndRead(TkBegin);

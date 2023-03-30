@@ -12,7 +12,7 @@ procedure OutConstantArraySeparator;
 forward;
 procedure OutConstantArrayEnd;
 forward;
-procedure OutVariableDefinition(VarPtr : TPsVarPtr);
+procedure OutVariableDefinition(VarPtr : TPsVarPtr; Location : TExpression);
 forward;
 procedure OutConstantDefinitionBegin(VarPtr : TPsVarPtr);
 forward;

@@ -914,6 +914,16 @@ begin
   Result.WasUsed := false
 end;
 
+function MakeReference(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+begin
+  Result.Name := Name;
+  Result.TypePtr := TypePtr;
+  Result.IsReference := true;
+  Result.IsConstant := false;
+  Result.WasInitialized := true;
+  Result.WasUsed := false
+end;
+
 function AddTmpVariable(const Prefix : string;
                         TypePtr : TPsTypePtr) : TPsVarPtr;
 begin

@@ -1,6 +1,8 @@
 function TypeName(TypePtr : TPsTypePtr) : string;
 forward;
 
+function IsUntyped(TypePtr : TPsTypePtr) : boolean;
+forward;
 function IsEnumType(TypePtr : TPsTypePtr) : boolean;
 forward;
 function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;

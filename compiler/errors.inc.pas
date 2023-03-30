@@ -40,6 +40,12 @@ begin
   if not IsOrdinalType(Typ) then ErrorForType('Expected an ordinal', Typ)
 end;
 
+procedure EnsureTypedExpr(Expr : TExpression);
+begin
+  if IsUntyped(Expr^.TypePtr) then
+    ErrorForExpr('Expected a typed expression', Expr)
+end;
+
 procedure EnsureRecordExpr(Expr : TExpression);
 begin
   if not IsRecordType(Expr^.TypePtr) then

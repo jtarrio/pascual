@@ -336,7 +336,7 @@ begin
   if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
   else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
          write(Codegen.Output, Expr^.VarPtr^.Name)
-  else if IsUntypedPtrType(Expr^.TypePtr) then
+  else if Expr^.Cls = XcToUntypedPtr then
   begin
     write(Codegen.Output, '(void**)&');
     _OutExpressionParensPrec(Expr, 1)
@@ -1288,7 +1288,8 @@ end;
 procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
 var Sp : string;
 begin
-  if Name[1] <> '*' then Sp := ' ' else Sp := '';
+  if Name[1] <> '*' then Sp := ' '
+  else Sp := '';
   if TypePtr = nil then write(Codegen.Output, 'void', Sp, Name)
   else if TypePtr^.Cls = TtcPointer then
   begin
@@ -1393,6 +1394,17 @@ begin
   _OutBlankline(TotVar);
   _OutIndent;
   OutVariableDeclaration(VarPtr^);
+  if Location <> nil then
+  begin
+    write(Codegen.Output, ' = ');
+    if not IsSameType(VarPtr^.TypePtr, Location^.TypePtr) then
+    begin
+      write(Codegen.Output, '(');
+      OutTypeReference(VarPtr^.TypePtr);
+      write(Codegen.Output, '*)')
+    end;
+    _OutAddress(Location)
+  end;
   write(Codegen.Output, ';');
   _OutNewline
 end;

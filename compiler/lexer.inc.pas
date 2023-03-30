@@ -3,12 +3,13 @@ type
                 TkString, TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals,
                 TkLessthan, TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma,
                 TkColon, TkSemicolon, TkCaret, TkLparen, TkRparen, TkNotEquals,
-                TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAt, TkAnd,
-                TkArray, TkBegin, TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                TkElse, TkEnd, TkFile, TkFor, TkForward, TkFunction, TkGoto,
-                TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot, TkOf, TkOr, TkPacked,
-                TkProcedure, TkProgram, TkRecord, TkRepeat, TkSet, TkShl, TkShr,
-                TkThen, TkTo, TkType, TkUntil, TkVar, TkWhile, TkWith, TkXor);
+                TkLessOrEquals, TkMoreOrEquals, TkAssign, TkRange, TkAt,
+                TkAbsolute, TkAnd, TkArray, TkBegin, TkCase, TkConst, TkDiv,
+                TkDo, TkDownto, TkElse, TkEnd, TkFile, TkFor, TkForward,
+                TkFunction, TkGoto, TkIf, TkIn, TkLabel, TkMod, TkNil, TkNot,
+                TkOf, TkOr, TkPacked, TkProcedure, TkProgram, TkRecord,
+                TkRepeat, TkSet, TkShl, TkShr, TkThen, TkTo, TkType, TkUntil,
+                TkVar, TkWhile, TkWith, TkXor);
   TLxPos = record
     Row, Col : integer
   end;
@@ -119,25 +120,26 @@ end;
 
 procedure LxGetIdentifier;
 const 
-  NK = 39;
-  Keywords : array[1..NK] of string = ('AND', 'ARRAY', 'BEGIN', 'CASE', 'CONST',
-                                       'DIV', 'DO', 'DOWNTO', 'ELSE', 'END',
-                                       'FILE', 'FOR', 'FORWARD', 'FUNCTION',
-                                       'GOTO', 'IF', 'IN', 'LABEL', 'MOD',
-                                       'NIL', 'NOT', 'OF', 'OR', 'PACKED',
-                                       'PROCEDURE', 'PROGRAM', 'RECORD',
-                                       'REPEAT', 'SET', 'SHL', 'SHR', 'THEN',
-                                       'TO', 'TYPE', 'UNTIL', 'VAR', 'WHILE',
-                                       'WITH', 'XOR' );
-  Tokens : array[1..NK] of TLxTokenId = (TkAnd, TkArray, TkBegin, TkCase,
-                                         TkConst, TkDiv, TkDo, TkDownto, TkElse,
-                                         TkEnd, TkFile, TkFor, TkForward,
-                                         TkFunction, TkGoto, TkIf, TkIn,
-                                         TkLabel, TkMod, TkNil, TkNot, TkOf,
-                                         TkOr, TkPacked, TkProcedure, TkProgram,
-                                         TkRecord, TkRepeat, TkSet, TkShl,
-                                         TkShr, TkThen, TkTo, TkType, TkUntil,
-                                         TkVar, TkWhile, TkWith, TkXor);
+  NK = 40;
+  Keywords : array[1..NK] of string = ('ABSOLUTE', 'AND', 'ARRAY', 'BEGIN',
+                                       'CASE', 'CONST', 'DIV', 'DO', 'DOWNTO',
+                                       'ELSE', 'END', 'FILE', 'FOR', 'FORWARD',
+                                       'FUNCTION', 'GOTO', 'IF', 'IN', 'LABEL',
+                                       'MOD', 'NIL', 'NOT', 'OF', 'OR',
+                                       'PACKED', 'PROCEDURE', 'PROGRAM',
+                                       'RECORD', 'REPEAT', 'SET', 'SHL', 'SHR',
+                                       'THEN', 'TO', 'TYPE', 'UNTIL', 'VAR',
+                                       'WHILE', 'WITH', 'XOR');
+  Tokens : array[1..NK] of TLxTokenId = (TkAbsolute, TkAnd, TkArray, TkBegin,
+                                         TkCase, TkConst, TkDiv, TkDo, TkDownto,
+                                         TkElse, TkEnd, TkFile, TkFor,
+                                         TkForward, TkFunction, TkGoto, TkIf,
+                                         TkIn, TkLabel, TkMod, TkNil, TkNot,
+                                         TkOf, TkOr, TkPacked, TkProcedure,
+                                         TkProgram, TkRecord, TkRepeat, TkSet,
+                                         TkShl, TkShr, TkThen, TkTo, TkType,
+                                         TkUntil, TkVar, TkWhile, TkWith,
+                                         TkXor);
 var 
   Chr : char;
   Pos : integer;
