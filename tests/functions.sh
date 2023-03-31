@@ -232,3 +232,11 @@ echo "program foo;
       function Gen42 : integer;
       begin Result := 42 end;
       begin Fun := @Gen42; write(Fun) end." | outputs 42
+
+# Untyped variable parameters
+echo "program foo;
+      function RetAsChar(var v) : char;
+      var ch : char absolute v;
+      begin Result := ch end;
+      var n : integer;
+      begin n := 65; write(RetAsChar(n)) end." | outputs 'A'

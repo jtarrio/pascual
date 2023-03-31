@@ -214,3 +214,11 @@ echo "program foo;
       procedure Display42;
       begin write(42) end;
       begin Proc := @Display42; Proc end." | outputs 42
+
+# Untyped variable parameters
+echo "program foo;
+      procedure DisplayAsChr(var v);
+      var ch : char absolute v;
+      begin write(ch) end;
+      var n : integer;
+      begin n := 65; DisplayAsChr(n) end." | outputs 'A'

@@ -34,6 +34,15 @@ echo "program foo;
            end;
       begin end." | outputs ''
 
+# Untyped pointers
+echo "program foo;
+      function RetAsCh(var a) : char;
+      var ch : char absolute a;
+      begin Result := ch end;
+      var i : integer;
+          p : pointer;
+      begin i := 65; p := @i; write(RetAsCh(p^)) end." | outputs 'A'
+
 # Longer program showing pointer manipulation.
 echo "program foo;
       type TP = ^T;
