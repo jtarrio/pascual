@@ -902,8 +902,6 @@ begin
   begin
     EnsureAddressableExpr(Parent);
     EnsureAssignableExpr(Parent);
-    if Parent^.Cls <> XcVariable then
-      ErrorForExpr('Expected a variable', Parent);
     Result^.TypePtr := MakePointerType(Parent^.TypePtr)
   end
 end;

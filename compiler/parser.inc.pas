@@ -492,9 +492,7 @@ begin
     begin
       WantTokenAndRead(TkAbsolute);
       Location := PsVariable;
-      EnsureAddressableExpr(Location);
-      if Location^.Cls = XcVariable then
-        Location^.VarPtr^.WasUsed := true
+      EnsureAddressableExpr(Location)
     end
     else Location := nil;
     WantTokenAndRead(TkSemicolon);
@@ -630,6 +628,7 @@ end;
 
 function PsPointerDeref(Ptr : TExpression) : TExpression;
 begin
+  if Ptr^.Cls = XcVariable then Ptr^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkCaret);
   PsPointerDeref := ExPointerAccess(Ptr)
 end;
@@ -653,16 +652,22 @@ end;
 
 function PsFunctionCall(Fn : TExpression) : TExpression;
 begin
-  if (Fn^.Cls = XcFnRef) or IsFunctionType(Fn^.TypePtr) then
-    PsFunctionCall := ExFunctionCall(Fn, PsFunctionArgs)
+  if Fn^.Cls = XcFnRef then
+  begin
+    Fn^.FnPtr^.WasUsed := true;
+    Result := ExFunctionCall(Fn, PsFunctionArgs)
+  end
+  else if IsFunctionType(Fn^.TypePtr) then
+         Result := ExFunctionCall(Fn, PsFunctionArgs)
   else if Fn^.Cls = XcPseudoFnRef then
-         PsFunctionCall := Fn^.PseudoFnPtr^.ParseFn(Fn)
+         Result := Fn^.PseudoFnPtr^.ParseFn(Fn)
 end;
 
 function PsArrayAccess(Arr : TExpression) : TExpression;
 var 
   Idx : TExpression;
 begin
+  if Arr^.Cls = XcVariable then Arr^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkLbracket);
   repeat
     Idx := PsExpression;
@@ -682,64 +687,76 @@ function PsFieldAccess(Rec : TExpression) : TExpression;
 var 
   Fld : TPsIdentifier;
 begin
+  if Rec^.Cls = XcVariable then Rec^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
   PsFieldAccess := ExFieldAccess(Rec,
                    FindField(Rec^.TypePtr, Fld.Name, {Required=}true))
 end;
 
-function PsVariable : TExpression;
+function _PsVariableInternal(ForStatement : boolean;
+                             CallFns : boolean) : TExpression;
 var 
   Id : TPsIdentifier;
   WithVarPtr : TPsWithVarPtr;
-  Found : TPsName;
+  Found : TPsNamePtr;
   Expr : TExpression;
+  Done : boolean;
 begin
   Id := PsIdentifier;
   WithVarPtr := FindWithVar(Id.Name);
+  Found := FindName(Id.Name, {Required=}false);
   if WithVarPtr <> nil then
   begin
     Expr := ExVariable(WithVarPtr^.VarPtr);
     Expr := ExFieldAccess(Expr,
             FindField(Expr^.TypePtr, Id.Name, {Required=}true))
   end
-  else
-  begin
-    Found := FindName(Id.Name, {Required=}true)^;
-    if Found.Cls = TncVariable then
-      Expr := ExVariable(Found.VarPtr)
-    else if Found.Cls = TncConstant then
-           Expr := ExCopy(Found.ConstPtr^.Value)
-    else if Found.Cls = TncFunction then
-           Expr := ExFnRef(Found.FnPtr)
-    else if Found.Cls = TncEnumVal then
-           Expr := ExEnumConstant(Found.Ordinal, Found.EnumTypePtr)
-    else if Found.Cls = TncPseudoFn then
-           Expr := ExPseudoFn(Found.PseudoFnPtr)
-    else
-      CompileError('Invalid identifier: ' + Id.Name)
-  end;
-  PsVariable := Expr
-end;
+  else if Found = nil then CompileError('Unknown identifier: ' + Id.Name)
+  else if Found^.Cls = TncVariable then Expr := ExVariable(Found^.VarPtr)
+  else if Found^.Cls = TncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
+  else if Found^.Cls = TncFunction then Expr := ExFnRef(Found^.FnPtr)
+  else if Found^.Cls = TncEnumVal then
+         Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
+  else if Found^.Cls = TncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)
+  else CompileError('Invalid identifier: ' + Id.Name);
 
-function PsVariableOrFunctionExtension(Expr : TExpression) : TExpression;
-var 
-  Done : boolean;
-begin
-  if (Expr^.Cls = XcVariable)
-     and (Lexer.Token.Id in [TkDot, TkLbracket, TkCaret, TkLparen]) then
-    Expr^.VarPtr^.WasUsed := true;
-  Done := false;
-  repeat
-    if (Expr^.Cls in [XcFnRef, XcPseudoFnRef]) then Expr := PsFunctionCall(Expr)
-    else if IsFunctionType(Expr^.TypePtr) and (Lexer.Token.Id = TkLparen) then
+  Done := ForStatement and (Expr^.Cls = XcFnRef)
+          and (Expr^.FnPtr = Defs.CurrentFn)
+          and (Lexer.Token.Id = TkAssign);
+  while not Done do
+  begin
+    if CallFns and (Expr^.Cls in [XcFnRef, XcPseudoFnRef]) then
+      Expr := PsFunctionCall(Expr)
+    else if CallFns and IsFunctionType(Expr^.TypePtr)
+            and (Lexer.Token.Id = TkLparen) then
            Expr := PsFunctionCall(Expr)
     else if Lexer.Token.Id = TkDot then Expr := PsFieldAccess(Expr)
     else if Lexer.Token.Id = TkLbracket then Expr := PsArrayAccess(Expr)
     else if Lexer.Token.Id = TkCaret then Expr := PsPointerDeref(Expr)
     else Done := true
-  until Done;
-  PsVariableOrFunctionExtension := Expr
+  end;
+
+  if (Expr^.Cls = XcVariable) and not ForStatement then
+    Expr^.VarPtr^.WasUsed := true
+  else if Expr^.Cls = XcFnRef then Expr^.FnPtr^.WasUsed := true;
+
+  Result := Expr
+end;
+
+function PsVariable : TExpression;
+begin
+  Result := _PsVariableInternal({ForStatement=}false, {CallFns=}true)
+end;
+
+function PsVariableOrFunction : TExpression;
+begin
+  Result := _PsVariableInternal({ForStatement=}false, {CallFns=}false)
+end;
+
+function PsVariableForStatement : TExpression;
+begin
+  Result := _PsVariableInternal({ForStatement=}true, {CallFns=}true)
 end;
 
 function IsOpAdding(Tok : TLxToken) : boolean;
@@ -905,12 +922,7 @@ begin
          Expr := ExIntegerConstant(ParseInt(GetTokenValueAndRead(TkInteger)))
   else if Lexer.Token.Id = TkReal then
          Expr := ExRealConstant(ParseReal(GetTokenValueAndRead(TkReal)))
-  else if Lexer.Token.Id = TkIdentifier then
-  begin
-    Expr := PsVariable;
-    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true;
-    Expr := PsVariableOrFunctionExtension(Expr)
-  end
+  else if Lexer.Token.Id = TkIdentifier then Expr := PsVariable
   else if Lexer.Token.Id = TkLbracket then Expr := PsSetConstructor
   else if Lexer.Token.Id = TkLparen then
   begin
@@ -926,10 +938,7 @@ begin
   else if Lexer.Token.Id = TkAt then
   begin
     WantTokenAndRead(TkAt);
-    Expr := PsVariable;
-    if Expr^.Cls = XcVariable then Expr^.VarPtr^.WasUsed := true
-    else if Expr^.Cls = XcFnRef then Expr^.FnPtr^.WasUsed := true;
-    Expr := ExAddressOf(Expr)
+    Expr := ExAddressOf(PsVariableOrFunction)
   end
   else
     CompileError('Invalid token in expression: ' + LxTokenStr);
@@ -1059,12 +1068,7 @@ var
   OrigLhs : TExpression;
   UsesTmpVars : boolean;
 begin
-  Lhs := PsVariable;
-  if (Lhs^.Cls <> XcFnRef)
-     or (Lhs^.FnPtr <> Defs.CurrentFn)
-     or (Lexer.Token.Id <> TkAssign) then
-    Lhs := PsVariableOrFunctionExtension(Lhs);
-
+  Lhs := PsVariableForStatement;
   if Lexer.Token.Id = TkAssign then
   begin
     WantTokenAndRead(TkAssign);

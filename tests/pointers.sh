@@ -18,6 +18,8 @@ echo "program foo; var I : integer; P : ^integer;
       begin I := 3; P := @I; write(P^) end." | outputs 3
 echo "program foo; type IP = ^integer; var I : integer; P : IP; PP : ^IP;
       begin I := 3; P := @I; PP := @P; write(PP^^) end." | outputs 3
+echo "program foo; type IP = ^integer; var R : record A : integer end; P : IP;
+      begin R.A := 3; P := @R.A; write(P^) end." | outputs 3
 
 # Can declare a pointer of a type defined in the same block.
 echo "program foo; type TP = ^T; T = integer; var P : TP;
