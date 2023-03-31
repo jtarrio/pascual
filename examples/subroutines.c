@@ -11,14 +11,14 @@ void SAY(PString WHAT, PBoolean EXCLAMATION) {
   Write(&OUTPUT, 1, RwpEnd | RwpLn);
 }
 
-void SWAP(PInteger *A, PInteger *B) {
+void SWAP(PInteger* A, PInteger* B) {
   PInteger C;
   C = *A;
   *A = *B;
   *B = C;
 }
 
-void SAYCONSTREF(const PString *WHAT) {
+void SAYCONSTREF(const PString* WHAT) {
   Write(&OUTPUT, 1, RwpStringPtr | RwpLn | RwpEnd, WHAT);
 }
 

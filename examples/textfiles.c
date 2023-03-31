@@ -4,7 +4,7 @@
 PFile INFILE;
 PFile OUTFILE;
 
-void COPYFILE(PFile *FILEIN, PFile *FILEOUT) {
+void COPYFILE(PFile* FILEIN, PFile* FILEOUT) {
   PString LINE;
   while (!Eof(FILEIN, 1)) {
     Read(FILEIN, 1, RwpString | RwpLn | RwpEnd, &LINE);
