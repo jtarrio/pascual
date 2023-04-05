@@ -668,18 +668,11 @@ void LXGETIDENTIFIER() {
     if (INTOKEN) POS = POS + 1;
   }
   LXGETSYMBOL(TKIDENTIFIER, POS);
-  do {
-    PInteger first = 1;
-    PInteger last = LENGTH(&LEXER.TOKEN.VALUE);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        LEXER.TOKEN.VALUE.chr[POS] = UPCASE(LEXER.TOKEN.VALUE.chr[POS]);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = LENGTH(&LEXER.TOKEN.VALUE); first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) LEXER.TOKEN.VALUE.chr[POS] = UPCASE(LEXER.TOKEN.VALUE.chr[POS]);
+    break;
+  }
   POS = 1;
   while (POS <= 40 && LEXER.TOKEN.ID == TKIDENTIFIER) {
     if (cmp_str(CoEq, CpStringPtr, &LEXER.TOKEN.VALUE, CpStringPtr, &KEYWORDS[subrange(POS, 1, 40) - 1])) LEXER.TOKEN.ID = TOKENS[subrange(POS, 1, 40) - 1];
@@ -1553,34 +1546,27 @@ PString UNPARSESTRING(const PString* ST) {
   PBoolean QUOTED;
   QUOTED = 0;
   RESULT = str_make(0, "");
-  do {
-    PInteger first = 1;
-    PInteger last = LENGTH(ST);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (ST->chr[POS] < ' ') {
-            if (QUOTED) {
-              QUOTED = 0;
-              RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
-            }
-            RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, '#', CpEnd | CpString, INTTOSTR((int)ST->chr[POS]));
-          }
-          else {
-            if (!QUOTED) {
-              QUOTED = 1;
-              RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
-            }
-            if (ST->chr[POS] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "''");
-            else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ST->chr[POS]);
-          }
+  for (PInteger first = 1, last = LENGTH(ST); first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      if (ST->chr[POS] < ' ') {
+        if (QUOTED) {
+          QUOTED = 0;
+          RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
         }
-        if (POS == last) break;
-        ++POS;
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpChar, '#', CpEnd | CpString, INTTOSTR((int)ST->chr[POS]));
+      }
+      else {
+        if (!QUOTED) {
+          QUOTED = 1;
+          RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
+        }
+        if (ST->chr[POS] == '\'') RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "''");
+        else RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ST->chr[POS]);
       }
     }
-  } while(0);
+    break;
+  }
   if (QUOTED) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '\'');
   if (cmp_str(CoEq, CpStringPtr, &RESULT, CpLenPtr, 0, "")) RESULT = str_make(2, "''");
   return RESULT;
@@ -1600,21 +1586,14 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
   else if (cmp_str(CoNotEq, CpStringPtr, &TYPEPTR->NAME, CpLenPtr, 0, "")) RESULT = TYPEPTR->NAME;
   else if (TYPEPTR->CLS == TTCENUM) {
     RESULT = str_of('(');
-    do {
-      PInteger first = 0;
-      PInteger last = TYPEPTR->ENUMPTR->SIZE - 1;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (POS != 0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ',');
-            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &TYPEPTR->ENUMPTR->VALUES[subrange(POS, 0, 127)]);
-          }
-          if (POS == last) break;
-          ++POS;
-        }
+    for (PInteger first = 0, last = TYPEPTR->ENUMPTR->SIZE - 1; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+        if (POS != 0) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ',');
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &TYPEPTR->ENUMPTR->VALUES[subrange(POS, 0, 127)]);
       }
-    } while(0);
+      break;
+    }
     RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
   }
   else if (TYPEPTR->CLS == TTCRANGE) RESULT = CONCAT(CpString, _ANTIORDINAL(TYPEPTR->RANGEDEF.FIRST, TYPEPTR->RANGEDEF.BASETYPEPTR), CpLenPtr, 2, "..", CpEnd | CpString, _ANTIORDINAL(TYPEPTR->RANGEDEF.LAST, TYPEPTR->RANGEDEF.BASETYPEPTR));
@@ -1624,21 +1603,14 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
   }
   else if (TYPEPTR->CLS == TTCRECORD) {
     RESULT = str_make(7, "RECORD ");
-    do {
-      PInteger first = 1;
-      PInteger last = TYPEPTR->RECPTR->SIZE;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
-            RESULT = CONCAT(CpStringPtr, &RESULT, CpString, DEEPTYPENAME(TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR, 0), CpChar, ':', CpEnd | CpStringPtr, &TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME);
-          }
-          if (POS == last) break;
-          ++POS;
-        }
+    for (PInteger first = 1, last = TYPEPTR->RECPTR->SIZE; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+        if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
+        RESULT = CONCAT(CpStringPtr, &RESULT, CpString, DEEPTYPENAME(TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR, 0), CpChar, ':', CpEnd | CpStringPtr, &TYPEPTR->RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME);
       }
-    } while(0);
+      break;
+    }
     RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, " END");
   }
   else if (TYPEPTR->CLS == TTCARRAY) RESULT = CONCAT(CpLenPtr, 7, "ARRAY [", CpString, DEEPTYPENAME(TYPEPTR->ARRAYDEF.INDEXTYPEPTR, 0), CpLenPtr, 5, "] OF ", CpEnd | CpString, DEEPTYPENAME(TYPEPTR->ARRAYDEF.VALUETYPEPTR, 0));
@@ -1654,24 +1626,17 @@ PString DEEPTYPENAME(TPSTYPE* TYPEPTR, PBoolean USEORIGINAL) {
       else RESULT = str_make(8, "FUNCTION");
       if (with1->ARGS.COUNT > 0) {
         RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, '(');
-        do {
-          PInteger first = 1;
-          PInteger last = with1->ARGS.COUNT;
-          if (first <= last) {
-            POS = first;
-            while (1) {
-              {
-                if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
-                if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 6, "CONST ");
-                else if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, "VAR ");
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].NAME);
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, 0));
-              }
-              if (POS == last) break;
-              ++POS;
-            }
+        for (PInteger first = 1, last = with1->ARGS.COUNT; first <= last; /*breaks*/) {
+          PBoolean done = 0;
+          for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+            if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, "; ");
+            if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 6, "CONST ");
+            else if (with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 4, "VAR ");
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpStringPtr, &with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].NAME);
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, 0));
           }
-        } while(0);
+          break;
+        }
         RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
       }
       if (with1->RETURNTYPEPTR != PNil) RESULT = CONCAT(CpStringPtr, &RESULT, CpLenPtr, 3, " : ", CpEnd | CpString, DEEPTYPENAME(with1->RETURNTYPEPTR, 0));
@@ -1730,18 +1695,11 @@ PBoolean ISSAMEFUNCTIONDEFINITION(TPSFUNCTION* DECLPTR, TPSFUNCTION FUN) {
   PInteger POS;
   DECL = *DECLPTR;
   SAME = ISSAMETYPE(DECL.RETURNTYPEPTR, FUN.RETURNTYPEPTR) && DECL.ARGS.COUNT == FUN.ARGS.COUNT;
-  do {
-    PInteger first = 1;
-    PInteger last = DECL.ARGS.COUNT;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        SAME = SAME && ISSAMETYPE(DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR) && DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE;
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = DECL.ARGS.COUNT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) SAME = SAME && ISSAMETYPE(DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].TYPEPTR) && DECL.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == FUN.ARGS.DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE;
+    break;
+  }
   RESULT = SAME;
   return RESULT;
 }
@@ -2048,18 +2006,11 @@ TPSTYPE* MAKEENUMTYPE(const TPSENUMDEF* ENUM) {
   RESULT = _NEWTYPE(TTCENUM);
   RESULT->ENUMPTR = NEWENUM(ENUM);
   RESULT->WASUSED = 1;
-  do {
-    PInteger first = 0;
-    PInteger last = RESULT->ENUMPTR->SIZE - 1;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        ADDENUMVALNAME(POS, RESULT);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 0, last = RESULT->ENUMPTR->SIZE - 1; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) ADDENUMVALNAME(POS, RESULT);
+    break;
+  }
   return RESULT;
 }
 
@@ -2163,18 +2114,11 @@ PBoolean ARESAMEARGS(const TPSFNARGS* A, const TPSFNARGS* B) {
   PBoolean RESULT;
   PInteger POS;
   RESULT = A->COUNT == B->COUNT;
-  if (RESULT) do {
-    PInteger first = 1;
-    PInteger last = A->COUNT;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        RESULT = RESULT && A->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == B->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE && A->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT == B->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT && ISSAMETYPE(A->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, B->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  if (RESULT) for (PInteger first = 1, last = A->COUNT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) RESULT = RESULT && A->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE == B->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE && A->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT == B->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT && ISSAMETYPE(A->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, B->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
+    break;
+  }
   return RESULT;
 }
 
@@ -2366,18 +2310,11 @@ void EXDISPOSE(TEXPRESSIONOBJ** EXPR) {
     case XCFNCALL:
       {
         EXDISPOSE(&(*EXPR)->FNEXPR);
-        do {
-          PInteger first = 1;
-          PInteger last = (*EXPR)->CALLARGS.SIZE;
-          if (first <= last) {
-            POS = first;
-            while (1) {
-              EXDISPOSE(&(*EXPR)->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
-              if (POS == last) break;
-              ++POS;
-            }
-          }
-        } while(0);
+        for (PInteger first = 1, last = (*EXPR)->CALLARGS.SIZE; first <= last; /*breaks*/) {
+          PBoolean done = 0;
+          for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) EXDISPOSE(&(*EXPR)->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+          break;
+        }
       }
       break;
     case XCCONVERTTOSTR:
@@ -2585,18 +2522,11 @@ TEXPRESSIONOBJ* EXCOPY(TEXPRESSIONOBJ* EXPR) {
       {
         COPY->FNEXPR = EXCOPY(EXPR->FNEXPR);
         COPY->CALLARGS.SIZE = EXPR->CALLARGS.SIZE;
-        do {
-          PInteger first = 1;
-          PInteger last = EXPR->CALLARGS.SIZE;
-          if (first <= last) {
-            POS = first;
-            while (1) {
-              COPY->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
-              if (POS == last) break;
-              ++POS;
-            }
-          }
-        } while(0);
+        for (PInteger first = 1, last = EXPR->CALLARGS.SIZE; first <= last; /*breaks*/) {
+          PBoolean done = 0;
+          for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) COPY->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+          break;
+        }
       }
       break;
     case XCPSEUDOFNREF:
@@ -2853,21 +2783,14 @@ PString EXDESCRIBE(TEXPRESSIONOBJ* EXPR) {
     case XCFNCALL:
       {
         RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->FNEXPR), CpEnd | CpChar, '(');
-        do {
-          PInteger first = 1;
-          PInteger last = EXPR->CALLARGS.SIZE;
-          if (first <= last) {
-            POS = first;
-            while (1) {
-              {
-                if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
-                RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]));
-              }
-              if (POS == last) break;
-              ++POS;
-            }
+        for (PInteger first = 1, last = EXPR->CALLARGS.SIZE; first <= last; /*breaks*/) {
+          PBoolean done = 0;
+          for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+            if (POS != 1) RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpLenPtr, 2, ", ");
+            RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpString, EXDESCRIBE(EXPR->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]));
           }
-        } while(0);
+          break;
+        }
         RESULT = CONCAT(CpStringPtr, &RESULT, CpEnd | CpChar, ')');
       }
       break;
@@ -3298,33 +3221,26 @@ TEXPRESSIONOBJ* _EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, const TPSFNARGS* ARGDEFS
   FNCALL->ISFUNCTIONRESULT = 1;
   FNCALL->ISSTATEMENT = 1;
   RESULT = FNCALL;
-  do {
-    PInteger first = 1;
-    PInteger last = ARGS->SIZE;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 16) - 1], ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
-          if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
-            if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]->ISADDRESSABLE) {
-              if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
-                RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1], RESULT);
-                FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(RESULT->TMPVAR);
-              }
-              else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1])));
-            }
-            else if (!ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
-              ENSUREASSIGNABLEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
-              EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
-            }
+  for (PInteger first = 1, last = ARGS->SIZE; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOERCE(ARGS->VALUES[subrange(POS, 1, 16) - 1], ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR);
+      if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
+        if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]->ISADDRESSABLE) {
+          if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
+            RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1], RESULT);
+            FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(RESULT->TMPVAR);
           }
+          else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1])));
         }
-        if (POS == last) break;
-        ++POS;
+        else if (!ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
+          ENSUREASSIGNABLEEXPR(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+          EXMARKINITIALIZED(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]);
+        }
       }
     }
-  } while(0);
+    break;
+  }
   return RESULT;
 }
 
@@ -4792,20 +4708,13 @@ void PSRECORDFIELD(TPSRECORDDEF* REC, TLXTOKENID DELIMITER) {
   LASTFIELD = REC->SIZE;
   do {
     NAME = GETTOKENVALUEANDREAD(TKIDENTIFIER);
-    do {
-      PInteger first = 1;
-      PInteger last = REC->SIZE;
-      if (first <= last) {
-        FIELD = first;
-        while (1) {
-          {
-            if (cmp_str(CoEq, CpStringPtr, &REC->FIELDS[subrange(FIELD, 1, 64) - 1].NAME, CpStringPtr, &NAME)) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
-          }
-          if (FIELD == last) break;
-          ++FIELD;
-        }
+    for (PInteger first = 1, last = REC->SIZE; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (FIELD = first; !done; done = FIELD == last ? 1 : (++FIELD, 0)) {
+        if (cmp_str(CoEq, CpStringPtr, &REC->FIELDS[subrange(FIELD, 1, 64) - 1].NAME, CpStringPtr, &NAME)) COMPILEERROR(CONCAT(CpLenPtr, 14, "A field named ", CpStringPtr, &NAME, CpEnd | CpLenPtr, 25, " has already been defined"));
       }
-    } while(0);
+      break;
+    }
     REC->SIZE = REC->SIZE + 1;
     if (REC->SIZE > 64) COMPILEERROR(str_make(25, "Too many fields in record"));
     REC->FIELDS[subrange(REC->SIZE, 1, 64) - 1].NAME = NAME;
@@ -4814,18 +4723,11 @@ void PSRECORDFIELD(TPSRECORDDEF* REC, TLXTOKENID DELIMITER) {
   } while (LEXER.TOKEN.ID != TKCOLON);
   WANTTOKENANDREAD(TKCOLON);
   TYPEPTR = PSTYPEDENOTER();
-  do {
-    PInteger first = LASTFIELD + 1;
-    PInteger last = REC->SIZE;
-    if (first <= last) {
-      FIELD = first;
-      while (1) {
-        REC->FIELDS[subrange(FIELD, 1, 64) - 1].TYPEPTR = TYPEPTR;
-        if (FIELD == last) break;
-        ++FIELD;
-      }
-    }
-  } while(0);
+  for (PInteger first = LASTFIELD + 1, last = REC->SIZE; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (FIELD = first; !done; done = FIELD == last ? 1 : (++FIELD, 0)) REC->FIELDS[subrange(FIELD, 1, 64) - 1].TYPEPTR = TYPEPTR;
+    break;
+  }
   WANTTOKEN2(TKSEMICOLON, DELIMITER);
   SKIPTOKEN(TKSEMICOLON);
 }
@@ -4909,18 +4811,11 @@ void PSARGUMENTS(TPSFNARGS* ARGS) {
     }
     else if (ISVAR) TYPEPTR = PNil;
     else COMPILEERROR(str_make(44, "Untyped parameters must be pass-by-reference"));
-    do {
-      PInteger first = LASTARG + 1;
-      PInteger last = ARGS->COUNT;
-      if (first <= last) {
-        ARG = first;
-        while (1) {
-          ARGS->DEFS[subrange(ARG, 1, 16) - 1].TYPEPTR = TYPEPTR;
-          if (ARG == last) break;
-          ++ARG;
-        }
-      }
-    } while(0);
+    for (PInteger first = LASTARG + 1, last = ARGS->COUNT; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (ARG = first; !done; done = ARG == last ? 1 : (++ARG, 0)) ARGS->DEFS[subrange(ARG, 1, 16) - 1].TYPEPTR = TYPEPTR;
+      break;
+    }
     WANTTOKEN2(TKSEMICOLON, TKRPAREN);
     SKIPTOKEN(TKSEMICOLON);
   } while (LEXER.TOKEN.ID != TKRPAREN);
@@ -5172,21 +5067,14 @@ void PSVARDEFINITIONS() {
     }
     else LOCATION = PNil;
     WANTTOKENANDREAD(TKSEMICOLON);
-    do {
-      PInteger first = 1;
-      PInteger last = NUMNAMES;
-      if (first <= last) {
-        NUMNAMES = first;
-        while (1) {
-          {
-            if (LOCATION == PNil) OUTVARIABLEDEFINITION(({ TPSVARIABLE tmp1 = MAKEVARIABLE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR); ADDVARIABLE(&tmp1); }), PNil);
-            else OUTVARIABLEDEFINITION(({ TPSVARIABLE tmp2 = MAKEREFERENCE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR); ADDVARIABLE(&tmp2); }), LOCATION);
-          }
-          if (NUMNAMES == last) break;
-          ++NUMNAMES;
-        }
+    for (PInteger first = 1, last = NUMNAMES; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (NUMNAMES = first; !done; done = NUMNAMES == last ? 1 : (++NUMNAMES, 0)) {
+        if (LOCATION == PNil) OUTVARIABLEDEFINITION(({ TPSVARIABLE tmp1 = MAKEVARIABLE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR); ADDVARIABLE(&tmp1); }), PNil);
+        else OUTVARIABLEDEFINITION(({ TPSVARIABLE tmp2 = MAKEREFERENCE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR); ADDVARIABLE(&tmp2); }), LOCATION);
       }
-    } while(0);
+      break;
+    }
     if (LOCATION != PNil) EXDISPOSE(&LOCATION);
   } while (LEXER.TOKEN.ID == TKIDENTIFIER);
   OUTENUMVALUESFROMCHECKPOINT(CHECKPOINT);
@@ -5198,18 +5086,11 @@ void PSFUNCTIONBODY(TPSFUNCTION* FNPTR) {
   TPSVARIABLE* RESULTPTR;
   STARTLOCALSCOPE(FNPTR);
   CHECKPOINT = DEFS.LATEST;
-  do {
-    PInteger first = 1;
-    PInteger last = FNPTR->ARGS.COUNT;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        ADDVARIABLE(&FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = FNPTR->ARGS.COUNT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) ADDVARIABLE(&FNPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
+    break;
+  }
   OUTFUNCTIONDEFINITION(FNPTR);
   OUTENUMVALUESFROMCHECKPOINT(CHECKPOINT);
   if (FNPTR->RETURNTYPEPTR != PNil) {
@@ -6200,19 +6081,12 @@ TEXPRESSIONOBJ* _MODIOWRITE_PARSE(TEXPRESSIONOBJ* FNEXPR) {
 
 void _UPFIRST(PString* STR) {
   PInteger POS;
-  do {
-    PInteger first = 1;
-    PInteger last = LENGTH(STR);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        if (POS == 1) STR->chr[POS] = UPCASE(STR->chr[POS]);
-        else STR->chr[POS] = LOWERCASE(STR->chr[POS]);
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = LENGTH(STR); first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) if (POS == 1) STR->chr[POS] = UPCASE(STR->chr[POS]);
+    else STR->chr[POS] = LOWERCASE(STR->chr[POS]);
+    break;
+  }
 }
 
 TEXPRESSIONOBJ* _MODIO_FILEFUN_PARSE(TEXPRESSIONOBJ* FNEXPR) {
@@ -6698,18 +6572,11 @@ void _OUTBLANKLINE(TOUTPUTTYPE NEWOUT) {
 
 void _OUTINDENT() {
   PInteger CT;
-  if (CODEGEN.NEWLINE) do {
-    PInteger first = 1;
-    PInteger last = CODEGEN.INDENT;
-    if (first <= last) {
-      CT = first;
-      while (1) {
-        Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "  ");
-        if (CT == last) break;
-        ++CT;
-      }
-    }
-  } while(0);
+  if (CODEGEN.NEWLINE) for (PInteger first = 1, last = CODEGEN.INDENT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (CT = first; !done; done = CT == last ? 1 : (++CT, 0)) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "  ");
+    break;
+  }
   CODEGEN.NEWLINE = 0;
 }
 
@@ -6760,29 +6627,22 @@ void _OUTCSTRING(const PString* STR) {
   PInteger POS;
   PChar CH;
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '"');
-  do {
-    PInteger first = 1;
-    PInteger last = LENGTH(STR);
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          CH = STR->chr[POS];
-          if (CH < ' ' || CH > '~') {
-            _OUTESCAPEDCHAR(CH);
-            if (POS < LENGTH(STR) && LXISHEXDIGIT(STR->chr[POS + 1])) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\"\"");
-          }
-          else {
-            if (CH == '"') Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\\\"");
-            else if (CH == '\\') Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\\\\");
-            else Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, CH);
-          }
-        }
-        if (POS == last) break;
-        ++POS;
+  for (PInteger first = 1, last = LENGTH(STR); first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      CH = STR->chr[POS];
+      if (CH < ' ' || CH > '~') {
+        _OUTESCAPEDCHAR(CH);
+        if (POS < LENGTH(STR) && LXISHEXDIGIT(STR->chr[POS + 1])) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\"\"");
+      }
+      else {
+        if (CH == '"') Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\\\"");
+        else if (CH == '\\') Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\\\\");
+        else Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, CH);
       }
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '"');
 }
 
@@ -6996,54 +6856,33 @@ void _OUTSETIMMEDIATE(TEXPRESSIONOBJ* EXPR) {
   HIGHBOUND = GETTYPEHIGHBOUND(ELEMTYPEPTR);
   LOWBOUNDBYTE = GETTYPELOWBOUND(ELEMTYPEPTR) / 8;
   SETSIZE = HIGHBOUND / 8 - LOWBOUND / 8 + 1;
-  do {
-    PInteger first = 1;
-    PInteger last = SETSIZE;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        SETELEMS[subrange(POS, 1, 32) - 1] = 0;
-        if (POS == last) break;
-        ++POS;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = SETSIZE; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) SETELEMS[subrange(POS, 1, 32) - 1] = 0;
+    break;
+  }
   while (BOUNDS != PNil) {
     if (BOUNDS->FIRST < LOWBOUND || BOUNDS->LAST > HIGHBOUND) COMPILEERROR(CONCAT(CpLenPtr, 4, "Set ", CpString, EXDESCRIBE(EXPR), CpLenPtr, 19, " contains elements ", CpLenPtr, 27, "that are out of bounds for ", CpEnd | CpString, TYPENAME(EXPR->TYPEPTR)));
-    do {
-      PInteger first = BOUNDS->FIRST;
-      PInteger last = BOUNDS->LAST;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            BYTENUM = 1 + POS / 8 - LOWBOUNDBYTE;
-            BITNUM = POS % 8;
-            SETELEMS[subrange(BYTENUM, 1, 32) - 1] = SETELEMS[subrange(BYTENUM, 1, 32) - 1] | 1 << BITNUM;
-          }
-          if (POS == last) break;
-          ++POS;
-        }
+    for (PInteger first = BOUNDS->FIRST, last = BOUNDS->LAST; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+        BYTENUM = 1 + POS / 8 - LOWBOUNDBYTE;
+        BITNUM = POS % 8;
+        SETELEMS[subrange(BYTENUM, 1, 32) - 1] = SETELEMS[subrange(BYTENUM, 1, 32) - 1] | 1 << BITNUM;
       }
-    } while(0);
+      break;
+    }
     BOUNDS = BOUNDS->NEXT;
   }
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 5, "(PSet", RwpInt, SETSIZE * 8, RwpLenPtr | RwpEnd, 4, ") { ");
-  do {
-    PInteger first = 1;
-    PInteger last = SETSIZE;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (POS != 1) _OUTCOMMA();
-          Write(&CODEGEN.OUTPUT, 1, RwpInt | RwpEnd, SETELEMS[subrange(POS, 1, 32) - 1]);
-        }
-        if (POS == last) break;
-        ++POS;
-      }
+  for (PInteger first = 1, last = SETSIZE; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      if (POS != 1) _OUTCOMMA();
+      Write(&CODEGEN.OUTPUT, 1, RwpInt | RwpEnd, SETELEMS[subrange(POS, 1, 32) - 1]);
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, " }");
 }
 
@@ -7197,25 +7036,18 @@ void _OUTEXSTRINGCHAR(TEXPRESSIONOBJ* EXPR) {
 void _OUTEXFUNCTIONCALLARGS(const TPSFNARGS* ARGDEFS, const TEXFUNCTIONARGS* ARGVALUES) {
   PInteger POS;
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '(');
-  do {
-    PInteger first = 1;
-    PInteger last = ARGVALUES->SIZE;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (POS != 1) _OUTCOMMA();
-          if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
-            ENSUREADDRESSABLEEXPR(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
-            _OUTADDRESS(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
-          }
-          else OUTEXPRESSION(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
-        }
-        if (POS == last) break;
-        ++POS;
+  for (PInteger first = 1, last = ARGVALUES->SIZE; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      if (POS != 1) _OUTCOMMA();
+      if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
+        ENSUREADDRESSABLEEXPR(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
+        _OUTADDRESS(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
       }
+      else OUTEXPRESSION(ARGVALUES->VALUES[subrange(POS, 1, 16) - 1]);
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
 }
 
@@ -7925,21 +7757,14 @@ void OUTENUMVALUES(TPSENUMDEF* ENUMPTR) {
   _OUTBLANKLINE(TOTENUMVAL);
   _OUTINDENT();
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 22, "const char* enumvalues", RwpInt, ENUMPTR->ID, RwpLenPtr | RwpEnd, 7, "[] = { ");
-  do {
-    PInteger first = 0;
-    PInteger last = ENUMPTR->SIZE - 1;
-    if (first <= last) {
-      POSINENUM = first;
-      while (1) {
-        {
-          if (POSINENUM != 0) _OUTCOMMA();
-          Write(&CODEGEN.OUTPUT, 1, RwpChar, '"', RwpStringPtr, &ENUMPTR->VALUES[subrange(POSINENUM, 0, 127)], RwpChar | RwpEnd, '"');
-        }
-        if (POSINENUM == last) break;
-        ++POSINENUM;
-      }
+  for (PInteger first = 0, last = ENUMPTR->SIZE - 1; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POSINENUM = first; !done; done = POSINENUM == last ? 1 : (++POSINENUM, 0)) {
+      if (POSINENUM != 0) _OUTCOMMA();
+      Write(&CODEGEN.OUTPUT, 1, RwpChar, '"', RwpStringPtr, &ENUMPTR->VALUES[subrange(POSINENUM, 0, 127)], RwpChar | RwpEnd, '"');
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 3, " };");
   _OUTNEWLINE();
 }
@@ -7970,31 +7795,17 @@ PString _GETRANGETYPE(TPSTYPE* TYPEPTR) {
   FITTYPES = (PSet8) { 0 };
   LOW = GETTYPELOWBOUND(TYPEPTR);
   HIGH = GETTYPEHIGHBOUND(TYPEPTR);
-  do {
-    PInteger first = U8;
-    PInteger last = S32;
-    if (first <= last) {
-      T = first;
-      while (1) {
-        if (LOW >= LOWLIMITS[T] && HIGH <= HIGHLIMITS[T]) FITTYPES = ({ PSet8 dst; set_union(FITTYPES.bits, ({ PSet8 dst = (PSet8) { 0 }; set_set(T, T, 0, dst.bits); dst; }).bits, dst.bits, 1); dst; });
-        if (T == last) break;
-        ++T;
-      }
-    }
-  } while(0);
+  for (PInteger first = U8, last = S32; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (T = first; !done; done = T == last ? 1 : (++T, 0)) if (LOW >= LOWLIMITS[T] && HIGH <= HIGHLIMITS[T]) FITTYPES = ({ PSet8 dst; set_union(FITTYPES.bits, ({ PSet8 dst = (PSet8) { 0 }; set_set(T, T, 0, dst.bits); dst; }).bits, dst.bits, 1); dst; });
+    break;
+  }
   RESULT = str_make(8, "PInteger");
-  do {
-    PInteger first = S32;
-    PInteger last = U8;
-    if (first >= last) {
-      T = first;
-      while (1) {
-        if (set_in(T, 0, FITTYPES.bits)) RESULT = NAMES[T];
-        if (T == last) break;
-        --T;
-      }
-    }
-  } while(0);
+  for (PInteger first = S32, last = U8; first >= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (T = first; !done; done = T == last ? 1 : (--T, 0)) if (set_in(T, 0, FITTYPES.bits)) RESULT = NAMES[T];
+    break;
+  }
   return RESULT;
 }
 
@@ -8046,39 +7857,32 @@ void OUTNAMEANDRECORD(const PString* NAME, TPSRECORDDEF* RECPTR) {
     if (RECPTR->ISPACKED) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 28, "__attribute__((__packed__)) ");
     Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 6, "record", RwpInt, RECPTR->ID, RwpChar | RwpEnd, ' ');
     OUTBEGIN();
-    do {
-      PInteger first = 1;
-      PInteger last = RECPTR->SIZE;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[subrange(NUMVARIANT + 1, 1, 64) - 1] == POS) {
-              NUMVARIANT = NUMVARIANT + 1;
-              if (NUMVARIANT == 1) {
-                _OUTINDENT();
-                Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 6, "union ");
-                OUTBEGIN();
-              }
-              else {
-                OUTENDSAMELINE();
-                Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ';');
-                _OUTNEWLINE();
-              }
-              _OUTINDENT();
-              Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, "struct ");
-              OUTBEGIN();
-            }
+    for (PInteger first = 1, last = RECPTR->SIZE; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+        if (RECPTR->NUMVARIANTS > NUMVARIANT && RECPTR->VARIANTBOUNDS[subrange(NUMVARIANT + 1, 1, 64) - 1] == POS) {
+          NUMVARIANT = NUMVARIANT + 1;
+          if (NUMVARIANT == 1) {
             _OUTINDENT();
-            OUTNAMEANDTYPE(&RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR);
+            Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 6, "union ");
+            OUTBEGIN();
+          }
+          else {
+            OUTENDSAMELINE();
             Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ';');
             _OUTNEWLINE();
           }
-          if (POS == last) break;
-          ++POS;
+          _OUTINDENT();
+          Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 7, "struct ");
+          OUTBEGIN();
         }
+        _OUTINDENT();
+        OUTNAMEANDTYPE(&RECPTR->FIELDS[subrange(POS, 1, 64) - 1].NAME, RECPTR->FIELDS[subrange(POS, 1, 64) - 1].TYPEPTR);
+        Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ';');
+        _OUTNEWLINE();
       }
-    } while(0);
+      break;
+    }
     if (NUMVARIANT > 0) {
       OUTENDSAMELINE();
       Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ';');
@@ -8098,21 +7902,14 @@ void OUTNAMEANDENUM(const PString* NAME, TPSENUMDEF* ENUMPTR) {
   if (ENUMPTR->HASBEENDEFINED) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 9, "enum enum", RwpInt | RwpEnd, ENUMPTR->ID);
   else {
     Write(&CODEGEN.OUTPUT, 1, RwpLenPtr, 37, "enum __attribute__((__packed__)) enum", RwpInt, ENUMPTR->ID, RwpLenPtr | RwpEnd, 3, " { ");
-    do {
-      PInteger first = 0;
-      PInteger last = ENUMPTR->SIZE - 1;
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          {
-            if (POS > 0) _OUTCOMMA();
-            Write(&CODEGEN.OUTPUT, 1, RwpStringPtr | RwpEnd, &ENUMPTR->VALUES[subrange(POS, 0, 127)]);
-          }
-          if (POS == last) break;
-          ++POS;
-        }
+    for (PInteger first = 0, last = ENUMPTR->SIZE - 1; first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+        if (POS > 0) _OUTCOMMA();
+        Write(&CODEGEN.OUTPUT, 1, RwpStringPtr | RwpEnd, &ENUMPTR->VALUES[subrange(POS, 0, 127)]);
       }
-    } while(0);
+      break;
+    }
     Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, " }");
     ENUMPTR->HASBEENDEFINED = 1;
   }
@@ -8138,21 +7935,14 @@ void OUTNAMEANDFUNCTION(const PString* NAME, TPSTYPE* TYPEPTR) {
     OUTNAMEANDTYPE(&tmp1, TYPEPTR->FNDEFPTR->RETURNTYPEPTR);
   }
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '(');
-  do {
-    PInteger first = 1;
-    PInteger last = TYPEPTR->FNDEFPTR->ARGS.COUNT;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (POS != 1) _OUTCOMMA();
-          OUTVARIABLEDECLARATION(TYPEPTR->FNDEFPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
-        }
-        if (POS == last) break;
-        ++POS;
-      }
+  for (PInteger first = 1, last = TYPEPTR->FNDEFPTR->ARGS.COUNT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      if (POS != 1) _OUTCOMMA();
+      OUTVARIABLEDECLARATION(TYPEPTR->FNDEFPTR->ARGS.DEFS[subrange(POS, 1, 16) - 1]);
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
 }
 
@@ -8265,21 +8055,14 @@ void OUTFUNCTIONPROTOTYPE(TPSFUNCTION DEF) {
   _OUTINDENT();
   OUTNAMEANDTYPE(&DEF.EXTERNALNAME, DEF.RETURNTYPEPTR);
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, '(');
-  do {
-    PInteger first = 1;
-    PInteger last = DEF.ARGS.COUNT;
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          if (POS != 1) _OUTCOMMA();
-          OUTVARIABLEDECLARATION(DEF.ARGS.DEFS[subrange(POS, 1, 16) - 1]);
-        }
-        if (POS == last) break;
-        ++POS;
-      }
+  for (PInteger first = 1, last = DEF.ARGS.COUNT; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      if (POS != 1) _OUTCOMMA();
+      OUTVARIABLEDECLARATION(DEF.ARGS.DEFS[subrange(POS, 1, 16) - 1]);
     }
-  } while(0);
+    break;
+  }
   Write(&CODEGEN.OUTPUT, 1, RwpChar | RwpEnd, ')');
 }
 
@@ -8551,18 +8334,11 @@ PString REPLACEEXTENSION(PString STR, PString OLD, PString NEW) {
   BASELEN = LENGTH(&STR) - LENGTH(&OLD);
   if (BASELEN > 0) {
     MATCHES = 1;
-    do {
-      PInteger first = 1;
-      PInteger last = LENGTH(&OLD);
-      if (first <= last) {
-        POS = first;
-        while (1) {
-          MATCHES = MATCHES && UPCASE(STR.chr[POS + BASELEN]) == UPCASE(OLD.chr[POS]);
-          if (POS == last) break;
-          ++POS;
-        }
-      }
-    } while(0);
+    for (PInteger first = 1, last = LENGTH(&OLD); first <= last; /*breaks*/) {
+      PBoolean done = 0;
+      for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) MATCHES = MATCHES && UPCASE(STR.chr[POS + BASELEN]) == UPCASE(OLD.chr[POS]);
+      break;
+    }
     if (MATCHES) RESULT = CONCAT(CpString, COPY(&STR, 1, BASELEN), CpEnd | CpStringPtr, &NEW);
   }
   return RESULT;
@@ -8580,35 +8356,28 @@ void PARSECMDLINE() {
   OUTPUTFILE = str_make(0, "");
   SUPPRESSWARNINGS = 0;
   FLAG = FLAGNONE;
-  do {
-    PInteger first = 1;
-    PInteger last = PARAMCOUNT();
-    if (first <= last) {
-      POS = first;
-      while (1) {
-        {
-          PARAM = PARAMSTR(POS);
-          if (PARAM.chr[1] == '-' && cmp_str(CoNotEq, CpStringPtr, &PARAM, CpChar, '-')) {
-            if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-o")) FLAG = FLAGOUTPUT;
-            else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 6, "-Wnone")) SUPPRESSWARNINGS = 1;
-            else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-h")) USAGE(str_make(0, ""));
-            else USAGE(CONCAT(CpLenPtr, 16, "Unknown option: ", CpEnd | CpStringPtr, &PARAM));
-          }
-          else if (FLAG == FLAGOUTPUT) {
-            if (cmp_str(CoNotEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(39, "Output file must be specified only once"));
-            else OUTPUTFILE = PARAM;
-            FLAG = FLAGNONE;
-          }
-          else {
-            if (cmp_str(CoNotEq, CpStringPtr, &INPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(38, "Input file must be specified only once"));
-            else INPUTFILE = PARAM;
-          }
-        }
-        if (POS == last) break;
-        ++POS;
+  for (PInteger first = 1, last = PARAMCOUNT(); first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) {
+      PARAM = PARAMSTR(POS);
+      if (PARAM.chr[1] == '-' && cmp_str(CoNotEq, CpStringPtr, &PARAM, CpChar, '-')) {
+        if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-o")) FLAG = FLAGOUTPUT;
+        else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 6, "-Wnone")) SUPPRESSWARNINGS = 1;
+        else if (cmp_str(CoEq, CpStringPtr, &PARAM, CpLenPtr, 2, "-h")) USAGE(str_make(0, ""));
+        else USAGE(CONCAT(CpLenPtr, 16, "Unknown option: ", CpEnd | CpStringPtr, &PARAM));
+      }
+      else if (FLAG == FLAGOUTPUT) {
+        if (cmp_str(CoNotEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(39, "Output file must be specified only once"));
+        else OUTPUTFILE = PARAM;
+        FLAG = FLAGNONE;
+      }
+      else {
+        if (cmp_str(CoNotEq, CpStringPtr, &INPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(38, "Input file must be specified only once"));
+        else INPUTFILE = PARAM;
       }
     }
-  } while(0);
+    break;
+  }
   if (cmp_str(CoEq, CpStringPtr, &INPUTFILE, CpLenPtr, 0, "")) USAGE(str_make(28, "Input file must be specified"));
   if (cmp_str(CoEq, CpStringPtr, &OUTPUTFILE, CpLenPtr, 0, "")) {
     if (cmp_str(CoEq, CpStringPtr, &INPUTFILE, CpChar, '-')) OUTPUTFILE = str_of('-');
