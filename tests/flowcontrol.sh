@@ -166,3 +166,9 @@ testlooptype "(A,B,C,D,E,F)" "for i := B to E do write(i)" | outputs 'S BCDE E'
 testlooptype boolean "for i := false to true do write(i)" |
 outputs 'S FALSETRUE E'
 testlooptype string "for i := 'a' to 'z' do write(i)" | is_not_valid
+
+testlooptype "integer; j : integer" \
+             "for i := 1 to 3 do
+                for j := i * 10 + 1 to i * 10 + 3 do
+                  write(i, ',', j, ' ')" |
+outputs 'S 1,11 1,12 1,13 2,21 2,22 2,23 3,31 3,32 3,33  E'

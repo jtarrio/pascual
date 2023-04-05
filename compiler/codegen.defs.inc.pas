@@ -63,7 +63,7 @@ forward;
 procedure OutForBegin(Iter, FirstExpr, LastExpr : TExpression;
                       Ascending : boolean);
 forward;
-procedure OutForEnd(Iter : TExpression; Ascending : boolean);
+procedure OutForEnd;
 forward;
 procedure OutExpressionStatement(Expr : TExpression);
 forward;

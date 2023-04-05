@@ -1215,7 +1215,7 @@ begin
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
   PsStatement;
-  OutForEnd(Iter, Ascending);
+  OutForEnd;
   ExDispose(Iter);
   ExDispose(First);
   ExDispose(Last)

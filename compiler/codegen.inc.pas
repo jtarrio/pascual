@@ -1618,57 +1618,45 @@ begin
   First := MakeVariable('first', LimitType);
   Last := MakeVariable('last', LimitType);
   _OutIndent;
-  write(Codegen.Output, 'do ');
-  OutBegin;
-  _OutIndent;
+  write(Codegen.Output, 'for (');
   OutVariableDeclaration(First);
   write(Codegen.Output, ' = ');
   OutExpression(FirstExpr);
-  write(Codegen.Output, ';');
-  _OutNewline;
-  _OutIndent;
-  OutVariableDeclaration(Last);
+  _OutComma;
+  write(Codegen.Output, Last.Name);
   write(Codegen.Output, ' = ');
   OutExpression(LastExpr);
-  write(Codegen.Output, ';');
-  _OutNewline;
-  _OutIndent;
-  write(Codegen.Output, 'if (first ');
+  write(Codegen.Output, '; ');
+  write(Codegen.Output, 'first ');
   if Ascending then
     write(Codegen.Output, '<=')
   else
     write(Codegen.Output, '>=');
-  write(Codegen.Output, ' last) ');
+  write(Codegen.Output, ' last; /*breaks*/) ');
   OutBegin;
   _OutIndent;
-  OutExpression(Iter);
-  write(Codegen.Output, ' = first;');
+  write(Codegen.Output, 'PBoolean done = 0;');
   _OutNewline;
   _OutIndent;
-  write(Codegen.Output, 'while (1) ');
-  OutBegin
-end;
-
-procedure OutForEnd;
-begin
-  _OutIndent;
-  write(Codegen.Output, 'if (');
+  write(Codegen.Output, 'for (');
   OutExpression(Iter);
-  write(Codegen.Output, ' == last) break;');
-  _OutNewline;
-  _OutIndent;
+  write(Codegen.Output, ' = first; !done; done = ');
+    OutExpression(Iter);
+  write(Codegen.Output, ' == last ? 1 : (');
   if Ascending then
     write(Codegen.Output, '++')
   else
     write(Codegen.Output, '--');
   OutExpression(Iter);
-  write(Codegen.Output, ';');
+  write(Codegen.Output, ', 0)) ')
+end;
+
+procedure OutForEnd;
+begin
+  _OutIndent;
+  write(Codegen.Output, 'break;');
   _OutNewline;
-  OutEnd;
-  OutEnd;
-  OutEndSameLine;
-  write(Codegen.Output, ' while(0);');
-  _OutNewline
+  OutEnd
 end;
 
 procedure OutExpressionStatement;

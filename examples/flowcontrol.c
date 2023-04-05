@@ -60,71 +60,36 @@ void SHOWWHILE() {
 
 void SHOWFOR() {
   PInteger I;
-  do {
-    PInteger first = 1;
-    PInteger last = 10;
-    if (first <= last) {
-      I = first;
-      while (1) {
-        Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-        if (I == last) break;
-        ++I;
-      }
+  for (PInteger first = 1, last = 10; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (I = first; !done; done = I == last ? 1 : (++I, 0)) Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
+    break;
+  }
+  for (PInteger first = 10, last = 1; first >= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (I = first; !done; done = I == last ? 1 : (--I, 0)) Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
+    break;
+  }
+  for (PInteger first = 1, last = 10; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (I = first; !done; done = I == last ? 1 : (++I, 0)) {
+      Write(&OUTPUT, 1, RwpLenPtr | RwpEnd, 14, "The number is ");
+      Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
     }
-  } while(0);
-  do {
-    PInteger first = 10;
-    PInteger last = 1;
-    if (first >= last) {
-      I = first;
-      while (1) {
-        Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-        if (I == last) break;
-        --I;
-      }
-    }
-  } while(0);
-  do {
-    PInteger first = 1;
-    PInteger last = 10;
-    if (first <= last) {
-      I = first;
-      while (1) {
-        {
-          Write(&OUTPUT, 1, RwpLenPtr | RwpEnd, 14, "The number is ");
-          Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-        }
-        if (I == last) break;
-        ++I;
-      }
-    }
-  } while(0);
+    break;
+  }
   I = 10;
-  do {
-    PInteger first = 1;
-    PInteger last = I;
-    if (first <= last) {
-      I = first;
-      while (1) {
-        Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-        if (I == last) break;
-        ++I;
-      }
-    }
-  } while(0);
+  for (PInteger first = 1, last = I; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (I = first; !done; done = I == last ? 1 : (++I, 0)) Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
+    break;
+  }
   I = 0;
-  do {
-    PInteger first = 20;
-    PInteger last = 10;
-    if (first <= last) {
-      I = first;
-      while (1) {
-        Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
-        if (I == last) break;
-        ++I;
-      }
-    }
-  } while(0);
+  for (PInteger first = 20, last = 10; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (I = first; !done; done = I == last ? 1 : (++I, 0)) Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, I);
+    break;
+  }
   Write(&OUTPUT, 1, RwpLenPtr, 29, "The value of i is 0, not 20: ", RwpInt | RwpLn | RwpEnd, I);
 }
 
