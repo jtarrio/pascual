@@ -17,9 +17,7 @@ begin
   writeln('Character literals are just like string literals, ',
           'but with only one character, like so: ', 'X');
   writeln('You can also use the # and #$ syntax, like so: ', #65, #$42);
-  writeln('You can also specify control characters, but right now you need ',
-          'to precede it with an empty string so Pascual will parse it: ',
-          ''^g)
+  writeln('You can also specify control characters: ', ^g)
 end;
 
 procedure Operations;

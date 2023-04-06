@@ -907,6 +907,7 @@ var
   Expr : TExpression;
   Str : string;
 begin
+  if Lexer.Token.Id = TkCaret then LxGetStringFromCaret;
   if Lexer.Token.Id = TkNil then
   begin
     Expr := ExNil;

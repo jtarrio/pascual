@@ -242,6 +242,13 @@ begin
   LxGetSymbol(TkString, Last)
 end;
 
+procedure LxGetStringFromCaret;
+begin
+  Lexer.Line := '^' + Lexer.Line;
+  Lexer.Input.Pos.Col := Lexer.Input.Pos.Col - 1;
+  LxGetString
+end;
+
 procedure LxGetComment;
 var 
   Done : boolean;

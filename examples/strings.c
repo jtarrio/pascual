@@ -14,7 +14,7 @@ void LITERALS() {
   Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 62, "You can also use lowercase for your control characters, like \x07");
   Write(&OUTPUT, 1, RwpLenPtr, 50, "Character literals are just like string literals, ", RwpLenPtr, 38, "but with only one character, like so: ", RwpChar | RwpLn | RwpEnd, 'X');
   Write(&OUTPUT, 1, RwpLenPtr, 47, "You can also use the # and #$ syntax, like so: ", RwpChar, 'A', RwpChar | RwpLn | RwpEnd, 'B');
-  Write(&OUTPUT, 1, RwpLenPtr, 64, "You can also specify control characters, but right now you need ", RwpLenPtr, 61, "to precede it with an empty string so Pascual will parse it: ", RwpChar | RwpLn | RwpEnd, '\x07');
+  Write(&OUTPUT, 1, RwpLenPtr, 41, "You can also specify control characters: ", RwpChar | RwpLn | RwpEnd, '\x07');
 }
 
 void OPERATIONS() {
