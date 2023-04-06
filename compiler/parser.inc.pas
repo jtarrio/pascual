@@ -811,7 +811,7 @@ begin
     else if State = Hash then
     begin
       ChNum := 0;
-      if LxIsDigit(Ch) then State := NumCharDec
+      if Ch in LxCharsDigits then State := NumCharDec
       else if Ch = '$' then
       begin
         State := NumCharHex;
@@ -820,7 +820,7 @@ begin
     end
     else if State = NumCharDec then
     begin
-      if LxIsDigit(Ch) then
+      if Ch in LxCharsDigits then
       begin
         Pos := Pos + 1;
         ChNum := ChNum * 10 + Ord(Ch) - 48
@@ -829,7 +829,7 @@ begin
     end
     else if State = NumCharHex then
     begin
-      if LxIsHexDigit(Ch) then
+      if Ch in LxCharsHex then
       begin
         Pos := Pos + 1;
         if Ch <= '9' then ChNum := ChNum * 16 + Ord(Ch) - 48

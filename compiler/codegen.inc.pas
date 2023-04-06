@@ -101,7 +101,7 @@ begin
     if (Ch < ' ') or (Ch > #126) then
     begin
       _OutEscapedChar(Ch);
-      if (Pos < Length(Str)) and LxIsHexDigit(Str[Pos + 1]) then
+      if (Pos < Length(Str)) and (Str[Pos + 1] in LxCharsHex) then
         write(Codegen.Output, '""')
     end
     else
@@ -1641,7 +1641,7 @@ begin
   write(Codegen.Output, 'for (');
   OutExpression(Iter);
   write(Codegen.Output, ' = first; !done; done = ');
-    OutExpression(Iter);
+  OutExpression(Iter);
   write(Codegen.Output, ' == last ? 1 : (');
   if Ascending then
     write(Codegen.Output, '++')

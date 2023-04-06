@@ -37,6 +37,13 @@ var
     IncludeStack : TLxIncludeStack
   end;
 
+{ Character classes }
+const 
+  LxCharsDigits = ['0'..'9'];
+  LxCharsHex = ['0'..'9', 'a'..'f', 'A'..'F'];
+  LxCharsIdentifierFirst = ['a'..'z', 'A'..'Z', '_'];
+  LxCharsIdentifier = ['a'..'z', 'A'..'Z', '_', '0'..'9'];
+
 function LxTokenName(Id : TLxTokenId) : string;
 var 
   Name : string;
@@ -59,36 +66,6 @@ end;
 function LxTokenStr : string;
 begin
   LxTokenStr := LxTokenName(Lexer.Token.Id) + ' [' + Lexer.Token.Value + ']'
-end;
-
-function LxIsAlpha(Chr : char) : boolean;
-begin
-  LxIsAlpha := Chr in ['a'..'z', 'A'..'Z']
-end;
-
-function LxIsDigit(Chr : char) : boolean;
-begin
-  LxIsDigit := Chr in ['0'..'9']
-end;
-
-function LxIsHexDigit(Chr : char) : boolean;
-begin
-  LxIsHexDigit := Chr in ['0'..'9', 'a'..'f', 'A'..'F']
-end;
-
-function LxIsAlphaNum(Chr : char) : boolean;
-begin
-  LxIsAlphaNum := LxIsAlpha(Chr) or LxIsDigit(Chr)
-end;
-
-function LxIsIdentifierFirst(Chr : char) : boolean;
-begin
-  LxIsIdentifierFirst := LxIsAlpha(Chr) or (Chr = '_')
-end;
-
-function LxIsIdentifierChar(Chr : char) : boolean;
-begin
-  LxIsIdentifierChar := LxIsAlphaNum(Chr) or (Chr = '_')
 end;
 
 function LxIsTokenWaiting : boolean;
@@ -150,7 +127,7 @@ begin
   while (Pos < Length(Lexer.Line)) and InToken do
   begin
     Chr := Lexer.Line[Pos + 1];
-    InToken := LxIsIdentifierChar(Chr);
+    InToken := Chr in LxCharsIdentifier;
     if InToken then Pos := Pos + 1
   end;
   LxGetSymbol(TkIdentifier, Pos);
@@ -201,7 +178,7 @@ begin
     else if State = Hash then
     begin
       if Chr = '$' then State := NumCharHex
-      else if LxIsDigit(Chr) then
+      else if Chr in LxCharsDigits then
       begin
         State := NumCharDec;
         Last := Pos
@@ -210,7 +187,7 @@ begin
     end
     else if State = NumCharDec then
     begin
-      if LxIsDigit(Chr) then Last := Pos
+      if Chr in LxCharsDigits then Last := Pos
       else if Chr = '''' then State := QuotedStr
       else if Chr = '#' then State := Hash
       else if Chr = '^' then State := Caret
@@ -218,7 +195,7 @@ begin
     end
     else if State = NumCharHex then
     begin
-      if LxIsHexDigit(Chr) then Last := Pos
+      if Chr in LxCharsHex then Last := Pos
       else if Chr = '''' then State := QuotedStr
       else if Chr = '#' then State := Hash
       else if Chr = '^' then State := Caret
@@ -304,8 +281,8 @@ begin
     else if Pfx = ':=' then LxGetSymbol(TkAssign, 2)
     else if Pfx = '..' then LxGetSymbol(TkRange, 2)
     else if Pfx = '(*' then LxGetComment
-    else if LxIsIdentifierFirst(Chr) then LxGetIdentifier
-    else if LxIsDigit(Chr) then LxGetNumber
+    else if Chr in LxCharsIdentifierFirst then LxGetIdentifier
+    else if Chr in LxCharsDigits then LxGetNumber
     else case Chr of 
            '''' : LxGetString;
            '#' : LxGetString;
