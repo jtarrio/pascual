@@ -593,42 +593,6 @@ PString LXTOKENSTR() {
   return RESULT;
 }
 
-PBoolean LXISALPHA(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = 'A' <= CHR && CHR <= 'Z' || 'a' <= CHR && CHR <= 'z';
-  return RESULT;
-}
-
-PBoolean LXISDIGIT(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = '0' <= CHR && CHR <= '9';
-  return RESULT;
-}
-
-PBoolean LXISHEXDIGIT(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = '0' <= CHR && CHR <= '9' || 'A' <= CHR && CHR <= 'F' || 'a' <= CHR && CHR <= 'f';
-  return RESULT;
-}
-
-PBoolean LXISALPHANUM(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = LXISALPHA(CHR) || LXISDIGIT(CHR);
-  return RESULT;
-}
-
-PBoolean LXISIDENTIFIERFIRST(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = LXISALPHA(CHR) || CHR == '_';
-  return RESULT;
-}
-
-PBoolean LXISIDENTIFIERCHAR(PChar CHR) {
-  PBoolean RESULT;
-  RESULT = LXISALPHANUM(CHR) || CHR == '_';
-  return RESULT;
-}
-
 PBoolean LXISTOKENWAITING() {
   PBoolean RESULT;
   do {
@@ -655,16 +619,17 @@ void LXGETSYMBOL(TLXTOKENID ID, PInteger LENGTH) {
 }
 
 void LXGETIDENTIFIER() {
+  typedef PBits8 KWTOKENS;
   const PString KEYWORDS[40] = { str_make(8, "ABSOLUTE"), str_make(3, "AND"), str_make(5, "ARRAY"), str_make(5, "BEGIN"), str_make(4, "CASE"), str_make(5, "CONST"), str_make(3, "DIV"), str_make(2, "DO"), str_make(6, "DOWNTO"), str_make(4, "ELSE"), str_make(3, "END"), str_make(4, "FILE"), str_make(3, "FOR"), str_make(7, "FORWARD"), str_make(8, "FUNCTION"), str_make(4, "GOTO"), str_make(2, "IF"), str_make(2, "IN"), str_make(5, "LABEL"), str_make(3, "MOD"), str_make(3, "NIL"), str_make(3, "NOT"), str_make(2, "OF"), str_make(2, "OR"), str_make(6, "PACKED"), str_make(9, "PROCEDURE"), str_make(7, "PROGRAM"), str_make(6, "RECORD"), str_make(6, "REPEAT"), str_make(3, "SET"), str_make(3, "SHL"), str_make(3, "SHR"), str_make(4, "THEN"), str_make(2, "TO"), str_make(4, "TYPE"), str_make(5, "UNTIL"), str_make(3, "VAR"), str_make(5, "WHILE"), str_make(4, "WITH"), str_make(3, "XOR") };
-  const TLXTOKENID TOKENS[40] = { TKABSOLUTE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR };
   PChar CHR;
   PInteger POS;
+  KWTOKENS TOKEN;
   PBoolean INTOKEN;
   POS = 0;
   INTOKEN = 1;
   while (POS < LENGTH(&LEXER.LINE) && INTOKEN) {
     CHR = LEXER.LINE.chr[POS + 1];
-    INTOKEN = LXISIDENTIFIERCHAR(CHR);
+    INTOKEN = '0' <= CHR && CHR <= '9' || 'A' <= CHR && CHR <= 'Z' || CHR == '_' || 'a' <= CHR && CHR <= 'z';
     if (INTOKEN) POS = POS + 1;
   }
   LXGETSYMBOL(TKIDENTIFIER, POS);
@@ -673,10 +638,10 @@ void LXGETIDENTIFIER() {
     for (POS = first; !done; done = POS == last ? 1 : (++POS, 0)) LEXER.TOKEN.VALUE.chr[POS] = UPCASE(LEXER.TOKEN.VALUE.chr[POS]);
     break;
   }
-  POS = 1;
-  while (POS <= 40 && LEXER.TOKEN.ID == TKIDENTIFIER) {
-    if (cmp_str(CoEq, CpStringPtr, &LEXER.TOKEN.VALUE, CpStringPtr, &KEYWORDS[subrange(POS, 1, 40) - 1])) LEXER.TOKEN.ID = TOKENS[subrange(POS, 1, 40) - 1];
-    POS = POS + 1;
+  for (PInteger first = TKABSOLUTE, last = TKXOR; first <= last; /*breaks*/) {
+    PBoolean done = 0;
+    for (TOKEN = first; !done; done = TOKEN == last ? 1 : (++TOKEN, 0)) if (LEXER.TOKEN.ID == TKIDENTIFIER && cmp_str(CoEq, CpStringPtr, &LEXER.TOKEN.VALUE, CpStringPtr, &KEYWORDS[TOKEN - 29])) LEXER.TOKEN.ID = TOKEN;
+    break;
   }
 }
 
@@ -712,21 +677,21 @@ void LXGETSTRING() {
     }
     else if (STATE == HASH) {
       if (CHR == '$') STATE = NUMCHARHEX;
-      else if (LXISDIGIT(CHR)) {
+      else if ('0' <= CHR && CHR <= '9') {
         STATE = NUMCHARDEC;
         LAST = POS;
       }
       else STATE = DONE;
     }
     else if (STATE == NUMCHARDEC) {
-      if (LXISDIGIT(CHR)) LAST = POS;
+      if ('0' <= CHR && CHR <= '9') LAST = POS;
       else if (CHR == '\'') STATE = QUOTEDSTR;
       else if (CHR == '#') STATE = HASH;
       else if (CHR == '^') STATE = CARET;
       else STATE = DONE;
     }
     else if (STATE == NUMCHARHEX) {
-      if (LXISHEXDIGIT(CHR)) LAST = POS;
+      if ('0' <= CHR && CHR <= '9' || 'A' <= CHR && CHR <= 'F' || 'a' <= CHR && CHR <= 'f') LAST = POS;
       else if (CHR == '\'') STATE = QUOTEDSTR;
       else if (CHR == '#') STATE = HASH;
       else if (CHR == '^') STATE = CARET;
@@ -745,6 +710,12 @@ void LXGETSTRING() {
     }
   } while (STATE != DONE);
   LXGETSYMBOL(TKSTRING, LAST);
+}
+
+void LXGETSTRINGFROMCARET() {
+  LEXER.LINE = CONCAT(CpChar, '^', CpEnd | CpStringPtr, &LEXER.LINE);
+  LEXER.INPUT.POS.COL = LEXER.INPUT.POS.COL - 1;
+  LXGETSTRING();
 }
 
 void LXGETCOMMENT() {
@@ -792,8 +763,8 @@ void LXREADTOKEN() {
     else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, ":=")) LXGETSYMBOL(TKASSIGN, 2);
     else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "..")) LXGETSYMBOL(TKRANGE, 2);
     else if (cmp_str(CoEq, CpStringPtr, &PFX, CpLenPtr, 2, "(*")) LXGETCOMMENT();
-    else if (LXISIDENTIFIERFIRST(CHR)) LXGETIDENTIFIER();
-    else if (LXISDIGIT(CHR)) LXGETNUMBER();
+    else if ('A' <= CHR && CHR <= 'Z' || CHR == '_' || 'a' <= CHR && CHR <= 'z') LXGETIDENTIFIER();
+    else if ('0' <= CHR && CHR <= '9') LXGETNUMBER();
     else switch (CHR) {
       case '\'':
         LXGETSTRING();
@@ -5367,21 +5338,21 @@ PString PARSESTRING(const PString* PSTR) {
     }
     else if (STATE == HASH) {
       CHNUM = 0;
-      if (LXISDIGIT(CH)) STATE = NUMCHARDEC;
+      if ('0' <= CH && CH <= '9') STATE = NUMCHARDEC;
       else if (CH == '$') {
         STATE = NUMCHARHEX;
         POS = POS + 1;
       }
     }
     else if (STATE == NUMCHARDEC) {
-      if (LXISDIGIT(CH)) {
+      if ('0' <= CH && CH <= '9') {
         POS = POS + 1;
         CHNUM = CHNUM * 10 + (int)CH - 48;
       }
       else STATE = NUMCHARREADY;
     }
     else if (STATE == NUMCHARHEX) {
-      if (LXISHEXDIGIT(CH)) {
+      if ('0' <= CH && CH <= '9' || 'A' <= CH && CH <= 'F' || 'a' <= CH && CH <= 'f') {
         POS = POS + 1;
         if (CH <= '9') CHNUM = CHNUM * 16 + (int)CH - 48;
         else if (CH <= 'F') CHNUM = CHNUM * 16 + (int)CH - 55;
@@ -5453,6 +5424,7 @@ TEXPRESSIONOBJ* PSFACTOR() {
   TEXPRESSIONOBJ* RESULT;
   TEXPRESSIONOBJ* EXPR;
   PString STR;
+  if (LEXER.TOKEN.ID == TKCARET) LXGETSTRINGFROMCARET();
   if (LEXER.TOKEN.ID == TKNIL) {
     EXPR = EXNIL();
     READTOKEN();
@@ -6653,7 +6625,7 @@ void _OUTCSTRING(const PString* STR) {
       CH = STR->chr[POS];
       if (CH < ' ' || CH > '~') {
         _OUTESCAPEDCHAR(CH);
-        if (POS < LENGTH(STR) && LXISHEXDIGIT(STR->chr[POS + 1])) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\"\"");
+        if (POS < LENGTH(STR) && ('0' <= STR->chr[POS + 1] && STR->chr[POS + 1] <= '9' || 'A' <= STR->chr[POS + 1] && STR->chr[POS + 1] <= 'F' || 'a' <= STR->chr[POS + 1] && STR->chr[POS + 1] <= 'f')) Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\"\"");
       }
       else {
         if (CH == '"') Write(&CODEGEN.OUTPUT, 1, RwpLenPtr | RwpEnd, 2, "\\\"");
