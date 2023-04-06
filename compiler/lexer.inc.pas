@@ -96,30 +96,23 @@ begin
 end;
 
 procedure LxGetIdentifier;
+type 
+  KwTokens = TkAbsolute..TkXor;
 const 
-  NK = 40;
-  Keywords : array[1..NK] of string = ('ABSOLUTE', 'AND', 'ARRAY', 'BEGIN',
-                                       'CASE', 'CONST', 'DIV', 'DO', 'DOWNTO',
-                                       'ELSE', 'END', 'FILE', 'FOR', 'FORWARD',
-                                       'FUNCTION', 'GOTO', 'IF', 'IN', 'LABEL',
-                                       'MOD', 'NIL', 'NOT', 'OF', 'OR',
-                                       'PACKED', 'PROCEDURE', 'PROGRAM',
-                                       'RECORD', 'REPEAT', 'SET', 'SHL', 'SHR',
-                                       'THEN', 'TO', 'TYPE', 'UNTIL', 'VAR',
-                                       'WHILE', 'WITH', 'XOR');
-  Tokens : array[1..NK] of TLxTokenId = (TkAbsolute, TkAnd, TkArray, TkBegin,
-                                         TkCase, TkConst, TkDiv, TkDo, TkDownto,
-                                         TkElse, TkEnd, TkFile, TkFor,
-                                         TkForward, TkFunction, TkGoto, TkIf,
-                                         TkIn, TkLabel, TkMod, TkNil, TkNot,
-                                         TkOf, TkOr, TkPacked, TkProcedure,
-                                         TkProgram, TkRecord, TkRepeat, TkSet,
-                                         TkShl, TkShr, TkThen, TkTo, TkType,
-                                         TkUntil, TkVar, TkWhile, TkWith,
-                                         TkXor);
+  Keywords : array[KwTokens] of string = ('ABSOLUTE', 'AND', 'ARRAY', 'BEGIN',
+                                          'CASE', 'CONST', 'DIV', 'DO',
+                                          'DOWNTO', 'ELSE', 'END', 'FILE',
+                                          'FOR', 'FORWARD', 'FUNCTION', 'GOTO',
+                                          'IF', 'IN', 'LABEL', 'MOD', 'NIL',
+                                          'NOT', 'OF', 'OR', 'PACKED',
+                                          'PROCEDURE', 'PROGRAM', 'RECORD',
+                                          'REPEAT', 'SET', 'SHL', 'SHR',
+                                          'THEN', 'TO', 'TYPE', 'UNTIL', 'VAR',
+                                          'WHILE', 'WITH', 'XOR');
 var 
   Chr : char;
   Pos : integer;
+  Token : KwTokens;
   InToken : boolean;
 begin
   Pos := 0;
@@ -134,12 +127,10 @@ begin
   for Pos := 1 to Length(Lexer.Token.Value) do
     Lexer.Token.Value[Pos] := UpCase(Lexer.Token.Value[Pos]);
 
-  Pos := 1;
-  while (Pos <= NK) and (Lexer.Token.Id = TkIdentifier) do
-  begin
-    if Lexer.Token.Value = Keywords[Pos] then Lexer.Token.Id := Tokens[Pos];
-    Pos := Pos + 1
-  end
+  for Token := TkAbsolute to TkXor do
+    if (Lexer.Token.Id = TkIdentifier)
+       and (Lexer.Token.Value = Keywords[Token]) then
+      Lexer.Token.Id := Token
 end;
 
 procedure LxGetNumber;
