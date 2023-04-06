@@ -571,6 +571,13 @@ begin
                            or IsSameType(A, B))
 end;
 
+function AreFunctionsCompatible(A, B : TPsTypePtr) : boolean;
+begin
+  AreFunctionsCompatible := IsFunctionyType(A) and IsFunctionyType(B)
+                            and (IsNilType(A) or IsNilType(B)
+                            or IsSameType(A, B))
+end;
+
 function UnparseChar(Chr : char) : string;
 begin
   if Chr = '''' then Result := ''''''''''

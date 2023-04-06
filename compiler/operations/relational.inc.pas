@@ -282,6 +282,16 @@ begin
   Result := _ExOp_MakeBinary(Left, Right, XoNe, PrimitiveTypes.PtBoolean)
 end;
 
+function _ExOpEq_Functions(Left, Right : TExpression) : TExpression;
+begin
+  Result := _ExOp_MakeBinary(Left, Right, XoEq, PrimitiveTypes.PtBoolean)
+end;
+
+function _ExOpNe_Functions(Left, Right : TExpression) : TExpression;
+begin
+  Result := _ExOp_MakeBinary(Left, Right, XoNe, PrimitiveTypes.PtBoolean)
+end;
+
 function ExOpIn(Left, Right : TExpression) : TExpression;
 begin
   if IsSetType(Right^.TypePtr) then
@@ -310,6 +320,8 @@ begin
          Result := _ExOpEq_Sets(Left, Right)
   else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
          Result := _ExOpEq_Pointers(Left, Right)
+  else if AreFunctionsCompatible(Left^.TypePtr, Right^.TypePtr) then
+  Result := _ExOpEq_Functions(Left, Right)
   else ErrorInvalidOperator2(Left, Right, XoEq)
 end;
 
@@ -330,6 +342,8 @@ begin
          Result := ExOpNot(_ExOpEq_Sets(Left, Right))
   else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
          Result := _ExOpNe_Pointers(Left, Right)
+  else if AreFunctionsCompatible(Left^.TypePtr, Right^.TypePtr) then
+  Result := _ExOpNe_Functions(Left, Right)
   else ErrorInvalidOperator2(Left, Right, XoNe)
 end;
 
