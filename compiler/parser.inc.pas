@@ -681,7 +681,7 @@ function PsFunctionCall(Fn : TExpression) : TExpression;
 begin
   if Fn^.Cls = XcFnRef then
   begin
-    Fn^.FnPtr^.WasUsed := true;
+    if Fn^.FnPtr <> Defs.CurrentFn then Fn^.FnPtr^.WasUsed := true;
     Result := ExFunctionCall(Fn, PsFunctionArgs)
   end
   else if IsFunctionType(Fn^.TypePtr) then
@@ -766,7 +766,8 @@ begin
 
   if (Expr^.Cls = XcVariable) and not ForStatement then
     Expr^.VarPtr^.WasUsed := true
-  else if Expr^.Cls = XcFnRef then Expr^.FnPtr^.WasUsed := true;
+  else if (Expr^.Cls = XcFnRef) and (Expr^.FnPtr <> Defs.CurrentFn) then
+    Expr^.FnPtr^.WasUsed := true;
 
   Result := Expr
 end;

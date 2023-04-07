@@ -252,7 +252,8 @@ begin
     XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     XcToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
     XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
-    XcToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.ToUntypedPtrParent);
+    XcToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.
+                                                ToUntypedPtrParent);
     XcWithTmpVar :
                    begin
                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
@@ -975,11 +976,8 @@ function ExFunctionCall(FnExpr : TExpression;
                         const Args : TExFunctionArgs) : TExpression;
 begin
   if FnExpr^.Cls = XcFnRef then
-  begin
-    FnExpr^.FnPtr^.WasUsed := true;
     Result := _ExFunctionCall(FnExpr, FnExpr^.FnPtr^.Args,
               FnExpr^.FnPtr^.ReturnTypePtr, Args)
-  end
   else if IsFunctionType(FnExpr^.TypePtr) then
          Result := _ExFunctionCall(FnExpr, FnExpr^.TypePtr^.FnDefPtr^.Args,
                    FnExpr^.TypePtr^.FnDefPtr^.ReturnTypePtr, Args)
