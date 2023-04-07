@@ -816,8 +816,7 @@ begin
 end;
 
 function FindField(TypePtr : TPsTypePtr; const Name : string;
-                   Required : boolean)
-: integer;
+                   Required : boolean) : integer;
 var 
   Pos : integer;
   Ret : integer;

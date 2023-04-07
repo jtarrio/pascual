@@ -401,30 +401,57 @@ begin
 end;
 
 procedure PsConstantValue(TypePtr : TPsTypePtr);
-var 
-  Expr : TExpression;
-  ConstSize, WantedSize : integer;
+forward;
+
+procedure PsConstantArray(TypePtr : TPsTypePtr);
+var ConstSize, WantedSize : integer;
 begin
-  if IsArrayType(TypePtr) then
+  WantTokenAndRead(TkLparen);
+  ConstSize := 0;
+  OutConstantArrayBegin;
+  while Lexer.Token.Id <> TkRparen do
   begin
-    WantTokenAndRead(TkLparen);
-    ConstSize := 0;
-    OutConstantArrayBegin;
-    while Lexer.Token.Id <> TkRparen do
-    begin
-      ConstSize := ConstSize + 1;
-      PsConstantValue(TypePtr^.ArrayDef.ValueTypePtr);
-      WantToken2(TkComma, TkRparen);
-      if Lexer.Token.Id = TkComma then OutConstantArraySeparator;
-      SkipToken(TkComma)
-    end;
-    OutConstantArrayEnd;
-    WantTokenAndRead(TkRparen);
-    WantedSize := GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr);
-    if ConstSize <> WantedSize then
-      CompileError('Array constant has size ' + IntToStr(ConstSize) +
-      ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr))
-  end
+    ConstSize := ConstSize + 1;
+    PsConstantValue(TypePtr^.ArrayDef.ValueTypePtr);
+    WantToken2(TkComma, TkRparen);
+    if Lexer.Token.Id = TkComma then OutConstantArraySeparator;
+    SkipToken(TkComma)
+  end;
+  OutConstantArrayEnd;
+  WantTokenAndRead(TkRparen);
+  WantedSize := GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr);
+  if ConstSize <> WantedSize then
+    CompileError('Array constant has size ' + IntToStr(ConstSize) +
+    ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr))
+end;
+
+procedure PsConstantRecord(TypePtr : TPsTypePtr);
+var 
+  FieldId : TPsIdentifier;
+  FieldType : TPsTypePtr;
+begin
+  WantTokenAndRead(TkLparen);
+  OutConstantRecordBegin;
+  while Lexer.Token.Id <> TkRparen do
+  begin
+    FieldId := PsIdentifier;
+    OutConstantRecordField(FieldId.Name);
+    WantTokenAndRead(TkColon);
+    FieldType := FindFieldType(TypePtr, FieldId.Name, {Required=}true);
+    PsConstantValue(FieldType);
+    WantToken2(TkSemicolon, TkRparen);
+    if Lexer.Token.Id = TkSemicolon then OutConstantRecordSeparator;
+    SkipToken(TkSemicolon)
+  end;
+  OutConstantRecordEnd;
+  WantTokenAndRead(TkRparen)
+end;
+
+procedure PsConstantValue(TypePtr : TPsTypePtr);
+var Expr : TExpression;
+begin
+  if IsArrayType(TypePtr) then PsConstantArray(TypePtr)
+  else if IsRecordType(TypePtr) then PsConstantRecord(TypePtr)
   else
   begin
     Expr := ExCoerce(PsImmediate, TypePtr);

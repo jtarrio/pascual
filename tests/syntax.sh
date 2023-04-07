@@ -143,6 +143,10 @@ echo 'const A : integer = 123; B : integer = A;' | testdef | is_not_valid
 echo 'const A : integer = 1 + 2;' | testdef | is_valid
 echo 'const A : array[1..5] of integer = (1, 2, 3, 4, 5);' | testdef | is_valid
 echo 'const A : array[1..5] of integer = 5;' | testdef | is_not_valid
+echo 'const A : record B : integer; C : boolean end = (B: 42; C: true);' |
+testdef | is_valid
+echo 'const A : record B : integer; C : boolean end = (B: 42, C: true);' |
+testdef | is_not_valid
 
 # Type definitions
 echo 'type A = integer;' | testdef | is_valid

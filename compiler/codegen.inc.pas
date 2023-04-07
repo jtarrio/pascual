@@ -1374,6 +1374,26 @@ begin
   write(Codegen.Output, ' }')
 end;
 
+procedure OutConstantRecordBegin;
+begin
+  write(Codegen.Output, '{ ')
+end;
+
+procedure OutConstantRecordField(const Name : string);
+begin
+  write(Codegen.Output, '.', Name, ' = ')
+end;
+
+procedure OutConstantRecordSeparator;
+begin
+  _OutComma
+end;
+
+procedure OutConstantRecordEnd;
+begin
+  write(Codegen.Output, ' }')
+end;
+
 procedure OutVariableDeclaration(VarDef : TPsVariable);
 var Name : string;
 begin
