@@ -1099,13 +1099,20 @@ end;
 
 function _GetRangeType(TypePtr : TPsTypePtr) : string;
 type 
-  Types = (U8, S8, U16, S16, U32, S32);
+  Types = (U8, S8, U16, S16, S32);
 const 
-  Names : array[Types] of string = ('PBits8', 'PBits8S', 'PBits16', 'PBits16S',
-                                    'PBits32', 'PBits32S');
-  LowLimits : array[Types] of integer = (0, -128, 0, -32768, 0, -2147483648);
-  HighLimits : array[Types] of integer = (255, 127, 65535, 32767, 4294967295,
-                                          2147483647);
+  TypeInfo : array[Types] of record
+    Name : string;
+    Low : integer;
+    High : integer
+  end 
+  = (
+    {U8=}(Name: 'PBits8'; Low: 0; High: 255),
+    {S8=}(Name: 'PBits8S'; Low: -128; High: 127),
+    {U16=}(Name: 'PBits16'; Low: 0; High: 65535),
+    {S16=}(Name: 'PBits16S'; Low: -32768; High: 32767),
+    {S32=}(Name: 'PBits32S'; Low: -2147483648; High: 2147483647)
+    );
 var 
   FitTypes : set of Types;
   Low, High : integer;
@@ -1115,11 +1122,11 @@ begin
   Low := GetTypeLowBound(TypePtr);
   High := GetTypeHighBound(TypePtr);
   for T := U8 to S32 do
-    if (Low >= LowLimits[T]) and (High <= HighLimits[T]) then
+    if (Low >= TypeInfo[T].Low) and (High <= TypeInfo[T].High) then
       FitTypes := FitTypes + [T];
   Result := 'PInteger';
   for T := S32 downto U8 do
-    if T in FitTypes then Result := Names[T]
+    if T in FitTypes then Result := TypeInfo[T].Name
 end;
 
 procedure OutTypeReference(TypePtr : TPsTypePtr);
