@@ -1099,7 +1099,7 @@ end;
 
 function _GetRangeType(TypePtr : TPsTypePtr) : string;
 type 
-  Types = (U8, S8, U16, S16, S32);
+  Types = (U8, S8, U16, S16, U32, S32);
 const 
   TypeInfo : array[Types] of record
     Name : string;
@@ -1111,6 +1111,7 @@ const
     {S8=}(Name: 'PBits8S'; Low: -128; High: 127),
     {U16=}(Name: 'PBits16'; Low: 0; High: 65535),
     {S16=}(Name: 'PBits16S'; Low: -32768; High: 32767),
+    {U32=}(Name: 'PBits32'; Low: 0; High: 2147483647 {Should be 4294967295}),
     {S32=}(Name: 'PBits32S'; Low: -2147483648; High: 2147483647)
     );
 var 
