@@ -70,9 +70,9 @@ type
   end;
 
   TExpressionClass = (XcImmediate, XcToString, XcToReal, XcToUntypedPtr,
-                      XcWithTmpVar, XcSubrange, XcSet, XcVariable, XcField,
-                      XcArray, XcPointer, XcAddress, XcStringChar,
-                      XcFnRef, XcFnCall, XcPseudoFnRef, XcSizeof,
+                      XcToGenericFile, XcWithTmpVar, XcSubrange, XcSet,
+                      XcVariable, XcField, XcArray, XcPointer, XcAddress,
+                      XcStringChar, XcFnRef, XcFnCall, XcPseudoFnRef, XcSizeof,
                       XcConvertToStr, XcConvertToVal, XcRead, XcWrite,
                       XcUnaryOp, XcBinaryOp);
   TExpressionObj = record
@@ -86,6 +86,7 @@ type
       XcToString : (ToStrParent : TExpression);
       XcToReal : (ToRealParent : TExpression);
       XcToUntypedPtr : (ToUntypedPtrParent : TExpression);
+      XcToGenericFile : (ToGenericFileParent : TExpression);
       XcWithTmpVar : (TmpVar : TExpression;
                       TmpVarValue : TExpression;
                       TmpVarChild : TExpression);
@@ -131,7 +132,15 @@ type
   TPsWithVarPtr = ^TPsWithVar;
   TPsNamePtr = ^TPsName;
 
-  TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcText,
+  TPsFileClass = (TfcNone, TfcText, TfcBinary);
+  TPsFileDef = record
+    Id : integer;
+    HasBeenDefined : boolean;
+    case Cls : TPsFileClass of 
+      TfcBinary : (TypePtr : TPsTypePtr)
+  end;
+
+  TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcFile,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
                   TtcPointer, TtcNil, TtcPointerForward, TtcFunction);
   TPsType = record
@@ -139,6 +148,7 @@ type
     AliasFor : TPsTypePtr;
     WasUsed : boolean;
     case Cls : TPsTypeClass of 
+      TtcFile : (FileDef : TPsFileDef);
       TtcEnum : (EnumPtr : TPsEnumPtr);
       TtcRange : (RangeDef : record
                   First, Last : integer;
@@ -227,10 +237,11 @@ type
       TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;
 
-  TPsCounterType = (TctEnum, TctRecord, TctTmpVar);
+  TPsCounterType = (TctEnum, TctRecord, TctFile, TctTmpVar);
   TPsCounters = record
     EnumCtr : integer;
     RecordCtr : integer;
+    FileCtr : integer;
     TmpVarCtr : integer;
   end;
 

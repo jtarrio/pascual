@@ -1,29 +1,21 @@
 var 
   Defs : TPsDefs;
   PrimitiveTypes : record
-    PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText,
+    PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText, PtFile,
     PtEmptySet, PtUntypedPtr : TPsTypePtr
   end;
 
 function DefCounter(CounterType : TPsCounterType) : integer;
+var Ctr : ^integer;
 begin
   case CounterType of 
-    TctEnum:
-             begin
-               Defs.Counters.EnumCtr := Defs.Counters.EnumCtr + 1;
-               Result := Defs.Counters.EnumCtr
-             end;
-    TctRecord:
-               begin
-                 Defs.Counters.RecordCtr := Defs.Counters.RecordCtr + 1;
-                 Result := Defs.Counters.RecordCtr
-               end;
-    TctTmpVar:
-               begin
-                 Defs.Counters.TmpVarCtr := Defs.Counters.TmpVarCtr + 1;
-                 Result := Defs.Counters.TmpVarCtr
-               end;
-  end
+    TctEnum: Ctr := @Defs.Counters.EnumCtr;
+    TctRecord: Ctr := @Defs.Counters.RecordCtr;
+    TctFile: Ctr := @Defs.Counters.FileCtr;
+    TctTmpVar: Ctr := @Defs.Counters.TmpVarCtr;
+  end;
+  Ctr^ := Ctr^ + 1;
+  Result := Ctr^
 end;
 
 procedure InitDefs;
@@ -31,6 +23,7 @@ begin
   Defs.Latest := nil;
   Defs.Counters.EnumCtr := 0;
   Defs.Counters.RecordCtr := 0;
+  Defs.Counters.FileCtr := 0;
   Defs.Counters.TmpVarCtr := 0;
   Defs.CurrentFn := nil;
 end;
@@ -429,9 +422,19 @@ begin
   IsBooleanType := _TypeHasClass(TypePtr, TtcBoolean)
 end;
 
+function IsFileType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := _TypeHasClass(TypePtr, TtcFile)
+end;
+
 function IsTextType(TypePtr : TPsTypePtr) : boolean;
 begin
-  IsTextType := _TypeHasClass(TypePtr, TtcText)
+  IsTextType := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = TfcText)
+end;
+
+function IsGenericFileType(TypePtr : TPsTypePtr) : boolean;
+begin
+  Result := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = TfcNone)
 end;
 
 function IsEnumType(TypePtr : TPsTypePtr) : boolean;
@@ -631,6 +634,12 @@ begin
       TypePtr := TypePtr^.AliasFor;
   if TypePtr = nil then Result := 'untyped'
   else if TypePtr^.Name <> '' then Result := TypePtr^.Name
+  else if TypePtr^.Cls = TtcFile then
+  begin
+    if TypePtr^.FileDef.Cls = TfcNone then Result := 'FILE'
+    else if TypePtr^.FileDef.Cls = TfcText then Result := 'TEXT'
+    else Result := 'FILE OF ' + DeepTypeName(TypePtr^.FileDef.TypePtr, false)
+  end
   else if TypePtr^.Cls = TtcEnum then
   begin
     Result := '(';
@@ -1069,6 +1078,47 @@ begin
   Result := _NewType(Cls);
   Result^.Name := Name;
   AddTypeName(Name, Result)
+end;
+
+function _MakeFileType(Cls : TPsFileClass; TypePtr : TPsTypePtr) : TPsTypePtr;
+var 
+  Def : TPsDefPtr;
+begin
+  Result := nil;
+  Def := Defs.Latest;
+  while (Def <> nil) and (Result = nil) do
+  begin
+    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFile)
+       and (Def^.TypePtr^.FileDef.Cls = Cls)
+       and ((Cls <> TfcBinary)
+       or IsSameType(Def^.TypePtr^.FileDef.TypePtr,
+       TypePtr^.FileDef.TypePtr)) then
+      Result := _UnaliasType(Def^.TypePtr);
+    Def := Def^.Prev
+  end;
+  if Result = nil then
+  begin
+    { TODO check that the type is appropriate }
+    Result := _NewType(TtcFile);
+    Result^.FileDef.Id := DefCounter(TctFile);
+    Result^.FileDef.Cls := Cls;
+    if Cls = TfcBinary then Result^.FileDef.TypePtr := TypePtr
+  end
+end;
+
+function MakeGenericFileType : TPsTypePtr;
+begin
+  Result := _MakeFileType(TfcNone, nil)
+end;
+
+function MakeTextType : TPsTypePtr;
+begin
+  Result := _MakeFileType(TfcText, nil)
+end;
+
+function MakeFileType(TypePtr : TPsTypePtr) : TPsTypePtr;
+begin
+  Result := _MakeFileType(TfcBinary, TypePtr)
 end;
 
 function MakeEnumType(const Enum : TPsEnumDef) : TPsTypePtr;

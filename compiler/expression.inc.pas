@@ -78,6 +78,7 @@ begin
     XcToString: ExDispose(Expr^.ToStrParent);
     XcToReal: ExDispose(Expr^.ToRealParent);
     XcToUntypedPtr: ExDispose(Expr^.ToUntypedPtrParent);
+    XcToGenericFile: ExDispose(Expr^.ToGenericFileParent);
     XcWithTmpVar:
                   begin
                     ExDispose(Expr^.TmpVar);
@@ -254,6 +255,8 @@ begin
     XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
     XcToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.
                                                 ToUntypedPtrParent);
+    XcToGenericFile: Copy^.ToGenericFileParent := ExCopy(Expr^.
+                                                  ToGenericFileParent);
     XcWithTmpVar :
                    begin
                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
@@ -365,13 +368,14 @@ end;
 const _ExPrecedences : array[TExpressionClass] of integer 
                        = (
                           {XcImmediate=}0, {XcToString=}-1, {XcToReal=}-1,
-                          {XcToUntypedPtr=}-1, {XcWithTmpVar=}-1,
-                          {XcSubrange=}0, {XcSet=}0, {XcVariable=}0,
-                          {XcField=}1, {XcArray=}1, {XcPointer=}1,
-                          {XcAddress=}1, {XcStringChar=}1, {XcFnRef=}0,
-                          {XcFnCall=}0, {XcPseudoFnRef=}0, {XcSizeof=}1,
-                          {XcConvertToStr=}1, {XcConvertToVal=}1, {XcRead=}1,
-                          {XcWrite=}1, {XcUnaryOp=}-1, {XcBinaryOp=}-1);
+                          {XcToUntypedPtr=}-1, {XcToGenericFile=}-1,
+                          {XcWithTmpVar=}-1, {XcSubrange=}0, {XcSet=}0,
+                          {XcVariable=}0, {XcField=}1, {XcArray=}1,
+                          {XcPointer=}1, {XcAddress=}1, {XcStringChar=}1,
+                          {XcFnRef=}0, {XcFnCall=}0, {XcPseudoFnRef=}0,
+                          {XcSizeof=}1, {XcConvertToStr=}1, {XcConvertToVal=}1,
+                          {XcRead=}1, {XcWrite=}1, {XcUnaryOp=}-1,
+                          {XcBinaryOp=}-1);
 const _ExOperators : array[TExOperator] of record
   Precedence: integer;
   Name: string
@@ -411,6 +415,7 @@ begin
       XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
       XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
       XcToUntypedPtr: Result := _ExprPrecedence(Expr^.ToUntypedPtrParent);
+      XcToGenericFile: Result := _ExprPrecedence(Expr^.ToGenericFileParent);
       XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
       XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
       XcUnaryOp: Result := _ExOperators[Expr^.Unary.Op].Precedence;
@@ -501,6 +506,7 @@ begin
     XcToString: Result := ExDescribe(Expr^.ToStrParent);
     XcToReal: Result := ExDescribe(Expr^.ToRealParent);
     XcToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
+    XcToGenericFile: Result := ExDescribe(Expr^.ToGenericFileParent);
     XcWithTmpVar: Result := _DescribeWithTmpVar(Expr);
     XcSubrange: Result := ExDescribe(Expr^.ToStrParent);
     XcSet: Result := _DescribeSet(Expr);
@@ -830,6 +836,16 @@ begin
   Result := _NewExpr(XcToUntypedPtr);
   Result^.ToUntypedPtrParent := Parent;
   Result^.TypePtr := PrimitiveTypes.PtUntypedPtr;
+  Result^.IsFunctionResult := Parent^.IsFunctionResult;
+  Result^.IsAssignable := Parent^.IsAssignable;
+  Result^.IsAddressable := Parent^.IsAddressable
+end;
+
+function ExToGenericFile(Parent : TExpression) : TExpression;
+begin
+  Result := _NewExpr(XcToGenericFile);
+  Result^.ToGenericFileParent := Parent;
+  Result^.TypePtr := PrimitiveTypes.PtFile;
   Result^.IsFunctionResult := Parent^.IsFunctionResult;
   Result^.IsAssignable := Parent^.IsAssignable;
   Result^.IsAddressable := Parent^.IsAddressable
@@ -1196,6 +1212,8 @@ begin
          ExCoerce := ExToUntypedPtr(Expr)
   else if IsSetType(Expr^.TypePtr) and IsSetType(TypePtr) then
          ExCoerce := _ExCoerceSet(Expr, TypePtr)
+  else if IsFileType(Expr^.TypePtr) and IsGenericFileType(TypePtr) then
+         ExCoerce := ExToGenericFile(Expr)
   else if IsUntyped(TypePtr) then
          ExCoerce := Expr
   else

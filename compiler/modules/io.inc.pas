@@ -10,8 +10,8 @@ var
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
-  InFile := ExVariable(FindNameOfClass('INPUT',
-            TncVariable, {Required=}true)^.VarPtr);
+  InFile := ExCoerce(ExVariable(FindNameOfClass('INPUT',
+            TncVariable, {Required=}true)^.VarPtr), PrimitiveTypes.PtFile);
   ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -20,11 +20,11 @@ begin
     while Lexer.Token.Id <> TkRparen do
     begin
       ReadVar := PsExpression;
-      if First and IsTextType(ReadVar^.TypePtr) then
+      if First and IsFileType(ReadVar^.TypePtr) then
       begin
         EnsureAddressableExpr(ReadVar);
         ExDispose(InFile);
-        InFile := ReadVar
+        InFile := ExCoerce(ReadVar, PrimitiveTypes.PtFile)
       end
       else
       begin
@@ -73,8 +73,8 @@ var
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
-  OutFile := ExVariable(FindNameOfClass('OUTPUT',
-                               TncVariable, {Required=}true)^.VarPtr);
+  OutFile := ExCoerce(ExVariable(FindNameOfClass('OUTPUT',
+             TncVariable, {Required=}true)^.VarPtr), PrimitiveTypes.PtFile);
   ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -88,7 +88,7 @@ begin
       begin
         EnsureAddressableExpr(WriteValue.Arg);
         ExDispose(OutFile);
-        OutFile := WriteValue.Arg
+        OutFile := ExCoerce(WriteValue.Arg, PrimitiveTypes.PtFile)
       end
       else
       begin
@@ -181,7 +181,7 @@ end;
 
 procedure _AddFileProc(Name : string);
 begin
-  _AddIoProc1(Name, MakeVarArg('F', PrimitiveTypes.PtText))
+  _AddIoProc1(Name, MakeVarArg('F', PrimitiveTypes.PtFile))
 end;
 
 procedure _AddFileResetProc(Name : string);
@@ -189,14 +189,14 @@ begin
   AddPseudoFn(Name, @_ModIo_FileResetFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure3(Name,
-              MakeVarArg('F', PrimitiveTypes.PtText),
+              MakeVarArg('F', PrimitiveTypes.PtFile),
   MakeArg('BLOCK_SIZE', PrimitiveTypes.PtInteger),
   MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
 procedure _AddFileProc1(Name : string; Arg1 : TPsVariable);
 begin
-  _AddIoProc2(Name, MakeVarArg('F', PrimitiveTypes.PtText), Arg1)
+  _AddIoProc2(Name, MakeVarArg('F', PrimitiveTypes.PtFile), Arg1)
 end;
 
 procedure _AddDirProc(Name : string);
@@ -206,12 +206,12 @@ end;
 
 procedure _AddFileFun(Name : string; ReturnTypePtr : TPsTypePtr);
 begin
-  _AddIoFun1(Name, ReturnTypePtr, MakeVarArg('F', PrimitiveTypes.PtText))
+  _AddIoFun1(Name, ReturnTypePtr, MakeVarArg('F', PrimitiveTypes.PtFile))
 end;
 
 procedure _AddConstFileFun(Name : string; ReturnTypePtr : TPsTypePtr);
 begin
-  _AddIoFun1(Name, ReturnTypePtr, MakeConstArg('F', PrimitiveTypes.PtText))
+  _AddIoFun1(Name, ReturnTypePtr, MakeConstArg('F', PrimitiveTypes.PtFile))
 end;
 
 

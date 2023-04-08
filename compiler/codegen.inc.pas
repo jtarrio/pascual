@@ -176,6 +176,7 @@ begin
     XcToString : Result := 0;
     XcToReal : Result := 2;
     XcToUntypedPtr : Result := _Precedence(Expr^.ToUntypedPtrParent);
+    XcToGenericFile : Result := 1;
     XcWithTmpVar : Result := 0;
     XcSubrange : Result := 0;
     XcSet : Result := 0;
@@ -387,6 +388,25 @@ begin
     end;
     write(Codegen.Output, Expr^.RecExpr^.TypePtr^.RecPtr^
           .Fields[Expr^.RecFieldNum].Name)
+  end
+end;
+
+procedure _OutExToGenericFile(Expr : TExpression);
+begin
+  with Expr^.ToGenericFileParent^ do
+  begin
+    if Cls = XcPointer then
+    begin
+      _OutExpressionParens(PointerExpr, Expr);
+      write(Codegen.Output, '->file')
+    end
+    else if (Cls = XcVariable) and VarPtr^.IsReference then
+           write(Codegen.Output, VarPtr^.Name, '->file')
+    else
+    begin
+      _OutExpressionParens(Expr^.ToGenericFileParent, Expr);
+      write(Codegen.Output, '.file')
+    end
   end
 end;
 
@@ -1033,6 +1053,7 @@ begin
                 OutExpression(Expr^.ToRealParent)
               end;
     XcToUntypedPtr: OutExpression(Expr^.ToUntypedPtrParent);
+    XcToGenericFile: _OutExToGenericFile(Expr);
     XcWithTmpVar: _OutExWithTmpVar(Expr);
     XcSubrange: _OutExSubrange(Expr);
     XcSet: _OutExSet(Expr);
@@ -1144,7 +1165,12 @@ begin
   else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
   else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'PChar')
   else if TypePtr^.Cls = TtcString then write(Codegen.Output, 'PString')
-  else if TypePtr^.Cls = TtcText then write(Codegen.Output, 'PFile')
+  else if TypePtr^.Cls = TtcFile then
+  begin
+    if TypePtr^.FileDef.Cls = TfcNone then write(Codegen.Output, 'PFile')
+    else if TypePtr^.FileDef.Cls = TfcText then write(Codegen.Output, 'PText')
+    else write(Codegen.Output, 'struct file', TypePtr^.FileDef.Id)
+  end
   else if TypePtr^.Cls = TtcEnum then
   begin
     if TypePtr^.EnumPtr^.HasBeenDefined and (TypePtr^.Name <> '') then
@@ -1316,8 +1342,24 @@ begin
          write(Codegen.Output, 'PChar', Sp, Name)
   else if TypePtr^.Cls = TtcString then
          write(Codegen.Output, 'PString', Sp, Name)
-  else if TypePtr^.Cls = TtcText then
-         write(Codegen.Output, 'PFile', Sp, Name)
+  else if TypePtr^.Cls = TtcFile then
+  begin
+    if TypePtr^.FileDef.Cls = TfcNone then
+      write(Codegen.Output, 'PFile', Sp, Name)
+    else if TypePtr^.FileDef.Cls = TfcText then
+           write(Codegen.Output, 'PText', Sp, Name)
+    else
+    begin
+      write(Codegen.Output, 'struct file', TypePtr^.FileDef.Id);
+      if not TypePtr^.FileDef.HasBeenDefined then
+      begin
+        write(Codegen.Output, ' { PFile file; ');
+        OutNameAndType('* datatype', TypePtr^.FileDef.TypePtr);
+        write(Codegen.Output, '} ', Name);
+        TypePtr^.FileDef.HasBeenDefined := true
+      end
+    end
+  end
   else if TypePtr^.Cls = TtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
   else if TypePtr^.Cls = TtcRange then

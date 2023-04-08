@@ -838,7 +838,7 @@ void LXREADTOKEN() {
 
 void LXRESET() {
   LEXER.LINE = str_make(0, "");
-  LEXER.INPUT.SRC = INPUT;
+  LEXER.INPUT.SRC = INPUT.file;
   LEXER.INPUT.NAME = str_of('-');
   LEXER.INPUT.POS.ROW = 0;
   LEXER.INPUT.POS.COL = 0;
@@ -7011,7 +7011,13 @@ void _OUTEXSUBRANGE(TEXPRESSIONOBJ* EXPR) {
 }
 
 void _OUTEXVARIABLE(TEXPRESSIONOBJ* EXPR) {
-  if (EXPR->VARPTR->ISREFERENCE) Write(&CODEGEN.OUTPUT, 1, RwpChar, '*', RwpStringPtr | RwpEnd, &EXPR->VARPTR->NAME);
+  if (cmp_str(CoEq, CpStringPtr, &EXPR->VARPTR->NAME, CpLenPtr, 5, "INPUT")
+      || cmp_str(CoEq, CpStringPtr, &EXPR->VARPTR->NAME, CpLenPtr, 6, "OUTPUT")
+      || cmp_str(CoEq, CpStringPtr, &EXPR->VARPTR->NAME, CpLenPtr, 6, "STDERR")) {
+    if (EXPR->VARPTR->ISREFERENCE) Write(&CODEGEN.OUTPUT, 1, RwpStringPtr, &EXPR->VARPTR->NAME, RwpLenPtr | RwpEnd, 6, "->file");
+    else Write(&CODEGEN.OUTPUT, 1, RwpStringPtr, &EXPR->VARPTR->NAME, RwpLenPtr | RwpEnd, 5, ".file");
+  }
+  else if (EXPR->VARPTR->ISREFERENCE) Write(&CODEGEN.OUTPUT, 1, RwpChar, '*', RwpStringPtr | RwpEnd, &EXPR->VARPTR->NAME);
   else Write(&CODEGEN.OUTPUT, 1, RwpStringPtr | RwpEnd, &EXPR->VARPTR->NAME);
 }
 
@@ -8321,7 +8327,7 @@ void OUTPROGRAMEND() {
 }
 
 void CODEGENRESET() {
-  CODEGEN.OUTPUT = OUTPUT;
+  CODEGEN.OUTPUT = OUTPUT.file;
   CODEGEN.ISMULTISTATEMENT = 0;
   CODEGEN.INDENT = 0;
   CODEGEN.NEWLINE = 1;
@@ -8334,31 +8340,31 @@ void CODEGENSETOUTPUT(PString FILENAME) {
 }
 
 void COMPILEERROR(PString MSG) {
-  Write(&STDERR, 1, RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
+  Write(&STDERR.file, 1, RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
   HALT(1);
 }
 
 void INTERNALERROR(PString MSG) {
-  Write(&STDERR, 1, RwpLenPtr, 17, "Internal error : ", RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
+  Write(&STDERR.file, 1, RwpLenPtr, 17, "Internal error : ", RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
   HALT(1);
 }
 
 void COMPILEWARNING(PString MSG) {
-  if (!OPTIONS.SUPPRESSWARNINGS) Write(&STDERR, 1, RwpLenPtr, 9, "Warning: ", RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
+  if (!OPTIONS.SUPPRESSWARNINGS) Write(&STDERR.file, 1, RwpLenPtr, 9, "Warning: ", RwpStringPtr, &MSG, RwpString | RwpLn | RwpEnd, LXWHERESTR());
 }
 
 void USAGE(PString MSG) {
   if (cmp_str(CoNotEq, CpStringPtr, &MSG, CpLenPtr, 0, "")) {
-    Write(&OUTPUT, 1, RwpStringPtr | RwpLn | RwpEnd, &MSG);
-    Write(&OUTPUT, 1, RwpEnd | RwpLn);
+    Write(&OUTPUT.file, 1, RwpStringPtr | RwpLn | RwpEnd, &MSG);
+    Write(&OUTPUT.file, 1, RwpEnd | RwpLn);
   }
-  Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 6, "Usage:");
-  Write(&OUTPUT, 1, RwpString, PARAMSTR(0), RwpLenPtr | RwpLn | RwpEnd, 33, " input.pas [-o output.c] [-Wnone]");
-  Write(&OUTPUT, 1, RwpEnd | RwpLn);
-  Write(&OUTPUT, 1, RwpLenPtr, 48, "If you specify \"-\" as the input or output file, ", RwpLenPtr | RwpLn | RwpEnd, 26, "stdin/stdout will be used.");
-  Write(&OUTPUT, 1, RwpEnd | RwpLn);
-  Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 8, "Options:");
-  Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 46, "   -Wnone    :- Suppress all warning messages.");
+  Write(&OUTPUT.file, 1, RwpLenPtr | RwpLn | RwpEnd, 6, "Usage:");
+  Write(&OUTPUT.file, 1, RwpString, PARAMSTR(0), RwpLenPtr | RwpLn | RwpEnd, 33, " input.pas [-o output.c] [-Wnone]");
+  Write(&OUTPUT.file, 1, RwpEnd | RwpLn);
+  Write(&OUTPUT.file, 1, RwpLenPtr, 48, "If you specify \"-\" as the input or output file, ", RwpLenPtr | RwpLn | RwpEnd, 26, "stdin/stdout will be used.");
+  Write(&OUTPUT.file, 1, RwpEnd | RwpLn);
+  Write(&OUTPUT.file, 1, RwpLenPtr | RwpLn | RwpEnd, 8, "Options:");
+  Write(&OUTPUT.file, 1, RwpLenPtr | RwpLn | RwpEnd, 46, "   -Wnone    :- Suppress all warning messages.");
   HALT(0);
 }
 

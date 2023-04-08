@@ -21,3 +21,7 @@ function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
 forward;
 function IsNumericType(TypePtr : TPsTypePtr) : boolean;
 forward;
+function IsFileType(TypePtr : TPsTypePtr) : boolean;
+forward;
+function IsGenericFileType(TypePtr : TPsTypePtr) : boolean;
+forward;

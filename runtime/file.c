@@ -78,7 +78,7 @@ void Getdir(PInteger drive, PString* dir, PBoolean die_on_error) {
 }
 
 static inline PBoolean is_open(const PFile* file, PBoolean die_on_error) {
-  if (file->file != NULL) return 1;
+  if (file->handle != NULL) return 1;
   set_ioresult(file, ieFileNotOpen);
   if (die_on_error) check_ioresult();
   return 0;
@@ -92,68 +92,68 @@ void Assign(PFile* file, const PString* name, PBoolean die_on_error) {
 void Close(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  fclose(file->file);
-  file->file = NULL;
+  fclose(file->handle);
+  file->handle = NULL;
 }
 
 PBoolean Eof(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 1;
-  clearerr(file->file);
-  int ch = fgetc(file->file);
-  if (feof(file->file)) return 1;
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  clearerr(file->handle);
+  int ch = fgetc(file->handle);
+  if (feof(file->handle)) return 1;
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
-  ungetc(ch, file->file);
+  ungetc(ch, file->handle);
   return 0;
 }
 
 PBoolean Seekeof(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 1;
-  clearerr(file->file);
+  clearerr(file->handle);
   int ch;
   do {
-    ch = fgetc(file->file);
-    if (feof(file->file)) return 1;
+    ch = fgetc(file->handle);
+    if (feof(file->handle)) return 1;
   } while (ch == ' ' || ch == '\t');
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
-  ungetc(ch, file->file);
+  ungetc(ch, file->handle);
   return 0;
 }
 
 PBoolean Eoln(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 1;
-  clearerr(file->file);
-  int ch = fgetc(file->file);
-  if (feof(file->file)) return 1;
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  clearerr(file->handle);
+  int ch = fgetc(file->handle);
+  if (feof(file->handle)) return 1;
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
-  ungetc(ch, file->file);
+  ungetc(ch, file->handle);
   return ch == '\n';
 }
 
 PBoolean Seekeoln(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 1;
-  clearerr(file->file);
+  clearerr(file->handle);
   int ch;
   do {
-    ch = fgetc(file->file);
-    if (feof(file->file)) return 1;
+    ch = fgetc(file->handle);
+    if (feof(file->handle)) return 1;
   } while (ch == ' ' || ch == '\t');
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
-  ungetc(ch, file->file);
+  ungetc(ch, file->handle);
   return ch == '\n';
 }
 
 PInteger Filepos(const PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 0;
-  PInteger pos = ftell(file->file);
+  PInteger pos = ftell(file->handle);
   if (pos < 0) set_ioresult(file, ioerror_from_errno());
   if (die_on_error) check_ioresult();
   return pos;
@@ -162,12 +162,12 @@ PInteger Filepos(const PFile* file, PBoolean die_on_error) {
 PInteger Filesize(const PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 0;
-  long prev = ftell(file->file);
+  long prev = ftell(file->handle);
   if (prev < 0) goto filesize_error;
-  if (fseek(file->file, 0, SEEK_END) < 0) goto filesize_error;
-  long size = ftell(file->file);
+  if (fseek(file->handle, 0, SEEK_END) < 0) goto filesize_error;
+  long size = ftell(file->handle);
   if (size < 0) goto filesize_error;
-  if (fseek(file->file, prev, SEEK_SET) < 0) goto filesize_error;
+  if (fseek(file->handle, prev, SEEK_SET) < 0) goto filesize_error;
   return size;
 
 filesize_error:
@@ -179,7 +179,7 @@ filesize_error:
 void Seek(PFile* file, PInteger pos, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  if (fseek(file->file, pos, SEEK_SET) < 0)
+  if (fseek(file->handle, pos, SEEK_SET) < 0)
     set_ioresult(file, ioerror_from_errno());
   if (die_on_error) check_ioresult();
 }
@@ -187,7 +187,7 @@ void Seek(PFile* file, PInteger pos, PBoolean die_on_error) {
 void Flush(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  if (fflush(file->file) < 0) set_ioresult(file, ioerror_from_errno());
+  if (fflush(file->handle) < 0) set_ioresult(file, ioerror_from_errno());
   if (die_on_error) check_ioresult();
 }
 
@@ -214,8 +214,8 @@ void Rename(PFile* file, const PString* name, PBoolean die_on_error) {
 static inline void open_file(PFile* file, const char* mode,
                              PBoolean die_on_error) {
   check_ioresult();
-  file->file = fopen(pchar_of_str(&file->name), mode);
-  if (file->file == NULL) {
+  file->handle = fopen(pchar_of_str(&file->name), mode);
+  if (file->handle == NULL) {
     set_ioresult(file, errno == ENOENT   ? ieFileNotFound
                        : errno == EACCES ? ieAccessDenied
                                          : ieUnknown);
@@ -234,30 +234,30 @@ void Rewrite(PFile* file, PInteger block_size, PBoolean die_on_error) {
 static void readln(PFile* file, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  clearerr(file->file);
+  clearerr(file->handle);
   int chr;
   do {
-    chr = fgetc(file->file);
+    chr = fgetc(file->handle);
   } while ((chr != '\n') && (chr != -1));
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
 }
 
 static PBoolean read_token(PFile* file, PString* str, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return 0;
-  clearerr(file->file);
+  clearerr(file->handle);
   int len = 0;
   int chr = 0;
   enum { Blanks, Token, End } stage = Blanks;
   while (len < 255 && stage != 2) {
-    chr = fgetc(file->file);
+    chr = fgetc(file->handle);
     if (chr == -1)
       break;
     else if (chr == ' ' || chr == '\t' || chr == '\n') {
       if (stage == Token) {
         stage = End;
-        ungetc(chr, file->file);
+        ungetc(chr, file->handle);
       }
     } else {
       if (stage == Blanks) stage = Token;
@@ -265,7 +265,7 @@ static PBoolean read_token(PFile* file, PString* str, PBoolean die_on_error) {
     }
   }
   str->len = len;
-  if (ferror(file->file)) {
+  if (ferror(file->handle)) {
     set_ioresult(file, ieReadError);
     if (die_on_error) check_ioresult();
     return 0;
@@ -278,9 +278,9 @@ static void read_char(PFile* file, PChar* chr, PBoolean die_on_error) {
   int ch = 0;
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  clearerr(file->file);
-  ch = fgetc(file->file);
-  if (ferror(file->file))
+  clearerr(file->handle);
+  ch = fgetc(file->handle);
+  if (ferror(file->handle))
     set_ioresult(file, ieReadError);
   else if (ch == -1)
     *chr = 26;
@@ -292,20 +292,20 @@ static void read_char(PFile* file, PChar* chr, PBoolean die_on_error) {
 static void read_str(PFile* file, PString* str, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  clearerr(file->file);
+  clearerr(file->handle);
   int chr = 0;
   int len = 0;
   while ((len < 255) && (chr != '\n')) {
-    chr = fgetc(file->file);
+    chr = fgetc(file->handle);
     if (chr == -1)
       break;
     else if (chr == '\n')
-      ungetc(chr, file->file);
+      ungetc(chr, file->handle);
     else
       str->value[len++] = chr;
   }
   str->len = len;
-  if (ferror(file->file)) set_ioresult(file, ieReadError);
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
 }
 
@@ -346,11 +346,11 @@ static void writestr(PFile* file, int strlen, const char* strptr, int width,
                      int linefeed, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  clearerr(file->file);
-  for (int i = 0; i < width - strlen; ++i) fputc(' ', file->file);
-  for (int pos = 0; pos < strlen; ++pos) fputc(strptr[pos], file->file);
-  if (linefeed) fputc('\n', file->file);
-  if (ferror(file->file)) set_ioresult(file, ieWriteError);
+  clearerr(file->handle);
+  for (int i = 0; i < width - strlen; ++i) fputc(' ', file->handle);
+  for (int pos = 0; pos < strlen; ++pos) fputc(strptr[pos], file->handle);
+  if (linefeed) fputc('\n', file->handle);
+  if (ferror(file->handle)) set_ioresult(file, ieWriteError);
   if (die_on_error) check_ioresult();
 }
 
@@ -414,17 +414,17 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
   va_end(args);
 }
 
-PFile INPUT = {};
-PFile OUTPUT = {};
-PFile STDERR = {};
+PText INPUT = {};
+PText OUTPUT = {};
+PText STDERR = {};
 
 void InitFile() {
   error_code = 0;
   error_file = NULL;
-  INPUT.file = stdin;
-  INPUT.name = str_make(7, "(stdin)");
-  OUTPUT.file = stdout;
-  OUTPUT.name = str_make(8, "(stdout)");
-  STDERR.file = stderr;
-  STDERR.name = str_make(8, "(stderr)");
+  INPUT.file.handle = stdin;
+  INPUT.file.name = str_make(7, "(stdin)");
+  OUTPUT.file.handle = stdout;
+  OUTPUT.file.name = str_make(8, "(stdout)");
+  STDERR.file.handle = stderr;
+  STDERR.file.name = str_make(8, "(stderr)");
 }

@@ -11,7 +11,8 @@ begin
   PrimitiveTypes.PtReal := MakeBaseType('REAL', TtcReal);
   PrimitiveTypes.PtChar := MakeBaseType('CHAR', TtcChar);
   PrimitiveTypes.PtString := MakeBaseType('STRING', TtcString);
-  PrimitiveTypes.PtText := MakeBaseType('TEXT', TtcText);
+  PrimitiveTypes.PtText := AddTypeName('TEXT', MakeTextType)^.TypePtr;
+  PrimitiveTypes.PtFile := MakeGenericFileType;
   PrimitiveTypes.PtEmptySet := MakeSetType(nil);
   PrimitiveTypes.PtUntypedPtr := AddTypeName('POINTER', 
                                  MakePointerType(nil))^.TypePtr;

@@ -7,9 +7,9 @@
 #undef EOF
 #endif
 
-extern PFile INPUT;
-extern PFile OUTPUT;
-extern PFile STDERR;
+extern PText INPUT;
+extern PText OUTPUT;
+extern PText STDERR;
 
 PInteger IORESULT();
 
