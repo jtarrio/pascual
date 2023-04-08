@@ -156,7 +156,7 @@ PInteger Filepos(const PFile* file, PBoolean die_on_error) {
   PInteger pos = ftell(file->handle);
   if (pos < 0) set_ioresult(file, ioerror_from_errno());
   if (die_on_error) check_ioresult();
-  return pos;
+  return pos / file->block_size;
 }
 
 PInteger Filesize(const PFile* file, PBoolean die_on_error) {
@@ -168,7 +168,7 @@ PInteger Filesize(const PFile* file, PBoolean die_on_error) {
   long size = ftell(file->handle);
   if (size < 0) goto filesize_error;
   if (fseek(file->handle, prev, SEEK_SET) < 0) goto filesize_error;
-  return size;
+  return size / file->block_size;
 
 filesize_error:
   set_ioresult(file, ioerror_from_errno());
@@ -179,7 +179,7 @@ filesize_error:
 void Seek(PFile* file, PInteger pos, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
-  if (fseek(file->handle, pos, SEEK_SET) < 0)
+  if (fseek(file->handle, pos * file->block_size, SEEK_SET) < 0)
     set_ioresult(file, ioerror_from_errno());
   if (die_on_error) check_ioresult();
 }
@@ -211,7 +211,7 @@ void Rename(PFile* file, const PString* name, PBoolean die_on_error) {
   if (die_on_error) check_ioresult();
 }
 
-static inline void open_file(PFile* file, const char* mode,
+static inline void open_file(PFile* file, const char* mode, PInteger block_size,
                              PBoolean die_on_error) {
   check_ioresult();
   file->handle = fopen(pchar_of_str(&file->name), mode);
@@ -220,15 +220,16 @@ static inline void open_file(PFile* file, const char* mode,
                        : errno == EACCES ? ieAccessDenied
                                          : ieUnknown);
   }
+  file->block_size = block_size < 1 ? 1 : block_size;
   if (die_on_error) check_ioresult();
 }
 
 void Reset(PFile* file, PInteger block_size, PBoolean die_on_error) {
-  open_file(file, "r", die_on_error);
+  open_file(file, "r", block_size, die_on_error);
 }
 
 void Rewrite(PFile* file, PInteger block_size, PBoolean die_on_error) {
-  open_file(file, "w", die_on_error);
+  open_file(file, "w", block_size, die_on_error);
 }
 
 static void readln(PFile* file, PBoolean die_on_error) {
@@ -355,7 +356,7 @@ static void writestr(PFile* file, int strlen, const char* strptr, int width,
 }
 
 void Write(PFile* file, PBoolean die_on_error, ...) {
-  int use_ptr;
+  enum { Str, StrPtr } type;
   PString str;
   int strlen;
   const char* strptr;
@@ -363,7 +364,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
   va_list args;
   va_start(args, die_on_error);
   do {
-    use_ptr = 0;
+    type = Str;
     str.len = 0;
     paramtype = va_arg(args, enum ReadWriteParamType);
     int width = paramtype & RwpWidth ? va_arg(args, int) : 0;
@@ -392,39 +393,43 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
         str = va_arg(args, PString);
         break;
       case RwpStringPtr: {
+        type = StrPtr;
         PString* dst = va_arg(args, PString*);
-        use_ptr = 1;
         strlen = dst->len;
         strptr = dst->value;
         break;
       }
       case RwpLenPtr: {
-        use_ptr = 1;
+        type = StrPtr;
         strlen = va_arg(args, int);
         strptr = va_arg(args, const char*);
         break;
       }
     }
-    if (use_ptr)
-      writestr(file, strlen, strptr, width, paramtype & RwpLn, die_on_error);
-    else
-      writestr(file, str.len, str.value, width, paramtype & RwpLn,
-               die_on_error);
+    switch (type) {
+      case Str:
+        writestr(file, str.len, str.value, width, paramtype & RwpLn,
+                 die_on_error);
+        break;
+      case StrPtr:
+        writestr(file, strlen, strptr, width, paramtype & RwpLn, die_on_error);
+        break;
+    }
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
 }
 
-PText INPUT = {};
-PText OUTPUT = {};
-PText STDERR = {};
+PFile INPUT = {};
+PFile OUTPUT = {};
+PFile STDERR = {};
 
 void InitFile() {
   error_code = 0;
   error_file = NULL;
-  INPUT.file.handle = stdin;
-  INPUT.file.name = str_make(7, "(stdin)");
-  OUTPUT.file.handle = stdout;
-  OUTPUT.file.name = str_make(8, "(stdout)");
-  STDERR.file.handle = stderr;
-  STDERR.file.name = str_make(8, "(stderr)");
+  INPUT.handle = stdin;
+  INPUT.name = str_make(7, "(stdin)");
+  OUTPUT.handle = stdout;
+  OUTPUT.name = str_make(8, "(stdout)");
+  STDERR.handle = stderr;
+  STDERR.name = str_make(8, "(stderr)");
 }

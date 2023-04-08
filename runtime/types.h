@@ -34,12 +34,8 @@ typedef struct {
 typedef struct {
   PString name;
   FILE* handle;
+  PInteger block_size;
 } PFile;
-
-typedef struct {
-  PFile file;
-  PChar* datatype;
-} PText;
 
 #define DEF_SET_BITS(b)                        \
   typedef struct __attribute__((__packed__)) { \

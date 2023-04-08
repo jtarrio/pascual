@@ -264,9 +264,9 @@ echo '(One, Two, Three); X = set of T' | testtype | is_valid
 echo 'set of integer' | testtype | is_not_valid
 echo 'set of 5..15' | testtype | is_valid
 echo "set of 'a'..'z'" | testtype | is_valid
-echo 'file of integer' | testtype | will_be_valid
+echo 'file of integer' | testtype | is_valid
 echo 'file of record A : integer; B : char end' | testtype | is_not_valid
-echo 'record A : integer; B : char end; X = file of T' | testtype | will_be_valid
+echo 'record A : integer; B : char end; X = file of T' | testtype | is_valid
 echo 'text' | testtype | is_valid
 echo '^integer' | testtype | is_valid
 echo 'integer; X = ^T' | testtype | is_valid

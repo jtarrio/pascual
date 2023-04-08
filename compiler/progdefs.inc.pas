@@ -11,7 +11,6 @@ begin
   case CounterType of 
     TctEnum: Ctr := @Defs.Counters.EnumCtr;
     TctRecord: Ctr := @Defs.Counters.RecordCtr;
-    TctFile: Ctr := @Defs.Counters.FileCtr;
     TctTmpVar: Ctr := @Defs.Counters.TmpVarCtr;
   end;
   Ctr^ := Ctr^ + 1;
@@ -23,7 +22,6 @@ begin
   Defs.Latest := nil;
   Defs.Counters.EnumCtr := 0;
   Defs.Counters.RecordCtr := 0;
-  Defs.Counters.FileCtr := 0;
   Defs.Counters.TmpVarCtr := 0;
   Defs.CurrentFn := nil;
 end;
@@ -1100,7 +1098,6 @@ begin
   begin
     { TODO check that the type is appropriate }
     Result := _NewType(TtcFile);
-    Result^.FileDef.Id := DefCounter(TctFile);
     Result^.FileDef.Cls := Cls;
     if Cls = TfcBinary then Result^.FileDef.TypePtr := TypePtr
   end

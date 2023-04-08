@@ -143,6 +143,7 @@ var
   Args : TExFunctionArgs;
   FnName : string;
   FnPtr : TPsFnPtr;
+  FileTypePtr : TPsTypePtr;
 begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
@@ -150,7 +151,13 @@ begin
   FnPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.FnPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
-  Args.Values[Args.Size - 1] := ExIntegerConstant(0);
+  if Args.Values[1]^.Cls = XcToGenericFile then
+    FileTypePtr := Args.Values[1]^.ToGenericFileParent^.TypePtr
+  else FileTypePtr := Args.Values[1]^.TypePtr;
+  if IsTextType(FileTypePtr) or IsGenericFileType(FileTypePtr) then
+    Args.Values[Args.Size - 1] := ExIntegerConstant(0)
+  else
+    Args.Values[Args.Size - 1] := ExSizeof(FileTypePtr^.FileDef.TypePtr);
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
   Result := ExFunctionCall(ExFnRef(FnPtr), Args)
 end;

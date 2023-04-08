@@ -133,12 +133,6 @@ type
   TPsNamePtr = ^TPsName;
 
   TPsFileClass = (TfcNone, TfcText, TfcBinary);
-  TPsFileDef = record
-    Id : integer;
-    HasBeenDefined : boolean;
-    case Cls : TPsFileClass of 
-      TfcBinary : (TypePtr : TPsTypePtr)
-  end;
 
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcFile,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
@@ -148,7 +142,10 @@ type
     AliasFor : TPsTypePtr;
     WasUsed : boolean;
     case Cls : TPsTypeClass of 
-      TtcFile : (FileDef : TPsFileDef);
+      TtcFile : (FileDef : record
+                 Cls : TPsFileClass;
+                 TypePtr : TPsTypePtr
+                 end);
       TtcEnum : (EnumPtr : TPsEnumPtr);
       TtcRange : (RangeDef : record
                   First, Last : integer;
@@ -237,11 +234,10 @@ type
       TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;
 
-  TPsCounterType = (TctEnum, TctRecord, TctFile, TctTmpVar);
+  TPsCounterType = (TctEnum, TctRecord, TctTmpVar);
   TPsCounters = record
     EnumCtr : integer;
     RecordCtr : integer;
-    FileCtr : integer;
     TmpVarCtr : integer;
   end;
 

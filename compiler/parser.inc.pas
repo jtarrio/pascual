@@ -327,6 +327,13 @@ begin
   Result := MakeSetType(ElementTypePtr)
 end;
 
+function PsFileType : TPsTypePtr;
+begin
+  WantTokenAndRead(TkFile);
+  WantTokenAndRead(TkOf);
+  Result := MakeFileType(PsTypeIdentifier)
+end;
+
 function PsTypeDenoter;
 var 
   Idx : TPsNamePtr;
@@ -337,6 +344,7 @@ begin
   SkipToken(TkPacked);
 
   if Lexer.Token.Id = TkLparen then Result := PsEnumeratedType
+  else if Lexer.Token.Id = TkFile then Result := PsFileType
   else if Lexer.Token.Id = TkSet then Result := PsSetType
   else if Lexer.Token.Id = TkRecord then Result := PsRecordType(IsPacked)
   else if Lexer.Token.Id = TkArray then Result := PsArrayType
