@@ -55,7 +55,7 @@ type
     Next : TExWriteArgList
   end;
   TExOperator = (XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod, XoNeg,
-                 XoAnd, XoOr, XoXor, XoNot, XoShl, XoShr,
+                 XoAnd, XoOr, XoXor, XoShl, XoShr, XoNot,
                  XoIn,
                  XoEq, XoNe, XoLt, XoGt, XoLtEq, XoGtEq,
                  XoOrd, XoPred, XoSucc);

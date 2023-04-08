@@ -363,20 +363,44 @@ begin
 end;
 
 const _ExPrecedences : array[TExpressionClass] of integer 
-                       = ( 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1,
-                          0, 1, 1, 1, 1, 1, 1, -1, -1);
-const _ExOpPrecedences : array[TExOperator] of integer 
-                         = (4, 4, 4, 3, 3, 3, 4,
-                            3, 4, 4, 1, 3, 3,
-                            5,
-                            5, 5, 5, 5, 5, 5,
-                            1, 1, 1);
-const _ExOpNames : array[TExOperator] of string 
-                   = ('+', '-', '*', '/', 'DIV', 'MOD', '-',
-                      'AND', 'OR', 'XOR', 'NOT', 'SHL', 'SHR',
-                      'IN',
-                      '=', '<>', '<', '>', '<=', '>=',
-                      'ORD', 'PRED', 'SUCC');
+                       = (
+                          {XcImmediate=}0, {XcToString=}-1, {XcToReal=}-1,
+                          {XcToUntypedPtr=}-1, {XcWithTmpVar=}-1,
+                          {XcSubrange=}0, {XcSet=}0, {XcVariable=}0,
+                          {XcField=}1, {XcArray=}1, {XcPointer=}1,
+                          {XcAddress=}1, {XcStringChar=}1, {XcFnRef=}0,
+                          {XcFnCall=}0, {XcPseudoFnRef=}0, {XcSizeof=}1,
+                          {XcConvertToStr=}1, {XcConvertToVal=}1, {XcRead=}1,
+                          {XcWrite=}1, {XcUnaryOp=}-1, {XcBinaryOp=}-1);
+const _ExOperators : array[TExOperator] of record
+  Precedence: integer;
+  Name: string
+end 
+= (
+    {XoAdd=}(Precedence: 4; Name: '+'),
+    {XoSub=}(Precedence: 4; Name: '-'),
+    {XoMul=}(Precedence: 4; Name: '*'),
+    {XoDivReal=}(Precedence: 3; Name: '/'),
+    {XoDivInt=}(Precedence: 3; Name: 'DIV'),
+    {XoMod=}(Precedence: 3; Name: 'MOD'),
+    {XoNeg=}(Precedence: 4; Name: '-'),
+    {XoAnd=}(Precedence: 3; Name: 'AND'),
+    {XoOr=}(Precedence: 4; Name: 'OR'),
+    {XoXor=}(Precedence: 4; Name: 'XOR'),
+    {XoShl=}(Precedence: 3; Name: 'SHL'),
+    {XoShr=}(Precedence: 3; Name: 'SHR'),
+    {XoNot=}(Precedence: 1; Name: 'NOT'),
+    {XoIn=}(Precedence: 5; Name: 'IN'),
+    {XoEq=}(Precedence: 5; Name: '='),
+    {XoNe=}(Precedence: 5; Name: '<>'),
+    {XoLt=}(Precedence: 5; Name: '<'),
+    {XoGt=}(Precedence: 5; Name: '>'),
+    {XoLtEq=}(Precedence: 5; Name: '<='),
+    {XoGtEq=}(Precedence: 5; Name: '>='),
+    {XoOrd=}(Precedence: 1; Name: 'ORD'),
+    {XoPred=}(Precedence: 1; Name: 'PREC'),
+    {XoSucc=}(Precedence: 1; Name: 'SUCC')
+  );
 
 function _ExprPrecedence(Expr : TExpression) : integer;
 begin
@@ -389,8 +413,8 @@ begin
       XcToUntypedPtr: Result := _ExprPrecedence(Expr^.ToUntypedPtrParent);
       XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
       XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
-      XcUnaryOp: Result := _ExOpPrecedences[Expr^.Unary.Op];
-      XcBinaryOp: Result := _ExOpPrecedences[Expr^.Binary.Op];
+      XcUnaryOp: Result := _ExOperators[Expr^.Unary.Op].Precedence;
+      XcBinaryOp: Result := _ExOperators[Expr^.Binary.Op].Precedence;
     end
   end;
   if Result < 0 then
@@ -399,7 +423,7 @@ end;
 
 function ExDescribeOperator(Op : TExOperator) : string;
 begin
-  Result := _ExOpNames[Op]
+  Result := _ExOperators[Op].Name
 end;
 
 function _DescribeUnaryOpExpr(Expr : TExpression) : string;
