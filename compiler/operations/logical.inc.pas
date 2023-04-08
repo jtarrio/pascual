@@ -136,7 +136,7 @@ begin
     Result := _ExOpLogical_Booleans(Left, Right, XoAnd)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
          Result := _ExOpLogical_Integers(Left, Right, XoAnd)
-  else ErrorInvalidOperator2(Left, Right, XoAdd)
+  else ErrorInvalidOperator2(Left, Right, XoAnd)
 end;
 
 function ExOpOr(Left, Right : TExpression) : TExpression;
