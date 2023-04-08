@@ -83,7 +83,7 @@ typedef struct record8 {
   TEXWRITEARG VALUE;
   struct record8* NEXT;
 } TEXWRITEARGVALUE;
-typedef enum __attribute__((__packed__)) enum2 { XOADD, XOSUB, XOMUL, XODIVREAL, XODIVINT, XOMOD, XONEG, XOAND, XOOR, XOXOR, XONOT, XOSHL, XOSHR, XOIN, XOEQ, XONE, XOLT, XOGT, XOLTEQ, XOGTEQ, XOORD, XOPRED, XOSUCC } TEXOPERATOR;
+typedef enum __attribute__((__packed__)) enum2 { XOADD, XOSUB, XOMUL, XODIVREAL, XODIVINT, XOMOD, XONEG, XOAND, XOOR, XOXOR, XOSHL, XOSHR, XONOT, XOIN, XOEQ, XONE, XOLT, XOGT, XOLTEQ, XOGTEQ, XOORD, XOPRED, XOSUCC } TEXOPERATOR;
 typedef struct record9 {
   struct record11* PARENT;
   TEXOPERATOR OP;
@@ -368,7 +368,7 @@ typedef struct record29 {
 } TPSDEFS;
 
 const char* enumvalues1[] = { "XICNIL", "XICBOOLEAN", "XICINTEGER", "XICREAL", "XICCHAR", "XICSTRING", "XICENUM", "XICSET" };
-const char* enumvalues2[] = { "XOADD", "XOSUB", "XOMUL", "XODIVREAL", "XODIVINT", "XOMOD", "XONEG", "XOAND", "XOOR", "XOXOR", "XONOT", "XOSHL", "XOSHR", "XOIN", "XOEQ", "XONE", "XOLT", "XOGT", "XOLTEQ", "XOGTEQ", "XOORD", "XOPRED", "XOSUCC" };
+const char* enumvalues2[] = { "XOADD", "XOSUB", "XOMUL", "XODIVREAL", "XODIVINT", "XOMOD", "XONEG", "XOAND", "XOOR", "XOXOR", "XOSHL", "XOSHR", "XONOT", "XOIN", "XOEQ", "XONE", "XOLT", "XOGT", "XOLTEQ", "XOGTEQ", "XOORD", "XOPRED", "XOSUCC" };
 const char* enumvalues3[] = { "XCIMMEDIATE", "XCTOSTRING", "XCTOREAL", "XCTOUNTYPEDPTR", "XCWITHTMPVAR", "XCSUBRANGE", "XCSET", "XCVARIABLE", "XCFIELD", "XCARRAY", "XCPOINTER", "XCADDRESS", "XCSTRINGCHAR", "XCFNREF", "XCFNCALL", "XCPSEUDOFNREF", "XCSIZEOF", "XCCONVERTTOSTR", "XCCONVERTTOVAL", "XCREAD", "XCWRITE", "XCUNARYOP", "XCBINARYOP" };
 const char* enumvalues4[] = { "TTCBOOLEAN", "TTCINTEGER", "TTCREAL", "TTCCHAR", "TTCSTRING", "TTCTEXT", "TTCENUM", "TTCRANGE", "TTCSET", "TTCRECORD", "TTCARRAY", "TTCPOINTER", "TTCNIL", "TTCPOINTERFORWARD", "TTCFUNCTION" };
 const char* enumvalues5[] = { "TNCTYPE", "TNCVARIABLE", "TNCCONSTANT", "TNCENUMVAL", "TNCFUNCTION", "TNCPSEUDOFN" };
@@ -2610,9 +2610,11 @@ PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ* EXPR) {
   }
   return RESULT;
 }
-const PInteger _EXPRECEDENCES[23] = { 0, -1, -1, -1, -1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, -1, -1 };
-const PInteger _EXOPPRECEDENCES[23] = { 4, 4, 4, 3, 3, 3, 4, 3, 4, 4, 1, 3, 3, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1 };
-const PString _EXOPNAMES[23] = { str_of('+'), str_of('-'), str_of('*'), str_of('/'), str_make(3, "DIV"), str_make(3, "MOD"), str_of('-'), str_make(3, "AND"), str_make(2, "OR"), str_make(3, "XOR"), str_make(3, "NOT"), str_make(3, "SHL"), str_make(3, "SHR"), str_make(2, "IN"), str_of('='), str_make(2, "<>"), str_of('<'), str_of('>'), str_make(2, "<="), str_make(2, ">="), str_make(3, "ORD"), str_make(4, "PRED"), str_make(4, "SUCC") };
+const PInteger _EXPRECEDENCES[23] = { 0, -1, -1, -1, -1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, -1, -1 };
+const struct record36 {
+  PInteger PRECEDENCE;
+  PString NAME;
+} _EXOPERATORS[23] = { { .PRECEDENCE = 4, .NAME = str_of('+') }, { .PRECEDENCE = 4, .NAME = str_of('-') }, { .PRECEDENCE = 4, .NAME = str_of('*') }, { .PRECEDENCE = 3, .NAME = str_of('/') }, { .PRECEDENCE = 3, .NAME = str_make(3, "DIV") }, { .PRECEDENCE = 3, .NAME = str_make(3, "MOD") }, { .PRECEDENCE = 4, .NAME = str_of('-') }, { .PRECEDENCE = 3, .NAME = str_make(3, "AND") }, { .PRECEDENCE = 4, .NAME = str_make(2, "OR") }, { .PRECEDENCE = 4, .NAME = str_make(3, "XOR") }, { .PRECEDENCE = 3, .NAME = str_make(3, "SHL") }, { .PRECEDENCE = 3, .NAME = str_make(3, "SHR") }, { .PRECEDENCE = 1, .NAME = str_make(3, "NOT") }, { .PRECEDENCE = 5, .NAME = str_make(2, "IN") }, { .PRECEDENCE = 5, .NAME = str_of('=') }, { .PRECEDENCE = 5, .NAME = str_make(2, "<>") }, { .PRECEDENCE = 5, .NAME = str_of('<') }, { .PRECEDENCE = 5, .NAME = str_of('>') }, { .PRECEDENCE = 5, .NAME = str_make(2, "<=") }, { .PRECEDENCE = 5, .NAME = str_make(2, ">=") }, { .PRECEDENCE = 1, .NAME = str_make(3, "ORD") }, { .PRECEDENCE = 1, .NAME = str_make(4, "PREC") }, { .PRECEDENCE = 1, .NAME = str_make(4, "SUCC") } };
 
 PInteger _EXPRPRECEDENCE(TEXPRESSIONOBJ* EXPR) {
   PInteger RESULT;
@@ -2635,10 +2637,10 @@ PInteger _EXPRPRECEDENCE(TEXPRESSIONOBJ* EXPR) {
         RESULT = _EXPRPRECEDENCE(EXPR->SUBRANGEPARENT);
         break;
       case XCUNARYOP:
-        RESULT = _EXOPPRECEDENCES[EXPR->UNARY.OP];
+        RESULT = _EXOPERATORS[EXPR->UNARY.OP].PRECEDENCE;
         break;
       case XCBINARYOP:
-        RESULT = _EXOPPRECEDENCES[EXPR->BINARY.OP];
+        RESULT = _EXOPERATORS[EXPR->BINARY.OP].PRECEDENCE;
         break;
       default:
         break;
@@ -2650,7 +2652,7 @@ PInteger _EXPRPRECEDENCE(TEXPRESSIONOBJ* EXPR) {
 
 PString EXDESCRIBEOPERATOR(TEXOPERATOR OP) {
   PString RESULT;
-  RESULT = _EXOPNAMES[OP];
+  RESULT = _EXOPERATORS[OP].NAME;
   return RESULT;
 }
 
@@ -6562,7 +6564,7 @@ typedef enum __attribute__((__packed__)) enum9 { TOTNONE, TOTTYPE, TOTVAR, TOTEN
 
 const char* enumvalues9[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record36 {
+struct record37 {
   PFile OUTPUT;
   PBoolean ISMULTISTATEMENT;
   PInteger INDENT;
@@ -7802,9 +7804,11 @@ PString _GETRANGETYPE(TPSTYPE* TYPEPTR) {
   PString RESULT;
   typedef enum __attribute__((__packed__)) enum10 { U8, S8, U16, S16, U32, S32 } TYPES;
   const char* enumvalues10[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
-  const PString NAMES[6] = { str_make(6, "PBits8"), str_make(7, "PBits8S"), str_make(7, "PBits16"), str_make(8, "PBits16S"), str_make(7, "PBits32"), str_make(8, "PBits32S") };
-  const PInteger LOWLIMITS[6] = { 0, -128, 0, -32768, 0, -0 };
-  const PInteger HIGHLIMITS[6] = { 255, 127, 65535, 32767, -1, 2147483647 };
+  const struct record38 {
+    PString NAME;
+    PInteger LOW;
+    PInteger HIGH;
+  } TYPEINFO[6] = { { .NAME = str_make(6, "PBits8"), .LOW = 0, .HIGH = 255 }, { .NAME = str_make(7, "PBits8S"), .LOW = -128, .HIGH = 127 }, { .NAME = str_make(7, "PBits16"), .LOW = 0, .HIGH = 65535 }, { .NAME = str_make(8, "PBits16S"), .LOW = -32768, .HIGH = 32767 }, { .NAME = str_make(7, "PBits32"), .LOW = 0, .HIGH = 2147483647 }, { .NAME = str_make(8, "PBits32S"), .LOW = -2147483648, .HIGH = 2147483647 } };
   PSet8 FITTYPES;
   PInteger LOW;
   PInteger HIGH;
@@ -7814,13 +7818,13 @@ PString _GETRANGETYPE(TPSTYPE* TYPEPTR) {
   HIGH = GETTYPEHIGHBOUND(TYPEPTR);
   for (PInteger first = U8, last = S32; first <= last; /*breaks*/) {
     PBoolean done = 0;
-    for (T = first; !done; done = T == last ? 1 : (++T, 0)) if (LOW >= LOWLIMITS[T] && HIGH <= HIGHLIMITS[T]) FITTYPES = ({ PSet8 dst; set_union(FITTYPES.bits, ({ PSet8 dst = (PSet8) { 0 }; set_set(T, T, 0, dst.bits); dst; }).bits, dst.bits, 1); dst; });
+    for (T = first; !done; done = T == last ? 1 : (++T, 0)) if (LOW >= TYPEINFO[T].LOW && HIGH <= TYPEINFO[T].HIGH) FITTYPES = ({ PSet8 dst; set_union(FITTYPES.bits, ({ PSet8 dst = (PSet8) { 0 }; set_set(T, T, 0, dst.bits); dst; }).bits, dst.bits, 1); dst; });
     break;
   }
   RESULT = str_make(8, "PInteger");
   for (PInteger first = S32, last = U8; first >= last; /*breaks*/) {
     PBoolean done = 0;
-    for (T = first; !done; done = T == last ? 1 : (--T, 0)) if (set_in(T, 0, FITTYPES.bits)) RESULT = NAMES[T];
+    for (T = first; !done; done = T == last ? 1 : (--T, 0)) if (set_in(T, 0, FITTYPES.bits)) RESULT = TYPEINFO[T].NAME;
     break;
   }
   return RESULT;
