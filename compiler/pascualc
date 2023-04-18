@@ -63,8 +63,9 @@ parse_cmd "$@"
 
 if [ -z "$compile_only" ]
 then
-  c_file="$(mktemp --suffix=.c)"
-  trap 'rm -f "$c_file"' EXIT
+  tmp_dir="$(mktemp -d -t pascualc.XXXXXXXXXX)"
+  c_file="${tmp_dir}/source.c"
+  trap 'rm -fR "$tmp_dir"' EXIT
 else
   c_file="$output"
 fi

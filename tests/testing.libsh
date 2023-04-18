@@ -4,16 +4,11 @@ CC="${CC:-gcc}"
 PINCDIR="${PINCDIR:-${my_dir}/../runtime}"
 PLIBDIR="${PLIBDIR:-${my_dir}/../runtime}"
 
-cleanups=()
-add_cleanup() {
-  cleanups+=("$1")
-  trap 'rm -f "${cleanups[@]}"' EXIT
-}
+TEST_TMP_DIR="$(mktemp -d -t pascual-test.XXXXXXXXXX)"
+trap 'rm -fR "$TEST_TMP_DIR"' EXIT
 
 do_compile_with_fpc() {
-  infile="$(mktemp --suffix=.pas)"
-  add_cleanup "$infile"
-  add_cleanup "${infile%.pas}.o"
+  infile="$TEST_TMP_DIR/source.pas"
   cat > "$infile"
   fpc -Mtp "$infile" -o"$1" >/dev/null 2>&1
 }
@@ -21,8 +16,7 @@ do_compile_with_fpc() {
 do_test_syntax() {
   if [ "$PC" = 'fpc' ]
   then
-    outfile="$(mktemp)"
-    add_cleanup "$outfile"
+    outfile="$TEST_TMP_DIR/output-file"
     do_compile_with_fpc "$outfile"
   else
     "$PC" - -Wnone -o /dev/null 2>/dev/null
@@ -30,7 +24,7 @@ do_test_syntax() {
 }
 
 do_compile() {
-  outfile="$(mktemp)"
+  outfile="$TEST_TMP_DIR/compiled-program"
   if [ "$PC" = 'fpc' ]
   then
     do_compile_with_fpc "$outfile"
@@ -59,7 +53,6 @@ will_be_valid() {
 
 aborts() {
   outfile=$(do_compile)
-  add_cleanup "$outfile"
   if ( "$outfile" || false ) >/dev/null 2>&1
   then
     echo "Program did not abort execution in ${BASH_SOURCE[1]}:${BASH_LINENO}"
@@ -69,24 +62,20 @@ aborts() {
 
 outputs() {
   outfile=$(do_compile)
-  add_cleanup "$outfile"
   "$outfile" | diff -u --label expected <(echo -n "$1") --label actual - || (echo "Program output does not match in ${BASH_SOURCE[1]}:${BASH_LINENO}" ; exit 1 )
 }
 
 inputs_and_outputs() {
   outfile=$(do_compile)
-  add_cleanup "$outfile"
   echo -n "$1" | "$outfile" | diff -u --label expected <(echo -n "$2") --label actual - || (echo "Program output does not match in ${BASH_SOURCE[1]}:${BASH_LINENO}" ; exit 1 )
 }
 
 reads_and_outputs() {
   outfile=$(do_compile)
-  add_cleanup "$outfile"
   "$outfile" <(echo -n "$1") | diff -u --label expected <(echo -n "$2") --label actual - || (echo "Program output does not match in ${BASH_SOURCE[1]}:${BASH_LINENO}" ; exit 1 )
 }
 
 inputs_and_writes() {
   outfile=$(do_compile)
-  add_cleanup "$outfile"
   echo -n "$1" | "$outfile" >(diff -u --label expected <(echo -n "$2") --label actual - || (echo "Program output does not match in ${BASH_SOURCE[1]}:${BASH_LINENO}" ; exit 1 ))
 }
