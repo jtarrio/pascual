@@ -103,7 +103,7 @@ const char* pchar_of_str(const PString* str) {
   return buffer;
 }
 
-static void str_concat(PString* dst, int len, const char* src) {
+static void str_concat(PString* dst, int len, const PChar* src) {
   if (len > (255 - dst->len)) len = 255 - dst->len;
   if (len > 0) {
     memcpy(dst->value + dst->len, src, len);
@@ -137,7 +137,7 @@ PString CONCAT(enum ConcatCmpParamType paramtype, ...) {
       }
       case CpLenPtr: {
         int cp = va_arg(args, int);
-        const char* b = va_arg(args, const char*);
+        const PChar* b = va_arg(args, const PChar*);
         str_concat(&ret, cp, b);
         break;
       }
@@ -151,12 +151,12 @@ PString CONCAT(enum ConcatCmpParamType paramtype, ...) {
 struct StrData {
   PString str;
   int len;
-  const unsigned char* ptr;
+  const PChar* ptr;
 };
 
 void LoadStrData(va_list* args, struct StrData* strdata) {
   enum ConcatCmpParamType type = va_arg(*args, enum ConcatCmpParamType);
-  switch (type) {
+  switch (type & 0x0f) {
     case CpChar:
       strdata->str.len = 1;
       strdata->str.value[0] = va_arg(*args, int);
@@ -176,7 +176,7 @@ void LoadStrData(va_list* args, struct StrData* strdata) {
     }
     case CpLenPtr: {
       int len = va_arg(*args, int);
-      const char* ptr = va_arg(*args, const char*);
+      const PChar* ptr = va_arg(*args, const PChar*);
       strdata->len = len;
       strdata->ptr = ptr;
       break;

@@ -343,7 +343,7 @@ void Read(PFile* file, PBoolean die_on_error, ...) {
   va_end(args);
 }
 
-static void writestr(PFile* file, int strlen, const char* strptr, int width,
+static void writestr(PFile* file, int strlen, const PChar* strptr, int width,
                      int linefeed, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
@@ -359,7 +359,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
   enum { Str, StrPtr } type;
   PString str;
   int strlen;
-  const char* strptr;
+  const PChar* strptr;
   enum ReadWriteParamType paramtype;
   va_list args;
   va_start(args, die_on_error);
@@ -402,7 +402,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
       case RwpLenPtr: {
         type = StrPtr;
         strlen = va_arg(args, int);
-        strptr = va_arg(args, const char*);
+        strptr = va_arg(args, const PChar*);
         break;
       }
     }
