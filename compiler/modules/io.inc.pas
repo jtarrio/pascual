@@ -21,6 +21,11 @@ begin
   else Result := false
 end;
 
+function _ModIo_NeedsToMakeAddressable(OutFile, Expr : TExpression) : boolean;
+begin
+  Result := not IsTextType(OutFile^.TypePtr) and not Expr^.IsAddressable
+end;
+
 function _ModIoRead_Parse(FnExpr : TExpression) : TExpression;
 var 
   First : boolean;
@@ -101,6 +106,7 @@ begin
   ExDispose(FnExpr);
   OutFile := ExVariable(FindNameOfClass('OUTPUT',
              TncVariable, {Required=}true)^.VarPtr);
+  Result := nil;
   ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -126,12 +132,19 @@ begin
         if ArgList = nil then
         begin
           new(ArgList);
-          WriteArg := ArgList
+          WriteArg := ArgList;
         end
         else
         begin
           new(WriteArg^.Next);
           WriteArg := WriteArg^.Next;
+        end;
+        if _ModIo_NeedsToMakeAddressable(OutFile, WriteValue.Arg) then
+        begin
+          if Result = nil then Result := ExWrite(OutFile, ArgList, NewLine);
+          Result := ExWithTmpVar(ExVariable(AddTmpVariable(
+                    'tmp', WriteValue.Arg^.TypePtr)), WriteValue.Arg, Result);
+          WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;
         WriteArg^.Value := WriteValue;
         WriteArg^.Next := nil
@@ -142,7 +155,7 @@ begin
     end;
     WantTokenAndRead(TkRparen)
   end;
-  Result := ExWrite(OutFile, ArgList, NewLine);
+  if Result = nil then Result := ExWrite(OutFile, ArgList, NewLine);
 end;
 
 procedure _UpFirst(var Str : string);
