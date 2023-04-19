@@ -310,6 +310,16 @@ static void read_str(PFile* file, PString* str, PBoolean die_on_error) {
   if (die_on_error) check_ioresult();
 }
 
+static void read_dataptr(PFile* file, PInteger len, void* ptr,
+                         PBoolean die_on_error) {
+  check_ioresult();
+  if (!is_open(file, die_on_error)) return;
+  clearerr(file->handle);
+  fread(ptr, len, 1, file->handle);
+  if (ferror(file->handle)) set_ioresult(file, ieReadError);
+  if (die_on_error) check_ioresult();
+}
+
 void Read(PFile* file, PBoolean die_on_error, ...) {
   PString str;
   int code = 0;
@@ -337,6 +347,12 @@ void Read(PFile* file, PBoolean die_on_error, ...) {
       case RwpString:
         read_str(file, va_arg(args, PString*), die_on_error);
         break;
+      case RwpDataPtr: {
+        PInteger len = va_arg(args, PInteger);
+        void* ptr = va_arg(args, void*);
+        read_dataptr(file, len, ptr, die_on_error);
+        break;
+      }
     }
     if (paramtype & RwpLn) readln(file, die_on_error);
   } while ((paramtype & RwpEnd) == 0);
@@ -355,64 +371,93 @@ static void writestr(PFile* file, int strlen, const PChar* strptr, int width,
   if (die_on_error) check_ioresult();
 }
 
+static void writedata(PFile* file, PInteger len, const void* ptr,
+                      PBoolean die_on_error) {
+  check_ioresult();
+  if (!is_open(file, die_on_error)) return;
+  clearerr(file->handle);
+  fwrite(ptr, len, 1, file->handle);
+  if (ferror(file->handle)) set_ioresult(file, ieWriteError);
+  if (die_on_error) check_ioresult();
+}
+
 void Write(PFile* file, PBoolean die_on_error, ...) {
-  enum { Str, StrPtr } type;
-  PString str;
-  int strlen;
-  const PChar* strptr;
+  struct {
+    enum { Str, StrPtr, DataPtr } type;
+    union {
+      PString str;
+      struct {
+        int strlen;
+        const PChar* strptr;
+      };
+      struct {
+        PInteger len;
+        const void* ptr;
+      };
+    };
+  } data;
   enum ReadWriteParamType paramtype;
   va_list args;
   va_start(args, die_on_error);
   do {
-    type = Str;
-    str.len = 0;
+    data.type = Str;
+    data.str.len = 0;
     paramtype = va_arg(args, enum ReadWriteParamType);
     int width = paramtype & RwpWidth ? va_arg(args, int) : 0;
     int prec = paramtype & RwpPrec ? va_arg(args, int) : -1;
     switch (paramtype & 0x0f) {
       case RwpBool:
-        STR_b(va_arg(args, PBoolean), 0, &str);
+        STR_b(va_arg(args, PBoolean), 0, &data.str);
         break;
       case RwpInt:
-        STR_i(va_arg(args, PInteger), width, &str);
+        STR_i(va_arg(args, PInteger), width, &data.str);
         break;
       case RwpReal:
-        STR_r(va_arg(args, PReal), width, prec, &str);
+        STR_r(va_arg(args, PReal), width, prec, &data.str);
         break;
       case RwpChar:
-        str.value[0] = va_arg(args, int);
-        str.len = 1;
+        data.str.value[0] = va_arg(args, int);
+        data.str.len = 1;
         break;
       case RwpEnum: {
         POrdinal ordinal = va_arg(args, POrdinal);
         const char** enumvalues = va_arg(args, const char**);
-        STR_e(ordinal, enumvalues, 0, &str);
+        STR_e(ordinal, enumvalues, 0, &data.str);
         break;
       }
       case RwpString:
-        str = va_arg(args, PString);
+        data.str = va_arg(args, PString);
         break;
       case RwpStringPtr: {
-        type = StrPtr;
+        data.type = StrPtr;
         PString* dst = va_arg(args, PString*);
-        strlen = dst->len;
-        strptr = dst->value;
+        data.strlen = dst->len;
+        data.strptr = dst->value;
         break;
       }
       case RwpLenPtr: {
-        type = StrPtr;
-        strlen = va_arg(args, int);
-        strptr = va_arg(args, const PChar*);
+        data.type = StrPtr;
+        data.strlen = va_arg(args, int);
+        data.strptr = va_arg(args, const PChar*);
         break;
       }
+      case RwpDataPtr: {
+        data.type = DataPtr;
+        data.len = va_arg(args, PInteger);
+        data.ptr = va_arg(args, const void*);
+      }
     }
-    switch (type) {
+    switch (data.type) {
       case Str:
-        writestr(file, str.len, str.value, width, paramtype & RwpLn,
+        writestr(file, data.str.len, data.str.value, width, paramtype & RwpLn,
                  die_on_error);
         break;
       case StrPtr:
-        writestr(file, strlen, strptr, width, paramtype & RwpLn, die_on_error);
+        writestr(file, data.strlen, data.strptr, width, paramtype & RwpLn,
+                 die_on_error);
+        break;
+      case DataPtr:
+        writedata(file, data.len, data.ptr, die_on_error);
         break;
     }
   } while ((paramtype & RwpEnd) == 0);

@@ -43,6 +43,7 @@ enum ReadWriteParamType {
   RwpString = 0x06,
   RwpStringPtr = 0x07,
   RwpLenPtr = 0x08,
+  RwpDataPtr = 0x09,
   RwpWidth = 0x10,
   RwpPrec = 0x20,
   RwpLn = 0x40,
