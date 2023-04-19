@@ -1,4 +1,25 @@
+function _ModIo_TypeIsValidForFileRead(InFile, Expr : TExpression) : boolean;
+const ReadableTypes = [TtcInteger, TtcReal, TtcChar, TtcString];
+begin
+  if Expr^.TypePtr = nil then Result := false
+  else if IsTextType(InFile^.TypePtr) then
+         Result := GetFundamentalType(Expr^.TypePtr)^.Cls in ReadableTypes
+  else if IsFileType(InFile^.TypePtr) then
+         Result := IsSameType(InFile^.TypePtr^.FileDef.TypePtr, Expr^.TypePtr)
+  else Result := false
+end;
 
+function _ModIo_TypeIsValidForFileWrite(OutFile, Expr : TExpression) : boolean;
+const WritableTypes = [TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString,
+                      TtcEnum];
+begin
+  if Expr^.TypePtr = nil then Result := false
+  else if IsTextType(OutFile^.TypePtr) then
+         Result := GetFundamentalType(Expr^.TypePtr)^.Cls in WritableTypes
+  else if IsFileType(OutFile^.TypePtr) then
+         Result := IsSameType(OutFile^.TypePtr^.FileDef.TypePtr, Expr^.TypePtr)
+  else Result := false
+end;
 
 function _ModIoRead_Parse(FnExpr : TExpression) : TExpression;
 var 
@@ -10,8 +31,8 @@ var
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
-  InFile := ExCoerce(ExVariable(FindNameOfClass('INPUT',
-            TncVariable, {Required=}true)^.VarPtr), PrimitiveTypes.PtFile);
+  InFile := ExVariable(FindNameOfClass('INPUT',
+            TncVariable, {Required=}true)^.VarPtr);
   ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -24,11 +45,16 @@ begin
       begin
         EnsureAddressableExpr(ReadVar);
         ExDispose(InFile);
-        InFile := ExCoerce(ReadVar, PrimitiveTypes.PtFile)
+        InFile := ReadVar;
+        if NewLine and not IsTextType(InFile^.TypePtr) then
+          ErrorForExpr('Invalid file type for READLN', InFile)
       end
       else
       begin
         EnsureAssignableExpr(ReadVar);
+        if not _ModIo_TypeIsValidForFileRead(InFile, ReadVar) then
+          ErrorForExpr('Variable has invalid type for READ on ' +
+                       TypeName(InFile^.TypePtr), ReadVar);
         if ArgList = nil then
         begin
           new(ArgList);
@@ -73,8 +99,8 @@ var
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
-  OutFile := ExCoerce(ExVariable(FindNameOfClass('OUTPUT',
-             TncVariable, {Required=}true)^.VarPtr), PrimitiveTypes.PtFile);
+  OutFile := ExVariable(FindNameOfClass('OUTPUT',
+             TncVariable, {Required=}true)^.VarPtr);
   ArgList := nil;
   if Lexer.Token.Id = TkLparen then
   begin
@@ -84,14 +110,19 @@ begin
     begin
       WriteValue := Pf_WriteArg_Parse;
       WriteValue.Arg := _ModIoWrite_EvaluateZeroArg(WriteValue.Arg);
-      if First and IsTextType(WriteValue.Arg^.TypePtr) then
+      if First and IsFileType(WriteValue.Arg^.TypePtr) then
       begin
         EnsureAddressableExpr(WriteValue.Arg);
         ExDispose(OutFile);
-        OutFile := ExCoerce(WriteValue.Arg, PrimitiveTypes.PtFile)
+        OutFile := WriteValue.Arg;
+        if NewLine and not IsTextType(OutFile^.TypePtr) then
+          ErrorForExpr('Invalid file type for WRITELN', OutFile)
       end
       else
       begin
+        if not _ModIo_TypeIsValidForFileWrite(OutFile, WriteValue.Arg) then
+          ErrorForExpr('Expression has invalid type for WRITE on ' +
+                       TypeName(OutFile^.TypePtr), WriteValue.Arg);
         if ArgList = nil then
         begin
           new(ArgList);

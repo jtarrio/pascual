@@ -310,12 +310,11 @@ static void read_str(PFile* file, PString* str, PBoolean die_on_error) {
   if (die_on_error) check_ioresult();
 }
 
-static void read_dataptr(PFile* file, PInteger len, void* ptr,
-                         PBoolean die_on_error) {
+static void read_dataptr(PFile* file, void* ptr, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
   clearerr(file->handle);
-  fread(ptr, len, 1, file->handle);
+  fread(ptr, file->block_size, 1, file->handle);
   if (ferror(file->handle)) set_ioresult(file, ieReadError);
   if (die_on_error) check_ioresult();
 }
@@ -348,9 +347,7 @@ void Read(PFile* file, PBoolean die_on_error, ...) {
         read_str(file, va_arg(args, PString*), die_on_error);
         break;
       case RwpDataPtr: {
-        PInteger len = va_arg(args, PInteger);
-        void* ptr = va_arg(args, void*);
-        read_dataptr(file, len, ptr, die_on_error);
+        read_dataptr(file, va_arg(args, void*), die_on_error);
         break;
       }
     }
@@ -371,12 +368,11 @@ static void writestr(PFile* file, int strlen, const PChar* strptr, int width,
   if (die_on_error) check_ioresult();
 }
 
-static void writedata(PFile* file, PInteger len, const void* ptr,
-                      PBoolean die_on_error) {
+static void writedata(PFile* file, const void* ptr, PBoolean die_on_error) {
   check_ioresult();
   if (!is_open(file, die_on_error)) return;
   clearerr(file->handle);
-  fwrite(ptr, len, 1, file->handle);
+  fwrite(ptr, file->block_size, 1, file->handle);
   if (ferror(file->handle)) set_ioresult(file, ieWriteError);
   if (die_on_error) check_ioresult();
 }
@@ -390,10 +386,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
         int strlen;
         const PChar* strptr;
       };
-      struct {
-        PInteger len;
-        const void* ptr;
-      };
+      const void* ptr;
     };
   } data;
   enum ReadWriteParamType paramtype;
@@ -443,7 +436,6 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
       }
       case RwpDataPtr: {
         data.type = DataPtr;
-        data.len = va_arg(args, PInteger);
         data.ptr = va_arg(args, const void*);
       }
     }
@@ -457,7 +449,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
                  die_on_error);
         break;
       case DataPtr:
-        writedata(file, data.len, data.ptr, die_on_error);
+        writedata(file, data.ptr, die_on_error);
         break;
     }
   } while ((paramtype & RwpEnd) == 0);

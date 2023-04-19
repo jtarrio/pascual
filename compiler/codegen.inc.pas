@@ -919,21 +919,31 @@ begin
   end;
   while ReadArg <> nil do
   begin
-    TypePtr := GetFundamentalType(ReadArg^.Dest^.TypePtr);
-    case TypePtr^.Cls of 
-      TtcInteger: write(Codegen.Output, ', RwpInt');
-      TtcReal: write(Codegen.Output, ', RwpReal');
-      TtcChar: write(Codegen.Output, ', RwpChar');
-      TtcString: write(Codegen.Output, ', RwpString');
-      else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Dest)
-    end;
-    if ReadArg^.Next = nil then
+    if IsTextType(Src^.TypePtr) then
     begin
-      if Linefeed then write(Codegen.Output, ' | RwpLn');
-      write(Codegen.Output, ' | RwpEnd')
+      TypePtr := GetFundamentalType(ReadArg^.Dest^.TypePtr);
+      case TypePtr^.Cls of 
+        TtcInteger: write(Codegen.Output, ', RwpInt');
+        TtcReal: write(Codegen.Output, ', RwpReal');
+        TtcChar: write(Codegen.Output, ', RwpChar');
+        TtcString: write(Codegen.Output, ', RwpString');
+        else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Dest)
+      end;
+      if ReadArg^.Next = nil then
+      begin
+        if Linefeed then write(Codegen.Output, ' | RwpLn');
+        write(Codegen.Output, ' | RwpEnd')
+      end;
+      _OutComma;
+      _OutAddress(ReadArg^.Dest);
+    end
+    else
+    begin
+      write(Codegen.Output, ', RwpDataPtr');
+      if ReadArg^.Next = nil then write(Codegen.Output, ' | RwpEnd');
+      _OutComma;
+      _OutAddress(ReadArg^.Dest)
     end;
-    _OutComma;
-    _OutAddress(ReadArg^.Dest);
     ReadArg := ReadArg^.Next
   end;
   write(Codegen.Output, ')')
@@ -961,58 +971,68 @@ begin
   end;
   while WriteArg <> nil do
   begin
-    TypePtr := GetFundamentalType(WriteArg^.Value.Arg^.TypePtr);
-    case TypePtr^.Cls of 
-      TtcBoolean: write(Codegen.Output, ', RwpBool');
-      TtcInteger: write(Codegen.Output, ', RwpInt');
-      TtcReal: write(Codegen.Output, ', RwpReal');
-      TtcChar: write(Codegen.Output, ', RwpChar');
-      TtcEnum: write(Codegen.Output, ', RwpEnum');
-      TtcString:
-                 begin
-                   if ExIsImmediate(WriteArg^.Value.Arg) then
-                     write(Codegen.Output, ', RwpLenPtr')
-                   else if WriteArg^.Value.Arg^.IsAddressable then
-                          write(Codegen.Output, ', RwpStringPtr')
-                   else
-                     write(Codegen.Output, ', RwpString')
-                 end;
-      else ErrorForExpr('Expression has invalid type for WRITE',
-                        WriteArg^.Value.Arg)
-    end;
-    if WriteArg^.Value.Width <> nil then write(Codegen.Output, ' | RwpWidth');
-    if IsRealType(TypePtr) and (WriteArg^.Value.Prec <> nil) then
-      write(Codegen.Output, ' | RwpPrec');
-    if WriteArg^.Next = nil then
+    if IsTextType(Dst^.TypePtr) then
     begin
-      if Linefeed then write(Codegen.Output, ' | RwpLn');
-      write(Codegen.Output, ' | RwpEnd')
-    end;
-    if WriteArg^.Value.Width <> nil then
-    begin
+      TypePtr := GetFundamentalType(WriteArg^.Value.Arg^.TypePtr);
+      case TypePtr^.Cls of 
+        TtcBoolean: write(Codegen.Output, ', RwpBool');
+        TtcInteger: write(Codegen.Output, ', RwpInt');
+        TtcReal: write(Codegen.Output, ', RwpReal');
+        TtcChar: write(Codegen.Output, ', RwpChar');
+        TtcEnum: write(Codegen.Output, ', RwpEnum');
+        TtcString:
+                   begin
+                     if ExIsImmediate(WriteArg^.Value.Arg) then
+                       write(Codegen.Output, ', RwpLenPtr')
+                     else if WriteArg^.Value.Arg^.IsAddressable then
+                            write(Codegen.Output, ', RwpStringPtr')
+                     else
+                       write(Codegen.Output, ', RwpString')
+                   end;
+        else ErrorForExpr('Expression has invalid type for WRITE',
+                          WriteArg^.Value.Arg)
+      end;
+      if WriteArg^.Value.Width <> nil then write(Codegen.Output, ' | RwpWidth');
+      if IsRealType(TypePtr) and (WriteArg^.Value.Prec <> nil) then
+        write(Codegen.Output, ' | RwpPrec');
+      if WriteArg^.Next = nil then
+      begin
+        if Linefeed then write(Codegen.Output, ' | RwpLn');
+        write(Codegen.Output, ' | RwpEnd')
+      end;
+      if WriteArg^.Value.Width <> nil then
+      begin
+        _OutComma;
+        OutExpression(WriteArg^.Value.Width)
+      end;
+      if WriteArg^.Value.Prec <> nil then
+      begin
+        _OutComma;
+        OutExpression(WriteArg^.Value.Prec)
+      end;
       _OutComma;
-      OutExpression(WriteArg^.Value.Width)
-    end;
-    if WriteArg^.Value.Prec <> nil then
-    begin
-      _OutComma;
-      OutExpression(WriteArg^.Value.Prec)
-    end;
-    _OutComma;
-    if IsStringType(WriteArg^.Value.Arg^.TypePtr)
-       and ExIsImmediate(WriteArg^.Value.Arg) then
-    begin
-      write(Codegen.Output, Length(WriteArg^.Value.Arg^.Immediate.StringVal));
-      _OutComma;
-      _OutCstring(WriteArg^.Value.Arg^.Immediate.StringVal)
+      if IsStringType(WriteArg^.Value.Arg^.TypePtr)
+         and ExIsImmediate(WriteArg^.Value.Arg) then
+      begin
+        write(Codegen.Output, Length(WriteArg^.Value.Arg^.Immediate.StringVal));
+        _OutComma;
+        _OutCstring(WriteArg^.Value.Arg^.Immediate.StringVal)
+      end
+      else if IsStringType(WriteArg^.Value.Arg^.TypePtr)
+              and WriteArg^.Value.Arg^.IsAddressable then
+             _OutAddress(WriteArg^.Value.Arg)
+      else
+        OutExpression(WriteArg^.Value.Arg);
+      if IsEnumType(TypePtr) then
+        write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
     end
-    else if IsStringType(WriteArg^.Value.Arg^.TypePtr)
-            and WriteArg^.Value.Arg^.IsAddressable then
-           _OutAddress(WriteArg^.Value.Arg)
     else
-      OutExpression(WriteArg^.Value.Arg);
-    if IsEnumType(TypePtr) then
-      write(Codegen.Output, ', enumvalues', TypePtr^.EnumPtr^.Id);
+    begin
+      write(Codegen.Output, ', RwpDataPtr');
+      if WriteArg^.Next = nil then write(Codegen.Output, ' | RwpEnd');
+      _OutComma;
+      _OutAddress(WriteArg^.Value.Arg)
+    end;
     WriteArg := WriteArg^.Next
   end;
   write(Codegen.Output, ')')
