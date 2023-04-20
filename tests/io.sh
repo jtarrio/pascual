@@ -116,3 +116,20 @@ reads_and_outputs 'abcde
 fghi' 'abcde
 fghi
 '
+
+# Binary file input/output
+testfile() {
+  echo "program foo; type t = $1; var i : t; f : file of t;
+        begin assign(f, 'testfile');
+        rewrite(f); $2; close(f);
+        reset(f); $3 ; close(f);
+        erase(f) end."
+}
+testfile 'integer' 'write(f, 123456)' 'read(f, i); write(i)' | outputs '123456'
+testfile 'integer' 'i := 123456; write(f, 123456); i := 0' \
+                   'read(f, i); write(i)' | outputs '123456'
+
+testfile 'record a:integer; b:boolean end' \
+         'i.a := 123456; i.b := true; write(f, i)' \
+         "i.a := 0; i.b := false; read(f, i); write(i.a, ' ', i.b)" |
+outputs '123456 TRUE'
