@@ -334,14 +334,17 @@ end;
 
 procedure _OutAddress(Expr : TExpression);
 begin
-  if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
-  else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
-         write(Codegen.Output, Expr^.VarPtr^.Name)
+  if Expr^.Cls = XcToGenericFile then _OutAddress(Expr^.ToGenericFileParent)
+  else if Expr^.Cls = XcToReal then _OutAddress(Expr^.ToRealParent)
+  else if Expr^.Cls = XcToString then _OutAddress(Expr^.ToStrParent)
+  else if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
   else if Expr^.Cls = XcToUntypedPtr then
   begin
     write(Codegen.Output, '(void**)&');
     _OutExpressionParensPrec(Expr, 1)
   end
+  else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
+         write(Codegen.Output, Expr^.VarPtr^.Name)
   else
   begin
     write(Codegen.Output, '&');
