@@ -15,7 +15,7 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
     * Missing parameterized array bounds.
 * `While`, `repeat until`, `for`, `if`, `case`.
     * Missing `goto`.
-* `Write`, `writeln`, `read`, `readln`, `str`.
+* `Write`, `writeln`, `read`, `readln`, `str`, `val`.
 * Compiler directives:
     * `{$I name.pas}`: include the file `name.pas`
     * `{$I-}`, `{$I+}`: disable or enable checking for an error after every I/O operation (enabled by default)
