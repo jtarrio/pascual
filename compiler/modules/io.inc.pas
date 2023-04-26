@@ -142,8 +142,9 @@ begin
         if _ModIo_NeedsToMakeAddressable(OutFile, WriteValue.Arg) then
         begin
           if Result = nil then Result := ExWrite(OutFile, ArgList, NewLine);
-          Result := ExWithTmpVar(ExVariable(AddTmpVariable(
-                    'tmp', WriteValue.Arg^.TypePtr)), WriteValue.Arg, Result);
+          Result := ExWithTmpVar(ExVariable(AddAliasVariable(
+                    'tmp', WriteValue.Arg^.TypePtr, WriteValue.Arg)),
+                    WriteValue.Arg, Result);
           WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;
         WriteArg^.Value := WriteValue;

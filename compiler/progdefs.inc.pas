@@ -108,7 +108,12 @@ begin
     TdcName : dispose(Def^.NamePtr);
     TdcType : _DisposeType(Def^.TypePtr);
     TdcConstant : dispose(Def^.ConstPtr);
-    TdcVariable : dispose(Def^.VarPtr);
+    TdcVariable :
+                  begin
+                    if Def^.VarPtr^.IsAliasFor <> nil then
+                      ExDispose(Def^.VarPtr^.IsAliasFor);
+                    dispose(Def^.VarPtr)
+                  end;
     TdcFunction : dispose(Def^.FnPtr);
     TdcPseudoFn : dispose(Def^.PseudoFnPtr);
     TdcWithVar : dispose(Def^.WithVarPtr)
@@ -888,6 +893,7 @@ begin
   TmpVar.IsReference := Base^.IsAddressable;
   TmpVar.WasInitialized := true;
   TmpVar.WasUsed := true;
+  TmpVar.IsAliasFor := ExCopy(Base);
   TmpVarPtr := AddVariable(TmpVar);
   WithVarPtr := _AddDef(TdcWithVar)^.WithVarPtr;
   WithVarPtr^.VarPtr := TmpVarPtr;
@@ -906,15 +912,14 @@ end;
 
 function MakeTypedConstant(const Name : string; TypePtr : TPsTypePtr)
 : TPsVariable;
-var 
-  VarDef : TPsVariable;
 begin
-  VarDef.Name := Name;
-  VarDef.TypePtr := TypePtr;
-  VarDef.IsReference := false;
-  VarDef.IsConstant := true;
-  VarDef.WasInitialized := true;
-  MakeTypedConstant := VarDef
+  Result.Name := Name;
+  Result.TypePtr := TypePtr;
+  Result.IsReference := false;
+  Result.IsConstant := true;
+  Result.WasInitialized := true;
+  Result.WasUsed := false;
+  Result.IsAliasFor := nil
 end;
 
 function MakeVariable(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
@@ -924,7 +929,8 @@ begin
   Result.IsReference := false;
   Result.IsConstant := false;
   Result.WasInitialized := false;
-  Result.WasUsed := false
+  Result.WasUsed := false;
+  Result.IsAliasFor := nil
 end;
 
 function MakeReference(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
@@ -934,14 +940,17 @@ begin
   Result.IsReference := true;
   Result.IsConstant := false;
   Result.WasInitialized := true;
-  Result.WasUsed := false
+  Result.WasUsed := false;
+  Result.IsAliasFor := nil
 end;
 
-function AddTmpVariable(const Prefix : string;
-                        TypePtr : TPsTypePtr) : TPsVarPtr;
+function AddAliasVariable(const Prefix : string;
+                          TypePtr : TPsTypePtr;
+                          Expr : TExpression) : TPsVarPtr;
 begin
   Result := AddVariable(MakeVariable(Prefix + IntToStr(DefCounter(TctTmpVar)),
-            TypePtr))
+            TypePtr));
+  Result^.IsAliasFor := ExCopy(Expr)
 end;
 
 function _MakeArg(const Name : string; TypePtr : TPsTypePtr;
@@ -952,7 +961,8 @@ begin
   Result.IsReference := IsRef or IsConst;
   Result.IsConstant := IsConst;
   Result.WasInitialized := false;
-  Result.WasUsed := false
+  Result.WasUsed := false;
+  Result.IsAliasFor := nil
 end;
 
 function MakeArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;

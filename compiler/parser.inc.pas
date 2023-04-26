@@ -209,6 +209,7 @@ begin
       Args.Defs[Args.Count].IsConstant := IsConst;
       Args.Defs[Args.Count].IsReference := IsVar or IsConst;
       Args.Defs[Args.Count].WasInitialized := true;
+      Args.Defs[Args.Count].IsAliasFor := nil;
       WantToken4(TkComma, TkColon, TkSemicolon, TkRparen);
       SkipToken(TkComma)
     until Lexer.Token.Id in [TkColon, TkSemicolon, TkRparen];

@@ -193,7 +193,8 @@ type
     IsReference : boolean;
     IsConstant : boolean;
     WasInitialized : boolean;
-    WasUsed : boolean
+    WasUsed : boolean;
+    IsAliasFor : TExpression
   end;
   TPsFnArgs = record
     Count : integer;

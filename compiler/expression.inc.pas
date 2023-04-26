@@ -510,7 +510,10 @@ begin
     XcWithTmpVar: Result := _DescribeWithTmpVar(Expr);
     XcSubrange: Result := ExDescribe(Expr^.ToStrParent);
     XcSet: Result := _DescribeSet(Expr);
-    XcVariable: Result := Expr^.VarPtr^.Name;
+    XcVariable: if Expr^.VarPtr^.IsAliasFor = nil then
+                  Result := Expr^.VarPtr^.Name
+                else
+                  Result := ExDescribe(Expr^.VarPtr^.IsAliasFor);
     XcField: Result := ExDescribe(Expr^.RecExpr) + '.' +
                        Expr^.RecExpr^.TypePtr^.RecPtr^
                        .Fields[Expr^.RecFieldNum].Name;
@@ -994,8 +997,9 @@ begin
       begin
         if ArgDefs.Defs[Pos].IsConstant then
         begin
-          Result := ExWithTmpVar(ExVariable(AddTmpVariable(
-                    'tmp', ArgDefs.Defs[Pos].TypePtr)),
+          Result := ExWithTmpVar(ExVariable(AddAliasVariable(
+                    'tmp', ArgDefs.Defs[Pos].TypePtr,
+                    FnCall^.CallArgs.Values[Pos])),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := ExCopy(Result^.TmpVar)
         end
