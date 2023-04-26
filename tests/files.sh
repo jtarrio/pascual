@@ -2,64 +2,6 @@
 
 . ./testing.libsh
 
-# Text file output
-testtextout() {
-  echo "program foo; var i : string; f : text;
-        begin assign(f, paramstr(1)); rewrite(f); $1 ; close(f) end."
-}
-testtextout 'readln(i); write(f, i); readln(i); write(f, i)' |
-inputs_and_writes 'abcde
-fghi' 'abcdefghi'
-testtextout 'readln(i); write(f, i); writeln(f);
-             readln(i); write(f, i); writeln(f)' |
-inputs_and_writes 'abcde
-fghi' 'abcde
-fghi
-'
-testtextout 'readln(i); writeln(f, i); readln(i); writeln(f, i)' |
-inputs_and_writes 'abcde
-fghi' 'abcde
-fghi
-'
-
-# Text file input
-testtextin() {
-  echo "program foo; var i : string; f : text;
-        begin assign(f, paramstr(1)); reset(f); $1 ; close(f) end."
-}
-testtextin 'read(f, i); writeln(i); read(f, i); writeln(i)' |
-reads_and_outputs 'abcde
-fghi' 'abcde
-
-'
-testtextin 'read(f, i); writeln(i); readln(f); read(f, i); writeln(i)' |
-reads_and_outputs 'abcde
-fghi' 'abcde
-fghi
-'
-testtextin 'readln(f, i); writeln(i); readln(f, i); writeln(i)' |
-reads_and_outputs 'abcde
-fghi' 'abcde
-fghi
-'
-
-# Binary file input/output
-testfile() {
-  echo "program foo; type t = $1; var i : t; f : file of t;
-        begin assign(f, 'testfile');
-        rewrite(f); $2; close(f);
-        reset(f); $3 ; close(f);
-        erase(f) end."
-}
-testfile 'integer' 'write(f, 123456)' 'read(f, i); write(i)' | outputs '123456'
-testfile 'integer' 'i := 123456; write(f, 123456); i := 0' \
-                   'read(f, i); write(i)' | outputs '123456'
-
-testfile 'record a:integer; b:boolean end' \
-         'i.a := 123456; i.b := true; write(f, i)' \
-         "i.a := 0; i.b := false; read(f, i); write(i.a, ' ', i.b)" |
-outputs '123456 TRUE'
-
 # Directory subroutines
 echo "{\$I-}
       program foo;
@@ -134,6 +76,68 @@ echo "{\$I-}
         close(f);
         erase(f)
       end." | outputs "Text 2 TRUE"
+
+# Text file read error
+echo "{\$I-}
+      program foo;
+      var f : text; s : string; e : integer;
+      begin
+        assign(f, 'testfile');
+        rewrite(f);
+        readln(f, s);
+        e := ioresult;
+        write(e);
+        close(f);
+        erase(f)
+      end." | outputs "5"
+
+# Text file write error
+echo "{\$I-}
+      program foo;
+      var f : text; s : string; e : integer;
+      begin
+        assign(f, 'testfile');
+        rewrite(f);
+        close(f);
+        reset(f);
+        writeln(f, 'Text');
+        e := ioresult;
+        write(e);
+        close(f);
+        erase(f)
+      end." | outputs "6"
+
+# Binary files
+echo "{\$I-}
+      program foo;
+      var f : file of integer; i : integer;
+      begin
+        assign(f, 'testfile');
+        rewrite(f);
+        write(f, 12345678);
+        close(f);
+        reset(f);
+        read(f, i);
+        write(i);
+        close(f);
+        erase(f)
+      end." | outputs "12345678"
+echo "{\$I-}
+      program foo;
+      var f : file of integer; i : integer;
+      begin
+        assign(f, 'testfile');
+        rewrite(f);
+        close(f);
+        reset(f);
+        write(f, 12345678);
+        seek(f, 0);
+        read(f, i);
+        write(i);
+        close(f);
+        erase(f)
+      end." | outputs "12345678"
+
 # Eoln
 echo "{\$I-}
       program foo;

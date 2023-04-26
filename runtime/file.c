@@ -225,11 +225,13 @@ static inline void open_file(PFile* file, const char* mode, PInteger block_size,
 }
 
 void Reset(PFile* file, PInteger block_size, PBoolean die_on_error) {
-  open_file(file, "r", block_size, die_on_error);
+  const char* mode = block_size <= 0 ? "r" : "r+";
+  open_file(file, mode, block_size, die_on_error);
 }
 
 void Rewrite(PFile* file, PInteger block_size, PBoolean die_on_error) {
-  open_file(file, "w", block_size, die_on_error);
+  const char* mode = block_size <= 0 ? "w" : "w+";
+  open_file(file, mode, block_size, die_on_error);
 }
 
 static void readln(PFile* file, PBoolean die_on_error) {
@@ -351,6 +353,7 @@ void Read(PFile* file, PBoolean die_on_error, ...) {
         break;
       }
     }
+    if (error_code != 0) break;
     if (paramtype & RwpLn) readln(file, die_on_error);
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
@@ -452,6 +455,7 @@ void Write(PFile* file, PBoolean die_on_error, ...) {
         writedata(file, data.ptr, die_on_error);
         break;
     }
+    if (error_code != 0) break;
   } while ((paramtype & RwpEnd) == 0);
   va_end(args);
 }
