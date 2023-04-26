@@ -1,8 +1,8 @@
 /* Program: TEXTFILES */
 #include "pascual.h"
 
-PFile INFILE;
-PFile OUTFILE;
+PFile INFILE = (PFile){.handle = PNil};
+PFile OUTFILE = (PFile){.handle = PNil};
 
 void COPYFILE(PFile* FILEIN, PFile* FILEOUT) {
   PString LINE;

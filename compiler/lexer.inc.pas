@@ -327,10 +327,12 @@ begin
 end;
 
 procedure LxOpen(Filename : string);
+var InputFile : Text;
 begin
   Lexer.Input.Name := Filename;
-  Assign(Lexer.Input.Src, Lexer.Input.Name);
-  Reset(Lexer.Input.Src)
+  Assign(InputFile, Lexer.Input.Name);
+  Reset(InputFile);
+  Lexer.Input.Src := InputFile
 end;
 
 procedure LxInclude(const Filename : string);

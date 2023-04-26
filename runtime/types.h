@@ -32,9 +32,9 @@ typedef struct {
 } PString;
 
 typedef struct {
-  PString name;
   FILE* handle;
   PInteger block_size;
+  PString name;
 } PFile;
 
 #define DEF_SET_BITS(b)                        \

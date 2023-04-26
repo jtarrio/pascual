@@ -1458,7 +1458,9 @@ begin
       write(Codegen.Output, '*)')
     end;
     _OutAddress(Location)
-  end;
+  end
+  else if IsFileType(VarPtr^.TypePtr) then
+         write(Codegen.Output, ' = (PFile){.handle = PNil}');
   write(Codegen.Output, ';');
   _OutNewline
 end;

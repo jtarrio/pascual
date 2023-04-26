@@ -1229,6 +1229,9 @@ begin
       XcField: Lhs := Lhs^.RecExpr;
       XcArray: Lhs := Lhs^.ArrayExpr;
       XcStringChar: Lhs := Lhs^.StringExpr;
+      XcToString: Lhs := Lhs^.ToStrParent;
+      XcToReal: Lhs := Lhs^.ToRealParent;
+      XcToGenericFile: Lhs := Lhs^.ToGenericFileParent;
       else IsTerminal := true
     end;
   if Lhs^.Cls = XcVariable then Lhs^.VarPtr^.WasInitialized := true
