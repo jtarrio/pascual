@@ -214,6 +214,10 @@ void Rename(PFile* file, const PString* name, PBoolean die_on_error) {
 static inline void open_file(PFile* file, const char* mode, PInteger block_size,
                              PBoolean die_on_error) {
   check_ioresult();
+  if (file->handle != NULL) {
+    fclose(file->handle);
+    file->handle = NULL;
+  }
   file->handle = fopen(pchar_of_str(&file->name), mode);
   if (file->handle == NULL) {
     set_ioresult(file, errno == ENOENT   ? ieFileNotFound

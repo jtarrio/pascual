@@ -26,7 +26,6 @@ echo "{\$I-}
       begin
         assign(f, 'testfile');
         rewrite(f);
-        close(f);
         reset(f);
         write(IoResult, '(0) ');
         close(f);
@@ -65,7 +64,6 @@ echo "{\$I-}
         writeln(f, 'Text');
         writeln(f, 2);
         writeln(f, true);
-        close(f);
         reset(f);
         readln(f, s);
         write(s, ' ');
@@ -98,7 +96,6 @@ echo "{\$I-}
       begin
         assign(f, 'testfile');
         rewrite(f);
-        close(f);
         reset(f);
         writeln(f, 'Text');
         e := ioresult;
@@ -115,7 +112,6 @@ echo "{\$I-}
         assign(f, 'testfile');
         rewrite(f);
         write(f, 12345678);
-        close(f);
         reset(f);
         read(f, i);
         write(i);
@@ -128,7 +124,6 @@ echo "{\$I-}
       begin
         assign(f, 'testfile');
         rewrite(f);
-        close(f);
         reset(f);
         write(f, 12345678);
         seek(f, 0);
@@ -147,7 +142,6 @@ echo "{\$I-}
         rewrite(f);
         writeln(f, 'This is line 1.');
         write(f, '2 ');
-        close(f);
         reset(f);
         write(eoln(f));
         read(f, s);
@@ -170,7 +164,6 @@ echo "{\$I-}
         rewrite(f);
         writeln(f, 'This is line 1.');
         write(f, '2 ');
-        close(f);
         reset(f);
         write(seekeoln(f));
         read(f, s);
@@ -193,7 +186,6 @@ echo "{\$I-}
         rewrite(f);
         writeln(f, 'This is line 1.');
         write(f, '2 ');
-        close(f);
         reset(f);
         write(eof(f));
         read(f, s);
@@ -216,7 +208,6 @@ echo "{\$I-}
         rewrite(f);
         writeln(f, 'This is line 1.');
         write(f, '2 ');
-        close(f);
         reset(f);
         write(seekeof(f));
         read(f, s);
@@ -239,7 +230,6 @@ echo "{\$I-}
         rewrite(f);
         writeln(f, 'This is line 1.');
         write(f, 'This is line 2.');
-        close(f);
         reset(f);
         write(filesize(f), '(31) ');
         write(filepos(f), '(0) ');
