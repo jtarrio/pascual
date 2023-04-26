@@ -872,7 +872,7 @@ PString _LXRESOLVEFILENAME(const PString* CURRENT, const PString* NEW) {
 }
 
 void LXOPEN(PString FILENAME) {
-  PFile INPUTFILE;
+  PFile INPUTFILE = (PFile){.handle = PNil};
   LEXER.INPUT.NAME = FILENAME;
   Assign(&INPUTFILE, &LEXER.INPUT.NAME, 1);
   Reset(&INPUTFILE, 0, 1);
