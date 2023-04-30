@@ -96,6 +96,14 @@ begin
   dispose(Def)
 end;
 
+function _HasUnusedPrefix(const Name : string) : boolean;
+begin
+  Result := (Length(Name) > 7)
+            and (Name[1] = 'U') and (Name[2] = 'N') and (Name[3] = 'U')
+            and (Name[4] = 'S') and (Name[5] = 'E') and (Name[6] = 'D')
+            and (Name[7] = '_')
+end;
+
 procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
@@ -108,7 +116,8 @@ begin
 
   case Def^.Cls of 
     TdcVariable:
-                 if not Def^.VarPtr^.WasUsed then
+                 if not Def^.VarPtr^.WasUsed
+                    and not _HasUnusedPrefix(Def^.VarPtr^.Name) then
                  begin
                    if Def^.VarPtr^.IsConstant then
                      CompileWarning('Constant ' + Def^.VarPtr^.Name +
@@ -1079,7 +1088,7 @@ begin
   AddTypeName(Name, Result)
 end;
 
-function _DefIsFileType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsFileType(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsFileTypeDef absolute Ctx;
@@ -1139,7 +1148,8 @@ begin
   Result^.RecPtr := NewRecord(Rec)
 end;
 
-function _DefIsArrayType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsArrayType(var Item; var Ctx;
+                         var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsArrayTypeDef absolute Ctx;
@@ -1170,7 +1180,8 @@ begin
   end
 end;
 
-function _DefIsRangeType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsRangeType(var Item; var Ctx;
+                         var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsRangeTypeDef absolute Ctx;
@@ -1202,7 +1213,9 @@ begin
   end
 end;
 
-function _DefIsPointerType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsPointerType(var Item; var Ctx; var Unused_Stop : boolean) :
+                                                                         boolean
+;
 var 
   Def : TPsDefPtr absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
@@ -1225,7 +1238,7 @@ begin
 end;
 
 function _DefIsPointerForwardType(var Item; var Ctx;
-                                  var Stop : boolean) : boolean;
+                                  var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   TargetName : string absolute Ctx;
@@ -1248,7 +1261,7 @@ begin
   end
 end;
 
-function _DefIsSetType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsSetType(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
@@ -1281,7 +1294,8 @@ begin
                 and IsSameType(A.Defs[Pos].TypePtr, B.Defs[Pos].TypePtr)
 end;
 
-function _DefIsFunctionType(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsFunctionType(var Item; var Ctx;
+                            var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   FnDef : TPsFnDef absolute Ctx;
