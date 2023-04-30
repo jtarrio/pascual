@@ -66,7 +66,7 @@ begin
       TdcFunction: Def^.FnPtr^.WasUsed := true;
       TdcType: Def^.TypePtr^.WasUsed := true;
     end;
-    Def := Def^.Prev
+    Def := Def^.Older
   end;
 
   { Let the user redefine all the global names }

@@ -133,7 +133,18 @@ type
   TPsNamePtr = ^TPsName;
 
   TPsFileClass = (TfcNone, TfcText, TfcBinary);
-
+  TPsFileTypeDef = record
+                 Cls : TPsFileClass;
+                 TypePtr : TPsTypePtr
+                 end;
+  TPsRangeTypeDef = record
+                  First, Last : integer;
+                  BaseTypePtr : TPsTypePtr
+                  end;
+  TPsArrayTypeDef = record
+                  IndexTypePtr : TPsTypePtr;
+                  ValueTypePtr : TPsTypePtr;
+                  end;
   TPsTypeClass = (TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString, TtcFile,
                   TtcEnum, TtcRange, TtcSet, TtcRecord, TtcArray,
                   TtcPointer, TtcNil, TtcPointerForward, TtcFunction);
@@ -142,21 +153,12 @@ type
     AliasFor : TPsTypePtr;
     WasUsed : boolean;
     case Cls : TPsTypeClass of 
-      TtcFile : (FileDef : record
-                 Cls : TPsFileClass;
-                 TypePtr : TPsTypePtr
-                 end);
+      TtcFile : (FileDef : TPsFileTypeDef);
       TtcEnum : (EnumPtr : TPsEnumPtr);
-      TtcRange : (RangeDef : record
-                  First, Last : integer;
-                  BaseTypePtr : TPsTypePtr
-                  end);
+      TtcRange : (RangeDef : TPsRangeTypeDef);
       TtcSet : (ElementTypePtr : TPsTypePtr);
       TtcRecord : (RecPtr : TPsRecPtr);
-      TtcArray : (ArrayDef : record
-                  IndexTypePtr : TPsTypePtr;
-                  ValueTypePtr : TPsTypePtr;
-                  end);
+      TtcArray : (ArrayDef : TPsArrayTypeDef);
       TtcPointer : (PointedTypePtr : TPsTypePtr);
       TtcPointerForward : (TargetName : ^string);
       TtcFunction : (FnDefPtr : TPsFnDefPtr);
@@ -246,8 +248,8 @@ type
   TPsDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
                  TdcFunction, TdcPseudoFn, TdcWithVar, TdcScopeBoundary);
   TPsDefEntry = record
-    Prev : TPsDefPtr;
-    Next : TPsDefPtr;
+    Older : TPsDefPtr;
+    Newer : TPsDefPtr;
     case Cls : TPsDefClass of 
       TdcName : (NamePtr : TPsNamePtr);
       TdcType : (TypePtr : TPsTypePtr);

@@ -1109,7 +1109,7 @@ procedure OutEnumValuesFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  Def := Checkpoint^.Next;
+  Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
     if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcEnum) then
@@ -1118,7 +1118,7 @@ begin
         OutEnumValues(Def^.TypePtr^.EnumPtr);
       Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput := true
     end;
-    Def := Def^.Next
+    Def := Def^.Newer
   end
 end;
 
@@ -1381,7 +1381,7 @@ procedure OutTypeDefinitionsFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  Def := Checkpoint^.Next;
+  Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
     if Def^.Cls = TdcType then
@@ -1389,7 +1389,7 @@ begin
       _ResolvePointerForward(Def^.TypePtr);
       if Def^.TypePtr^.AliasFor <> nil then OutTypeDefinition(Def^.TypePtr)
     end;
-    Def := Def^.Next
+    Def := Def^.Newer
   end
 end;
 

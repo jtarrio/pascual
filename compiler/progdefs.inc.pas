@@ -69,31 +69,6 @@ begin
   if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
-function _NewDef(Cls : TPsDefClass) : TPsDefPtr;
-var 
-  Def : TPsDefPtr;
-begin
-  new(Def);
-  Def^.Prev := nil;
-  Def^.Next := nil;
-  Def^.Cls := Cls;
-  case Cls of 
-    TdcName : new(Def^.NamePtr);
-    TdcType : new(Def^.TypePtr);
-    TdcConstant : new(Def^.ConstPtr);
-    TdcVariable : new(Def^.VarPtr);
-    TdcFunction : new(Def^.FnPtr);
-    TdcPseudoFn : new(Def^.PseudoFnPtr);
-    TdcWithVar : new(Def^.WithVarPtr);
-    TdcScopeBoundary :
-                       begin
-                         Def^.TemporaryScope := false;
-                         Def^.CurrentFn := nil
-                       end
-  end;
-  _NewDef := Def
-end;
-
 procedure _DisposeType(var TypePtr : TPsTypePtr);
 begin
   if TypePtr^.Cls = TtcEnum then DisposeEnum(TypePtr^.EnumPtr)
@@ -160,26 +135,35 @@ begin
 end;
 
 function _AddDef(Cls : TPsDefClass) : TPsDefPtr;
-var 
-  Def : TPsDefPtr;
 begin
-  Def := _NewDef(Cls);
-  Def^.Prev := Defs.Latest;
-  if Defs.Latest <> nil then Defs.Latest^.Next := Def;
-  Defs.Latest := Def;
-  _AddDef := Def;
+  new(Result);
+  Result^.Cls := Cls;
+  case Cls of 
+    TdcName : new(Result^.NamePtr);
+    TdcType : new(Result^.TypePtr);
+    TdcConstant : new(Result^.ConstPtr);
+    TdcVariable : new(Result^.VarPtr);
+    TdcFunction : new(Result^.FnPtr);
+    TdcPseudoFn : new(Result^.PseudoFnPtr);
+    TdcWithVar : new(Result^.WithVarPtr);
+    TdcScopeBoundary :
+                       begin
+                         Result^.TemporaryScope := false;
+                         Result^.CurrentFn := nil
+                       end
+  end;
+  Stack_Push(Defs.Latest, Result)
 end;
 
 function _DeleteDef(var DeletedDef : TPsDefEntry) : boolean;
+var DeletedItem : TPsDefPtr;
 begin
-  if Defs.Latest = nil then _DeleteDef := false
-  else
+  Result := Stack_Pop(Defs.Latest, DeletedItem);
+  if Result then
   begin
-    _CheckUnusedSymbols(Defs.Latest);
-    DeletedDef := Defs.Latest^;
-    _DisposeDef(Defs.Latest);
-    Defs.Latest := DeletedDef.Prev;
-    _DeleteDef := true
+    _CheckUnusedSymbols(DeletedItem);
+    DeletedDef := DeletedItem^;
+    _DisposeDef(DeletedItem)
   end
 end;
 
@@ -229,24 +213,33 @@ begin
   _CloseScope({Temporary=}true)
 end;
 
+function _DefIsName(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  TheCtx : record
+    FromLocalScope : boolean;
+    Name : string
+  end
+  absolute Ctx;
+begin
+  Stop := TheCtx.FromLocalScope and (Def^.Cls = TdcScopeBoundary);
+  Result := (Def^.Cls = TdcName) and (TheCtx.Name = Def^.NamePtr^.Name)
+end;
+
 function _FindName(const Name : string; Required : boolean;
                    FromLocalScope : boolean) : TPsNamePtr;
 var 
-  Def : TPsDefPtr;
-  Ret : TPsNamePtr;
-begin
-  Ret := nil;
-  Def := Defs.Latest;
-  while (Ret = nil)
-        and (Def <> nil)
-        and (not FromLocalScope or (Def^.Cls <> TdcScopeBoundary)) do
-  begin
-    if (Def^.Cls = TdcName) and (Name = Def^.NamePtr^.Name) then
-      Ret := Def^.NamePtr;
-    Def := Def^.Prev
+  Ctx : record
+    FromLocalScope : boolean;
+    Name : string
   end;
-  if Required and (Ret = nil) then CompileError('Unknown identifier: ' + Name);
-  _FindName := Ret
+  Def : TPsDefPtr;
+begin
+  Ctx.FromLocalScope := FromLocalScope;
+  Ctx.Name := Name;
+  if Stack_Find(Defs.Latest, Def, @_DefIsName, Ctx) then Result := Def^.NamePtr
+  else if Required then CompileError('Unknown identifier: ' + Name)
+  else Result := nil
 end;
 
 function _CheckNameClass(NamePtr : TPsNamePtr; Cls : TPsNameClass) : TPSNamePtr;
@@ -858,25 +851,23 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function FindWithVar(const Name : string) : TPsWithVarPtr;
+function _DefIsWithVar(var Item; var Ctx; var Stop : boolean) : boolean;
 var 
-  Ret : TPsWithVarPtr;
-  Def : TPsDefPtr;
-  TypePtr : TPsTypePtr;
+  Def : TPsDefPtr absolute Item;
+  Name : string absolute Ctx;
 begin
-  Ret := nil;
-  Def := Defs.Latest;
-  while (Ret = nil) and (Def <> nil) and (Def^.Cls <> TdcScopeBoundary) do
-  begin
-    if Def^.Cls = TdcWithVar then
-    begin
-      TypePtr := Def^.WithVarPtr^.VarPtr^.TypePtr;
-      if FindFieldType(TypePtr, Name, false) <> nil then
-        Ret := Def^.WithVarPtr;
-    end;
-    Def := Def^.Prev
-  end;
-  FindWithVar := Ret
+  Stop := Def^.Cls = TdcScopeBoundary;
+  Result := (Def^.Cls = TdcWithVar)
+            and (FindFieldType(Def^.WithVarPtr^.VarPtr^.TypePtr,
+            Name, False) <> nil)
+end;
+
+function FindWithVar(Name : string) : TPsWithVarPtr;
+var Def : TPsDefPtr;
+begin
+  if Stack_Find(Defs.Latest, Def, @_DefIsWithVar, Name) then
+    Result := Def^.WithVarPtr
+  else Result := nil
 end;
 
 function AddWithVar(Base : TExpression) : TPsVarPtr;
@@ -1088,28 +1079,31 @@ begin
   AddTypeName(Name, Result)
 end;
 
+function _DefIsFileType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  Wanted : TPsFileTypeDef absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFile)
+            and (Def^.TypePtr^.FileDef.Cls = Wanted.Cls)
+            and ((Wanted.Cls <> TfcBinary)
+            or IsSameType(Def^.TypePtr^.FileDef.TypePtr, Wanted.TypePtr))
+end;
+
 function _MakeFileType(Cls : TPsFileClass; TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
+  FileDef : TPsFileTypeDef;
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
+  { TODO check that the type is appropriate }
+  FileDef.Cls := Cls;
+  FileDef.TypePtr := TypePtr;
+  if Stack_Find(Defs.Latest, Def, @_DefIsFileType, FileDef) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFile)
-       and (Def^.TypePtr^.FileDef.Cls = Cls)
-       and ((Cls <> TfcBinary)
-       or IsSameType(Def^.TypePtr^.FileDef.TypePtr,
-       TypePtr^.FileDef.TypePtr)) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
-  begin
-    { TODO check that the type is appropriate }
     Result := _NewType(TtcFile);
-    Result^.FileDef.Cls := Cls;
-    if Cls = TfcBinary then Result^.FileDef.TypePtr := TypePtr
+    Result^.FileDef := FileDef
   end
 end;
 
@@ -1145,92 +1139,108 @@ begin
   Result^.RecPtr := NewRecord(Rec)
 end;
 
+function _DefIsArrayType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  Wanted : TPsArrayTypeDef absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcArray)
+            and IsSameType(Def^.TypePtr^.ArrayDef.IndexTypePtr,
+            Wanted.IndexTypePtr)
+            and IsSameType(Def^.TypePtr^.ArrayDef.ValueTypePtr,
+            Wanted.ValueTypePtr)
+end;
+
 function MakeArrayType(IndexType, ValueType : TPsTypePtr) : TPsTypePtr;
 var 
+  ArrayDef : TPsArrayTypeDef;
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
+  if not IsBoundedType(IndexType) then
+    ErrorForType('Array indices must belong to a bounded ordinal type',
+                 IndexType);
+  ArrayDef.IndexTypePtr := IndexType;
+  ArrayDef.ValueTypePtr := ValueType;
+  if Stack_Find(Defs.Latest, Def, @_DefIsArrayType, ArrayDef) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcArray)
-       and IsSameType(Def^.TypePtr^.ArrayDef.IndexTypePtr, IndexType)
-       and IsSameType(Def^.TypePtr^.ArrayDef.ValueTypePtr, ValueType) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
-  begin
-    if not IsBoundedType(IndexType) then
-      ErrorForType('Array indices must belong to a bounded ordinal type',
-                   IndexType);
     Result := _NewType(TtcArray);
-    Result^.ArrayDef.IndexTypePtr := IndexType;
-    Result^.ArrayDef.ValueTypePtr := ValueType
+    Result^.ArrayDef := ArrayDef
   end
+end;
+
+function _DefIsRangeType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  Wanted : TPsRangeTypeDef absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcRange)
+            and IsSameType(Def^.TypePtr^.RangeDef.BaseTypePtr,
+            Wanted.BaseTypePtr)
+            and (Def^.TypePtr^.RangeDef.First = Wanted.First)
+            and (Def^.TypePtr^.RangeDef.Last = Wanted.Last)
 end;
 
 function MakeRangeType(TypePtr : TPsTypePtr;
                        First, Last : integer) : TPsTypePtr;
 var 
+  RangeDef : TPsRangeTypeDef;
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
+  if First > Last then
+    CompileError('The bounds of a subrange must be in ascending order');
+  RangeDef.BaseTypePtr := GetFundamentalType(TypePtr);
+  RangeDef.First := First;
+  RangeDef.Last := Last;
+  if Stack_Find(Defs.Latest, Def, @_DefIsRangeType, RangeDef) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcRange)
-       and IsSameType(Def^.TypePtr^.RangeDef.BaseTypePtr, TypePtr)
-       and (First = Def^.TypePtr^.RangeDef.First)
-       and (Last = Def^.TypePtr^.RangeDef.Last) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
-  begin
-    if First > Last then
-      CompileError('The bounds of a subrange must be in ascending order');
     Result := _NewType(TtcRange);
-    Result^.RangeDef.First := First;
-    Result^.RangeDef.Last := Last;
-    Result^.RangeDef.BaseTypePtr := GetFundamentalType(TypePtr)
+    Result^.RangeDef := RangeDef
   end
+end;
+
+function _DefIsPointerType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  TypePtr : TPsTypePtr absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointer)
+            and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr)
 end;
 
 function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
-  begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointer)
-       and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
+  if Stack_Find(Defs.Latest, Def, @_DefIsPointerType, TypePtr) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
     Result := _NewType(TtcPointer);
     Result^.PointedTypePtr := TypePtr
   end
 end;
 
-function MakePointerForwardType(const TargetName : string) : TPsTypePtr;
+function _DefIsPointerForwardType(var Item; var Ctx;
+                                  var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  TargetName : string absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerForward)
+            and (Def^.TypePtr^.TargetName^ = TargetName)
+end;
+
+function MakePointerForwardType(TargetName : string) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
-  begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerForward)
-       and (Def^.TypePtr^.TargetName^ = TargetName) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
+  if Stack_Find(Defs.Latest, Def, @_DefIsPointerForwardType, TargetName) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
     Result := _NewType(TtcPointerForward);
     new(Result^.TargetName);
@@ -1238,20 +1248,22 @@ begin
   end
 end;
 
+function _DefIsSetType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  TypePtr : TPsTypePtr absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcSet)
+            and IsSameType(Def^.TypePtr^.ElementTypePtr, TypePtr)
+end;
+
 function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
-  begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcSet)
-       and IsSameType(Def^.TypePtr^.ElementTypePtr, TypePtr) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
+  if Stack_Find(Defs.Latest, Def, @_DefIsSetType, TypePtr) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
     Result := _NewType(TtcSet);
     Result^.ElementTypePtr := TypePtr
@@ -1269,26 +1281,33 @@ begin
                 and IsSameType(A.Defs[Pos].TypePtr, B.Defs[Pos].TypePtr)
 end;
 
+function _DefIsFunctionType(var Item; var Ctx; var Stop : boolean) : boolean;
+var 
+  Def : TPsDefPtr absolute Item;
+  FnDef : TPsFnDef absolute Ctx;
+begin
+  Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFunction)
+            and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr,
+            FnDef.ReturnTypePtr)
+            and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, FnDef.Args)
+end;
+
 function MakeFunctionType(const Args : TPsFnArgs;
                           ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
-var Def : TPsDefPtr;
+var 
+  Def : TPsDefPtr;
+  FnDef : TPsFnDef;
 begin
-  Result := nil;
-  Def := Defs.Latest;
-  while (Def <> nil) and (Result = nil) do
-  begin
-    if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFunction)
-       and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr, ReturnTypePtr)
-       and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, Args) then
-      Result := _UnaliasType(Def^.TypePtr);
-    Def := Def^.Prev
-  end;
-  if Result = nil then
+  FnDef.ReturnTypePtr := ReturnTypePtr;
+  FnDef.Args := Args;
+  if Stack_Find(Defs.Latest, Def, @_DefIsFunctionType, FnDef) then
+    Result := _UnaliasType(Def^.TypePtr)
+  else
   begin
     Result := _NewType(TtcFunction);
     Result^.FnDefPtr := NewFnDef;
-    Result^.FnDefPtr^.ReturnTypePtr := ReturnTypePtr;
-    Result^.FnDefPtr^.Args := Args
+    Result^.FnDefPtr^.ReturnTypePtr := FnDef.ReturnTypePtr;
+    Result^.FnDefPtr^.Args := FnDef.Args
   end
 end;
 

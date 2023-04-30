@@ -1238,5 +1238,9 @@ begin
       XcToGenericFile: Lhs := Lhs^.ToGenericFileParent;
       else IsTerminal := true
     end;
-  if Lhs^.Cls = XcVariable then Lhs^.VarPtr^.WasInitialized := true
+  if Lhs^.Cls = XcVariable then
+  begin
+    Lhs^.VarPtr^.WasInitialized := true;
+    if Lhs^.VarPtr^.IsReference then Lhs^.VarPtr^.WasUsed := true
+  end
 end;

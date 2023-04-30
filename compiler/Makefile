@@ -6,9 +6,9 @@ bootstrap: stage0.c $(RTDIR)/libpascual.a
 	gcc -o bootstrap -Os -I$(RTDIR) -L$(RTDIR) stage0.c -lpascual
 
 pascual: bootstrap $(RTDIR)/libpascual.a compiler.pas \
-         codegen.defs.inc.pas codegen.inc.pas errors.inc.pas \
-				 expression.forward.inc.pas expression.inc.pas globals.inc.pas \
-				 lexer.inc.pas parser.inc.pas \
+         codegen.defs.inc.pas codegen.inc.pas containers.inc.pas \
+				 errors.inc.pas expression.forward.inc.pas expression.inc.pas \
+				 globals.inc.pas lexer.inc.pas parser.inc.pas \
 				 progdefs.forward.inc.pas progdefs.inc.pas \
 				 pseudofuns.inc.pas typedefs.inc.pas \
 				 modules/*.pas \
