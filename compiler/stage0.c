@@ -17,16 +17,61 @@ PString INTTOSTR(PInteger VALUE) {
   return RESULT;
 }
 
-typedef struct record16* TPSTYPEPTR;
-typedef struct record17* TPSENUMPTR;
-typedef struct record21* TPSVARPTR;
-typedef struct record24* TPSFNPTR;
-typedef struct record25* TPSPSEUDOFNPTR;
-typedef struct record3* TEXSETIMMBOUNDS;
-typedef struct record4* TEXSETEXPRBOUNDS;
-typedef struct record11* TEXPRESSION;
-typedef enum __attribute__((__packed__)) enum1 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
+typedef struct record2* TSTACK;
 typedef struct record2 {
+  struct record2* OLDER;
+  struct record2* NEWER;
+} TSTACKPTRS;
+typedef PBoolean (*TSTACKPREDICATE)(void* ITEM, void* CONTEXT, PBoolean* STOP);
+
+void STACK_PUSH(void* HEAD, void* ITEM) {
+  TSTACKPTRS** THEHEAD = (TSTACKPTRS**)HEAD;
+  TSTACKPTRS** NEWITEM = (TSTACKPTRS**)ITEM;
+  (*NEWITEM)->OLDER = *THEHEAD;
+  (*NEWITEM)->NEWER = PNil;
+  if (*THEHEAD != PNil) (*THEHEAD)->NEWER = *NEWITEM;
+  *THEHEAD = *NEWITEM;
+}
+
+PBoolean STACK_POP(void* HEAD, void* DELETEDITEM) {
+  PBoolean RESULT;
+  TSTACKPTRS** THEHEAD = (TSTACKPTRS**)HEAD;
+  TSTACKPTRS** THEDELETEDITEM = (TSTACKPTRS**)DELETEDITEM;
+  *THEDELETEDITEM = *THEHEAD;
+  RESULT = *THEHEAD != PNil;
+  if (RESULT) *THEHEAD = (*THEHEAD)->OLDER;
+  return RESULT;
+}
+
+PBoolean STACK_FIND(void* HEAD, void* FOUNDITEM, TSTACKPREDICATE PREDICATE, void* CONTEXT) {
+  PBoolean RESULT;
+  TSTACKPTRS** THEHEAD = (TSTACKPTRS**)HEAD;
+  TSTACKPTRS* ITEM;
+  TSTACKPTRS** THEFOUNDITEM = (TSTACKPTRS**)FOUNDITEM;
+  PBoolean FOUND;
+  PBoolean STOP;
+  FOUND = 0;
+  STOP = 0;
+  ITEM = *THEHEAD;
+  while (!FOUND && !STOP && ITEM != PNil) {
+    FOUND = PREDICATE(&ITEM, CONTEXT, &STOP);
+    if (FOUND) *THEFOUNDITEM = ITEM;
+    else if (!STOP) ITEM = ITEM->OLDER;
+  }
+  RESULT = FOUND;
+  return RESULT;
+}
+
+typedef struct record17* TPSTYPEPTR;
+typedef struct record18* TPSENUMPTR;
+typedef struct record22* TPSVARPTR;
+typedef struct record25* TPSFNPTR;
+typedef struct record26* TPSPSEUDOFNPTR;
+typedef struct record4* TEXSETIMMBOUNDS;
+typedef struct record5* TEXSETEXPRBOUNDS;
+typedef struct record12* TEXPRESSION;
+typedef enum __attribute__((__packed__)) enum1 { XICNIL, XICBOOLEAN, XICINTEGER, XICREAL, XICCHAR, XICSTRING, XICENUM, XICSET } TEXIMMEDIATECLASS;
+typedef struct record3 {
   TEXIMMEDIATECLASS CLS;
   union {
     struct {
@@ -46,56 +91,56 @@ typedef struct record2 {
     };
     struct {
       PInteger ENUMORDINAL;
-      struct record17* ENUMPTR;
+      struct record18* ENUMPTR;
     };
     struct {
-      struct record3* SETBOUNDS;
-      struct record16* SETOFTYPEPTR;
+      struct record4* SETBOUNDS;
+      struct record17* SETOFTYPEPTR;
     };
   };
 } TEXIMMEDIATE;
-typedef struct record3 {
+typedef struct record4 {
   PInteger FIRST;
   PInteger LAST;
-  struct record3* NEXT;
-} TEXSETIMMBOUNDSOBJ;
-typedef struct record4 {
-  struct record11* FIRST;
-  struct record11* LAST;
   struct record4* NEXT;
-} TEXSETEXPRBOUNDSOBJ;
+} TEXSETIMMBOUNDSOBJ;
 typedef struct record5 {
-  PInteger SIZE;
-  struct record11* VALUES[16];
-} TEXFUNCTIONARGS;
+  struct record12* FIRST;
+  struct record12* LAST;
+  struct record5* NEXT;
+} TEXSETEXPRBOUNDSOBJ;
 typedef struct record6 {
-  struct record11* ARG;
-  struct record11* WIDTH;
-  struct record11* PREC;
-} TEXWRITEARG;
-typedef struct record7* TEXREADARGLIST;
+  PInteger SIZE;
+  struct record12* VALUES[16];
+} TEXFUNCTIONARGS;
 typedef struct record7 {
-  struct record11* DEST;
-  struct record7* NEXT;
-} TEXREADARGVALUE;
-typedef struct record8* TEXWRITEARGLIST;
+  struct record12* ARG;
+  struct record12* WIDTH;
+  struct record12* PREC;
+} TEXWRITEARG;
+typedef struct record8* TEXREADARGLIST;
 typedef struct record8 {
-  TEXWRITEARG VALUE;
+  struct record12* DEST;
   struct record8* NEXT;
+} TEXREADARGVALUE;
+typedef struct record9* TEXWRITEARGLIST;
+typedef struct record9 {
+  TEXWRITEARG VALUE;
+  struct record9* NEXT;
 } TEXWRITEARGVALUE;
 typedef enum __attribute__((__packed__)) enum2 { XOADD, XOSUB, XOMUL, XODIVREAL, XODIVINT, XOMOD, XONEG, XOAND, XOOR, XOXOR, XOSHL, XOSHR, XONOT, XOIN, XOEQ, XONE, XOLT, XOGT, XOLTEQ, XOGTEQ, XOORD, XOPRED, XOSUCC } TEXOPERATOR;
-typedef struct record9 {
-  struct record11* PARENT;
+typedef struct record10 {
+  struct record12* PARENT;
   TEXOPERATOR OP;
 } TEXUNARYOP;
-typedef struct record10 {
-  struct record11* LEFT;
-  struct record11* RIGHT;
+typedef struct record11 {
+  struct record12* LEFT;
+  struct record12* RIGHT;
   TEXOPERATOR OP;
 } TEXBINARYOP;
 typedef enum __attribute__((__packed__)) enum3 { XCIMMEDIATE, XCTOSTRING, XCTOREAL, XCTOUNTYPEDPTR, XCTOGENERICFILE, XCWITHTMPVAR, XCSUBRANGE, XCSET, XCVARIABLE, XCFIELD, XCARRAY, XCPOINTER, XCADDRESS, XCSTRINGCHAR, XCFNREF, XCFNCALL, XCPSEUDOFNREF, XCSIZEOF, XCCONVERTTOSTR, XCCONVERTTOVAL, XCREAD, XCWRITE, XCUNARYOP, XCBINARYOP } TEXPRESSIONCLASS;
-typedef struct record11 {
-  struct record16* TYPEPTR;
+typedef struct record12 {
+  struct record17* TYPEPTR;
   PBoolean ISASSIGNABLE;
   PBoolean ISADDRESSABLE;
   PBoolean ISFUNCTIONRESULT;
@@ -106,79 +151,79 @@ typedef struct record11 {
       TEXIMMEDIATE IMMEDIATE;
     };
     struct {
-      struct record11* TOSTRPARENT;
+      struct record12* TOSTRPARENT;
     };
     struct {
-      struct record11* TOREALPARENT;
+      struct record12* TOREALPARENT;
     };
     struct {
-      struct record11* TOUNTYPEDPTRPARENT;
+      struct record12* TOUNTYPEDPTRPARENT;
     };
     struct {
-      struct record11* TOGENERICFILEPARENT;
+      struct record12* TOGENERICFILEPARENT;
     };
     struct {
-      struct record11* TMPVAR;
-      struct record11* TMPVARVALUE;
-      struct record11* TMPVARCHILD;
+      struct record12* TMPVAR;
+      struct record12* TMPVARVALUE;
+      struct record12* TMPVARCHILD;
     };
     struct {
-      struct record11* SUBRANGEPARENT;
+      struct record12* SUBRANGEPARENT;
     };
     struct {
-      struct record11* SETBASE;
+      struct record12* SETBASE;
       TEXSETEXPRBOUNDSOBJ* SETBOUNDS;
     };
     struct {
-      struct record21* VARPTR;
+      struct record22* VARPTR;
     };
     struct {
-      struct record11* RECEXPR;
+      struct record12* RECEXPR;
       PInteger RECFIELDNUM;
     };
     struct {
-      struct record11* ARRAYEXPR;
-      struct record11* ARRAYINDEX;
+      struct record12* ARRAYEXPR;
+      struct record12* ARRAYINDEX;
     };
     struct {
-      struct record11* POINTEREXPR;
+      struct record12* POINTEREXPR;
     };
     struct {
-      struct record11* ADDRESSEXPR;
+      struct record12* ADDRESSEXPR;
     };
     struct {
-      struct record11* STRINGEXPR;
-      struct record11* STRINGINDEX;
+      struct record12* STRINGEXPR;
+      struct record12* STRINGINDEX;
     };
     struct {
-      struct record24* FNPTR;
+      struct record25* FNPTR;
     };
     struct {
-      struct record11* FNEXPR;
+      struct record12* FNEXPR;
       TEXFUNCTIONARGS CALLARGS;
     };
     struct {
-      struct record25* PSEUDOFNPTR;
+      struct record26* PSEUDOFNPTR;
     };
     struct {
-      struct record16* SIZEOFTYPEPTR;
+      struct record17* SIZEOFTYPEPTR;
     };
     struct {
       TEXWRITEARG TOSTRSRC;
-      struct record11* TOSTRDEST;
+      struct record12* TOSTRDEST;
     };
     struct {
-      struct record11* TOVALSRC;
-      struct record11* TOVALDEST;
-      struct record11* TOVALCODE;
+      struct record12* TOVALSRC;
+      struct record12* TOVALDEST;
+      struct record12* TOVALCODE;
     };
     struct {
-      struct record11* READFILE;
+      struct record12* READFILE;
       TEXREADARGVALUE* READARGS;
       PBoolean READLN;
     };
     struct {
-      struct record11* WRITEFILE;
+      struct record12* WRITEFILE;
       TEXWRITEARGVALUE* WRITEARGS;
       PBoolean WRITELN;
     };
@@ -190,62 +235,65 @@ typedef struct record11 {
     };
   };
 } TEXPRESSIONOBJ;
-typedef struct record12 {
+typedef struct record13 {
   PString NAME;
 } TPSIDENTIFIER;
-typedef struct record19* TPSRECPTR;
-typedef struct record23* TPSFNDEFPTR;
-typedef struct record20* TPSCONSTPTR;
-typedef struct record26* TPSWITHVARPTR;
-typedef struct record27* TPSNAMEPTR;
+typedef struct record20* TPSRECPTR;
+typedef struct record24* TPSFNDEFPTR;
+typedef struct record21* TPSCONSTPTR;
+typedef struct record27* TPSWITHVARPTR;
+typedef struct record28* TPSNAMEPTR;
 typedef enum __attribute__((__packed__)) enum4 { TFCNONE, TFCTEXT, TFCBINARY } TPSFILECLASS;
-typedef enum __attribute__((__packed__)) enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCFILE, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERFORWARD, TTCFUNCTION } TPSTYPECLASS;
+typedef struct record14 {
+  TPSFILECLASS CLS;
+  struct record17* TYPEPTR;
+} TPSFILETYPEDEF;
+typedef struct record15 {
+  PInteger FIRST;
+  PInteger LAST;
+  struct record17* BASETYPEPTR;
+} TPSRANGETYPEDEF;
 typedef struct record16 {
+  struct record17* INDEXTYPEPTR;
+  struct record17* VALUETYPEPTR;
+} TPSARRAYTYPEDEF;
+typedef enum __attribute__((__packed__)) enum5 { TTCBOOLEAN, TTCINTEGER, TTCREAL, TTCCHAR, TTCSTRING, TTCFILE, TTCENUM, TTCRANGE, TTCSET, TTCRECORD, TTCARRAY, TTCPOINTER, TTCNIL, TTCPOINTERFORWARD, TTCFUNCTION } TPSTYPECLASS;
+typedef struct record17 {
   PString NAME;
-  struct record16* ALIASFOR;
+  struct record17* ALIASFOR;
   PBoolean WASUSED;
   TPSTYPECLASS CLS;
   union {
     struct {
-      struct record13 {
-        TPSFILECLASS CLS;
-        struct record16* TYPEPTR;
-      } FILEDEF;
+      TPSFILETYPEDEF FILEDEF;
     };
     struct {
-      struct record17* ENUMPTR;
+      struct record18* ENUMPTR;
     };
     struct {
-      struct record14 {
-        PInteger FIRST;
-        PInteger LAST;
-        struct record16* BASETYPEPTR;
-      } RANGEDEF;
+      TPSRANGETYPEDEF RANGEDEF;
     };
     struct {
-      struct record16* ELEMENTTYPEPTR;
+      struct record17* ELEMENTTYPEPTR;
     };
     struct {
-      struct record19* RECPTR;
+      struct record20* RECPTR;
     };
     struct {
-      struct record15 {
-        struct record16* INDEXTYPEPTR;
-        struct record16* VALUETYPEPTR;
-      } ARRAYDEF;
+      TPSARRAYTYPEDEF ARRAYDEF;
     };
     struct {
-      struct record16* POINTEDTYPEPTR;
+      struct record17* POINTEDTYPEPTR;
     };
     struct {
       PString* TARGETNAME;
     };
     struct {
-      struct record23* FNDEFPTR;
+      struct record24* FNDEFPTR;
     };
   };
 } TPSTYPE;
-typedef struct record17 {
+typedef struct record18 {
   PInteger SIZE;
   PString VALUES[128];
   PInteger ID;
@@ -253,11 +301,11 @@ typedef struct record17 {
   PBoolean VALUESHAVEBEENOUTPUT;
   PInteger REFCOUNT;
 } TPSENUMDEF;
-typedef struct record18 {
+typedef struct record19 {
   PString NAME;
   TPSTYPE* TYPEPTR;
 } TPSRECORDFIELD;
-typedef struct record19 {
+typedef struct record20 {
   PInteger SIZE;
   TPSRECORDFIELD FIELDS[64];
   PInteger NUMVARIANTS;
@@ -267,28 +315,29 @@ typedef struct record19 {
   PBoolean HASBEENDEFINED;
   PInteger REFCOUNT;
 } TPSRECORDDEF;
-typedef struct record20 {
+typedef struct record21 {
   PString NAME;
   TEXPRESSIONOBJ* VALUE;
 } TPSCONSTANT;
-typedef struct record21 {
+typedef struct record22 {
   PString NAME;
   TPSTYPE* TYPEPTR;
   PBoolean ISREFERENCE;
   PBoolean ISCONSTANT;
   PBoolean WASINITIALIZED;
   PBoolean WASUSED;
+  TEXPRESSIONOBJ* ISALIASFOR;
 } TPSVARIABLE;
-typedef struct record22 {
+typedef struct record23 {
   PInteger COUNT;
   TPSVARIABLE DEFS[16];
 } TPSFNARGS;
-typedef struct record23 {
+typedef struct record24 {
   TPSFNARGS ARGS;
   TPSTYPE* RETURNTYPEPTR;
   PInteger REFCOUNT;
 } TPSFNDEF;
-typedef struct record24 {
+typedef struct record25 {
   PString NAME;
   PString EXTERNALNAME;
   TPSFNARGS ARGS;
@@ -297,15 +346,15 @@ typedef struct record24 {
   PBoolean WASUSED;
 } TPSFUNCTION;
 typedef TEXPRESSIONOBJ* (*TPSPSEUDOFNPARSER)(TEXPRESSIONOBJ* FNEXPR);
-typedef struct record25 {
+typedef struct record26 {
   PString NAME;
   TPSPSEUDOFNPARSER PARSEFN;
 } TPSPSEUDOFN;
-typedef struct record26 {
+typedef struct record27 {
   TPSVARIABLE* VARPTR;
 } TPSWITHVAR;
 typedef enum __attribute__((__packed__)) enum6 { TNCTYPE, TNCVARIABLE, TNCCONSTANT, TNCENUMVAL, TNCFUNCTION, TNCPSEUDOFN } TPSNAMECLASS;
-typedef struct record27 {
+typedef struct record28 {
   PString NAME;
   TPSNAMECLASS CLS;
   union {
@@ -331,16 +380,16 @@ typedef struct record27 {
   };
 } TPSNAME;
 typedef enum __attribute__((__packed__)) enum7 { TCTENUM, TCTRECORD, TCTTMPVAR } TPSCOUNTERTYPE;
-typedef struct record28 {
+typedef struct record29 {
   PInteger ENUMCTR;
   PInteger RECORDCTR;
   PInteger TMPVARCTR;
 } TPSCOUNTERS;
-typedef struct record29* TPSDEFPTR;
+typedef struct record30* TPSDEFPTR;
 typedef enum __attribute__((__packed__)) enum8 { TDCNAME, TDCTYPE, TDCCONSTANT, TDCVARIABLE, TDCFUNCTION, TDCPSEUDOFN, TDCWITHVAR, TDCSCOPEBOUNDARY } TPSDEFCLASS;
-typedef struct record29 {
-  struct record29* PREV;
-  struct record29* NEXT;
+typedef struct record30 {
+  struct record30* OLDER;
+  struct record30* NEWER;
   TPSDEFCLASS CLS;
   union {
     struct {
@@ -371,7 +420,7 @@ typedef struct record29 {
     };
   };
 } TPSDEFENTRY;
-typedef struct record30 {
+typedef struct record31 {
   TPSDEFENTRY* LATEST;
   TPSFUNCTION* CURRENTFN;
   TPSCOUNTERS COUNTERS;
@@ -551,29 +600,29 @@ void ENSUREADDRESSABLEEXPR(TEXPRESSIONOBJ* EXPR) {
 }
 
 typedef enum __attribute__((__packed__)) enum9 { TKUNKNOWN, TKEOF, TKCOMMENT, TKIDENTIFIER, TKINTEGER, TKREAL, TKSTRING, TKPLUS, TKMINUS, TKASTERISK, TKSLASH, TKEQUALS, TKLESSTHAN, TKMORETHAN, TKLBRACKET, TKRBRACKET, TKDOT, TKCOMMA, TKCOLON, TKSEMICOLON, TKCARET, TKLPAREN, TKRPAREN, TKNOTEQUALS, TKLESSOREQUALS, TKMOREOREQUALS, TKASSIGN, TKRANGE, TKAT, TKABSOLUTE, TKAND, TKARRAY, TKBEGIN, TKCASE, TKCONST, TKDIV, TKDO, TKDOWNTO, TKELSE, TKEND, TKFILE, TKFOR, TKFORWARD, TKFUNCTION, TKGOTO, TKIF, TKIN, TKLABEL, TKMOD, TKNIL, TKNOT, TKOF, TKOR, TKPACKED, TKPROCEDURE, TKPROGRAM, TKRECORD, TKREPEAT, TKSET, TKSHL, TKSHR, TKTHEN, TKTO, TKTYPE, TKUNTIL, TKVAR, TKWHILE, TKWITH, TKXOR } TLXTOKENID;
-typedef struct record31 {
+typedef struct record32 {
   PInteger ROW;
   PInteger COL;
 } TLXPOS;
-typedef struct record32 {
+typedef struct record33 {
   TLXTOKENID ID;
   PString VALUE;
   TLXPOS POS;
 } TLXTOKEN;
-typedef struct record33 {
+typedef struct record34 {
   PFile SRC;
   PString NAME;
   TLXPOS POS;
 } TLXINPUTFILE;
-typedef struct record34* TLXINCLUDESTACK;
-typedef struct record34 {
+typedef struct record35* TLXINCLUDESTACK;
+typedef struct record35 {
   TLXINPUTFILE INPUT;
-  struct record34* PREV;
+  struct record35* PREV;
 } TLXINCLUDESTACKELEM;
 
 const char* enumvalues9[] = { "TKUNKNOWN", "TKEOF", "TKCOMMENT", "TKIDENTIFIER", "TKINTEGER", "TKREAL", "TKSTRING", "TKPLUS", "TKMINUS", "TKASTERISK", "TKSLASH", "TKEQUALS", "TKLESSTHAN", "TKMORETHAN", "TKLBRACKET", "TKRBRACKET", "TKDOT", "TKCOMMA", "TKCOLON", "TKSEMICOLON", "TKCARET", "TKLPAREN", "TKRPAREN", "TKNOTEQUALS", "TKLESSOREQUALS", "TKMOREOREQUALS", "TKASSIGN", "TKRANGE", "TKAT", "TKABSOLUTE", "TKAND", "TKARRAY", "TKBEGIN", "TKCASE", "TKCONST", "TKDIV", "TKDO", "TKDOWNTO", "TKELSE", "TKEND", "TKFILE", "TKFOR", "TKFORWARD", "TKFUNCTION", "TKGOTO", "TKIF", "TKIN", "TKLABEL", "TKMOD", "TKNIL", "TKNOT", "TKOF", "TKOR", "TKPACKED", "TKPROCEDURE", "TKPROGRAM", "TKRECORD", "TKREPEAT", "TKSET", "TKSHL", "TKSHR", "TKTHEN", "TKTO", "TKTYPE", "TKUNTIL", "TKVAR", "TKWHILE", "TKWITH", "TKXOR" };
 
-struct record35 {
+struct record36 {
   PString LINE;
   TLXTOKEN TOKEN;
   TLXINPUTFILE INPUT;
@@ -890,7 +939,7 @@ void LXINCLUDE(const PString* FILENAME) {
   LXOPEN(_LXRESOLVEFILENAME(&LEXER.INPUT.NAME, FILENAME));
 }
 TPSDEFS DEFS;
-struct record36 {
+struct record37 {
   TPSTYPE* PTNIL;
   TPSTYPE* PTBOOLEAN;
   TPSTYPE* PTINTEGER;
@@ -975,48 +1024,6 @@ void DISPOSEFNDEF(TPSFNDEF* PTR) {
   if (PTR->REFCOUNT == 0) Dispose((void**)&PTR);
 }
 
-TPSDEFENTRY* _NEWDEF(TPSDEFCLASS CLS) {
-  TPSDEFENTRY* RESULT;
-  TPSDEFENTRY* DEF;
-  New((void**)&DEF, sizeof(TPSDEFENTRY));
-  DEF->PREV = PNil;
-  DEF->NEXT = PNil;
-  DEF->CLS = CLS;
-  switch (CLS) {
-    case TDCNAME:
-      New((void**)&DEF->NAMEPTR, sizeof(TPSNAME));
-      break;
-    case TDCTYPE:
-      New((void**)&DEF->TYPEPTR, sizeof(TPSTYPE));
-      break;
-    case TDCCONSTANT:
-      New((void**)&DEF->CONSTPTR, sizeof(TPSCONSTANT));
-      break;
-    case TDCVARIABLE:
-      New((void**)&DEF->VARPTR, sizeof(TPSVARIABLE));
-      break;
-    case TDCFUNCTION:
-      New((void**)&DEF->FNPTR, sizeof(TPSFUNCTION));
-      break;
-    case TDCPSEUDOFN:
-      New((void**)&DEF->PSEUDOFNPTR, sizeof(TPSPSEUDOFN));
-      break;
-    case TDCWITHVAR:
-      New((void**)&DEF->WITHVARPTR, sizeof(TPSWITHVAR));
-      break;
-    case TDCSCOPEBOUNDARY:
-      {
-        DEF->TEMPORARYSCOPE = 0;
-        DEF->CURRENTFN = PNil;
-      }
-      break;
-    default:
-      break;
-  }
-  RESULT = DEF;
-  return RESULT;
-}
-
 void _DISPOSETYPE(TPSTYPE** TYPEPTR) {
   if ((*TYPEPTR)->CLS == TTCENUM) DISPOSEENUM((*TYPEPTR)->ENUMPTR);
   else if ((*TYPEPTR)->CLS == TTCRECORD) DISPOSERECORD((*TYPEPTR)->RECPTR);
@@ -1036,7 +1043,10 @@ void _DISPOSEDEF(TPSDEFENTRY* DEF) {
       Dispose((void**)&DEF->CONSTPTR);
       break;
     case TDCVARIABLE:
-      Dispose((void**)&DEF->VARPTR);
+      {
+        if (DEF->VARPTR->ISALIASFOR != PNil) EXDISPOSE(&DEF->VARPTR->ISALIASFOR);
+        Dispose((void**)&DEF->VARPTR);
+      }
       break;
     case TDCFUNCTION:
       Dispose((void**)&DEF->FNPTR);
@@ -1082,24 +1092,51 @@ void _CHECKUNUSEDSYMBOLS(TPSDEFENTRY* DEF) {
 
 TPSDEFENTRY* _ADDDEF(TPSDEFCLASS CLS) {
   TPSDEFENTRY* RESULT;
-  TPSDEFENTRY* DEF;
-  DEF = _NEWDEF(CLS);
-  DEF->PREV = DEFS.LATEST;
-  if (DEFS.LATEST != PNil) DEFS.LATEST->NEXT = DEF;
-  DEFS.LATEST = DEF;
-  RESULT = DEF;
+  New((void**)&RESULT, sizeof(TPSDEFENTRY));
+  RESULT->CLS = CLS;
+  switch (CLS) {
+    case TDCNAME:
+      New((void**)&RESULT->NAMEPTR, sizeof(TPSNAME));
+      break;
+    case TDCTYPE:
+      New((void**)&RESULT->TYPEPTR, sizeof(TPSTYPE));
+      break;
+    case TDCCONSTANT:
+      New((void**)&RESULT->CONSTPTR, sizeof(TPSCONSTANT));
+      break;
+    case TDCVARIABLE:
+      New((void**)&RESULT->VARPTR, sizeof(TPSVARIABLE));
+      break;
+    case TDCFUNCTION:
+      New((void**)&RESULT->FNPTR, sizeof(TPSFUNCTION));
+      break;
+    case TDCPSEUDOFN:
+      New((void**)&RESULT->PSEUDOFNPTR, sizeof(TPSPSEUDOFN));
+      break;
+    case TDCWITHVAR:
+      New((void**)&RESULT->WITHVARPTR, sizeof(TPSWITHVAR));
+      break;
+    case TDCSCOPEBOUNDARY:
+      {
+        RESULT->TEMPORARYSCOPE = 0;
+        RESULT->CURRENTFN = PNil;
+      }
+      break;
+    default:
+      break;
+  }
+  STACK_PUSH(&DEFS.LATEST, &RESULT);
   return RESULT;
 }
 
 PBoolean _DELETEDEF(TPSDEFENTRY* DELETEDDEF) {
   PBoolean RESULT;
-  if (DEFS.LATEST == PNil) RESULT = 0;
-  else {
-    _CHECKUNUSEDSYMBOLS(DEFS.LATEST);
-    *DELETEDDEF = *DEFS.LATEST;
-    _DISPOSEDEF(DEFS.LATEST);
-    DEFS.LATEST = DELETEDDEF->PREV;
-    RESULT = 1;
+  TPSDEFENTRY* DELETEDITEM;
+  RESULT = STACK_POP(&DEFS.LATEST, &DELETEDITEM);
+  if (RESULT) {
+    _CHECKUNUSEDSYMBOLS(DELETEDITEM);
+    *DELETEDDEF = *DELETEDITEM;
+    _DISPOSEDEF(DELETEDITEM);
   }
   return RESULT;
 }
@@ -1139,18 +1176,30 @@ void CLOSETEMPORARYSCOPE() {
   _CLOSESCOPE(1);
 }
 
+PBoolean _DEFISNAME(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  struct record38 {
+    PBoolean FROMLOCALSCOPE;
+    PString NAME;
+  }* THECTX = (struct record38*)CTX;
+  *STOP = THECTX->FROMLOCALSCOPE && (*DEF)->CLS == TDCSCOPEBOUNDARY;
+  RESULT = (*DEF)->CLS == TDCNAME && cmp_str(CoEq, CpStringPtr, &THECTX->NAME, CpStringPtr, &(*DEF)->NAMEPTR->NAME);
+  return RESULT;
+}
+
 TPSNAME* _FINDNAME(const PString* NAME, PBoolean REQUIRED, PBoolean FROMLOCALSCOPE) {
   TPSNAME* RESULT;
+  struct record38 {
+    PBoolean FROMLOCALSCOPE;
+    PString NAME;
+  } CTX;
   TPSDEFENTRY* DEF;
-  TPSNAME* RET;
-  RET = PNil;
-  DEF = DEFS.LATEST;
-  while (RET == PNil && DEF != PNil && (!FROMLOCALSCOPE || DEF->CLS != TDCSCOPEBOUNDARY)) {
-    if (DEF->CLS == TDCNAME && cmp_str(CoEq, CpStringPtr, NAME, CpStringPtr, &DEF->NAMEPTR->NAME)) RET = DEF->NAMEPTR;
-    DEF = DEF->PREV;
-  }
-  if (REQUIRED && RET == PNil) COMPILEERROR(CONCAT(CpLenPtr, 20, "Unknown identifier: ", CpEnd | CpStringPtr, NAME));
-  RESULT = RET;
+  CTX.FROMLOCALSCOPE = FROMLOCALSCOPE;
+  CTX.NAME = *NAME;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISNAME, &CTX)) RESULT = DEF->NAMEPTR;
+  else if (REQUIRED) COMPILEERROR(CONCAT(CpLenPtr, 20, "Unknown identifier: ", CpEnd | CpStringPtr, NAME));
+  else RESULT = PNil;
   return RESULT;
 }
 
@@ -1777,21 +1826,20 @@ TPSTYPE* FINDFIELDTYPE(TPSTYPE* TYPEPTR, const PString* NAME, PBoolean REQUIRED)
   return RESULT;
 }
 
-TPSWITHVAR* FINDWITHVAR(const PString* NAME) {
+PBoolean _DEFISWITHVAR(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  PString* NAME = (PString*)CTX;
+  *STOP = (*DEF)->CLS == TDCSCOPEBOUNDARY;
+  RESULT = (*DEF)->CLS == TDCWITHVAR && FINDFIELDTYPE((*DEF)->WITHVARPTR->VARPTR->TYPEPTR, NAME, 0) != PNil;
+  return RESULT;
+}
+
+TPSWITHVAR* FINDWITHVAR(PString NAME) {
   TPSWITHVAR* RESULT;
-  TPSWITHVAR* RET;
   TPSDEFENTRY* DEF;
-  TPSTYPE* TYPEPTR;
-  RET = PNil;
-  DEF = DEFS.LATEST;
-  while (RET == PNil && DEF != PNil && DEF->CLS != TDCSCOPEBOUNDARY) {
-    if (DEF->CLS == TDCWITHVAR) {
-      TYPEPTR = DEF->WITHVARPTR->VARPTR->TYPEPTR;
-      if (FINDFIELDTYPE(TYPEPTR, NAME, 0) != PNil) RET = DEF->WITHVARPTR;
-    }
-    DEF = DEF->PREV;
-  }
-  RESULT = RET;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISWITHVAR, &NAME)) RESULT = DEF->WITHVARPTR;
+  else RESULT = PNil;
   return RESULT;
 }
 
@@ -1807,6 +1855,7 @@ TPSVARIABLE* ADDWITHVAR(TEXPRESSIONOBJ* BASE) {
   TMPVAR.ISREFERENCE = BASE->ISADDRESSABLE;
   TMPVAR.WASINITIALIZED = 1;
   TMPVAR.WASUSED = 1;
+  TMPVAR.ISALIASFOR = EXCOPY(BASE);
   TMPVARPTR = ADDVARIABLE(&TMPVAR);
   WITHVARPTR = _ADDDEF(TDCWITHVAR)->WITHVARPTR;
   WITHVARPTR->VARPTR = TMPVARPTR;
@@ -1825,13 +1874,13 @@ TPSCONSTANT MAKECONSTANT(const PString* NAME, TEXPRESSIONOBJ* VALUE) {
 
 TPSVARIABLE MAKETYPEDCONSTANT(const PString* NAME, TPSTYPE* TYPEPTR) {
   TPSVARIABLE RESULT;
-  TPSVARIABLE VARDEF;
-  VARDEF.NAME = *NAME;
-  VARDEF.TYPEPTR = TYPEPTR;
-  VARDEF.ISREFERENCE = 0;
-  VARDEF.ISCONSTANT = 1;
-  VARDEF.WASINITIALIZED = 1;
-  RESULT = VARDEF;
+  RESULT.NAME = *NAME;
+  RESULT.TYPEPTR = TYPEPTR;
+  RESULT.ISREFERENCE = 0;
+  RESULT.ISCONSTANT = 1;
+  RESULT.WASINITIALIZED = 1;
+  RESULT.WASUSED = 0;
+  RESULT.ISALIASFOR = PNil;
   return RESULT;
 }
 
@@ -1843,6 +1892,7 @@ TPSVARIABLE MAKEVARIABLE(const PString* NAME, TPSTYPE* TYPEPTR) {
   RESULT.ISCONSTANT = 0;
   RESULT.WASINITIALIZED = 0;
   RESULT.WASUSED = 0;
+  RESULT.ISALIASFOR = PNil;
   return RESULT;
 }
 
@@ -1854,12 +1904,14 @@ TPSVARIABLE MAKEREFERENCE(const PString* NAME, TPSTYPE* TYPEPTR) {
   RESULT.ISCONSTANT = 0;
   RESULT.WASINITIALIZED = 1;
   RESULT.WASUSED = 0;
+  RESULT.ISALIASFOR = PNil;
   return RESULT;
 }
 
-TPSVARIABLE* ADDTMPVARIABLE(const PString* PREFIX, TPSTYPE* TYPEPTR) {
+TPSVARIABLE* ADDALIASVARIABLE(const PString* PREFIX, TPSTYPE* TYPEPTR, TEXPRESSIONOBJ* EXPR) {
   TPSVARIABLE* RESULT;
   RESULT = ({ TPSVARIABLE tmp2 = ({ PString tmp1 = CONCAT(CpStringPtr, PREFIX, CpEnd | CpString, INTTOSTR(DEFCOUNTER(TCTTMPVAR))); MAKEVARIABLE(&tmp1, TYPEPTR); }); ADDVARIABLE(&tmp2); });
+  RESULT->ISALIASFOR = EXCOPY(EXPR);
   return RESULT;
 }
 
@@ -1871,6 +1923,7 @@ TPSVARIABLE _MAKEARG(const PString* NAME, TPSTYPE* TYPEPTR, PBoolean ISREF, PBoo
   RESULT.ISCONSTANT = ISCONST;
   RESULT.WASINITIALIZED = 0;
   RESULT.WASUSED = 0;
+  RESULT.ISALIASFOR = PNil;
   return RESULT;
 }
 
@@ -2004,19 +2057,24 @@ TPSTYPE* MAKEBASETYPE(const PString* NAME, TPSTYPECLASS CLS) {
   return RESULT;
 }
 
+PBoolean _DEFISFILETYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSFILETYPEDEF* WANTED = (TPSFILETYPEDEF*)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCFILE && (*DEF)->TYPEPTR->FILEDEF.CLS == WANTED->CLS && (WANTED->CLS != TFCBINARY || ISSAMETYPE((*DEF)->TYPEPTR->FILEDEF.TYPEPTR, WANTED->TYPEPTR));
+  return RESULT;
+}
+
 TPSTYPE* _MAKEFILETYPE(TPSFILECLASS CLS, TPSTYPE* TYPEPTR) {
   TPSTYPE* RESULT;
+  TPSFILETYPEDEF FILEDEF;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCFILE && DEF->TYPEPTR->FILEDEF.CLS == CLS && (CLS != TFCBINARY || ISSAMETYPE(DEF->TYPEPTR->FILEDEF.TYPEPTR, TYPEPTR->FILEDEF.TYPEPTR))) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
+  FILEDEF.CLS = CLS;
+  FILEDEF.TYPEPTR = TYPEPTR;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISFILETYPE, &FILEDEF)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCFILE);
-    RESULT->FILEDEF.CLS = CLS;
-    if (CLS == TFCBINARY) RESULT->FILEDEF.TYPEPTR = TYPEPTR;
+    RESULT->FILEDEF = FILEDEF;
   }
   return RESULT;
 }
@@ -2060,89 +2118,108 @@ TPSTYPE* MAKERECORDTYPE(const TPSRECORDDEF* REC) {
   return RESULT;
 }
 
+PBoolean _DEFISARRAYTYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSARRAYTYPEDEF* WANTED = (TPSARRAYTYPEDEF*)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCARRAY && ISSAMETYPE((*DEF)->TYPEPTR->ARRAYDEF.INDEXTYPEPTR, WANTED->INDEXTYPEPTR) && ISSAMETYPE((*DEF)->TYPEPTR->ARRAYDEF.VALUETYPEPTR, WANTED->VALUETYPEPTR);
+  return RESULT;
+}
+
 TPSTYPE* MAKEARRAYTYPE(TPSTYPE* INDEXTYPE, TPSTYPE* VALUETYPE) {
   TPSTYPE* RESULT;
+  TPSARRAYTYPEDEF ARRAYDEF;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCARRAY && ISSAMETYPE(DEF->TYPEPTR->ARRAYDEF.INDEXTYPEPTR, INDEXTYPE) && ISSAMETYPE(DEF->TYPEPTR->ARRAYDEF.VALUETYPEPTR, VALUETYPE)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
+  if (!ISBOUNDEDTYPE(INDEXTYPE)) {
+    PString tmp1 = str_make(51, "Array indices must belong to a bounded ordinal type");
+    ERRORFORTYPE(&tmp1, INDEXTYPE);
   }
-  if (RESULT == PNil) {
-    if (!ISBOUNDEDTYPE(INDEXTYPE)) {
-      PString tmp1 = str_make(51, "Array indices must belong to a bounded ordinal type");
-      ERRORFORTYPE(&tmp1, INDEXTYPE);
-    }
+  ARRAYDEF.INDEXTYPEPTR = INDEXTYPE;
+  ARRAYDEF.VALUETYPEPTR = VALUETYPE;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISARRAYTYPE, &ARRAYDEF)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCARRAY);
-    RESULT->ARRAYDEF.INDEXTYPEPTR = INDEXTYPE;
-    RESULT->ARRAYDEF.VALUETYPEPTR = VALUETYPE;
+    RESULT->ARRAYDEF = ARRAYDEF;
   }
+  return RESULT;
+}
+
+PBoolean _DEFISRANGETYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSRANGETYPEDEF* WANTED = (TPSRANGETYPEDEF*)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCRANGE && ISSAMETYPE((*DEF)->TYPEPTR->RANGEDEF.BASETYPEPTR, WANTED->BASETYPEPTR) && (*DEF)->TYPEPTR->RANGEDEF.FIRST == WANTED->FIRST && (*DEF)->TYPEPTR->RANGEDEF.LAST == WANTED->LAST;
   return RESULT;
 }
 
 TPSTYPE* MAKERANGETYPE(TPSTYPE* TYPEPTR, PInteger FIRST, PInteger LAST) {
   TPSTYPE* RESULT;
+  TPSRANGETYPEDEF RANGEDEF;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCRANGE && ISSAMETYPE(DEF->TYPEPTR->RANGEDEF.BASETYPEPTR, TYPEPTR) && FIRST == DEF->TYPEPTR->RANGEDEF.FIRST && LAST == DEF->TYPEPTR->RANGEDEF.LAST) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
-    if (FIRST > LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
+  if (FIRST > LAST) COMPILEERROR(str_make(51, "The bounds of a subrange must be in ascending order"));
+  RANGEDEF.BASETYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
+  RANGEDEF.FIRST = FIRST;
+  RANGEDEF.LAST = LAST;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISRANGETYPE, &RANGEDEF)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCRANGE);
-    RESULT->RANGEDEF.FIRST = FIRST;
-    RESULT->RANGEDEF.LAST = LAST;
-    RESULT->RANGEDEF.BASETYPEPTR = GETFUNDAMENTALTYPE(TYPEPTR);
+    RESULT->RANGEDEF = RANGEDEF;
   }
+  return RESULT;
+}
+
+PBoolean _DEFISPOINTERTYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSTYPE** TYPEPTR = (TPSTYPE**)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCPOINTER && ISSAMETYPE((*DEF)->TYPEPTR->POINTEDTYPEPTR, *TYPEPTR);
   return RESULT;
 }
 
 TPSTYPE* MAKEPOINTERTYPE(TPSTYPE* TYPEPTR) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCPOINTER && ISSAMETYPE(DEF->TYPEPTR->POINTEDTYPEPTR, TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISPOINTERTYPE, &TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCPOINTER);
     RESULT->POINTEDTYPEPTR = TYPEPTR;
   }
   return RESULT;
 }
 
-TPSTYPE* MAKEPOINTERFORWARDTYPE(const PString* TARGETNAME) {
+PBoolean _DEFISPOINTERFORWARDTYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  PString* TARGETNAME = (PString*)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCPOINTERFORWARD && cmp_str(CoEq, CpStringPtr, (*DEF)->TYPEPTR->TARGETNAME, CpStringPtr, TARGETNAME);
+  return RESULT;
+}
+
+TPSTYPE* MAKEPOINTERFORWARDTYPE(PString TARGETNAME) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCPOINTERFORWARD && cmp_str(CoEq, CpStringPtr, DEF->TYPEPTR->TARGETNAME, CpStringPtr, TARGETNAME)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISPOINTERFORWARDTYPE, &TARGETNAME)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCPOINTERFORWARD);
     New((void**)&RESULT->TARGETNAME, sizeof(PString));
-    *RESULT->TARGETNAME = *TARGETNAME;
+    *RESULT->TARGETNAME = TARGETNAME;
   }
+  return RESULT;
+}
+
+PBoolean _DEFISSETTYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSTYPE** TYPEPTR = (TPSTYPE**)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCSET && ISSAMETYPE((*DEF)->TYPEPTR->ELEMENTTYPEPTR, *TYPEPTR);
   return RESULT;
 }
 
 TPSTYPE* MAKESETTYPE(TPSTYPE* TYPEPTR) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCSET && ISSAMETYPE(DEF->TYPEPTR->ELEMENTTYPEPTR, TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISSETTYPE, &TYPEPTR)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCSET);
     RESULT->ELEMENTTYPEPTR = TYPEPTR;
   }
@@ -2161,20 +2238,26 @@ PBoolean ARESAMEARGS(const TPSFNARGS* A, const TPSFNARGS* B) {
   return RESULT;
 }
 
+PBoolean _DEFISFUNCTIONTYPE(void* ITEM, void* CTX, PBoolean* STOP) {
+  PBoolean RESULT;
+  TPSDEFENTRY** DEF = (TPSDEFENTRY**)ITEM;
+  TPSFNDEF* FNDEF = (TPSFNDEF*)CTX;
+  RESULT = (*DEF)->CLS == TDCTYPE && (*DEF)->TYPEPTR->CLS == TTCFUNCTION && ISSAMETYPE((*DEF)->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, FNDEF->RETURNTYPEPTR) && ARESAMEARGS(&(*DEF)->TYPEPTR->FNDEFPTR->ARGS, &FNDEF->ARGS);
+  return RESULT;
+}
+
 TPSTYPE* MAKEFUNCTIONTYPE(const TPSFNARGS* ARGS, TPSTYPE* RETURNTYPEPTR) {
   TPSTYPE* RESULT;
   TPSDEFENTRY* DEF;
-  RESULT = PNil;
-  DEF = DEFS.LATEST;
-  while (DEF != PNil && RESULT == PNil) {
-    if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCFUNCTION && ISSAMETYPE(DEF->TYPEPTR->FNDEFPTR->RETURNTYPEPTR, RETURNTYPEPTR) && ARESAMEARGS(&DEF->TYPEPTR->FNDEFPTR->ARGS, ARGS)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
-    DEF = DEF->PREV;
-  }
-  if (RESULT == PNil) {
+  TPSFNDEF FNDEF;
+  FNDEF.RETURNTYPEPTR = RETURNTYPEPTR;
+  FNDEF.ARGS = *ARGS;
+  if (STACK_FIND(&DEFS.LATEST, &DEF, &_DEFISFUNCTIONTYPE, &FNDEF)) RESULT = _UNALIASTYPE(DEF->TYPEPTR);
+  else {
     RESULT = _NEWTYPE(TTCFUNCTION);
     RESULT->FNDEFPTR = NEWFNDEF();
-    RESULT->FNDEFPTR->RETURNTYPEPTR = RETURNTYPEPTR;
-    RESULT->FNDEFPTR->ARGS = *ARGS;
+    RESULT->FNDEFPTR->RETURNTYPEPTR = FNDEF.RETURNTYPEPTR;
+    RESULT->FNDEFPTR->ARGS = FNDEF.ARGS;
   }
   return RESULT;
 }
@@ -2679,7 +2762,7 @@ PString _DESCRIBEIMMEDIATE(TEXPRESSIONOBJ* EXPR) {
   return RESULT;
 }
 const PInteger _EXPRECEDENCES[24] = { 0, -1, -1, -1, -1, -1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, -1, -1 };
-const struct record37 {
+const struct record38 {
   PInteger PRECEDENCE;
   PString NAME;
 } _EXOPERATORS[23] = { { .PRECEDENCE = 4, .NAME = str_of('+') }, { .PRECEDENCE = 4, .NAME = str_of('-') }, { .PRECEDENCE = 4, .NAME = str_of('*') }, { .PRECEDENCE = 3, .NAME = str_of('/') }, { .PRECEDENCE = 3, .NAME = str_make(3, "DIV") }, { .PRECEDENCE = 3, .NAME = str_make(3, "MOD") }, { .PRECEDENCE = 4, .NAME = str_of('-') }, { .PRECEDENCE = 3, .NAME = str_make(3, "AND") }, { .PRECEDENCE = 4, .NAME = str_make(2, "OR") }, { .PRECEDENCE = 4, .NAME = str_make(3, "XOR") }, { .PRECEDENCE = 3, .NAME = str_make(3, "SHL") }, { .PRECEDENCE = 3, .NAME = str_make(3, "SHR") }, { .PRECEDENCE = 1, .NAME = str_make(3, "NOT") }, { .PRECEDENCE = 5, .NAME = str_make(2, "IN") }, { .PRECEDENCE = 5, .NAME = str_of('=') }, { .PRECEDENCE = 5, .NAME = str_make(2, "<>") }, { .PRECEDENCE = 5, .NAME = str_of('<') }, { .PRECEDENCE = 5, .NAME = str_of('>') }, { .PRECEDENCE = 5, .NAME = str_make(2, "<=") }, { .PRECEDENCE = 5, .NAME = str_make(2, ">=") }, { .PRECEDENCE = 1, .NAME = str_make(3, "ORD") }, { .PRECEDENCE = 1, .NAME = str_make(4, "PREC") }, { .PRECEDENCE = 1, .NAME = str_make(4, "SUCC") } };
@@ -2817,7 +2900,8 @@ PString EXDESCRIBE(TEXPRESSIONOBJ* EXPR) {
       RESULT = _DESCRIBESET(EXPR);
       break;
     case XCVARIABLE:
-      RESULT = EXPR->VARPTR->NAME;
+      if (EXPR->VARPTR->ISALIASFOR == PNil) RESULT = EXPR->VARPTR->NAME;
+      else RESULT = EXDESCRIBE(EXPR->VARPTR->ISALIASFOR);
       break;
     case XCFIELD:
       RESULT = CONCAT(CpString, EXDESCRIBE(EXPR->RECEXPR), CpChar, '.', CpEnd | CpStringPtr, &EXPR->RECEXPR->TYPEPTR->RECPTR->FIELDS[subrange(EXPR->RECFIELDNUM, 1, 64) - 1].NAME);
@@ -3296,7 +3380,7 @@ TEXPRESSIONOBJ* _EXFUNCTIONCALL(TEXPRESSIONOBJ* FNEXPR, const TPSFNARGS* ARGDEFS
       if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISREFERENCE) {
         if (!FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]->ISADDRESSABLE) {
           if (ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].ISCONSTANT) {
-            RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1], RESULT);
+            RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp1 = str_make(3, "tmp"); ADDALIASVARIABLE(&tmp1, ARGDEFS->DEFS[subrange(POS, 1, 16) - 1].TYPEPTR, FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1]); })), FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1], RESULT);
             FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1] = EXCOPY(RESULT->TMPVAR);
           }
           else COMPILEERROR(CONCAT(CpLenPtr, 47, "Pass-by-reference argument must be assignable: ", CpEnd | CpString, EXDESCRIBE(FNCALL->CALLARGS.VALUES[subrange(POS, 1, 16) - 1])));
@@ -3562,7 +3646,10 @@ void EXMARKINITIALIZED(TEXPRESSIONOBJ* LHS) {
       ISTERMINAL = 1;
       break;
   }
-  if (LHS->CLS == XCVARIABLE) LHS->VARPTR->WASINITIALIZED = 1;
+  if (LHS->CLS == XCVARIABLE) {
+    LHS->VARPTR->WASINITIALIZED = 1;
+    if (LHS->VARPTR->ISREFERENCE) LHS->VARPTR->WASUSED = 1;
+  }
 }
 
 TEXPRESSIONOBJ* _EXOP_MAKEUNARY(TEXPRESSIONOBJ* EXPR, TEXOPERATOR OP, TPSTYPE* RESULTTYPE) {
@@ -4555,7 +4642,7 @@ TEXPRESSIONOBJ* _EXOPIN_IMPL(TEXPRESSIONOBJ* NEEDLE, TEXPRESSIONOBJ* HAYSTACK) {
   if (ELEMTYPE == PNil) ELEMTYPE = NEEDLE->TYPEPTR;
   else NEEDLE = EXCOERCE(NEEDLE, ELEMTYPE);
   if (NEEDLE->ISFUNCTIONRESULT) {
-    TMPVAR = ({ PString tmp1 = str_make(4, "elem"); ADDTMPVARIABLE(&tmp1, ELEMTYPE); });
+    TMPVAR = ({ PString tmp1 = str_make(4, "elem"); ADDALIASVARIABLE(&tmp1, ELEMTYPE, NEEDLE); });
     WANTED = EXVARIABLE(TMPVAR);
   }
   else {
@@ -4891,6 +4978,7 @@ void PSARGUMENTS(TPSFNARGS* ARGS) {
       ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].ISCONSTANT = ISCONST;
       ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].ISREFERENCE = ISVAR || ISCONST;
       ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].WASINITIALIZED = 1;
+      ARGS->DEFS[subrange(ARGS->COUNT, 1, 16) - 1].ISALIASFOR = PNil;
       WANTTOKEN4(TKCOMMA, TKCOLON, TKSEMICOLON, TKRPAREN);
       SKIPTOKEN(TKCOMMA);
     } while ((TKCOLON > LEXER.TOKEN.ID || LEXER.TOKEN.ID > TKSEMICOLON) && LEXER.TOKEN.ID != TKRPAREN);
@@ -4972,7 +5060,7 @@ TPSTYPE* PSPOINTERTYPE() {
   WANTTOKENANDREAD(TKCARET);
   WANTTOKEN(TKIDENTIFIER);
   NAMEPTR = FINDNAMEOFCLASS(&LEXER.TOKEN.VALUE, TNCTYPE, 0);
-  if (NAMEPTR == PNil) RESULT = MAKEPOINTERFORWARDTYPE(&LEXER.TOKEN.VALUE);
+  if (NAMEPTR == PNil) RESULT = MAKEPOINTERFORWARDTYPE(LEXER.TOKEN.VALUE);
   else {
     RESULT = MAKEPOINTERTYPE(NAMEPTR->TYPEPTR);
     NAMEPTR->TYPEPTR->WASUSED = 1;
@@ -5376,7 +5464,7 @@ TEXPRESSIONOBJ* _PSVARIABLEINTERNAL(PBoolean FORSTATEMENT, PBoolean CALLFNS) {
   TEXPRESSIONOBJ* EXPR;
   PBoolean DONE;
   ID = PSIDENTIFIER();
-  WITHVARPTR = FINDWITHVAR(&ID.NAME);
+  WITHVARPTR = FINDWITHVAR(ID.NAME);
   FOUND = FINDNAME(&ID.NAME, 0);
   if (WITHVARPTR != PNil) {
     EXPR = EXVARIABLE(WITHVARPTR->VARPTR);
@@ -6232,7 +6320,7 @@ TEXPRESSIONOBJ* _MODIOWRITE_PARSE(TEXPRESSIONOBJ* FNEXPR) {
         }
         if (_MODIO_NEEDSTOMAKEADDRESSABLE(OUTFILE, WRITEVALUE.ARG)) {
           if (RESULT == PNil) RESULT = EXWRITE(OUTFILE, ARGLIST, NEWLINE);
-          RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp4 = str_make(3, "tmp"); ADDTMPVARIABLE(&tmp4, WRITEVALUE.ARG->TYPEPTR); })), WRITEVALUE.ARG, RESULT);
+          RESULT = EXWITHTMPVAR(EXVARIABLE(({ PString tmp4 = str_make(3, "tmp"); ADDALIASVARIABLE(&tmp4, WRITEVALUE.ARG->TYPEPTR, WRITEVALUE.ARG); })), WRITEVALUE.ARG, RESULT);
           WRITEVALUE.ARG = EXCOPY(RESULT->TMPVAR);
         }
         WRITEARG->VALUE = WRITEVALUE;
@@ -6710,7 +6798,7 @@ void STARTGLOBALSCOPE() {
       default:
         break;
     }
-    DEF = DEF->PREV;
+    DEF = DEF->OLDER;
   }
   STARTTEMPORARYSCOPE();
 }
@@ -6719,7 +6807,7 @@ typedef enum __attribute__((__packed__)) enum10 { TOTNONE, TOTTYPE, TOTVAR, TOTE
 
 const char* enumvalues10[] = { "TOTNONE", "TOTTYPE", "TOTVAR", "TOTENUMVAL", "TOTFUNDEC", "TOTFUNDEF" };
 
-struct record38 {
+struct record39 {
   PFile OUTPUT;
   PBoolean ISMULTISTATEMENT;
   PInteger INDENT;
@@ -7970,13 +8058,13 @@ void OUTENUMVALUES(TPSENUMDEF* ENUMPTR) {
 
 void OUTENUMVALUESFROMCHECKPOINT(TPSDEFENTRY* CHECKPOINT) {
   TPSDEFENTRY* DEF;
-  DEF = CHECKPOINT->NEXT;
+  DEF = CHECKPOINT->NEWER;
   while (DEF != PNil) {
     if (DEF->CLS == TDCTYPE && DEF->TYPEPTR->CLS == TTCENUM) {
       if (!DEF->TYPEPTR->ENUMPTR->VALUESHAVEBEENOUTPUT) OUTENUMVALUES(DEF->TYPEPTR->ENUMPTR);
       DEF->TYPEPTR->ENUMPTR->VALUESHAVEBEENOUTPUT = 1;
     }
-    DEF = DEF->NEXT;
+    DEF = DEF->NEWER;
   }
 }
 
@@ -7984,7 +8072,7 @@ PString _GETRANGETYPE(TPSTYPE* TYPEPTR) {
   PString RESULT;
   typedef enum __attribute__((__packed__)) enum11 { U8, S8, U16, S16, U32, S32 } TYPES;
   const char* enumvalues11[] = { "U8", "S8", "U16", "S16", "U32", "S32" };
-  const struct record39 {
+  const struct record40 {
     PString NAME;
     PInteger LOW;
     PInteger HIGH;
@@ -8190,13 +8278,13 @@ void OUTTYPEDEFINITION(TPSTYPE* TYPEPTR) {
 
 void OUTTYPEDEFINITIONSFROMCHECKPOINT(TPSDEFENTRY* CHECKPOINT) {
   TPSDEFENTRY* DEF;
-  DEF = CHECKPOINT->NEXT;
+  DEF = CHECKPOINT->NEWER;
   while (DEF != PNil) {
     if (DEF->CLS == TDCTYPE) {
       _RESOLVEPOINTERFORWARD(DEF->TYPEPTR);
       if (DEF->TYPEPTR->ALIASFOR != PNil) OUTTYPEDEFINITION(DEF->TYPEPTR);
     }
-    DEF = DEF->NEXT;
+    DEF = DEF->NEWER;
   }
 }
 
