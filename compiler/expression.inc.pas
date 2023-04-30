@@ -2,6 +2,7 @@ function _NewExpr(Cls : TExpressionClass) : TExpression;
 begin
   new(Result);
   Result^.Cls := Cls;
+  Result^.TypePtr := nil;
   Result^.IsAssignable := false;
   Result^.IsAddressable := false;
   Result^.IsFunctionResult := false;
@@ -1032,6 +1033,7 @@ end;
 function ExPseudoFn(SpecialFn : TPsPseudoFnPtr) : TExpression;
 begin
   Result := _NewExpr(XcPseudoFnRef);
+  Result^.TypePtr := nil;
   Result^.PseudoFnPtr := SpecialFn
 end;
 
