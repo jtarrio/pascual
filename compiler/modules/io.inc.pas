@@ -33,12 +33,14 @@ var
   InFile : TExpression;
   NewLine : boolean;
   ArgList, ReadArg : TExReadArgList;
+  ArgAddPoint : TListAddPoint;
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
   InFile := ExVariable(FindNameOfClass('INPUT',
             TncVariable, {Required=}true)^.VarPtr);
   ArgList := nil;
+  ArgAddPoint := List_GetAddPoint(ArgList);
   if Lexer.Token.Id = TkLparen then
   begin
     First := true;
@@ -60,19 +62,10 @@ begin
         if not _ModIo_TypeIsValidForFileRead(InFile, ReadVar) then
           ErrorForExpr('Variable has invalid type for READ on ' +
                        TypeName(InFile^.TypePtr), ReadVar);
-        if ArgList = nil then
-        begin
-          new(ArgList);
-          ReadArg := ArgList
-        end
-        else
-        begin
-          new(ReadArg^.Next);
-          ReadArg := ReadArg^.Next;
-        end;
-        ReadArg^.Next := nil;
+        new(ReadArg);
         ReadArg^.Dest := ReadVar;
-        ExMarkInitialized(ReadVar)
+        ExMarkInitialized(ReadVar);
+        List_Add(ArgAddPoint, ReadArg)
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);
@@ -101,6 +94,7 @@ var
   OutFile : TExpression;
   NewLine : boolean;
   ArgList, WriteArg : TExWriteArgList;
+  ArgAddPoint : TListAddPoint;
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
@@ -108,6 +102,7 @@ begin
              TncVariable, {Required=}true)^.VarPtr);
   Result := nil;
   ArgList := nil;
+  ArgAddPoint := List_GetAddPoint(ArgList);
   if Lexer.Token.Id = TkLparen then
   begin
     First := true;
@@ -129,26 +124,21 @@ begin
         if not _ModIo_TypeIsValidForFileWrite(OutFile, WriteValue.Arg) then
           ErrorForExpr('Expression has invalid type for WRITE on ' +
                        TypeName(OutFile^.TypePtr), WriteValue.Arg);
-        if ArgList = nil then
-        begin
-          new(ArgList);
-          WriteArg := ArgList;
-        end
-        else
-        begin
-          new(WriteArg^.Next);
-          WriteArg := WriteArg^.Next;
-        end;
         if _ModIo_NeedsToMakeAddressable(OutFile, WriteValue.Arg) then
         begin
-          if Result = nil then Result := ExWrite(OutFile, ArgList, NewLine);
+          if Result = nil then
+          begin
+            Result := ExWrite(OutFile, ArgList, NewLine);
+            ArgAddPoint := List_GetAddPoint(Result^.WriteArgs)
+          end;
           Result := ExWithTmpVar(ExVariable(AddAliasVariable(
                     'tmp', WriteValue.Arg^.TypePtr, WriteValue.Arg)),
                     WriteValue.Arg, Result);
           WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;
+        new(WriteArg);
         WriteArg^.Value := WriteValue;
-        WriteArg^.Next := nil
+        List_Add(ArgAddPoint, WriteArg)
       end;
       WantToken2(TkComma, TkRparen);
       SkipToken(TkComma);

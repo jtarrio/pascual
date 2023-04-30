@@ -28,12 +28,12 @@ type
                 SetOfTypePtr : TPsTypePtr)
   end;
   TExSetImmBoundsObj = record
-    First, Last : integer;
     Next : TExSetImmBounds;
+    First, Last : integer
   end;
   TExSetExprboundsObj = record
-    First, Last : TExpression;
     Next : TExSetExprBounds;
+    First, Last : TExpression
   end;
   TExFunctionArgs = record
     Size : integer;
@@ -46,13 +46,13 @@ type
   end;
   TExReadArgList = ^TExReadArgValue;
   TExReadArgValue = record
-    Dest : TExpression;
-    Next : TExReadArgList
+    Next : TExReadArgList;
+    Dest : TExpression
   end;
   TExWriteArgList = ^TExWriteArgValue;
   TExWriteArgValue = record
-    Value : TExWriteArg;
-    Next : TExWriteArgList
+    Next : TExWriteArgList;
+    Value : TExWriteArg
   end;
   TExOperator = (XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod, XoNeg,
                  XoAnd, XoOr, XoXor, XoShl, XoShr, XoNot,

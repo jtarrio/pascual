@@ -1,5 +1,5 @@
 { Stack. }
-{ They are designated by a "head" object which points to the last item in the }
+{ They are designated by a "head" pointer which points to the last item in the }
 { stack, or to nil if the stack is empty. }
 type 
   TStack = ^TStackPtrs;
@@ -64,4 +64,60 @@ begin
     else if not Stop then Item := Item^.Older
   end;
   Result := Found
+end;
+
+{ Linked list. }
+{ Designated by a pointer to the first item in the list, or to nil }
+{ if the list is empty. }
+type 
+  TList = ^TListPtrs;
+  TListPtrs = record
+    { Link to the next item in the list. }
+    { Points to nil if this is the last item in the list. }
+    Next : TList
+  end;
+  { A pointer to the end of a list. Used for adding more items in O(1). }
+  TListAddPoint = ^TList;
+
+{ Returns the add point for an existing list. }
+function List_GetAddPoint(var List {: TList}) : TListAddPoint;
+var 
+  TheList : TList absolute List;
+  Tail : TList;
+begin
+  if TheList = nil then Result := @TheList
+  else
+  begin
+    Tail := TheList;
+    while Tail^.Next <> nil do
+      Tail := Tail^.Next;
+    Result := @Tail^.Next
+  end
+end;
+
+{ Adds an Item in the given AddPoint, which is updated. }
+procedure List_Add(var AddPoint {: TListAddPoint}; var Item {: TList});
+var 
+  TheAddPoint : TListAddPoint absolute AddPoint;
+  TheItem : TList absolute Item;
+begin
+  TheItem^.Next := nil;
+  TheAddPoint^ := TheItem;
+  TheAddPoint := @TheItem^.Next
+end;
+
+{ Removes the first item in the list. }
+{ If the list was empty, the function returns false; otherwise it returns }
+{ true and the removed item is set in DeletedItem. }
+function List_Shift(var List, DeletedItem {: TList}) : boolean;
+var
+  TheList : TList absolute List;
+  TheDeletedItem : TList absolute DeletedItem;
+begin
+  Result := TheList <> nil;
+  if Result then
+  begin
+    TheDeletedItem := TheList;
+    TheList := TheList^.Next
+  end
 end;

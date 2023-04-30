@@ -44,30 +44,24 @@ begin
 end;
 
 procedure _DisposeReadExpr(var Expr : TExpression);
-var ReadArg, NextReadArg : TExReadArgList;
+var ReadArg : TExReadArgList;
 begin
   ExDispose(Expr^.ReadFile);
-  ReadArg := Expr^.ReadArgs;
-  while ReadArg <> nil do
+  while List_Shift(Expr^.ReadArgs, ReadArg) do
   begin
-    NextReadArg := ReadArg^.Next;
     ExDispose(ReadArg^.Dest);
-    dispose(ReadArg);
-    ReadArg := NextReadArg
+    dispose(ReadArg)
   end
 end;
 
 procedure _DisposeWriteExpr(var Expr : TExpression);
-var WriteArg, NextWriteArg : TExWriteArgList;
+var WriteArg : TExWriteArgList;
 begin
   ExDispose(Expr^.WriteFile);
-  WriteArg := Expr^.WriteArgs;
-  while WriteArg <> nil do
+  while List_Shift(Expr^.WriteArgs, WriteArg) do
   begin
-    NextWriteArg := WriteArg^.Next;
     _DisposeWriteArg(WriteArg^.Value);
-    dispose(WriteArg);
-    WriteArg := NextWriteArg
+    dispose(WriteArg)
   end
 end;
 
@@ -135,48 +129,41 @@ begin
 end;
 
 function _CopyImmediate(const Imm : TExImmediate) : TExImmediate;
-var Src, Dst : TExSetImmBounds;
+var
+  Src, Dst : TExSetImmBounds;
+  AddPoint : TListAddPoint;
 begin
   Result := Imm;
   if Imm.Cls = XicSet then
   begin
     Src := Imm.SetBounds;
-    New(Result.SetBounds);
-    Dst := Result.SetBounds;
+    Result.SetBounds := nil;
+    AddPoint := List_GetAddPoint(Result.SetBounds);
     while Src <> nil do
     begin
+      new(Dst);
       Dst^ := Src^;
-      Src := Src^.Next;
-      if Src <> nil then
-      begin
-        New(Dst^.Next);
-        Dst := Dst^.Next
-      end
+      List_Add(AddPoint, Dst);
+      Src := Src^.Next
     end
   end
 end;
 
 function _CopyBounds(Bounds : TExSetExprBounds) : TExSetExprBounds;
-var Src, Dst : TExSetExprBounds;
+var
+  Src, Dst : TExSetExprBounds;
+  AddPoint : TListAddPoint;
 begin
   Src := Bounds;
-  Dst := nil;
+  Result := nil;
+  AddPoint := List_GetAddPoint(Result);
   while Src <> nil do
   begin
-    if Dst = nil then
-    begin
-      new(Dst);
-      Result := Dst;
-    end
-    else
-    begin
-      new(Dst^.Next);
-      Dst := Dst^.Next
-    end;
+    new(Dst);
     Dst^.First := ExCopy(Src^.First);
     if Src^.Last <> nil then Dst^.Last := ExCopy(Src^.Last)
     else Dst^.Last := nil;
-    Dst^.Next := nil;
+    List_Add(AddPoint, Dst);
     Src := Src^.Next
   end
 end;
@@ -191,51 +178,39 @@ begin
 end;
 
 procedure _CopyReadExpr(var Expr, Copy : TExpression);
-var Src, Dst : TExReadArgList;
+var 
+  Src, Dst : TExReadArgList;
+  AddPoint : TListAddPoint;
 begin
   Copy^.ReadFile := ExCopy(Expr^.ReadFile);
   Copy^.ReadLn := Expr^.ReadLn;
   Copy^.ReadArgs := nil;
+  AddPoint := List_GetAddPoint(Copy^.ReadArgs);
   Src := Expr^.ReadArgs;
   while Src <> nil do
   begin
-    if Copy^.ReadArgs = nil then
-    begin
-      new(Dst);
-      Copy^.ReadArgs := Dst
-    end
-    else
-    begin
-      new(Dst^.Next);
-      Dst := Dst^.Next;
-    end;
+    new(Dst);
     Dst^.Dest := ExCopy(Src^.Dest);
-    Dst^.Next := nil;
+    List_Add(AddPoint, Dst);
     Src := Src^.Next
   end
 end;
 
 procedure _CopyWriteExpr(var Expr, Copy : TExpression);
-var Src, Dst : TExWriteArgList;
+var 
+  Src, Dst : TExWriteArgList;
+  AddPoint : TListAddPoint;
 begin
   Copy^.WriteFile := ExCopy(Expr^.WriteFile);
   Copy^.WriteLn := Expr^.WriteLn;
   Copy^.WriteArgs := nil;
+  AddPoint := List_GetAddPoint(Copy^.WriteArgs);
   Src := Expr^.WriteArgs;
   while Src <> nil do
   begin
-    if Copy^.WriteArgs = nil then
-    begin
-      new(Dst);
-      Copy^.WriteArgs := Dst
-    end
-    else
-    begin
-      new(Dst^.Next);
-      Dst := Dst^.Next;
-    end;
+    new(Dst);
     Dst^.Value := _CopyWriteArg(Src^.Value);
-    Dst^.Next := nil;
+    List_Add(AddPoint, Dst);
     Src := Src^.Next
   end
 end;
