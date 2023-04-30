@@ -3,7 +3,7 @@ RTDIR=../runtime
 all: pascual
 
 bootstrap: stage0.c $(RTDIR)/libpascual.a
-	gcc -o bootstrap -Os -I$(RTDIR) -L$(RTDIR) stage0.c -lpascual
+	$(CC) $(CFLAGS) -o bootstrap -Os -I$(RTDIR) -L$(RTDIR) stage0.c -lpascual
 
 pascual: bootstrap $(RTDIR)/libpascual.a compiler.pas \
          codegen.defs.inc.pas codegen.inc.pas containers.inc.pas \
