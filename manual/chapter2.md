@@ -480,3 +480,34 @@ begin
 end.
 ```
 
+## Types
+
+Types are an important concept in Pascal. Every possible value you can use in a program belongs to a type, which tells the compiler how much memory that value takes up in memory, what operations can be done on the value and how to represent that value in the program, in memory, and on the screen.
+
+Pascal has five built-in types: `boolean`, `integer`, `real`, `char`, and `string`. Programmers can also create their own types and use them in their programs; those types can be defined as enumerations, subranges, sets, arrays, records, pointers, and files.
+
+### The built-in types
+
+The `boolean` type can hold any of two values: `true` or `false`. Comparison operators return values of this type. You can combine `boolean` values using the logical operators `and`, `or`, and `xor`, which return another `boolean` value, and negate them with the `not` operator.
+
+Examples: `true`, `false`, `3 = 2`, `8 > 5`, `greeting = 'hello'`, `(index <= length) and not found`.
+
+The `integer` type contains a positive or negative integer number from `-2147483648` to `2147483647`. You can perform integer arithmetic operations on `integer` values: addition (with the operator `+`), subtraction (`-`), multiplication (`*`), integer division (operator `div`) and modulus (operator `mod`). You can also perform bitwise operations `and`, `or`, `xor`, `not`, `shl`, and `shr`.
+
+Examples: `42`, `-127`, `3 + 2`, `4 + 8 * -5`, `14 div 3`, `14 mod 3`.
+
+The `real` type contains a 64-bit floating-point number. You can perform real arithmetic operations on `real` values: addition (`+`), subtraction (`-`), multiplication (`*`), and division (`/`), but no modulus or bitwise operations.
+
+Examples: `0.0`, `3.14159265`, `6.02e23`, `6.626e-34`, `5.0 / 2`.
+
+The `char` type contains an 8-bit byte, represented as a character between single quotes. You can use the operator `+` to concatenate two `char`s to form a `string`.
+
+Examples: `'A'`, `'!'`, `'A' + 'B'`, `'a' < 'b'`.
+
+The `string` type contains a sequence of characters, represented as text between single quotes. A string may be empty. You can use the operator `+` to concatenate two `string`s or a `string` to a `char`.
+
+Examples: `'Hello'`, `''`, `'Hello ' + 'world'`.
+
+### User-defined types
+
+Programmers can also create their own types or combine or modify existing types to create new ones.
