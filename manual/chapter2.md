@@ -187,7 +187,7 @@ If you keep track of where the semicolons go, you will notice the absence of one
 if condition then statement_true else statement_false
 ```
 
-If you added a semicolon between the `statement_true` and the `else`, Pascual would think that the `else` belonged to a different statement, giving you an error message when you tried to compile it.
+If you added a semicolon between the `statement_true` and the `else`, the compiler would think that the `else` belonged to a different statement, giving you an error message when you tried to compile it.
 
 You can have "if-then-else" statements inside other "if-then-else" statements. In particular, "if-then-else if" is a typical pattern for checking several conditions, one after the other, when you want to do something for the first one that matches.
 
@@ -232,7 +232,7 @@ else
 writeln('You knock on the door again, but it remains stubbornly shut.')
 ```
 
-The code in this example would not compile because Pascual would think that the first `writeln` was the single statement that goes with the "if-then" statement, and then it would be shocked to find a single `else` keyword later in the source code. The proper way to write this is by enclosing the sequence of `writeln` statements in a pair of `begin`/`end` keywords:
+The code in this example would not compile because the compiler would think that the first `writeln` was the single statement that goes with the "if-then" statement, and then it would be shocked to find a single `else` keyword later in the source code. The proper way to write this is by enclosing the sequence of `writeln` statements in a pair of `begin`/`end` keywords:
 
 ```pascal
 if Pass = 'swordfish' then
