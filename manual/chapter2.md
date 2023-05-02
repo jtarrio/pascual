@@ -527,6 +527,21 @@ end.
 
 This example shows you that you can compare two values from the same enumerated type, just like you can compare two numbers or two strings.
 
+You can also iterate through the values in an enumerated type, as in this example:
+
+```pascal
+program CardDeck;
+var Suit : (Diamonds, Hearts, Clubs, Spades);
+    Number : (Ace, Two, Three, Four, Five, Six, Seven,
+              Eight, Nine, Ten, Jack, Queen, King);
+begin
+  for Suit := Diamonds to Spades do
+    for Number := Ace to King do
+      write(Number, ' of ', Suit, '   ');
+  writeln
+end.
+```
+
 ### Arrays
 
 Another custom type you can create is an _array_, which is a series of values of a particular type that you can access through an index. Arrays are useful when you need a list of values.
@@ -591,7 +606,7 @@ You can combine all the custom types at will. For example, you can build an arra
 
 ```pascal
 program CardDeck;
-var People = array [1..3] of record
+var People : array [1..3] of record
                Name : string;
                Age : integer;
               end;
@@ -610,4 +625,69 @@ end.
 
 ### Type declarations
 
-In the previous examples we've de
+In the previous examples we defined our custom types along with the variables that use them. That works well if we only need to use that type in one or two variables, but it breaks down if we need to use the same type in several variables in different parts of the program. Enumeration types cannot be defined twice, and if you try defining the same record twice, it will result in two different types that look exactly the same.
+
+This example shows you what happens if you try to declare a `People` array of records and a `Person` variable holding a record of the same type as the `People` array:
+
+```pascal
+program DifferentTypesError;
+var People : array [1..3] of record
+               Name : string;
+               Age : integer;
+              end;
+    Person : record
+               Name : string;
+               Age : integer;
+              end;
+    I : integer;
+begin
+  People[1].Name := 'John Smith';
+  People[1].Age := 39;
+  People[2].Name := 'Mary Knight';
+  People[2].Age := 43;
+  People[3].Name := 'Pedro Ozores';
+  People[3].Age := 42;
+  for I := 1 to 3 do
+  begin
+    { Compile error: cannot assign People[I] to Person because they 
+      belong to different types, even if their definitions are identical. }
+    Person := People[I];
+    writeln('Name: ', Person.Name, ', Age: ', Person.Age)
+  end
+end.
+```
+
+In this example, the elements of the `People` array and the variable `Person` don't belong to the same type. They are both records, and they have the same fields with the same names and types; however, they were declared separately, so they are separate types.
+
+If we want to use the same type for the elements of `People` and for the variable `Person`, we need to create a name for our custom type and use it when we declare the variables:
+
+```pascal
+program TypeDefinition;
+type TPerson = record
+                 Name : string;
+                 Age : integer;
+                end;
+var People : array [1..3] of TPerson;
+    Person : TPerson;
+    I : integer;
+begin
+  People[1].Name := 'John Smith';
+  People[1].Age := 39;
+  People[2].Name := 'Mary Knight';
+  People[2].Age := 43;
+  People[3].Name := 'Pedro Ozores';
+  People[3].Age := 42;
+  for I := 1 to 3 do
+  begin
+    Person := People[I];
+    writeln('Name: ', Person.Name, ', Age: ', Person.Age)
+  end
+end.
+```
+
+In this example, the keyword `type` starts a _type declaration block_. It is similar to a variable declaration block, but it gives names to types. Notice that it uses an equals sign (`=`) between the type name and its definition; this tells us that `TPerson` is not a variable of that type; _it is_ that type.
+
+After the type `TPerson` is declared, it can be used in variable declarations to refer to that type.
+
+(It is customary for declared type names to start with the letter `T` to avoid confusing them with variable names. If we had named the type `Person`, we wouldn't be allowed to have a variable named `Person` too.)
+
