@@ -484,30 +484,76 @@ end.
 
 Types are an important concept in Pascal. Every possible value you can use in a program belongs to a type, which tells the compiler how much memory that value takes up in memory, what operations can be done on the value and how to represent that value in the program, in memory, and on the screen.
 
-Pascal has five built-in types: `boolean`, `integer`, `real`, `char`, and `string`. Programmers can also create their own types and use them in their programs; those types can be defined as enumerations, subranges, sets, arrays, records, pointers, and files.
+So far we've seen variables defined as `string` and `integer`, but Pascal has three more built-in types: `boolean` (which handles true or false values), `real` (which handles floating-point numbers) and `char` (for single bytes in a `string`.)
 
-### The built-in types
+Programmers can also create their own types to use in their programs. This is something we take for granted now, but it was new when Pascal came out.
 
-The `boolean` type can hold any of two values: `true` or `false`. Comparison operators return values of this type. You can combine `boolean` values using the logical operators `and`, `or`, and `xor`, which return another `boolean` value, and negate them with the `not` operator.
+### Enumerated types
 
-Examples: `true`, `false`, `3 = 2`, `8 > 5`, `greeting = 'hello'`, `(index <= length) and not found`.
+For example, you can create an _enumerated type_, which can hold one value from a list of named values. Here is an example:
 
-The `integer` type contains a positive or negative integer number from `-2147483648` to `2147483647`. You can perform integer arithmetic operations on `integer` values: addition (with the operator `+`), subtraction (`-`), multiplication (`*`), integer division (operator `div`) and modulus (operator `mod`). You can also perform bitwise operations `and`, `or`, `xor`, `not`, `shl`, and `shr`.
+```pascal
+program EnumeratedTypes;
+var Direction : (North, South, East, West);
+    Month : (Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec);
+    Day : integer;
+    WeekDay : (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday);
+begin
+  Direction := North;
+  writeln('The direction is ', Direction);
+  Direction := East;
+  writeln('Now the direction is ', Direction);
+  Month := Mar;
+  Day := 24;
+  WeekDay := Saturday;
+  writeln('The date is ', Weekday, ', ', Month, ' ', Day);
+  { WeekDay := Jul;  // This is not valid! }
+end.
+```
 
-Examples: `42`, `-127`, `3 + 2`, `4 + 8 * -5`, `14 div 3`, `14 mod 3`.
+In the example above, the variables `Direction`, `Month`, and `WeekDay` belong to different enumerated types. Each one can only have a value from its list of enumerated values.
 
-The `real` type contains a 64-bit floating-point number. You can perform real arithmetic operations on `real` values: addition (`+`), subtraction (`-`), multiplication (`*`), and division (`/`), but no modulus or bitwise operations.
+```pascal
+program EnumeratedTypeComparison;
+var Rating1, Rating2 : (Terrible, Poor, OK, Good, Great);
+    Improved : boolean;
+begin
+  Rating1 := Poor;
+  Rating2 := Good;
+  Improved := Rating1 < Rating2;
+  writeln('Has improved: ', Improved)
+end.
+```
 
-Examples: `0.0`, `3.14159265`, `6.02e23`, `6.626e-34`, `5.0 / 2`.
+This example shows you that you can compare two values from the same enumerated type, just like you can compare two numbers or two strings.
 
-The `char` type contains an 8-bit byte, represented as a character between single quotes. You can use the operator `+` to concatenate two `char`s to form a `string`.
+### Arrays
 
-Examples: `'A'`, `'!'`, `'A' + 'B'`, `'a' < 'b'`.
+Another custom type you can create is an _array_, which is a series of values of a particular type that you can access through an index. Arrays are useful when you need a list of values.
 
-The `string` type contains a sequence of characters, represented as text between single quotes. A string may be empty. You can use the operator `+` to concatenate two `string`s or a `string` to a `char`.
+```pascal
+program SieveOfEratosthenes;
+var IsPrime : array[2..100] of boolean;
+    I, Multiple : integer;
+begin
+  for I := 2 to 100 do IsPrime[I] := true;
+  for Multiple := 2 to 10 do
+  begin
+    I := Multiple * 2;
+    while I < 100 do
+    begin
+      IsPrime[I] := false;
+      I := I + Multiple
+    end
+  end;
+  write('Primes: ');
+  for I := 2 to 100 do
+    if IsPrime[I] then write(I, ' ');
+  writeln
+end.
+```
 
-Examples: `'Hello'`, `''`, `'Hello ' + 'world'`.
+The example above is an implementation of a Sieve of Eratosthenes. The `IsPrime` variable contains an array of booleans, numbered from 2 to 100; each boolean tells whether the boolean for its corresponding number is prime. Then, the first `for` loop sets all the booleans to `true`, and the second `for` loop executes the sieve, setting to `false` all the multiples of 2, 3, 4, all the way to 10. Finally, the last `for` loop iterates through the array, checking if each number is prime, and writing it to the screen if so.
 
-### User-defined types
+As you can see, arrays are defined with the syntax <code>**array[**_start_**..**_end_**] of** _type_</code>, where _start_ and _end_ are the first and last indexes of the array. In other languages, arrays always start at index 0 or 1, but in Pascal you always define the start index.
 
-Programmers can also create their own types or combine or modify existing types to create new ones.
