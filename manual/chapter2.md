@@ -54,7 +54,7 @@ $
 
 That's it! That's your first program. Now, if you want, you can modify it to see what other things you can make it say; write the text you want between the single quote signs (`'`), then compile and run again.
 
-I am now going to explain what's in this program. Since it is our first program, it will be a bit long, but don't worry: it may be long, but it's not complicated.
+I am now going to explain what's in this program. Since it is our first program, the explanation will be a bit long, but don't worry: it may be long, but it's not complicated.
 
 The first line declares the program's name. You can write any name you want, as long as it's a single word; so you could write `program Hello` or `program JacoboSaysHello` or `program ThisIsMyFirstProgram`, but not `program I have no idea what I am doing`.
 
@@ -312,7 +312,7 @@ This statement has a `repeat` keyword and a sequence of statements followed by a
 
 In this example, the condition is `(Guess = Number) or (Tries = 10)`; therefore, it will execute the statements between the `repeat` and `until` keywords until the player guesses the number or until they have tried 10 times.
 
-So let's look at what's inside the "repeat-until" block. First, we add 1 to the value of `Tries`, and then we ask the player for their guessed number, which goes into the `Guess` variable. Using "if-then-else if", we check if the player's guess is lower or higher than the number and tell them to go higher or lower, as appropriate. Finally, we reach the `until` keyword, which will decide whether we execute the statements again or we leave the loop.
+So let's look at what's inside the "repeat-until" block. First, we add 1 to the value of `Tries`, and then we ask the player for their guessed number, which goes into the `Guess` variable. Using "if-then-else if," we check if the player's guess is lower or higher than the number and tell them to go higher or lower, as appropriate. Finally, we reach the `until` keyword, which will decide whether we execute the statements again or we leave the loop.
 
 Finally, we check whether the user guessed the number or reached the maximum number of tries and write out the appropriate message.
 
