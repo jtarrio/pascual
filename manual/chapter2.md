@@ -555,5 +555,59 @@ end.
 
 The example above is an implementation of a Sieve of Eratosthenes. The `IsPrime` variable contains an array of booleans, numbered from 2 to 100; each boolean tells whether the boolean for its corresponding number is prime. Then, the first `for` loop sets all the booleans to `true`, and the second `for` loop executes the sieve, setting to `false` all the multiples of 2, 3, 4, all the way to 10. Finally, the last `for` loop iterates through the array, checking if each number is prime, and writing it to the screen if so.
 
-As you can see, arrays are defined with the syntax <code>**array[**_start_**..**_end_**] of** _type_</code>, where _start_ and _end_ are the first and last indexes of the array. In other languages, arrays always start at index 0 or 1, but in Pascal you always define the start index.
+As in the example above, arrays can be defined with the syntax <code>array[_start_.._end_] of _type_</code>, where _start_ and _end_ are the first and last indexes of the array, and are accessed with the syntax <code>_variable_[_index_]</code>.
 
+In other languages, arrays always start at index 0 or 1, but in Pascal you always define the start index. In this example we start at index 2 because we don't need to check if 1 is prime, so we don't need an array element for it.
+
+### Records
+
+Another common custom type is the _record_, which is a collection of values, possibly of different types, that are stored together. Records are useful when you deal with structured data, such as entries in a file.
+
+```pascal
+program RecordExample;
+var Person : record
+               FirstName : string;
+               LastName : string;
+               BirthDate : record
+                 Year : integer;
+                 Month : (Jan, Feb, Mar, Apr, Jun, Jul, Aug, Sep, Oct, Nov, Dec);
+                 Day : integer;
+               end;
+             end;
+begin
+  Person.FirstName := 'John';
+  Person.LastName := 'Smith';
+  Person.BirthDate.Year := 2002;
+  Person.BirthDate.Month := Apr;
+  Person.BirthDate.Day := 28;
+  writeln('Name: ', Person.FirstName, ' ', Person.LastName);
+  writeln('Birth date: ', Person.BirthDate.Year, ' ', Person.BirthDate.Month, ' ', Person.BirthDate.Day)
+end.
+```
+
+In this example, the variable `Person` is a record that contains three fields: `FirstName` and `LastName` (both of type `string`), and `BirthDate`, which is itself a record with three fields. As you can see, a field is accessed through the <code>_variable_._fieldname_</code> syntax, adding more <code>._fieldname_</code> as needed if you want to access a record within a record.
+
+You can combine all the custom types at will. For example, you can build an array of records as in this example:
+
+```pascal
+program CardDeck;
+var People = array [1..3] of record
+               Name : string;
+               Age : integer;
+              end;
+    I : integer;
+begin
+  People[1].Name := 'John Smith';
+  People[1].Age := 39;
+  People[2].Name := 'Mary Knight';
+  People[2].Age := 43;
+  People[3].Name := 'Pedro Ozores';
+  People[3].Age := 42;
+  for I := 1 to 3 do
+    writeln('Name: ', People[I].Name, ' ', People[I].Age)
+end.
+```
+
+### Type declarations
+
+In the previous examples we've de
