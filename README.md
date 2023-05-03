@@ -31,7 +31,7 @@ Pascual is a platform for learning how to write a compiler; as such, even though
 
 # How to build
 
-You need Make and a C compiler to build Pascual. I use GCC but Clang works as well.
+You need Make and a C compiler to build Pascual. I use GCC but Clang works as well. I develop Pascual in Linux, but it should also compile in MacOS.
 
 To build Pascual, type the following command:
 
