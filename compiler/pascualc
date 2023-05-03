@@ -2,7 +2,7 @@
 
 my_dir="$(dirname $0)"
 PC="${PC:-${my_dir}/pascual}"
-CC="${CC:-gcc}"
+CC="${CC:-cc}"
 PINCDIR="${PINCDIR:-${my_dir}}"
 PLIBDIR="${PLIBDIR:-${my_dir}}"
 

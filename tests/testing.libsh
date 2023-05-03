@@ -1,6 +1,6 @@
 my_dir="$(dirname $0)"
 PC="${PC:-${my_dir}/../compiler/pascual}"
-CC="${CC:-gcc}"
+CC="${CC:-cc}"
 PINCDIR="${PINCDIR:-${my_dir}/../runtime}"
 PLIBDIR="${PLIBDIR:-${my_dir}/../runtime}"
 

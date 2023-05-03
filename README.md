@@ -69,7 +69,7 @@ You can also convert a program to C and then compile it afterwards with your C c
 
 ```shell
 $ dist/pascual input.pas -o output.c
-$ gcc -Idist -Ldist -o output output.c -lpascual
+$ cc -Idist -Ldist -o output output.c -lpascual
 ```
 
 # What it looks like
