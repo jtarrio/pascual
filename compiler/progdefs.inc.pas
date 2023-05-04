@@ -59,7 +59,7 @@ begin
             and (Name[7] = '_')
 end;
 
-procedure _CheckUnusedSymbols(Def : TPsDefPtr);
+procedure _CheckUnusedSymbols(Def : TSDefinition);
 var Where : string;
 begin
   if CurrentScope^.CurrentFn = nil then
@@ -98,7 +98,7 @@ begin
   end
 end;
 
-function _AddDef(Cls : TPsDefClass) : TPsDefPtr;
+function _AddDef(Cls : TSDefClass) : TSDefinition;
 begin
   new(Result);
   Result^.Cls := Cls;
@@ -124,7 +124,7 @@ begin
 end;
 
 procedure CloseLocalScope;
-var Def : TPsDefPtr;
+var Def : TSDefinition;
 begin
   Def := CurrentScope^.LatestDef;
   while Def <> nil do
@@ -136,7 +136,7 @@ begin
   if CurrentScope = nil then InternalError('Closed the global scope')
 end;
 
-function _FindDef(var FoundDef : TPsDefPtr;
+function _FindDef(var FoundDef : TSDefinition;
                   Predicate : TStackPredicate;
                   var Context {:Any};
                   FromLocalScope : boolean) : boolean;
@@ -154,7 +154,7 @@ end;
 
 function _DefIsName(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   Name : string absolute Ctx;
 begin
   Result := (Def^.Cls = TdcName) and (Name = Def^.NamePtr^.Name)
@@ -163,7 +163,7 @@ end;
 function _FindName(Name : string; Required : boolean;
                    FromLocalScope : boolean) : TPsNamePtr;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then
     Result := Def^.NamePtr
@@ -776,7 +776,7 @@ end;
 
 function _DefIsWithVar(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   Name : string absolute Ctx;
 begin
   Result := (Def^.Cls = TdcWithVar)
@@ -785,7 +785,7 @@ begin
 end;
 
 function FindWithVar(Name : string) : TPsWithVarPtr;
-var Def : TPsDefPtr;
+var Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}true) then
     Result := Def^.WithVarPtr
@@ -1003,7 +1003,7 @@ end;
 
 function _DefIsFileType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   Wanted : TPsFileTypeDef absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFile)
@@ -1015,7 +1015,7 @@ end;
 function _MakeFileType(Cls : TPsFileClass; TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   FileDef : TPsFileTypeDef;
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   { TODO check that the type is appropriate }
   FileDef.Cls := Cls;
@@ -1063,7 +1063,7 @@ end;
 
 function _DefIsArrayType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   Wanted : TPsArrayTypeDef absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcArray)
@@ -1076,7 +1076,7 @@ end;
 function MakeArrayType(IndexType, ValueType : TPsTypePtr) : TPsTypePtr;
 var 
   ArrayDef : TPsArrayTypeDef;
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if not IsBoundedType(IndexType) then
     ErrorForType('Array indices must belong to a bounded ordinal type',
@@ -1094,7 +1094,7 @@ end;
 
 function _DefIsRangeType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   Wanted : TPsRangeTypeDef absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcRange)
@@ -1108,7 +1108,7 @@ function MakeRangeType(TypePtr : TPsTypePtr;
                        First, Last : integer) : TPsTypePtr;
 var 
   RangeDef : TPsRangeTypeDef;
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if First > Last then
     CompileError('The bounds of a subrange must be in ascending order');
@@ -1126,7 +1126,7 @@ end;
 
 function _DefIsPointerType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointer)
@@ -1135,7 +1135,7 @@ end;
 
 function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsPointerType, TypePtr, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
@@ -1148,7 +1148,7 @@ end;
 
 function _DefIsPointerForwardType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   TargetName : string absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcPointerForward)
@@ -1157,7 +1157,7 @@ end;
 
 function MakePointerForwardType(TargetName : string) : TPsTypePtr;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsPointerForwardType,
      TargetName, {FromLocalScope=}false) then
@@ -1172,7 +1172,7 @@ end;
 
 function _DefIsSetType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcSet)
@@ -1181,7 +1181,7 @@ end;
 
 function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsSetType, TypePtr, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
@@ -1205,7 +1205,7 @@ end;
 
 function _DefIsFunctionType(var Item; var Ctx) : boolean;
 var 
-  Def : TPsDefPtr absolute Item;
+  Def : TSDefinition absolute Item;
   FnDef : TPsFnDef absolute Ctx;
 begin
   Result := (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcFunction)
@@ -1217,7 +1217,7 @@ end;
 function MakeFunctionType(const Args : TPsFnArgs;
                           ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
   FnDef : TPsFnDef;
 begin
   FnDef.ReturnTypePtr := ReturnTypePtr;

@@ -1,6 +1,6 @@
 procedure CreateGlobalDefinitions;
 var 
-  Def : TPsDefPtr;
+  Def : TSDefinition;
 begin
   new(GlobalDefinitions);
   PushGlobalDefs(GlobalDefinitions);

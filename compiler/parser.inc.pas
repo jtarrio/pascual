@@ -386,7 +386,7 @@ procedure PsTypeDefinitions;
 var 
   Name : string;
   TypePtr : TPsTypePtr;
-  Checkpoint : TPsDefPtr;
+  Checkpoint : TSDefinition;
 begin
   Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkType);
@@ -485,7 +485,7 @@ end;
 procedure PsConstDefinitions;
 var 
   Name : string;
-  Checkpoint : TPsDefPtr;
+  Checkpoint : TSDefinition;
 begin
   Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkConst);
@@ -509,7 +509,7 @@ var
   Names : array[1..MaxVarNames] of string;
   TypePtr : TPsTypePtr;
   Location : TExpression;
-  Checkpoint : TPsDefPtr;
+  Checkpoint : TSDefinition;
 begin
   Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkVar);
@@ -552,7 +552,7 @@ var
   { TODO move to AST }
   FnDefs : TSScope;
   Pos : integer;
-  Checkpoint : TPsDefPtr;
+  Checkpoint : TSDefinition;
   ResultPtr : TPsVarPtr;
 begin
   new(FnDefs);

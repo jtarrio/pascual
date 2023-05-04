@@ -240,19 +240,3 @@ type
     RecordCtr : integer;
     TmpVarCtr : integer;
   end;
-
-  TPsDefPtr = ^TPsDefEntry;
-  TPsDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
-                 TdcFunction, TdcPseudoFn, TdcWithVar);
-  TPsDefEntry = record
-    Older : TPsDefPtr;
-    Newer : TPsDefPtr;
-    case Cls : TPsDefClass of 
-      TdcName : (NamePtr : TPsNamePtr);
-      TdcType : (TypePtr : TPsTypePtr);
-      TdcConstant : (ConstPtr : TPsConstPtr);
-      TdcVariable : (VarPtr : TPsVarPtr);
-      TdcFunction : (FnPtr : TPsFnPtr);
-      TdcPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr);
-      TdcWithVar : (WithVarPtr : TPsWithVarPtr);
-  end;
