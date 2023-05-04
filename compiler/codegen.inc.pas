@@ -1481,7 +1481,7 @@ begin
   _OutNewline
 end;
 
-procedure OutFunctionPrototype(Def : TPsFunction);
+procedure OutFunctionPrototype(Def : TPsSubroutine);
 var 
   Pos : integer;
 begin

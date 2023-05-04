@@ -163,7 +163,7 @@ begin
   Result := Found
 end;
 
-function _DefIsName(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
+function _DefIsName(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Name : string absolute Ctx;
@@ -176,7 +176,8 @@ function _FindName(Name : string; Required : boolean;
 var 
   Def : TPsDefPtr;
 begin
-  if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then Result := Def^.NamePtr
+  if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then
+    Result := Def^.NamePtr
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
@@ -670,7 +671,7 @@ begin
   AddVariable := VarPtr;
 end;
 
-function EmptyFunction : TPsFunction;
+function EmptyFunction : TPsSubroutine;
 begin
   Result.Name := '';
   Result.ExternalName := '';
@@ -681,9 +682,9 @@ begin
 end;
 
 function IsSameFunctionDefinition(DeclPtr : TPsFnPtr;
-                                  Fun : TPsFunction) : boolean;
+                                  Fun : TPsSubroutine) : boolean;
 var 
-  Decl : TPsFunction;
+  Decl : TPsSubroutine;
   Same : boolean;
   Pos : integer;
 begin
@@ -708,7 +709,7 @@ begin
                            and (NamePtr^.FnPtr^.IsDeclaration)
 end;
 
-function AddFunction(const Fun : TPsFunction) : TPsFnPtr;
+function AddFunction(const Fun : TPsSubroutine) : TPsFnPtr;
 var 
   NamePtr : TPsNamePtr;
   FnPtr : TPsFnPtr;
@@ -784,7 +785,7 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function _DefIsWithVar(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
+function _DefIsWithVar(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Name : string absolute Ctx;
@@ -903,7 +904,7 @@ begin
   MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
 
-function MakeProcedure0(const Name : string) : TPsFunction;
+function MakeProcedure0(const Name : string) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -911,7 +912,7 @@ begin
   Result.Args.Count := 0
 end;
 
-function MakeProcedure1(const Name : string; Arg : TPsVariable) : TPsFunction;
+function MakeProcedure1(const Name : string; Arg : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -921,7 +922,7 @@ begin
 end;
 
 function MakeProcedure2(const Name : string;
-                        Arg1, Arg2 : TPsVariable) : TPsFunction;
+                        Arg1, Arg2 : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -932,7 +933,7 @@ begin
 end;
 
 function MakeProcedure3(const Name : string;
-                        Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
+                        Arg1, Arg2, Arg3 : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -944,7 +945,7 @@ begin
 end;
 
 function MakeFunction0(const Name : string;
-                       RetTypePtr : TPsTypePtr) : TPsFunction;
+                       RetTypePtr : TPsTypePtr) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -953,7 +954,7 @@ begin
 end;
 
 function MakeFunction1(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg : TPsVariable) : TPsFunction;
+                       Arg : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -964,7 +965,7 @@ begin
 end;
 
 function MakeFunction2(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg1, Arg2 : TPsVariable) : TPsFunction;
+                       Arg1, Arg2 : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -976,7 +977,7 @@ begin
 end;
 
 function MakeFunction3(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg1, Arg2, Arg3 : TPsVariable) : TPsFunction;
+                       Arg1, Arg2, Arg3 : TPsVariable) : TPsSubroutine;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -1011,7 +1012,7 @@ begin
   AddTypeName(Name, Result)
 end;
 
-function _DefIsFileType(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
+function _DefIsFileType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsFileTypeDef absolute Ctx;
@@ -1071,8 +1072,7 @@ begin
   Result^.RecPtr := NewRecord(Rec)
 end;
 
-function _DefIsArrayType(var Item; var Ctx;
-                         var Unused_Stop : boolean) : boolean;
+function _DefIsArrayType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsArrayTypeDef absolute Ctx;
@@ -1103,8 +1103,7 @@ begin
   end
 end;
 
-function _DefIsRangeType(var Item; var Ctx;
-                         var Unused_Stop : boolean) : boolean;
+function _DefIsRangeType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Wanted : TPsRangeTypeDef absolute Ctx;
@@ -1136,11 +1135,7 @@ begin
   end
 end;
 
-function _DefIsPointerType(var Item; var Ctx; var Unused_Stop : boolean) :
-
-
-                                                                         boolean
-;
+function _DefIsPointerType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
@@ -1162,8 +1157,7 @@ begin
   end
 end;
 
-function _DefIsPointerForwardType(var Item; var Ctx;
-                                  var Unused_Stop : boolean) : boolean;
+function _DefIsPointerForwardType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   TargetName : string absolute Ctx;
@@ -1187,7 +1181,7 @@ begin
   end
 end;
 
-function _DefIsSetType(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
+function _DefIsSetType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   TypePtr : TPsTypePtr absolute Ctx;
@@ -1220,8 +1214,7 @@ begin
                 and IsSameType(A.Defs[Pos].TypePtr, B.Defs[Pos].TypePtr)
 end;
 
-function _DefIsFunctionType(var Item; var Ctx;
-                            var Unused_Stop : boolean) : boolean;
+function _DefIsFunctionType(var Item; var Ctx) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   FnDef : TPsFnDef absolute Ctx;

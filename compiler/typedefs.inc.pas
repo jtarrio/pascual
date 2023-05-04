@@ -7,7 +7,7 @@ type
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
-  TPsFnPtr = ^TPsFunction;
+  TPsFnPtr = ^TPsSubroutine;
   TPsPseudoFnPtr = ^TPsPseudoFn;
   TExSetImmBounds = ^TExSetImmBoundsObj;
   TExSetExprBounds = ^TExSetExprboundsObj;
@@ -204,7 +204,7 @@ type
     Args : TPsFnArgs;
     ReturnTypePtr : TPsTypePtr
   end;
-  TPsFunction = record
+  TPsSubroutine = record
     Name : string;
     ExternalName : string;
     Args : TPsFnArgs;

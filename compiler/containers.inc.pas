@@ -12,9 +12,8 @@ type
     Newer : TStack
   end;
   { A function that checks a predicate on an Item using a given Context. }
-  { The function can set Stop to true if it wants to stop the search. }
-  TStackPredicate = function (var Item {: TStack}; var Context {: Any};
-                              var Stop : boolean) : boolean;
+  TStackPredicate = function (var Item {: TStack};
+                              var Context {: Any}) : boolean;
 
 { Adds the Item to the stack designated by Head. }
 procedure Stack_Push(var Head, Item {:TStack});
@@ -52,16 +51,14 @@ var
   Item : TStack;
   TheFoundItem : TStack absolute FoundItem;
   Found : boolean;
-  Stop : boolean;
 begin
   Found := false;
-  Stop := false;
   Item := TheHead;
-  while not Found and not Stop and (Item <> nil) do
+  while not Found and (Item <> nil) do
   begin
-    Found := Predicate(Item, Context, Stop);
+    Found := Predicate(Item, Context);
     if Found then TheFoundItem := Item
-    else if not Stop then Item := Item^.Older
+    else Item := Item^.Older
   end;
   Result := Found
 end;

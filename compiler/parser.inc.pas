@@ -584,7 +584,7 @@ end;
 
 procedure PsProcedureDefinition;
 var 
-  Def : TPsFunction;
+  Def : TPsSubroutine;
 begin
   Def := EmptyFunction();
   WantTokenAndRead(TkProcedure);
@@ -606,7 +606,7 @@ end;
 
 procedure PsFunctionDefinition;
 var 
-  Def : TPsFunction;
+  Def : TPsSubroutine;
 begin
   Def := EmptyFunction();
   WantTokenAndRead(TkFunction);
