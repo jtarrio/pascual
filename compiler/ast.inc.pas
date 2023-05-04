@@ -1,6 +1,9 @@
 const 
+  { Maximum number of values per enumerated type. }
   MaxEnumVals = 128;
+  { Maximum number of fields per record type. }
   MaxRecordFields = 64;
+  { Maximum number of arguments per subroutine. }
   MaxSubroutineArgs = 16;
 
 type 
@@ -118,14 +121,23 @@ type
     { Has this type been used? }
     WasUsed : boolean;
     case Cls : TSDTypeClass of 
+      { File type. }
       SdtcFile : (FileDef : TSDTFile);
+      { Enumerated type. }
       SdtcEnum : (EnumPtr : TSDTEnum);
+      { Subrange type. }
       SdtcRange : (RangeDef : TSDTRange);
+      { Set type. }
       SdtcSet : (ElementTypePtr : TSDType);
+      { Record type. }
       SdtcRecord : (RecPtr : TSDTRecord);
+      { Array type. }
       SdtcArray : (ArrayDef : TSDTArray);
+      { Pointer type. }
       SdtcPointer : (PointedTypePtr : TSDType);
+      { Forward-declared pointer type. }
       SdtcPointerForward : (TargetName : ^string);
+      { Function type. }
       SdtcFunction : (FnDefPtr : TSDTSubroutine);
   end;
 
@@ -192,12 +204,18 @@ type
     Name : string;
     { A pointer to the definition with this name. }
     case Cls : TSDNameClass of 
+      { Untyped constant. }
       SdncConstant : (ConstPtr : TSDConstant);
+      { Type. }
       SdncType : (TypePtr : TSDType);
+      { Enumerated value. }
       SdncEnumVal : (EnumTypePtr : TSDType;
                      Ordinal : integer);
+      { Variable. }
       SdncVariable : (VarPtr : TSDVariable);
+      { Subroutine. }
       SdncSubroutine : (SrPtr : TSDSubroutine);
+      { Pseudo-function. }
       SdncPsfn : (PsfnPtr : TSDPsfn)
   end;
 
@@ -212,12 +230,19 @@ type
     Newer : TSDefinition;
     { Pointer to the definition. }
     case Cls : TSDefClass of 
+      { Type. }
       SdcType : (TypePtr : TSDType);
+      { Untyped constant. }
       SdcConstant : (ConstPtr : TSDConstant);
+      { Variable. }
       SdcVariable : (VarPtr : TSDVariable);
+      { Subroutine. }
       SdcSubroutine : (SrPtr : TSDSubroutine);
+      { Pseudo-function. }
       SdcPsfn : (PsfnPtr : TSDPsfn);
+      { Temporary variable. }
       SdcWithVar : (WithVarPtr : TSDWithVarPtr);
+      { Name. }
       SdcName : (NamePtr : TSDName);
   end;
 
@@ -248,13 +273,17 @@ type
   { Immediate bounds for a set constructor. }
   TSESetImmBounds = ^TSESetImmBoundsObj;
   TSESetImmBoundsObj = record
+    { Next pair of bounds. }
     Next : TSESetImmBounds;
+    { First and last ordinals. }
     First, Last : integer
   end;
   { Expression bounds for a set constructor. }
   TSESetExprBounds = ^TSESetExprBoundsObj;
   TSESetExprBoundsObj = record
+    { Next pair of bounds. }
     Next : TSESetExprBounds;
+    { First and last values. }
     First, Last : TSExpression
   end;
 
@@ -273,26 +302,35 @@ type
       SeicSet : (SetBounds : TSESetImmBounds;
                  SetOfTypePtr : TSDType)
   end;
-  { Function argument values. }
+  { Function arguments. }
   TSEFunctionArgs = record
+    { Number of arguments. }
     Size : integer;
+    { Values of the arguments. }
     Values : array[1..MaxSubroutineArgs] of TSExpression;
   end;
   { List of arguments for the READ procedure. }
   TSEReadArgList = ^TSEReadArgValue;
   TSEReadArgValue = record
+    { Next argument. }
     Next : TSEReadArgList;
+    { Target of the operation. }
     Dest : TSExpression
   end;
   { List of arguments for the WRITE procedure. }
   TSEWriteArgList = ^TSEWriteArgValue;
   TSEWriteArg = record
+    { Source of the operation. }
     Arg : TSExpression;
+    { Width. 0 = unspecified. }
     Width : TSExpression;
+    { Precision. -1 = unspecified. }
     Prec : TSExpression
   end;
   TSEWriteArgValue = record
+    { Next argument. }
     Next : TSEWriteArgList;
+    { Value. }
     Value : TSEWriteArg
   end;
   { Operators. }
@@ -303,13 +341,18 @@ type
                  SeoOrd, SeoPred, SeoSucc);
   { Unary operation. }
   TSEUnaryOp = record
+    { Operand. }
     Parent : TSExpression;
+    { Operator. }
     Op : TSEOperator
   end;
   { Binary operation. }
   TSEBinaryOp = record
+    { Left operand. }
     Left : TSExpression;
+    { Right operand. }
     Right : TSExpression;
+    { Operator. }
     Op : TSEOperator
   end;
 
