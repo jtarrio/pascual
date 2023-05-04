@@ -551,15 +551,12 @@ end;
 
 procedure PsFunctionBody(SrPtr : TSDSubroutine);
 var 
-  { TODO move to AST }
-  FnDefs : TSScope;
   Pos : integer;
   Checkpoint : TSDefinition;
   ResultPtr : TSDVariable;
   VarArg : TSDVariableDef;
 begin
-  new(FnDefs);
-  StartLocalScope(FnDefs, SrPtr);
+  StartLocalScope(@SrPtr^.Scope, SrPtr);
   Checkpoint := CurrentScope^.LatestDef;
   for Pos := 1 to SrPtr^.Args.Count do
   begin

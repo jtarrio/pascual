@@ -11,6 +11,34 @@ type
   TSExpression = ^TSExpressionObj;
   { A type. }
   TSDType = ^TSDTypeDef;
+  { A defined type, constant, variable, etc. }
+  TSDefinition = ^TSDefEntry;
+  { A subroutine. }
+  TSDSubroutine = ^TSDSubroutineDef;
+
+  { Counters for records, enums, and temporary variables. }
+  TSCounterType = (SctEnum, SctRecord, SctTmpVar);
+  TSCounters = record
+    { Enum counter. }
+    EnumCtr : integer;
+    { Record counter. }
+    RecordCtr : integer;
+    { Temporary variable counter. }
+    TmpVarCtr : integer;
+  end;
+
+  { The set of defined objects for a function or global. }
+  TSScope = ^TSScopeObj;
+  TSScopeObj = record
+    { Parent scope. }
+    Parent : TSScope;
+    { Stack for the definitions. }
+    LatestDef : TSDefinition;
+    { Function this scope belongs to. }
+    CurrentFn : TSDSubroutine;
+    { Current state of the counters. }
+    Counters : TSCounters;
+  end;
 
   { An untyped constant. }
   TSDConstant = ^TSDConstantDef;
@@ -161,7 +189,6 @@ type
   end;
 
   { A subroutine. }
-  TSDSubroutine = ^TSDSubroutineDef;
   TSDSubroutineDef = record
     { The subroutine's Pascal name. }
     Name : string;
@@ -171,6 +198,8 @@ type
     Args : TSDSubroutineArgs;
     { The return type. Nil if this subroutine is a procedure. }
     ReturnTypePtr : TSDType;
+    { The definitions in this function's scope. }
+    Scope : TSScopeObj;
     { Is this a forward declaration? }
     IsDeclaration : boolean;
     { Has this subroutine been used? }
@@ -219,10 +248,10 @@ type
       SdncPsfn : (PsfnPtr : TSDPsfn)
   end;
 
-  { A defined type, constant, variable, etc. }
-  TSDefinition = ^TSDefEntry;
+  { Definition class. }
   TSDefClass = (SdcName, SdcType, SdcConstant, SdcVariable,
                 SdcSubroutine, SdcPsfn, SdcWithVar);
+  { A defined type, constant, variable, etc. }
   TSDefEntry = record
     { Older entry in the stack. }
     Older : TSDefinition;
@@ -244,30 +273,6 @@ type
       SdcWithVar : (WithVarDef : TSDWithVarDef);
       { Name. }
       SdcName : (NameDef : TSDNameDef);
-  end;
-
-  { Counters for records, enums, and temporary variables. }
-  TSCounterType = (SctEnum, SctRecord, SctTmpVar);
-  TSCounters = record
-    { Enum counter. }
-    EnumCtr : integer;
-    { Record counter. }
-    RecordCtr : integer;
-    { Temporary variable counter. }
-    TmpVarCtr : integer;
-  end;
-
-  { The set of defined objects for a function or global. }
-  TSScope = ^TSScopeObj;
-  TSScopeObj = record
-    { Parent scope. }
-    Parent : TSScope;
-    { Stack for the definitions. }
-    LatestDef : TSDefinition;
-    { Function this scope belongs to. }
-    CurrentFn : TSDSubroutine;
-    { Current state of the counters. }
-    Counters : TSCounters;
   end;
 
   { Immediate bounds for a set constructor. }
