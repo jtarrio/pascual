@@ -663,6 +663,27 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
+procedure PsProgramBlock;
+begin
+  WantTokenAndRead(TkBegin);
+  OutProgramBegin;
+  while Lexer.Token.Id <> TkEnd do
+  begin
+    PsStatement;
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon)
+  end;
+  OutProgramEnd;
+  WantTokenAndRead(TkEnd)
+end;
+
+procedure PsProgram;
+begin
+  PsProgramHeading;
+  PsDefinitions;
+  PsProgramBlock
+end;
+
 function PsPointerDeref(Ptr : TExpression) : TExpression;
 begin
   if Ptr^.Cls = XcVariable then Ptr^.VarPtr^.WasUsed := true;
@@ -1298,21 +1319,6 @@ begin
     CompileError('Unexpected token ' + LxTokenStr)
 end;
 
-procedure PsProgramBlock;
-begin
-  PsDefinitions;
-  WantTokenAndRead(TkBegin);
-  OutProgramBegin;
-  while Lexer.Token.Id <> TkEnd do
-  begin
-    PsStatement;
-    WantToken2(TkSemicolon, TkEnd);
-    SkipToken(TkSemicolon)
-  end;
-  OutProgramEnd;
-  WantTokenAndRead(TkEnd)
-end;
-
 procedure ExecuteDirective(const Dir : string);
 begin
   if (length(Dir) > 3) and (Dir[2] = 'I') and (Dir[3] = ' ') then
@@ -1348,8 +1354,7 @@ end;
 procedure ParseProgram;
 begin
   ReadToken;
-  PsProgramHeading;
-  PsProgramBlock;
+  PsProgram;
   WantTokenAndRead(TkDot);
   WantToken(TkEof);
 end;
