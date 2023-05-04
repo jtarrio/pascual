@@ -18,7 +18,7 @@ begin
 end;
 
 function Pf_Overload_Parse(FnExpr : TExpression;
-                            NamePrefix : string) : TExpression;
+                           NamePrefix : string) : TExpression;
 var 
   Arg : TExpression;
   Args : TExFunctionArgs;
@@ -34,15 +34,15 @@ begin
   end;
   if Arg = nil then
   begin
-    SrPtr := FindNameOfClass(NamePrefix + '_n', SdncFunction, {Required=}true)^.
-             SrPtr;
+    SrPtr := FindNameOfClass(NamePrefix + '_n',
+             SdncSubroutine, {Required=}true)^.SrPtr;
     Args.Size := 0;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
   end
   else
   begin
     SrPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
-             SdncFunction, {Required=}true)^.SrPtr;
+             SdncSubroutine, {Required=}true)^.SrPtr;
     Args.Size := 1;
     Args.Values[1] := Arg;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
@@ -70,7 +70,7 @@ begin
 end;
 
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
-var
+var 
   Ptr : TExpression;
   SrPtr : TPsSubrPtr;
   Args : TExFunctionArgs;
@@ -83,12 +83,12 @@ begin
   ExDispose(FnExpr);
   Args.Size := 1;
   Args.Values[1] := Ptr;
-  SrPtr := FindNameOfClass('Dispose', SdncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass('Dispose', SdncSubroutine, {Required=}true)^.SrPtr;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 function PfNew_Parse(FnExpr : TExpression) : TExpression;
-var
+var 
   Ptr : TExpression;
   SrPtr : TPsSubrPtr;
   Args : TExFunctionArgs;
@@ -102,7 +102,7 @@ begin
   Args.Size := 2;
   Args.Values[1] := Ptr;
   Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
-  SrPtr := FindNameOfClass('New', SdncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass('New', SdncSubroutine, {Required=}true)^.SrPtr;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
@@ -136,7 +136,7 @@ begin
   if Found.Cls = SdncVariable then
     Result := ExSizeof(Found.VarPtr^.TypePtr)
   else if Found.Cls = SdncType then
-    Result := ExSizeof(Found.TypePtr)
+         Result := ExSizeof(Found.TypePtr)
   else
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
 end;

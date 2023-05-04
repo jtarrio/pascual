@@ -166,7 +166,7 @@ begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, SdncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 1;
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
@@ -183,7 +183,7 @@ begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, SdncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
   if Args.Values[1]^.Cls = XcToGenericFile then

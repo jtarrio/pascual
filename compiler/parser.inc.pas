@@ -780,7 +780,7 @@ begin
   else if Found = nil then CompileError('Unknown identifier: ' + Id.Name)
   else if Found^.Cls = SdncVariable then Expr := ExVariable(Found^.VarPtr)
   else if Found^.Cls = SdncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
-  else if Found^.Cls = SdncFunction then Expr := ExFnRef(Found^.SrPtr)
+  else if Found^.Cls = SdncSubroutine then Expr := ExFnRef(Found^.SrPtr)
   else if Found^.Cls = SdncEnumVal then
          Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
   else if Found^.Cls = SdncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)

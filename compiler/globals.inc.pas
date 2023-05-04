@@ -59,13 +59,13 @@ begin
   while Def <> nil do
   begin
     case Def^.Cls of 
-      TdcVariable:
+      SdcVariable:
                    begin
                      Def^.VarPtr^.WasInitialized := true;
                      Def^.VarPtr^.WasUsed := true
                    end;
-      TdcSubroutine: Def^.SrPtr^.WasUsed := true;
-      TdcType: Def^.TypePtr^.WasUsed := true;
+      SdcSubroutine: Def^.SrPtr^.WasUsed := true;
+      SdcType: Def^.TypePtr^.WasUsed := true;
     end;
     Def := Def^.Older
   end
