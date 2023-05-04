@@ -15,12 +15,19 @@ type
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
   end;
 
+  TSCounterType = (TctEnum, TctRecord, TctTmpVar);
+  TSCounters = record
+    EnumCtr : integer;
+    RecordCtr : integer;
+    TmpVarCtr : integer;
+  end;
+
   TSScope = ^TSScopeObj;
   TSScopeObj = record
     Parent : TSScope;
     LatestDef : TSDefinition;
     CurrentFn : TPsFnPtr;
-    Counters : TPsCounters;
+    Counters : TSCounters;
   end;
 
   TSProgram = ^TSProgramObj;

@@ -6,7 +6,7 @@ var
     PtEmptySet, PtUntypedPtr : TPsTypePtr
   end;
 
-function DefCounter(CounterType : TPsCounterType) : integer;
+function DefCounter(CounterType : TSCounterType) : integer;
 var Ctr : ^integer;
 begin
   case CounterType of 

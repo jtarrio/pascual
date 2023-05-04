@@ -233,10 +233,3 @@ type
       TncFunction : (FnPtr : TPsFnPtr);
       TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;
-
-  TPsCounterType = (TctEnum, TctRecord, TctTmpVar);
-  TPsCounters = record
-    EnumCtr : integer;
-    RecordCtr : integer;
-    TmpVarCtr : integer;
-  end;
