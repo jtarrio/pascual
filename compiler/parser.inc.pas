@@ -549,11 +549,14 @@ end;
 
 procedure PsFunctionBody(FnPtr : TPsFnPtr);
 var 
+  { TODO move to AST }
+  FnDefs : TPsDefs;
   Pos : integer;
   Checkpoint : TPsDefPtr;
   ResultPtr : TPsVarPtr;
 begin
-  StartLocalScope(FnPtr);
+  new(FnDefs);
+  StartLocalScope(FnDefs, FnPtr);
   Checkpoint := CurrentDefs^.Latest;
   for Pos := 1 to FnPtr^.Args.Count do
     AddVariable(FnPtr^.Args.Defs[Pos]);
@@ -1148,7 +1151,6 @@ begin
       if not UsesTmpVars then
       begin
         UsesTmpVars := true;
-        StartTemporaryScope;
         OutSequenceBegin
       end;
       OutDeclareAndAssign(Lhs^.TmpVar^.VarPtr, Lhs^.TmpVarValue);
@@ -1162,8 +1164,7 @@ begin
     ExDispose(OrigLhs);
     if UsesTmpVars then
     begin
-      OutSequenceEnd;
-      CloseTemporaryScope
+      OutSequenceEnd
     end
   end
 end;
@@ -1291,7 +1292,6 @@ var
   VarPtr : TPsVarPtr;
 begin
   WantToken(TkWith);
-  StartTemporaryScope;
   OutSequenceBegin;
   repeat
     ReadToken;
@@ -1303,8 +1303,7 @@ begin
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
   PsStatement;
-  OutSequenceEnd;
-  CloseTemporaryScope
+  OutSequenceEnd
 end;
 
 procedure PsStatement;

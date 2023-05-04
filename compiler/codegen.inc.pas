@@ -1109,7 +1109,7 @@ procedure OutEnumValuesFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  if CheckPoint = nil then Def := nil
+  if CheckPoint = nil then Stack_GetOldest(CurrentDefs^.Latest, Def)
   else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
@@ -1382,7 +1382,7 @@ procedure OutTypeDefinitionsFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  if Checkpoint = nil then Def := nil
+  if Checkpoint = nil then Stack_GetOldest(CurrentDefs^.Latest, Def)
   else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin

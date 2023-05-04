@@ -68,8 +68,5 @@ begin
       TdcType: Def^.TypePtr^.WasUsed := true;
     end;
     Def := Def^.Older
-  end;
-
-  { Let the user redefine all the global names }
-  StartTemporaryScope;
+  end
 end;

@@ -28,17 +28,17 @@ begin
   TheHead := NewItem
 end;
 
-{ Removes the last item from the stack designated by Head. }
-{ If the stack was empty, the function returns false; otherwise, it returns }
-{ true and the removed item is set in DeletedItem. }
-function Stack_Pop(var Head, DeletedItem {:TStack}) : boolean;
+{ Finds the first (oldest) element in the stack designated by Head and }
+{ sets it in OldestItem. }
+procedure Stack_GetOldest(var Head, OldestItem {:TStack});
 var 
   TheHead : TStack absolute Head;
-  TheDeletedItem : TStack absolute DeletedItem;
+  TheItem : TStack absolute OldestItem;
 begin
-  TheDeletedItem := TheHead;
-  Result := TheHead <> nil;
-  if Result then TheHead := TheHead^.Older
+  TheItem := TheHead;
+  if TheHead <> nil then
+    while TheItem^.Older <> nil do
+      TheItem := TheItem^.Older
 end;
 
 { Finds the latest element in the stack designated by Head for which the }
@@ -110,7 +110,7 @@ end;
 { If the list was empty, the function returns false; otherwise it returns }
 { true and the removed item is set in DeletedItem. }
 function List_Shift(var List, DeletedItem {: TList}) : boolean;
-var
+var 
   TheList : TList absolute List;
   TheDeletedItem : TList absolute DeletedItem;
 begin

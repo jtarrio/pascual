@@ -168,8 +168,7 @@ type
     Values : array[0..MaxEnumVals - 1] of string;
     Id : integer;
     HasBeenDefined : boolean;
-    ValuesHaveBeenOutput : boolean;
-    RefCount : integer
+    ValuesHaveBeenOutput : boolean
   end;
   TPsRecordField = record
     Name : string;
@@ -182,8 +181,7 @@ type
     VariantBounds : array[1..MaxRecordFields] of integer;
     IsPacked : boolean;
     Id : integer;
-    HasBeenDefined : boolean;
-    RefCount : integer
+    HasBeenDefined : boolean
   end;
   TPsConstant = record
     Name : string;
@@ -204,8 +202,7 @@ type
   end;
   TPsFnDef = record
     Args : TPsFnArgs;
-    ReturnTypePtr : TPsTypePtr;
-    RefCount : integer;
+    ReturnTypePtr : TPsTypePtr
   end;
   TPsFunction = record
     Name : string;
@@ -246,7 +243,7 @@ type
 
   TPsDefPtr = ^TPsDefEntry;
   TPsDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
-                 TdcFunction, TdcPseudoFn, TdcWithVar, TdcScopeBoundary);
+                 TdcFunction, TdcPseudoFn, TdcWithVar);
   TPsDefEntry = record
     Older : TPsDefPtr;
     Newer : TPsDefPtr;
@@ -258,9 +255,6 @@ type
       TdcFunction : (FnPtr : TPsFnPtr);
       TdcPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr);
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
-      TdcScopeBoundary : (TemporaryScope : boolean;
-                          Counters : TPsCounters;
-                          CurrentFn : TPsFnPtr)
   end;
 
   TPsDefs = ^TPsDefsObj;

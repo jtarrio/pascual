@@ -49,15 +49,8 @@ begin
   new(Result);
   Result^ := Enum;
   Result^.Id := DefCounter(TctEnum);
-  Result^.RefCount := 1;
   Result^.HasBeenDefined := false;
   Result^.ValuesHaveBeenOutput := false
-end;
-
-procedure DisposeEnum(Ptr : TPsEnumPtr);
-begin
-  Ptr^.RefCount := Ptr^.RefCount - 1;
-  if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
 function NewRecord(const Rec : TPsRecordDef) : TPsRecPtr;
@@ -65,53 +58,12 @@ begin
   new(Result);
   Result^ := Rec;
   Result^.Id := DefCounter(TctRecord);
-  Result^.RefCount := 1;
   Result^.HasBeenDefined := false
-end;
-
-procedure DisposeRecord(Ptr : TPsRecPtr);
-begin
-  Ptr^.RefCount := Ptr^.RefCount - 1;
-  if Ptr^.RefCount = 0 then dispose(Ptr)
 end;
 
 function NewFnDef : TPsFnDefPtr;
 begin
-  new(Result);
-  Result^.RefCount := 1
-end;
-
-procedure DisposeFnDef(Ptr : TPsFnDefPtr);
-begin
-  Ptr^.RefCount := Ptr^.RefCount - 1;
-  if Ptr^.RefCount = 0 then dispose(Ptr)
-end;
-
-procedure _DisposeType(var TypePtr : TPsTypePtr);
-begin
-  if TypePtr^.Cls = TtcEnum then DisposeEnum(TypePtr^.EnumPtr)
-  else if TypePtr^.Cls = TtcRecord then DisposeRecord(TypePtr^.RecPtr)
-  else if TypePtr^.Cls = TtcFunction then DisposeFnDef(TypePtr^.FnDefPtr);
-  dispose(TypePtr);
-end;
-
-procedure _DisposeDef(Def : TPsDefPtr);
-begin
-  case Def^.Cls of 
-    TdcName : dispose(Def^.NamePtr);
-    TdcType : _DisposeType(Def^.TypePtr);
-    TdcConstant : dispose(Def^.ConstPtr);
-    TdcVariable :
-                  begin
-                    if Def^.VarPtr^.IsAliasFor <> nil then
-                      ExDispose(Def^.VarPtr^.IsAliasFor);
-                    dispose(Def^.VarPtr)
-                  end;
-    TdcFunction : dispose(Def^.FnPtr);
-    TdcPseudoFn : dispose(Def^.PseudoFnPtr);
-    TdcWithVar : dispose(Def^.WithVarPtr)
-  end;
-  dispose(Def)
+  new(Result)
 end;
 
 function _HasUnusedPrefix(const Name : string) : boolean;
@@ -173,71 +125,26 @@ begin
     TdcFunction : new(Result^.FnPtr);
     TdcPseudoFn : new(Result^.PseudoFnPtr);
     TdcWithVar : new(Result^.WithVarPtr);
-    TdcScopeBoundary :
-                       begin
-                         Result^.TemporaryScope := false;
-                         Result^.CurrentFn := nil
-                       end
   end;
   Stack_Push(CurrentDefs^.Latest, Result)
 end;
 
-function _DeleteDef(var DeletedDef : TPsDefEntry) : boolean;
-var DeletedItem : TPsDefPtr;
+procedure StartLocalScope(Defs : TPsDefs; NewFunction : TPsFnPtr);
 begin
-  Result := Stack_Pop(CurrentDefs^.Latest, DeletedItem);
-  if Result then
-  begin
-    _CheckUnusedSymbols(DeletedItem);
-    DeletedDef := DeletedItem^;
-    _DisposeDef(DeletedItem)
-  end
-end;
-
-procedure _StartScope(Temporary : boolean; NewFunction : TPsFnPtr);
-var 
-  Def : TPsDefPtr;
-begin
-  Def := _AddDef(TdcScopeBoundary);
-  Def^.TemporaryScope := Temporary;
-  Def^.Counters := CurrentDefs^.Counters;
-  Def^.CurrentFn := CurrentDefs^.CurrentFn;
-  if not Temporary then
-    CurrentDefs^.CurrentFn := NewFunction
-end;
-
-procedure _CloseScope(Temporary : boolean);
-var 
-  DeletedDef : TPsDefEntry;
-  Deleted : boolean;
-begin
-  repeat
-    Deleted := _DeleteDef(DeletedDef)
-  until not Deleted
-        or ((DeletedDef.Cls = TdcScopeBoundary)
-        and (Temporary or not DeletedDef.TemporaryScope));
-  CurrentDefs^.CurrentFn := DeletedDef.CurrentFn;
-  CurrentDefs^.Counters := DeletedDef.Counters
-end;
-
-procedure StartLocalScope(NewFunction : TPsFnPtr);
-begin
-  _StartScope({Temporary=}false, NewFunction)
+  PushLocalDefs(Defs, CurrentDefs);
+  CurrentDefs^.CurrentFn := NewFunction
 end;
 
 procedure CloseLocalScope;
+var Def : TPsDefPtr;
 begin
-  _CloseScope({Temporary=}false)
-end;
-
-procedure StartTemporaryScope;
-begin
-  _StartScope({Temporary=}true, nil)
-end;
-
-procedure CloseTemporaryScope;
-begin
-  _CloseScope({Temporary=}true)
+  Def := CurrentDefs^.Latest;
+  while Def <> nil do
+  begin
+    _CheckUnusedSymbols(Def);
+    Def := Def^.Older
+  end;
+  PopDefs
 end;
 
 function _FindDef(var FoundDef : TPsDefPtr;
@@ -256,31 +163,20 @@ begin
   Result := Found
 end;
 
-function _DefIsName(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsName(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
-  TheCtx : record
-    FromLocalScope : boolean;
-    Name : string
-  end
-  absolute Ctx;
+  Name : string absolute Ctx;
 begin
-  Stop := TheCtx.FromLocalScope and (Def^.Cls = TdcScopeBoundary);
-  Result := (Def^.Cls = TdcName) and (TheCtx.Name = Def^.NamePtr^.Name)
+  Result := (Def^.Cls = TdcName) and (Name = Def^.NamePtr^.Name)
 end;
 
-function _FindName(const Name : string; Required : boolean;
+function _FindName(Name : string; Required : boolean;
                    FromLocalScope : boolean) : TPsNamePtr;
 var 
-  Ctx : record
-    FromLocalScope : boolean;
-    Name : string
-  end;
   Def : TPsDefPtr;
 begin
-  Ctx.FromLocalScope := FromLocalScope;
-  Ctx.Name := Name;
-  if _FindDef(Def, @_DefIsName, Ctx, FromLocalScope) then Result := Def^.NamePtr
+  if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then Result := Def^.NamePtr
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
@@ -400,12 +296,6 @@ begin
     new(Result.TargetName);
     Result.TargetName^ := TypePtr^.TargetName^
   end
-  else if Result.Cls = TtcEnum then
-         Result.EnumPtr^.RefCount := Result.EnumPtr^.RefCount + 1
-  else if Result.Cls = TtcRecord then
-         Result.RecPtr^.RefCount := Result.RecPtr^.RefCount + 1
-  else if Result.Cls = TtcFunction then
-         Result.FnDefPtr^.RefCount := Result.FnDefPtr^.RefCount + 1
 end;
 
 function GetFundamentalType(TypePtr : TPsTypePtr) : TPsTypePtr;
@@ -894,12 +784,11 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function _DefIsWithVar(var Item; var Ctx; var Stop : boolean) : boolean;
+function _DefIsWithVar(var Item; var Ctx; var Unused_Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
   Name : string absolute Ctx;
 begin
-  Stop := Def^.Cls = TdcScopeBoundary;
   Result := (Def^.Cls = TdcWithVar)
             and (FindFieldType(Def^.WithVarPtr^.VarPtr^.TypePtr,
             Name, False) <> nil)
@@ -908,7 +797,7 @@ end;
 function FindWithVar(Name : string) : TPsWithVarPtr;
 var Def : TPsDefPtr;
 begin
-  if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}false) then
+  if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}true) then
     Result := Def^.WithVarPtr
   else Result := nil
 end;
