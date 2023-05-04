@@ -180,6 +180,8 @@ type
     IsReference : boolean;
     { Is this variable actually a constant? }
     IsConstant : boolean;
+    { Is this variable actually a subroutine argument? }
+    IsArgument : boolean;
     { Has this variable been initialized? }
     WasInitialized : boolean;
     { Has this variable been used? }

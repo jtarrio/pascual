@@ -566,6 +566,7 @@ begin
       VarArg.TypePtr := TypePtr;
       VarArg.IsConstant := IsConstant;
       VarArg.IsReference := IsReference;
+      VarArg.IsArgument := true;
       VarArg.WasInitialized := true;
       VarArg.WasUsed := false;
       VarArg.IsAliasFor := nil;

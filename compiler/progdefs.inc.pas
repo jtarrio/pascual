@@ -797,6 +797,7 @@ begin
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;
   TmpVar.IsReference := Base^.IsAddressable;
+  TmpVar.IsArgument := false;
   TmpVar.WasInitialized := true;
   TmpVar.WasUsed := true;
   TmpVar.IsAliasFor := ExCopy(Base);
@@ -824,6 +825,7 @@ begin
   Result.TypePtr := TypePtr;
   Result.IsReference := false;
   Result.IsConstant := true;
+  Result.IsArgument := false;
   Result.WasInitialized := true;
   Result.WasUsed := false;
   Result.IsAliasFor := nil
@@ -835,6 +837,7 @@ begin
   Result.TypePtr := TypePtr;
   Result.IsReference := false;
   Result.IsConstant := false;
+  Result.IsArgument := false;
   Result.WasInitialized := false;
   Result.WasUsed := false;
   Result.IsAliasFor := nil
@@ -846,6 +849,7 @@ begin
   Result.TypePtr := TypePtr;
   Result.IsReference := true;
   Result.IsConstant := false;
+  Result.IsArgument := false;
   Result.WasInitialized := true;
   Result.WasUsed := false;
   Result.IsAliasFor := nil
