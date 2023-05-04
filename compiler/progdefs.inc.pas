@@ -71,29 +71,29 @@ begin
 
   case Def^.Cls of 
     SdcVariable:
-                 if not Def^.VarPtr^.WasUsed
-                    and not _HasUnusedPrefix(Def^.VarPtr^.Name) then
+                 if not Def^.VarPtr.WasUsed
+                    and not _HasUnusedPrefix(Def^.VarPtr.Name) then
                  begin
-                   if Def^.VarPtr^.IsConstant then
-                     CompileWarning('Constant ' + Def^.VarPtr^.Name +
+                   if Def^.VarPtr.IsConstant then
+                     CompileWarning('Constant ' + Def^.VarPtr.Name +
                                     ' was not used' + Where)
                    else
-                     CompileWarning('Variable ' + Def^.VarPtr^.Name +
+                     CompileWarning('Variable ' + Def^.VarPtr.Name +
                                     ' was not used' + Where)
                  end
-                 else if not Def^.VarPtr^.WasInitialized then
-                        CompileWarning('Variable ' + Def^.VarPtr^.Name +
+                 else if not Def^.VarPtr.WasInitialized then
+                        CompileWarning('Variable ' + Def^.VarPtr.Name +
                                        ' was not initialized' + Where);
-    SdcSubroutine: if not Def^.SrPtr^.WasUsed then
+    SdcSubroutine: if not Def^.SrPtr.WasUsed then
                    begin
-                     if Def^.SrPtr^.ReturnTypePtr = nil then
-                       CompileWarning('Procedure ' + Def^.SrPtr^.Name +
+                     if Def^.SrPtr.ReturnTypePtr = nil then
+                       CompileWarning('Procedure ' + Def^.SrPtr.Name +
                                       ' was not used')
-                     else CompileWarning('Function ' + Def^.SrPtr^.Name +
+                     else CompileWarning('Function ' + Def^.SrPtr.Name +
                                          ' was not used')
                    end;
-    SdcType: if (Def^.TypePtr^.Name <> '') and not Def^.TypePtr^.WasUsed then
-               CompileWarning('Type ' + TypeName(Def^.TypePtr) +
+    SdcType: if (Def^.TypePtr.Name <> '') and not Def^.TypePtr.WasUsed then
+               CompileWarning('Type ' + TypeName(@Def^.TypePtr) +
                ' was not used')
   end
 end;
@@ -102,15 +102,6 @@ function _AddDef(Cls : TSDefClass) : TSDefinition;
 begin
   new(Result);
   Result^.Cls := Cls;
-  case Cls of 
-    SdcName : new(Result^.NamePtr);
-    SdcType : new(Result^.TypePtr);
-    SdcConstant : new(Result^.ConstPtr);
-    SdcVariable : new(Result^.VarPtr);
-    SdcSubroutine : new(Result^.SrPtr);
-    SdcPsfn : new(Result^.PsfnPtr);
-    SdcWithVar : new(Result^.WithVarPtr);
-  end;
   Stack_Push(CurrentScope^.LatestDef, Result)
 end;
 
@@ -157,7 +148,7 @@ var
   Def : TSDefinition absolute Item;
   Name : string absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcName) and (Name = Def^.NamePtr^.Name)
+  Result := (Def^.Cls = SdcName) and (Name = Def^.NamePtr.Name)
 end;
 
 function _FindName(Name : string; Required : boolean;
@@ -166,7 +157,7 @@ var
   Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then
-    Result := Def^.NamePtr
+    Result := @Def^.NamePtr
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
@@ -181,7 +172,7 @@ begin
       SdncSubroutine : CompileError('Not a procedure or function: ' +
                                     NamePtr^.Name);
       SdncPsfn : CompileError('Not a procedure or function: ' +
-                                  NamePtr^.Name);
+                              NamePtr^.Name);
       else InternalError('Name class mismatch for ' + NamePtr^.Name)
     end;
   _CheckNameClass := NamePtr
@@ -213,15 +204,14 @@ begin
 end;
 
 function _AddName(const Name : string; Cls : TSDNameClass) : TSDName;
-var 
-  Pos : TSDName;
+var Def : TSDefinition;
 begin
   if FindNameInLocalScope(Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Name + ' already defined');
-  Pos := _AddDef(SdcName)^.NamePtr;
-  Pos^.Name := Name;
-  Pos^.Cls := Cls;
-  _AddName := Pos
+  Def := _AddDef(SdcName);
+  Result := @Def^.NamePtr;
+  Result^.Name := Name;
+  Result^.Cls := Cls
 end;
 
 function AddTypeName(const Name : string; Idx : TSDType) : TSDName;
@@ -268,14 +258,17 @@ begin
 end;
 
 function AddPsfn(const Name : string;
-                     Parse : TSDPsfnParser) : TSDPsfn;
-var Def : TSDName;
+                 Parse : TSDPsfnParser) : TSDPsfn;
+var
+  NameDef : TSDName;
+  Def : TSDefinition;
 begin
-  Def := _AddName(Name, SdncPsfn);
-  Def^.PsfnPtr := _AddDef(SdcPsfn)^.PsfnPtr;
-  Def^.PsfnPtr^.Name := Name;
-  Def^.PsfnPtr^.ParseFn := Parse;
-  Result := Def^.PsfnPtr
+  Def := _AddDef(SdcPsfn);
+  Def^.PsfnPtr.Name := Name;
+  Def^.PsfnPtr.ParseFn := Parse;
+  NameDef := _AddName(Name, SdncPsfn);
+  NameDef^.PsfnPtr := @Def^.PsfnPtr;
+  Result := NameDef^.PsfnPtr
 end;
 
 function CopyType(TypePtr : TSDType) : TSDTypeDef;
@@ -636,28 +629,26 @@ begin
   Result := DeepTypeName(TypePtr, false)
 end;
 
-function AddConstant(const Constant : TSDConstantObj) : TSDConstant;
-var 
-  ConstPtr : TSDConstant;
+function AddConstant(const Constant : TSDConstantDef) : TSDConstant;
+var Def : TSDefinition;
 begin
   if FindNameInLocalScope(Constant.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Constant.Name + ' already defined');
-  ConstPtr := _AddDef(SdcConstant)^.ConstPtr;
-  AddConstantName(Constant.Name, ConstPtr);
-  ConstPtr^ := Constant;
-  AddConstant := ConstPtr
+  Def := _AddDef(SdcConstant);
+  Result := @Def^.ConstPtr;
+  AddConstantName(Constant.Name, Result);
+  Result^ := Constant
 end;
 
 function AddVariable(const VarDef : TSDVariableDef) : TSDVariable;
-var 
-  VarPtr : TSDVariable;
+var Def : TSDefinition;
 begin
   if FindNameInLocalScope(VarDef.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + VarDef.Name + ' already defined');
-  VarPtr := _AddDef(SdcVariable)^.VarPtr;
-  AddVariableName(VarDef.Name, VarPtr);
-  VarPtr^ := VarDef;
-  AddVariable := VarPtr;
+  Def := _AddDef(SdcVariable);
+  Result := @Def^.VarPtr;
+  AddVariableName(VarDef.Name, Result);
+  Result^ := VarDef
 end;
 
 function EmptyFunction : TSDSubroutineDef;
@@ -701,28 +692,29 @@ end;
 
 function AddFunction(const Fun : TSDSubroutineDef) : TSDSubroutine;
 var 
+  Def : TSDefinition;
   NamePtr : TSDName;
-  SrPtr : TSDSubroutine;
   IsProcedure : boolean;
 begin
   IsProcedure := Fun.ReturnTypePtr = nil;
   NamePtr := FindNameInLocalScope(Fun.Name, {Required=}false);
   if NamePtr = nil then
   begin
-    SrPtr := _AddDef(SdcSubroutine)^.SrPtr;
-    SrPtr^ := Fun;
-    AddFunctionName(Fun.Name, SrPtr)
+    Def := _AddDef(SdcSubroutine);
+    Result := @Def^.SrPtr;
+    Result^ := Fun;
+    AddFunctionName(Fun.Name, Result)
   end
   else
   begin
     if (NamePtr^.Cls <> SdncSubroutine) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
-    SrPtr := NamePtr^.SrPtr;
-    if SrPtr^.IsDeclaration then
+    Result := NamePtr^.SrPtr;
+    if Result^.IsDeclaration then
     begin
       if ((Fun.Args.Count = 0) and (Fun.ReturnTypePtr = nil))
-         or IsSameFunctionDefinition(SrPtr, Fun) then
-        SrPtr^.IsDeclaration := false
+         or IsSameFunctionDefinition(Result, Fun) then
+        Result^.IsDeclaration := false
       else
       begin
         if IsProcedure then
@@ -740,8 +732,7 @@ begin
       else
         CompileError('Function ' + Fun.Name + ' already defined')
     end
-  end;
-  AddFunction := SrPtr;
+  end
 end;
 
 function FindField(TypePtr : TSDType; const Name : string;
@@ -781,23 +772,24 @@ var
   Name : string absolute Ctx;
 begin
   Result := (Def^.Cls = SdcWithVar)
-            and (FindFieldType(Def^.WithVarPtr^.VarPtr^.TypePtr,
+            and (FindFieldType(Def^.WithVarPtr.VarPtr^.TypePtr,
             Name, False) <> nil)
 end;
 
-function FindWithVar(Name : string) : TSDWithVarPtr;
+function FindWithVar(Name : string) : TSDWithVar;
 var Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}true) then
-    Result := Def^.WithVarPtr
+    Result := @Def^.WithVarPtr
   else Result := nil
 end;
 
 function AddWithVar(Base : TSExpression) : TSDVariable;
 var 
+  Def : TSDefinition;
   TmpVar : TSDVariableDef;
   TmpVarPtr : TSDVariable;
-  WithVarPtr : TSDWithVarPtr;
+  WithVarPtr : TSDWithVar;
 begin
   EnsureRecordExpr(Base);
 
@@ -809,15 +801,16 @@ begin
   TmpVar.WasUsed := true;
   TmpVar.IsAliasFor := ExCopy(Base);
   TmpVarPtr := AddVariable(TmpVar);
-  WithVarPtr := _AddDef(SdcWithVar)^.WithVarPtr;
+  Def := _AddDef(SdcWithVar);
+  WithVarPtr := @Def^.WithVarPtr;
   WithVarPtr^.VarPtr := TmpVarPtr;
   AddWithVar := TmpVarPtr
 end;
 
 function MakeConstant(const Name : string; Value : TSExpression)
-: TSDConstantObj;
+: TSDConstantDef;
 var 
-  Constant : TSDConstantObj;
+  Constant : TSDConstantDef;
 begin
   Constant.Name := Name;
   Constant.Value := Value;
@@ -986,8 +979,10 @@ begin
 end;
 
 function _NewType(Cls : TSDTypeClass) : TSDType;
+var Def : TSDefinition;
 begin
-  Result := _AddDef(SdcType)^.TypePtr;
+  Def := _AddDef(SdcType);
+  Result := @Def^.TypePtr;
   Result^.Name := '';
   Result^.Cls := Cls;
   Result^.AliasFor := nil;
@@ -1006,10 +1001,10 @@ var
   Def : TSDefinition absolute Item;
   Wanted : TSDTFile absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcFile)
-            and (Def^.TypePtr^.FileDef.Cls = Wanted.Cls)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcFile)
+            and (Def^.TypePtr.FileDef.Cls = Wanted.Cls)
             and ((Wanted.Cls <> SdtfcBinary)
-            or IsSameType(Def^.TypePtr^.FileDef.TypePtr, Wanted.TypePtr))
+            or IsSameType(Def^.TypePtr.FileDef.TypePtr, Wanted.TypePtr))
 end;
 
 function _MakeFileType(Cls : TSDTFileClass; TypePtr : TSDType) : TSDType;
@@ -1021,7 +1016,7 @@ begin
   FileDef.Cls := Cls;
   FileDef.TypePtr := TypePtr;
   if _FindDef(Def, @_DefIsFileType, FileDef, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcFile);
@@ -1066,10 +1061,10 @@ var
   Def : TSDefinition absolute Item;
   Wanted : TSDTArray absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcArray)
-            and IsSameType(Def^.TypePtr^.ArrayDef.IndexTypePtr,
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcArray)
+            and IsSameType(Def^.TypePtr.ArrayDef.IndexTypePtr,
             Wanted.IndexTypePtr)
-            and IsSameType(Def^.TypePtr^.ArrayDef.ValueTypePtr,
+            and IsSameType(Def^.TypePtr.ArrayDef.ValueTypePtr,
             Wanted.ValueTypePtr)
 end;
 
@@ -1084,7 +1079,7 @@ begin
   ArrayDef.IndexTypePtr := IndexType;
   ArrayDef.ValueTypePtr := ValueType;
   if _FindDef(Def, @_DefIsArrayType, ArrayDef, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcArray);
@@ -1097,11 +1092,11 @@ var
   Def : TSDefinition absolute Item;
   Wanted : TSDTRange absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcRange)
-            and IsSameType(Def^.TypePtr^.RangeDef.BaseTypePtr,
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcRange)
+            and IsSameType(Def^.TypePtr.RangeDef.BaseTypePtr,
             Wanted.BaseTypePtr)
-            and (Def^.TypePtr^.RangeDef.First = Wanted.First)
-            and (Def^.TypePtr^.RangeDef.Last = Wanted.Last)
+            and (Def^.TypePtr.RangeDef.First = Wanted.First)
+            and (Def^.TypePtr.RangeDef.Last = Wanted.Last)
 end;
 
 function MakeRangeType(TypePtr : TSDType;
@@ -1116,7 +1111,7 @@ begin
   RangeDef.First := First;
   RangeDef.Last := Last;
   if _FindDef(Def, @_DefIsRangeType, RangeDef, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcRange);
@@ -1129,8 +1124,8 @@ var
   Def : TSDefinition absolute Item;
   TypePtr : TSDType absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcPointer)
-            and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcPointer)
+            and IsSameType(Def^.TypePtr.PointedTypePtr, TypePtr)
 end;
 
 function MakePointerType(TypePtr : TSDType) : TSDType;
@@ -1138,7 +1133,7 @@ var
   Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsPointerType, TypePtr, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcPointer);
@@ -1151,8 +1146,8 @@ var
   Def : TSDefinition absolute Item;
   TargetName : string absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcPointerForward)
-            and (Def^.TypePtr^.TargetName^ = TargetName)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcPointerForward)
+            and (Def^.TypePtr.TargetName^ = TargetName)
 end;
 
 function MakePointerForwardType(TargetName : string) : TSDType;
@@ -1161,7 +1156,7 @@ var
 begin
   if _FindDef(Def, @_DefIsPointerForwardType,
      TargetName, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcPointerForward);
@@ -1175,8 +1170,8 @@ var
   Def : TSDefinition absolute Item;
   TypePtr : TSDType absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcSet)
-            and IsSameType(Def^.TypePtr^.ElementTypePtr, TypePtr)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcSet)
+            and IsSameType(Def^.TypePtr.ElementTypePtr, TypePtr)
 end;
 
 function MakeSetType(TypePtr : TSDType) : TSDType;
@@ -1184,7 +1179,7 @@ var
   Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsSetType, TypePtr, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcSet);
@@ -1208,10 +1203,10 @@ var
   Def : TSDefinition absolute Item;
   FnDef : TSDTSubroutineDef absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcFunction)
-            and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr,
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcFunction)
+            and IsSameType(Def^.TypePtr.FnDefPtr^.ReturnTypePtr,
             FnDef.ReturnTypePtr)
-            and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, FnDef.Args)
+            and AreSameArgs(Def^.TypePtr.FnDefPtr^.Args, FnDef.Args)
 end;
 
 function MakeFunctionType(const Args : TSDSubroutineArgs;
@@ -1223,7 +1218,7 @@ begin
   FnDef.ReturnTypePtr := ReturnTypePtr;
   FnDef.Args := Args;
   if _FindDef(Def, @_DefIsFunctionType, FnDef, {FromLocalScope=}false) then
-    Result := _UnaliasType(Def^.TypePtr)
+    Result := _UnaliasType(@Def^.TypePtr)
   else
   begin
     Result := _NewType(SdtcFunction);

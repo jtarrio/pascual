@@ -13,8 +13,8 @@ type
   TSDType = ^TSDTypeDef;
 
   { An untyped constant. }
-  TSDConstant = ^TSDConstantObj;
-  TSDConstantObj = record
+  TSDConstant = ^TSDConstantDef;
+  TSDConstantDef = record
     { Name of the constant. }
     Name : string;
     { Value of the constant. }
@@ -189,17 +189,17 @@ type
   end;
 
   { "With" variable. }
-  TSDWithVarPtr = ^TSDWithVar;
-  TSDWithVar = record
+  TSDWithVar = ^TSDWithVarDef;
+  TSDWithVarDef = record
     { Pointer to the "with" variable. }
     VarPtr : TSDVariable
   end;
 
   { A name for a definition. }
-  TSDName = ^TSDNameObj;
+  TSDName = ^TSDNameDef;
   TSDNameClass = (SdncConstant, SdncType, SdncEnumVal, SdncVariable,
                   SdncSubroutine, SdncPsfn);
-  TSDNameObj = record
+  TSDNameDef = record
     { The name. }
     Name : string;
     { A pointer to the definition with this name. }
@@ -231,19 +231,19 @@ type
     { Pointer to the definition. }
     case Cls : TSDefClass of 
       { Type. }
-      SdcType : (TypePtr : TSDType);
+      SdcType : (TypePtr : TSDTypeDef);
       { Untyped constant. }
-      SdcConstant : (ConstPtr : TSDConstant);
+      SdcConstant : (ConstPtr : TSDConstantDef);
       { Variable. }
-      SdcVariable : (VarPtr : TSDVariable);
+      SdcVariable : (VarPtr : TSDVariableDef);
       { Subroutine. }
-      SdcSubroutine : (SrPtr : TSDSubroutine);
+      SdcSubroutine : (SrPtr : TSDSubroutineDef);
       { Pseudo-function. }
-      SdcPsfn : (PsfnPtr : TSDPsfn);
+      SdcPsfn : (PsfnPtr : TSDPsfnDef);
       { Temporary variable. }
-      SdcWithVar : (WithVarPtr : TSDWithVarPtr);
+      SdcWithVar : (WithVarPtr : TSDWithVarDef);
       { Name. }
-      SdcName : (NamePtr : TSDName);
+      SdcName : (NamePtr : TSDNameDef);
   end;
 
   { Counters for records, enums, and temporary variables. }

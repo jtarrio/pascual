@@ -61,11 +61,11 @@ begin
     case Def^.Cls of 
       SdcVariable:
                    begin
-                     Def^.VarPtr^.WasInitialized := true;
-                     Def^.VarPtr^.WasUsed := true
+                     Def^.VarPtr.WasInitialized := true;
+                     Def^.VarPtr.WasUsed := true
                    end;
-      SdcSubroutine: Def^.SrPtr^.WasUsed := true;
-      SdcType: Def^.TypePtr^.WasUsed := true;
+      SdcSubroutine: Def^.SrPtr.WasUsed := true;
+      SdcType: Def^.TypePtr.WasUsed := true;
     end;
     Def := Def^.Older
   end

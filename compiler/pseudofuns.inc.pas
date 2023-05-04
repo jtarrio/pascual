@@ -126,7 +126,7 @@ end;
 function PfSizeof_Parse(FnExpr : TSExpression) : TSExpression;
 var 
   Id : TPsIdentifier;
-  Found : TSDNameObj;
+  Found : TSDNameDef;
 begin
   ExDispose(FnExpr);
   WantTokenAndRead(TkLparen);

@@ -1116,11 +1116,11 @@ begin
   else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
-    if (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcEnum) then
+    if (Def^.Cls = SdcType) and (Def^.TypePtr.Cls = SdtcEnum) then
     begin
-      if not Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput then
-        OutEnumValues(Def^.TypePtr^.EnumPtr);
-      Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput := true
+      if not Def^.TypePtr.EnumPtr^.ValuesHaveBeenOutput then
+        OutEnumValues(Def^.TypePtr.EnumPtr);
+      Def^.TypePtr.EnumPtr^.ValuesHaveBeenOutput := true
     end;
     Def := Def^.Newer
   end
@@ -1391,8 +1391,8 @@ begin
   begin
     if Def^.Cls = SdcType then
     begin
-      _ResolvePointerForward(Def^.TypePtr);
-      if Def^.TypePtr^.AliasFor <> nil then OutTypeDefinition(Def^.TypePtr)
+      _ResolvePointerForward(@Def^.TypePtr);
+      if Def^.TypePtr.AliasFor <> nil then OutTypeDefinition(@Def^.TypePtr)
     end;
     Def := Def^.Newer
   end

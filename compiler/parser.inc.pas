@@ -404,7 +404,7 @@ begin
 end;
 
 procedure PsConstant(const Name : string);
-var Constant : TSDConstantObj;
+var Constant : TSDConstantDef;
 begin
   WantTokenAndRead(TkEquals);
   Constant.Name := Name;
@@ -778,7 +778,7 @@ function _PsVariableInternal(ForStatement : boolean;
                              CallFns : boolean) : TSExpression;
 var 
   Id : TPsIdentifier;
-  WithVarPtr : TSDWithVarPtr;
+  WithVarPtr : TSDWithVar;
   Found : TSDName;
   Expr : TSExpression;
   Done : boolean;
