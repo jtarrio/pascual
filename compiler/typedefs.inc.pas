@@ -130,7 +130,6 @@ type
   TPsFnDefPtr = ^TPsFnDef;
   TPsConstPtr = ^TPsConstant;
   TPsWithVarPtr = ^TPsWithVar;
-  TPsNamePtr = ^TPsName;
 
   TPsFileClass = (TfcNone, TfcText, TfcBinary);
   TPsFileTypeDef = record
@@ -219,17 +218,4 @@ type
   end;
   TPsWithVar = record
     VarPtr : TPsVarPtr
-  end;
-  TPsNameClass = (TncType, TncVariable, TncConstant, TncEnumVal, TncFunction,
-                  TncPseudoFn);
-  TPsName = record
-    Name : string;
-    case Cls : TPsNameClass of 
-      TncType : (TypePtr : TPsTypePtr);
-      TncVariable : (VarPtr : TPsVarPtr);
-      TncConstant : (ConstPtr : TPsConstPtr);
-      TncEnumVal : (EnumTypePtr : TPsTypePtr;
-                    Ordinal : integer);
-      TncFunction : (SrPtr : TPsSubrPtr);
-      TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;

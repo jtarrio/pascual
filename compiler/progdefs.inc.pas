@@ -161,7 +161,7 @@ begin
 end;
 
 function _FindName(Name : string; Required : boolean;
-                   FromLocalScope : boolean) : TPsNamePtr;
+                   FromLocalScope : boolean) : TSDName;
 var 
   Def : TSDefinition;
 begin
@@ -171,16 +171,16 @@ begin
   else Result := nil
 end;
 
-function _CheckNameClass(NamePtr : TPsNamePtr; Cls : TPsNameClass) : TPSNamePtr;
+function _CheckNameClass(NamePtr : TSDName; Cls : TSDNameClass) : TSDName;
 begin
   if (NamePtr <> nil) and (NamePtr^.Cls <> Cls) then
     case Cls of 
-      TncType : CompileError('Not a type: ' + NamePtr^.Name);
-      TncVariable : CompileError('Not a variable: ' + NamePtr^.Name);
-      TncEnumVal : CompileError('Not an enumeration value: ' + NamePtr^.Name);
-      TncFunction : CompileError('Not a procedure or function: ' +
+      SdncType : CompileError('Not a type: ' + NamePtr^.Name);
+      SdncVariable : CompileError('Not a variable: ' + NamePtr^.Name);
+      SdncEnumVal : CompileError('Not an enumeration value: ' + NamePtr^.Name);
+      SdncFunction : CompileError('Not a procedure or function: ' +
                                  NamePtr^.Name);
-      TncPseudoFn : CompileError('Not a procedure or function: ' +
+      SdncPseudoFn : CompileError('Not a procedure or function: ' +
                                  NamePtr^.Name);
       else InternalError('Name class mismatch for ' + NamePtr^.Name)
     end;
@@ -188,33 +188,33 @@ begin
 end;
 
 function FindNameInLocalScope(const Name : string;
-                              Required : boolean) : TPsNamePtr;
+                              Required : boolean) : TSDName;
 begin
   FindNameInLocalScope := _FindName(Name, Required, {FromLocalScope=}true)
 end;
 
-function FindNameOfClassInLocalScope(const Name : string; Cls : TPsNameClass;
-                                     Required : boolean) : TPsNamePtr;
+function FindNameOfClassInLocalScope(const Name : string; Cls : TSDNameClass;
+                                     Required : boolean) : TSDName;
 begin
   FindNameOfClassInLocalScope := _CheckNameClass(
                                  FindNameInLocalScope(Name, Required), Cls)
 end;
 
-function FindName(const Name : string; Required : boolean) : TPsNamePtr;
+function FindName(const Name : string; Required : boolean) : TSDName;
 begin
   FindName := _FindName(Name, Required, {FromLocalScope=}false)
 end;
 
-function FindNameOfClass(const Name : string; Cls : TPsNameClass;
+function FindNameOfClass(const Name : string; Cls : TSDNameClass;
                          Required : boolean)
-: TPsNamePtr;
+: TSDName;
 begin
   FindNameOfClass := _CheckNameClass(FindName(Name, Required), Cls)
 end;
 
-function _AddName(const Name : string; Cls : TPsNameClass) : TPsNamePtr;
+function _AddName(const Name : string; Cls : TSDNameClass) : TSDName;
 var 
-  Pos : TPsNamePtr;
+  Pos : TSDName;
 begin
   if FindNameInLocalScope(Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Name + ' already defined');
@@ -224,44 +224,44 @@ begin
   _AddName := Pos
 end;
 
-function AddTypeName(const Name : string; Idx : TPsTypePtr) : TPsNamePtr;
+function AddTypeName(const Name : string; Idx : TPsTypePtr) : TSDName;
 begin
-  Result := _AddName(Name, TncType);
+  Result := _AddName(Name, SdncType);
   Result^.TypePtr := Idx
 end;
 
-function AddVariableName(const Name : string; Idx : TPsVarPtr) : TPsNamePtr;
+function AddVariableName(const Name : string; Idx : TPsVarPtr) : TSDName;
 var 
-  Def : TPsNamePtr;
+  Def : TSDName;
 begin
-  Def := _AddName(Name, TncVariable);
+  Def := _AddName(Name, SdncVariable);
   Def^.VarPtr := Idx;
   AddVariableName := Def
 end;
 
-function AddConstantName(const Name : string; Idx : TPsConstPtr) : TPsNamePtr;
+function AddConstantName(const Name : string; Idx : TPsConstPtr) : TSDName;
 var 
-  Def : TPsNamePtr;
+  Def : TSDName;
 begin
-  Def := _AddName(Name, TncConstant);
+  Def := _AddName(Name, SdncConstant);
   Def^.ConstPtr := Idx;
   Result := Def
 end;
 
-function AddFunctionName(const Name : string; Idx : TPsSubrPtr) : TPsNamePtr;
+function AddFunctionName(const Name : string; Idx : TPsSubrPtr) : TSDName;
 var 
-  Def : TPsNamePtr;
+  Def : TSDName;
 begin
-  Def := _AddName(Name, TncFunction);
+  Def := _AddName(Name, SdncFunction);
   Def^.SrPtr := Idx;
   AddFunctionName := Def
 end;
 
 function AddEnumValName(Ordinal : integer;
-                        TypeIdx : TPsTypePtr) : TPsNamePtr;
-var Def : TPsNamePtr;
+                        TypeIdx : TPsTypePtr) : TSDName;
+var Def : TSDName;
 begin
-  Def := _AddName(TypeIdx^.EnumPtr^.Values[Ordinal], TncEnumVal);
+  Def := _AddName(TypeIdx^.EnumPtr^.Values[Ordinal], SdncEnumVal);
   Def^.EnumTypePtr := TypeIdx;
   Def^.Ordinal := Ordinal;
   AddEnumValName := Def
@@ -269,9 +269,9 @@ end;
 
 function AddPseudoFn(const Name : string;
                      Parse : TPsPseudoFnParser) : TPsPseudoFnPtr;
-var Def : TPsNamePtr;
+var Def : TSDName;
 begin
-  Def := _AddName(Name, TncPseudoFn);
+  Def := _AddName(Name, SdncPseudoFn);
   Def^.PseudoFnPtr := _AddDef(TdcPseudoFn)^.PseudoFnPtr;
   Def^.PseudoFnPtr^.Name := Name;
   Def^.PseudoFnPtr^.ParseFn := Parse;
@@ -691,16 +691,16 @@ end;
 
 function HasForwardDeclaration(const Name : string) : boolean;
 var 
-  NamePtr : TPsNamePtr;
+  NamePtr : TSDName;
 begin
-  NamePtr := FindNameOfClassInLocalScope(Name, TncFunction, {Required=}false);
+  NamePtr := FindNameOfClassInLocalScope(Name, SdncFunction, {Required=}false);
   HasForwardDeclaration := (NamePtr <> nil)
                            and (NamePtr^.SrPtr^.IsDeclaration)
 end;
 
 function AddFunction(const Fun : TPsSubroutine) : TPsSubrPtr;
 var 
-  NamePtr : TPsNamePtr;
+  NamePtr : TSDName;
   SrPtr : TPsSubrPtr;
   IsProcedure : boolean;
 begin
@@ -714,7 +714,7 @@ begin
   end
   else
   begin
-    if (NamePtr^.Cls <> TncFunction) or Fun.IsDeclaration then
+    if (NamePtr^.Cls <> SdncFunction) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
     SrPtr := NamePtr^.SrPtr;
     if SrPtr^.IsDeclaration then

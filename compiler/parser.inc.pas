@@ -66,7 +66,7 @@ function PsTypeIdentifier : TPsTypePtr;
 begin
   WantToken(TkIdentifier);
   Result := FindNameOfClass(Lexer.Token.Value,
-            TncType, {Required=}true)^.TypePtr;
+            SdncType, {Required=}true)^.TypePtr;
   if Result <> nil then Result^.WasUsed := true;
   ReadToken
 end;
@@ -149,7 +149,7 @@ begin
     Rec.Fields[Rec.Size].TypePtr := TagType;
   end
   else
-    TagType := FindNameOfClass(Tag.Name, TncType, {Required=}true)^.TypePtr;
+    TagType := FindNameOfClass(Tag.Name, SdncType, {Required=}true)^.TypePtr;
   EnsureOrdinalType(TagType);
   WantTokenAndRead(TkOf);
   repeat
@@ -282,11 +282,11 @@ begin
 end;
 
 function PsPointerType : TPsTypePtr;
-var NamePtr : TPsNamePtr;
+var NamePtr : TSDName;
 begin
   WantTokenAndRead(TkCaret);
   WantToken(TkIdentifier);
-  NamePtr := FindNameOfClass(Lexer.Token.Value, TncType, {Required=}false);
+  NamePtr := FindNameOfClass(Lexer.Token.Value, SdncType, {Required=}false);
   if NamePtr = nil then Result := MakePointerForwardType(Lexer.Token.Value)
   else
   begin
@@ -338,7 +338,7 @@ end;
 
 function PsTypeDenoter;
 var 
-  Idx : TPsNamePtr;
+  Idx : TSDName;
   IsPacked : boolean;
 begin
   Result := nil;
@@ -357,8 +357,8 @@ begin
   begin
     Idx := FindName(Lexer.Token.Value, {Required=}false);
     if Idx = nil then
-    else if Idx^.Cls = TncType then Result := PsTypeIdentifier
-    else if Idx^.Cls in [TncConstant, TncEnumVal] then
+    else if Idx^.Cls = SdncType then Result := PsTypeIdentifier
+    else if Idx^.Cls in [SdncConstant, SdncEnumVal] then
            Result := PsRangeType
   end
   else if Lexer.Token.Id in [TkInteger, TkString, TkMinus, TkPlus] then
@@ -374,7 +374,7 @@ begin
   if IsPointerForwardType(TypePtr) then
   begin
     TargetPtr := FindNameOfClass(TypePtr^.TargetName^,
-                 TncType, {Required=}true)^.TypePtr;
+                 SdncType, {Required=}true)^.TypePtr;
     dispose(TypePtr^.TargetName);
     TypePtr^.Cls := TtcPointer;
     TypePtr^.PointedTypePtr := TargetPtr;
@@ -764,7 +764,7 @@ function _PsVariableInternal(ForStatement : boolean;
 var 
   Id : TPsIdentifier;
   WithVarPtr : TPsWithVarPtr;
-  Found : TPsNamePtr;
+  Found : TSDName;
   Expr : TExpression;
   Done : boolean;
 begin
@@ -778,12 +778,12 @@ begin
             FindField(Expr^.TypePtr, Id.Name, {Required=}true))
   end
   else if Found = nil then CompileError('Unknown identifier: ' + Id.Name)
-  else if Found^.Cls = TncVariable then Expr := ExVariable(Found^.VarPtr)
-  else if Found^.Cls = TncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
-  else if Found^.Cls = TncFunction then Expr := ExFnRef(Found^.SrPtr)
-  else if Found^.Cls = TncEnumVal then
+  else if Found^.Cls = SdncVariable then Expr := ExVariable(Found^.VarPtr)
+  else if Found^.Cls = SdncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
+  else if Found^.Cls = SdncFunction then Expr := ExFnRef(Found^.SrPtr)
+  else if Found^.Cls = SdncEnumVal then
          Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
-  else if Found^.Cls = TncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)
+  else if Found^.Cls = SdncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)
   else CompileError('Invalid identifier: ' + Id.Name);
 
   Done := ForStatement and (Expr^.Cls = XcFnRef)
@@ -1097,7 +1097,7 @@ begin
     if Lhs^.FnPtr <> CurrentScope^.CurrentFn then
       ErrorForExpr('Cannot assign a value to a function', Lhs);
     ResultVarPtr := FindNameOfClass('RESULT',
-                    TncVariable, {Required=}true)^.VarPtr;
+                    SdncVariable, {Required=}true)^.VarPtr;
     ExDispose(Lhs);
     Lhs := ExVariable(ResultVarPtr);
   end;

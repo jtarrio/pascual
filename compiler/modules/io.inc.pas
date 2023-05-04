@@ -38,7 +38,7 @@ begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
   InFile := ExVariable(FindNameOfClass('INPUT',
-            TncVariable, {Required=}true)^.VarPtr);
+            SdncVariable, {Required=}true)^.VarPtr);
   ArgList := nil;
   ArgAddPoint := List_GetAddPoint(ArgList);
   if Lexer.Token.Id = TkLparen then
@@ -99,7 +99,7 @@ begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
   OutFile := ExVariable(FindNameOfClass('OUTPUT',
-             TncVariable, {Required=}true)^.VarPtr);
+             SdncVariable, {Required=}true)^.VarPtr);
   Result := nil;
   ArgList := nil;
   ArgAddPoint := List_GetAddPoint(ArgList);
@@ -166,7 +166,7 @@ begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass(FnName, SdncFunction, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 1;
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
@@ -183,7 +183,7 @@ begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass(FnName, SdncFunction, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
   if Args.Values[1]^.Cls = XcToGenericFile then

@@ -34,7 +34,7 @@ begin
   end;
   if Arg = nil then
   begin
-    SrPtr := FindNameOfClass(NamePrefix + '_n', TncFunction, {Required=}true)^.
+    SrPtr := FindNameOfClass(NamePrefix + '_n', SdncFunction, {Required=}true)^.
              SrPtr;
     Args.Size := 0;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
@@ -42,7 +42,7 @@ begin
   else
   begin
     SrPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
-             TncFunction, {Required=}true)^.SrPtr;
+             SdncFunction, {Required=}true)^.SrPtr;
     Args.Size := 1;
     Args.Values[1] := Arg;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
@@ -83,7 +83,7 @@ begin
   ExDispose(FnExpr);
   Args.Size := 1;
   Args.Values[1] := Ptr;
-  SrPtr := FindNameOfClass('Dispose', TncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass('Dispose', SdncFunction, {Required=}true)^.SrPtr;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
@@ -102,7 +102,7 @@ begin
   Args.Size := 2;
   Args.Values[1] := Ptr;
   Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
-  SrPtr := FindNameOfClass('New', TncFunction, {Required=}true)^.SrPtr;
+  SrPtr := FindNameOfClass('New', SdncFunction, {Required=}true)^.SrPtr;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
@@ -126,16 +126,16 @@ end;
 function PfSizeof_Parse(FnExpr : TExpression) : TExpression;
 var 
   Id : TPsIdentifier;
-  Found : TPsName;
+  Found : TSDNameObj;
 begin
   ExDispose(FnExpr);
   WantTokenAndRead(TkLparen);
   Id := PsIdentifier;
   WantTokenAndRead(TkRparen);
   Found := FindName(Id.Name, {Required=}true)^;
-  if Found.Cls = TncVariable then
+  if Found.Cls = SdncVariable then
     Result := ExSizeof(Found.VarPtr^.TypePtr)
-  else if Found.Cls = TncType then
+  else if Found.Cls = SdncType then
     Result := ExSizeof(Found.TypePtr)
   else
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);

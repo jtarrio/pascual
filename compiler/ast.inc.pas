@@ -1,4 +1,19 @@
 type 
+  TSDName = ^TSDNameObj;
+  TSDNameClass = (SdncType, SdncVariable, SdncConstant, SdncEnumVal,
+                  SdncFunction, SdncPseudoFn);
+  TSDNameObj = record
+    Name : string;
+    case Cls : TSDNameClass of 
+      SdncType : (TypePtr : TPsTypePtr);
+      SdncVariable : (VarPtr : TPsVarPtr);
+      SdncConstant : (ConstPtr : TPsConstPtr);
+      SdncEnumVal : (EnumTypePtr : TPsTypePtr;
+                     Ordinal : integer);
+      SdncFunction : (SrPtr : TPsSubrPtr);
+      SdncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
+  end;
+
   TSDefinition = ^TSDefEntry;
   TSDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
                 TdcSubroutine, TdcPseudoFn, TdcWithVar);
@@ -6,7 +21,7 @@ type
     Older : TSDefinition;
     Newer : TSDefinition;
     case Cls : TSDefClass of 
-      TdcName : (NamePtr : TPsNamePtr);
+      TdcName : (NamePtr : TSDName);
       TdcType : (TypePtr : TPsTypePtr);
       TdcConstant : (ConstPtr : TPsConstPtr);
       TdcVariable : (VarPtr : TPsVarPtr);
