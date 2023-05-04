@@ -3,7 +3,7 @@ var
   CurrentScope : TSScope;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText, PtFile,
-    PtEmptySet, PtUntypedPtr : TPsTypePtr
+    PtEmptySet, PtUntypedPtr : TSDType
   end;
 
 function DefCounter(CounterType : TSCounterType) : integer;
@@ -29,7 +29,7 @@ begin
   CurrentScope := Defs
 end;
 
-function NewEnum(const Enum : TPsEnumDef) : TPsEnumPtr;
+function NewEnum(const Enum : TSDTEnumDef) : TSDTEnum;
 begin
   new(Result);
   Result^ := Enum;
@@ -38,7 +38,7 @@ begin
   Result^.ValuesHaveBeenOutput := false
 end;
 
-function NewRecord(const Rec : TPsRecordDef) : TPsRecPtr;
+function NewRecord(const Rec : TSDTRecordDef) : TSDTRecord;
 begin
   new(Result);
   Result^ := Rec;
@@ -46,7 +46,7 @@ begin
   Result^.HasBeenDefined := false
 end;
 
-function NewFnDef : TPsFnDefPtr;
+function NewFnDef : TSDTSubroutine;
 begin
   new(Result)
 end;
@@ -114,7 +114,7 @@ begin
   Stack_Push(CurrentScope^.LatestDef, Result)
 end;
 
-procedure StartLocalScope(Defs : TSScope; NewFunction : TPsSubrPtr);
+procedure StartLocalScope(Defs : TSScope; NewFunction : TSDSubroutine);
 begin
   Defs^.Parent := CurrentScope;
   Defs^.LatestDef := nil;
@@ -224,13 +224,13 @@ begin
   _AddName := Pos
 end;
 
-function AddTypeName(const Name : string; Idx : TPsTypePtr) : TSDName;
+function AddTypeName(const Name : string; Idx : TSDType) : TSDName;
 begin
   Result := _AddName(Name, SdncType);
   Result^.TypePtr := Idx
 end;
 
-function AddVariableName(const Name : string; Idx : TPsVarPtr) : TSDName;
+function AddVariableName(const Name : string; Idx : TSDVariable) : TSDName;
 var 
   Def : TSDName;
 begin
@@ -248,7 +248,7 @@ begin
   Result := Def
 end;
 
-function AddFunctionName(const Name : string; Idx : TPsSubrPtr) : TSDName;
+function AddFunctionName(const Name : string; Idx : TSDSubroutine) : TSDName;
 var 
   Def : TSDName;
 begin
@@ -258,7 +258,7 @@ begin
 end;
 
 function AddEnumValName(Ordinal : integer;
-                        TypeIdx : TPsTypePtr) : TSDName;
+                        TypeIdx : TSDType) : TSDName;
 var Def : TSDName;
 begin
   Def := _AddName(TypeIdx^.EnumPtr^.Values[Ordinal], SdncEnumVal);
@@ -268,7 +268,7 @@ begin
 end;
 
 function AddPseudoFn(const Name : string;
-                     Parse : TPsPseudoFnParser) : TPsPseudoFnPtr;
+                     Parse : TSDPsfnParser) : TSDPsfn;
 var Def : TSDName;
 begin
   Def := _AddName(Name, SdncPseudoFn);
@@ -278,145 +278,145 @@ begin
   Result := Def^.PseudoFnPtr
 end;
 
-function CopyType(TypePtr : TPsTypePtr) : TPsType;
+function CopyType(TypePtr : TSDType) : TSDTypeDef;
 begin
   Result := TypePtr^;
-  if Result.Cls = TtcPointerForward then
+  if Result.Cls = SdtcPointerForward then
   begin
     new(Result.TargetName);
     Result.TargetName^ := TypePtr^.TargetName^
   end
 end;
 
-function GetFundamentalType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function GetFundamentalType(TypePtr : TSDType) : TSDType;
 begin
-  if (TypePtr <> nil) and (TypePtr^.Cls = TtcRange) then
+  if (TypePtr <> nil) and (TypePtr^.Cls = SdtcRange) then
     Result := TypePtr^.RangeDef.BaseTypePtr
   else
     Result := TypePtr
 end;
 
-function IsUntyped(TypePtr : TPstypePtr) : boolean;
+function IsUntyped(TypePtr : TSDType) : boolean;
 begin
   Result := TypePtr = nil
 end;
 
-function _TypeHasClass(TypePtr : TPsTypePtr; Cls : TPsTypeClass) : boolean;
+function _TypeHasClass(TypePtr : TSDType; Cls : TSDTypeClass) : boolean;
 begin
   Result := (TypePtr <> nil) and (GetFundamentalType(TypePtr)^.Cls = Cls)
 end;
 
-function IsIntegerType(TypePtr : TPsTypePtr) : boolean;
+function IsIntegerType(TypePtr : TSDType) : boolean;
 begin
-  IsIntegerType := _TypeHasClass(TypePtr, TtcInteger)
+  IsIntegerType := _TypeHasClass(TypePtr, SdtcInteger)
 end;
 
-function IsRealType(TypePtr : TPsTypePtr) : boolean;
+function IsRealType(TypePtr : TSDType) : boolean;
 begin
-  Result := _TypeHasClass(TypePtr, TtcReal)
+  Result := _TypeHasClass(TypePtr, SdtcReal)
 end;
 
-function IsNumericType(TypePtr : TPsTypePtr) : boolean;
+function IsNumericType(TypePtr : TSDType) : boolean;
 begin
   Result := IsIntegerType(TypePtr) or IsRealType(TypePtr)
 end;
 
-function IsStringType(TypePtr : TPsTypePtr) : boolean;
+function IsStringType(TypePtr : TSDType) : boolean;
 begin
-  IsStringType := _TypeHasClass(TypePtr, TtcString)
+  IsStringType := _TypeHasClass(TypePtr, SdtcString)
 end;
 
-function IsCharType(TypePtr : TPsTypePtr) : boolean;
+function IsCharType(TypePtr : TSDType) : boolean;
 begin
-  IsCharType := _TypeHasClass(TypePtr, TtcChar)
+  IsCharType := _TypeHasClass(TypePtr, SdtcChar)
 end;
 
-function IsStringyType(TypePtr : TPsTypePtr) : boolean;
+function IsStringyType(TypePtr : TSDType) : boolean;
 begin
   IsStringyType := IsStringType(TypePtr) or IsCharType(TypePtr)
 end;
 
-function IsBooleanType(TypePtr : TPsTypePtr) : boolean;
+function IsBooleanType(TypePtr : TSDType) : boolean;
 begin
-  IsBooleanType := _TypeHasClass(TypePtr, TtcBoolean)
+  IsBooleanType := _TypeHasClass(TypePtr, SdtcBoolean)
 end;
 
-function IsFileType(TypePtr : TPsTypePtr) : boolean;
+function IsFileType(TypePtr : TSDType) : boolean;
 begin
-  Result := _TypeHasClass(TypePtr, TtcFile)
+  Result := _TypeHasClass(TypePtr, SdtcFile)
 end;
 
-function IsTextType(TypePtr : TPsTypePtr) : boolean;
+function IsTextType(TypePtr : TSDType) : boolean;
 begin
-  IsTextType := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = TfcText)
+  IsTextType := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = SdtfcText)
 end;
 
-function IsGenericFileType(TypePtr : TPsTypePtr) : boolean;
+function IsGenericFileType(TypePtr : TSDType) : boolean;
 begin
-  Result := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = TfcNone)
+  Result := IsFileType(TypePtr) and (TypePtr^.FileDef.Cls = SdtfcNone)
 end;
 
-function IsEnumType(TypePtr : TPsTypePtr) : boolean;
+function IsEnumType(TypePtr : TSDType) : boolean;
 begin
-  IsEnumType := _TypeHasClass(TypePtr, TtcEnum)
+  IsEnumType := _TypeHasClass(TypePtr, SdtcEnum)
 end;
 
-function IsRangeType(TypePtr : TPsTypePtr) : boolean;
+function IsRangeType(TypePtr : TSDType) : boolean;
 begin
-  Result := (TypePtr <> nil) and (TypePtr^.Cls = TtcRange)
+  Result := (TypePtr <> nil) and (TypePtr^.Cls = SdtcRange)
 end;
 
-function IsSetType(TypePtr : TPsTypePtr) : boolean;
+function IsSetType(TypePtr : TSDType) : boolean;
 begin
-  Result := _TypeHasClass(TypePtr, TtcSet)
+  Result := _TypeHasClass(TypePtr, SdtcSet)
 end;
 
-function IsRecordType(TypePtr : TPsTypePtr) : boolean;
+function IsRecordType(TypePtr : TSDType) : boolean;
 begin
-  IsRecordType := _TypeHasClass(TypePtr, TtcRecord)
+  IsRecordType := _TypeHasClass(TypePtr, SdtcRecord)
 end;
 
-function IsArrayType(TypePtr : TPsTypePtr) : boolean;
+function IsArrayType(TypePtr : TSDType) : boolean;
 begin
-  IsArrayType := _TypeHasClass(TypePtr, TtcArray)
+  IsArrayType := _TypeHasClass(TypePtr, SdtcArray)
 end;
 
-function IsPointerType(TypePtr : TPsTypePtr) : boolean;
+function IsPointerType(TypePtr : TSDType) : boolean;
 begin
-  IsPointerType := _TypeHasClass(TypePtr, TtcPointer)
+  IsPointerType := _TypeHasClass(TypePtr, SdtcPointer)
 end;
 
-function IsNilType(TypePtr : TPsTypePtr) : boolean;
+function IsNilType(TypePtr : TSDType) : boolean;
 begin
-  IsNilType := _TypeHasClass(TypePtr, TtcNil)
+  IsNilType := _TypeHasClass(TypePtr, SdtcNil)
 end;
 
-function IsPointeryType(TypePtr : TPsTypePtr) : boolean;
+function IsPointeryType(TypePtr : TSDType) : boolean;
 begin
   IsPointeryType := IsPointerType(TypePtr) or IsNilType(TypePtr)
 end;
 
-function IsPointerForwardType(TypePtr : TPsTypePtr) : boolean;
+function IsPointerForwardType(TypePtr : TSDType) : boolean;
 begin
-  IsPointerForwardType := _TypeHasClass(TypePtr, TtcPointerForward)
+  IsPointerForwardType := _TypeHasClass(TypePtr, SdtcPointerForward)
 end;
 
-function IsUntypedPtrType(TypePtr : TPsTypePtr) : boolean;
+function IsUntypedPtrType(TypePtr : TSDType) : boolean;
 begin
   Result := IsPointerType(TypePtr) and (TypePtr^.PointedTypePtr = nil)
 end;
 
-function IsFunctionType(TypePtr : TPsTypePtr) : boolean;
+function IsFunctionType(TypePtr : TSDType) : boolean;
 begin
-  IsFunctionType := _TypeHasClass(TypePtr, TtcFunction)
+  IsFunctionType := _TypeHasClass(TypePtr, SdtcFunction)
 end;
 
-function IsFunctionyType(TypePtr : TPsTypePtr) : boolean;
+function IsFunctionyType(TypePtr : TSDType) : boolean;
 begin
   Result := IsFunctionType(TypePtr) or IsNilType(TypePtr)
 end;
 
-function IsOrdinalType(TypePtr : TPsTypePtr) : boolean;
+function IsOrdinalType(TypePtr : TSDType) : boolean;
 begin
   IsOrdinalType := IsBooleanType(TypePtr)
                    or IsIntegerType(TypePtr)
@@ -425,7 +425,7 @@ begin
                    or IsRangeType(TypePtr)
 end;
 
-function IsBoundedType(TypePtr : TPsTypePtr) : boolean;
+function IsBoundedType(TypePtr : TSDType) : boolean;
 begin
   Result := IsBooleanType(TypePtr)
             or IsCharType(TypePtr)
@@ -433,34 +433,34 @@ begin
             or IsRangeType(TypePtr)
 end;
 
-function GetTypeLowBound(TypePtr : TPsTypePtr) : integer;
+function GetTypeLowBound(TypePtr : TSDType) : integer;
 begin
   case TypePtr^.Cls of 
-    TtcBoolean : Result := 0;
-    TtcChar : Result := 0;
-    TtcEnum : Result := 0;
-    TtcRange : Result := TypePtr^.RangeDef.First;
+    SdtcBoolean : Result := 0;
+    SdtcChar : Result := 0;
+    SdtcEnum : Result := 0;
+    SdtcRange : Result := TypePtr^.RangeDef.First;
     else ErrorForType('Expected bounded type', TypePtr)
   end
 end;
 
-function GetTypeHighBound(TypePtr : TPsTypePtr) : integer;
+function GetTypeHighBound(TypePtr : TSDType) : integer;
 begin
   case TypePtr^.Cls of 
-    TtcBoolean : Result := 1;
-    TtcChar : Result := 255;
-    TtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
-    TtcRange : Result := TypePtr^.RangeDef.Last;
+    SdtcBoolean : Result := 1;
+    SdtcChar : Result := 255;
+    SdtcEnum : Result := TypePtr^.EnumPtr^.Size - 1;
+    SdtcRange : Result := TypePtr^.RangeDef.Last;
     else ErrorForType('Expected bounded type', TypePtr)
   end
 end;
 
-function GetBoundedTypeSize(TypePtr : TPsTypePtr) : integer;
+function GetBoundedTypeSize(TypePtr : TSDType) : integer;
 begin
   Result := GetTypeHighBound(TypePtr) - GetTypeLowBound(TypePtr) + 1
 end;
 
-function IsSameType(A, B : TPsTypePtr) : boolean;
+function IsSameType(A, B : TSDType) : boolean;
 begin
   if (A = nil) or (B = nil) then IsSameType := A = B
   else
@@ -481,19 +481,19 @@ begin
   end
 end;
 
-function IsFundamentallySameType(A, B : TPsTypePtr) : boolean;
+function IsFundamentallySameType(A, B : TSDType) : boolean;
 begin
   Result := IsSameType(GetFundamentalType(A), GetFundamentalType(B))
 end;
 
-function ArePointersCompatible(A, B : TPsTypePtr) : boolean;
+function ArePointersCompatible(A, B : TSDType) : boolean;
 begin
   ArePointersCompatible := IsPointeryType(A) and IsPointeryType(B) and
                            (IsNilType(A) or IsNilType(B)
                            or IsSameType(A, B))
 end;
 
-function AreFunctionsCompatible(A, B : TPsTypePtr) : boolean;
+function AreFunctionsCompatible(A, B : TSDType) : boolean;
 begin
   AreFunctionsCompatible := IsFunctionyType(A) and IsFunctionyType(B)
                             and (IsNilType(A) or IsNilType(B)
@@ -540,12 +540,12 @@ begin
   if Result = '' then Result := ''''''
 end;
 
-function _AntiOrdinal(Ordinal : integer; TypePtr : TPsTypePtr) : string;
+function _AntiOrdinal(Ordinal : integer; TypePtr : TSDType) : string;
 begin
   Result := ExDescribe(ExGetAntiOrdinal(Ordinal, TypePtr));
 end;
 
-function DeepTypeName(TypePtr : TPsTypePtr; UseOriginal : boolean) : string;
+function DeepTypeName(TypePtr : TSDType; UseOriginal : boolean) : string;
 var Pos : integer;
 begin
   if UseOriginal and (TypePtr <> nil) then
@@ -553,13 +553,13 @@ begin
       TypePtr := TypePtr^.AliasFor;
   if TypePtr = nil then Result := 'untyped'
   else if TypePtr^.Name <> '' then Result := TypePtr^.Name
-  else if TypePtr^.Cls = TtcFile then
+  else if TypePtr^.Cls = SdtcFile then
   begin
-    if TypePtr^.FileDef.Cls = TfcNone then Result := 'FILE'
-    else if TypePtr^.FileDef.Cls = TfcText then Result := 'TEXT'
+    if TypePtr^.FileDef.Cls = SdtfcNone then Result := 'FILE'
+    else if TypePtr^.FileDef.Cls = SdtfcText then Result := 'TEXT'
     else Result := 'FILE OF ' + DeepTypeName(TypePtr^.FileDef.TypePtr, false)
   end
-  else if TypePtr^.Cls = TtcEnum then
+  else if TypePtr^.Cls = SdtcEnum then
   begin
     Result := '(';
     for Pos := 0 to TypePtr^.EnumPtr^.Size - 1 do
@@ -570,17 +570,17 @@ begin
     end;
     Result := Result + ')'
   end
-  else if TypePtr^.Cls = TtcRange then
+  else if TypePtr^.Cls = SdtcRange then
          Result := _AntiOrdinal(TypePtr^.RangeDef.First,
                    TypePtr^.RangeDef.BaseTypePtr) +
                    '..' + _AntiOrdinal(TypePtr^.RangeDef.Last,
                    TypePtr^.RangeDef.BaseTypePtr)
-  else if TypePtr^.Cls = TtcSet then
+  else if TypePtr^.Cls = SdtcSet then
   begin
     if TypePtr^.ElementTypePtr = nil then Result := 'SET OF []'
     else Result := 'SET OF ' + DeepTypeName(TypePtr^.ElementTypePtr, false)
   end
-  else if TypePtr^.Cls = TtcRecord then
+  else if TypePtr^.Cls = SdtcRecord then
   begin
     Result := 'RECORD ';
     for Pos := 1 to TypePtr^.RecPtr^.Size do
@@ -592,18 +592,18 @@ begin
     end;
     Result := Result + ' END'
   end
-  else if TypePtr^.Cls = TtcArray then
+  else if TypePtr^.Cls = SdtcArray then
          Result := 'ARRAY [' +
                    DeepTypeName(TypePtr^.ArrayDef.IndexTypePtr, false) +
                    '] OF ' + DeepTypeName(TypePtr^.ArrayDef.ValueTypePtr, false)
-  else if TypePtr^.Cls = TtcPointer then
+  else if TypePtr^.Cls = SdtcPointer then
   begin
     if TypePtr^.PointedTypePtr = nil then Result := 'POINTER'
     else Result := '^' + DeepTypeName(TypePtr^.PointedTypePtr, UseOriginal)
   end
-  else if TypePtr^.Cls = TtcPointerForward then
+  else if TypePtr^.Cls = SdtcPointerForward then
          Result := '^' + TypePtr^.TargetName^
-  else if TypePtr^.Cls = TtcFunction then
+  else if TypePtr^.Cls = SdtcFunction then
          with TypePtr^.FnDefPtr^ do
   begin
     if ReturnTypePtr = nil then Result := 'PROCEDURE'
@@ -631,7 +631,7 @@ begin
   end
 end;
 
-function TypeName(TypePtr : TPsTypePtr) : string;
+function TypeName(TypePtr : TSDType) : string;
 begin
   Result := DeepTypeName(TypePtr, false)
 end;
@@ -648,9 +648,9 @@ begin
   AddConstant := ConstPtr
 end;
 
-function AddVariable(const VarDef : TPsVariable) : TPsVarPtr;
+function AddVariable(const VarDef : TSDVariableDef) : TSDVariable;
 var 
-  VarPtr : TPsVarPtr;
+  VarPtr : TSDVariable;
 begin
   if FindNameInLocalScope(VarDef.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + VarDef.Name + ' already defined');
@@ -660,7 +660,7 @@ begin
   AddVariable := VarPtr;
 end;
 
-function EmptyFunction : TPsSubroutine;
+function EmptyFunction : TSDSubroutineDef;
 begin
   Result.Name := '';
   Result.ExternalName := '';
@@ -670,10 +670,10 @@ begin
   Result.WasUsed := false
 end;
 
-function IsSameFunctionDefinition(DeclPtr : TPsSubrPtr;
-                                  Fun : TPsSubroutine) : boolean;
+function IsSameFunctionDefinition(DeclPtr : TSDSubroutine;
+                                  Fun : TSDSubroutineDef) : boolean;
 var 
-  Decl : TPsSubroutine;
+  Decl : TSDSubroutineDef;
   Same : boolean;
   Pos : integer;
 begin
@@ -699,10 +699,10 @@ begin
                            and (NamePtr^.SrPtr^.IsDeclaration)
 end;
 
-function AddFunction(const Fun : TPsSubroutine) : TPsSubrPtr;
+function AddFunction(const Fun : TSDSubroutineDef) : TSDSubroutine;
 var 
   NamePtr : TSDName;
-  SrPtr : TPsSubrPtr;
+  SrPtr : TSDSubroutine;
   IsProcedure : boolean;
 begin
   IsProcedure := Fun.ReturnTypePtr = nil;
@@ -744,7 +744,7 @@ begin
   AddFunction := SrPtr;
 end;
 
-function FindField(TypePtr : TPsTypePtr; const Name : string;
+function FindField(TypePtr : TSDType; const Name : string;
                    Required : boolean) : integer;
 var 
   Pos : integer;
@@ -765,8 +765,8 @@ begin
   FindField := Ret
 end;
 
-function FindFieldType(TypePtr : TPsTypePtr; const Name : string;
-                       Required : boolean) : TPsTypePtr;
+function FindFieldType(TypePtr : TSDType; const Name : string;
+                       Required : boolean) : TSDType;
 var 
   Pos : integer;
 begin
@@ -785,7 +785,7 @@ begin
             Name, False) <> nil)
 end;
 
-function FindWithVar(Name : string) : TPsWithVarPtr;
+function FindWithVar(Name : string) : TSDWithVarPtr;
 var Def : TSDefinition;
 begin
   if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}true) then
@@ -793,11 +793,11 @@ begin
   else Result := nil
 end;
 
-function AddWithVar(Base : TExpression) : TPsVarPtr;
+function AddWithVar(Base : TSExpression) : TSDVariable;
 var 
-  TmpVar : TPsVariable;
-  TmpVarPtr : TPsVarPtr;
-  WithVarPtr : TPsWithVarPtr;
+  TmpVar : TSDVariableDef;
+  TmpVarPtr : TSDVariable;
+  WithVarPtr : TSDWithVarPtr;
 begin
   EnsureRecordExpr(Base);
 
@@ -814,7 +814,7 @@ begin
   AddWithVar := TmpVarPtr
 end;
 
-function MakeConstant(const Name : string; Value : TExpression)
+function MakeConstant(const Name : string; Value : TSExpression)
 : TSDConstantObj;
 var 
   Constant : TSDConstantObj;
@@ -824,8 +824,8 @@ begin
   MakeConstant := Constant
 end;
 
-function MakeTypedConstant(const Name : string; TypePtr : TPsTypePtr)
-: TPsVariable;
+function MakeTypedConstant(const Name : string; TypePtr : TSDType)
+: TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
@@ -836,7 +836,7 @@ begin
   Result.IsAliasFor := nil
 end;
 
-function MakeVariable(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeVariable(const Name : string; TypePtr : TSDType) : TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
@@ -847,7 +847,7 @@ begin
   Result.IsAliasFor := nil
 end;
 
-function MakeReference(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeReference(const Name : string; TypePtr : TSDType) : TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
@@ -859,16 +859,16 @@ begin
 end;
 
 function AddAliasVariable(const Prefix : string;
-                          TypePtr : TPsTypePtr;
-                          Expr : TExpression) : TPsVarPtr;
+                          TypePtr : TSDType;
+                          Expr : TSExpression) : TSDVariable;
 begin
   Result := AddVariable(MakeVariable(Prefix + IntToStr(DefCounter(SctTmpVar)),
             TypePtr));
   Result^.IsAliasFor := ExCopy(Expr)
 end;
 
-function _MakeArg(const Name : string; TypePtr : TPsTypePtr;
-                  IsRef, IsConst : boolean) : TPsVariable;
+function _MakeArg(const Name : string; TypePtr : TSDType;
+                  IsRef, IsConst : boolean) : TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
@@ -879,22 +879,22 @@ begin
   Result.IsAliasFor := nil
 end;
 
-function MakeArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
 begin
   MakeArg := _MakeArg(Name, TypePtr, false, false)
 end;
 
-function MakeVarArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeVarArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
 begin
   MakeVarArg := _MakeArg(Name, TypePtr, true, false)
 end;
 
-function MakeConstArg(const Name : string; TypePtr : TPsTypePtr) : TPsVariable;
+function MakeConstArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
 begin
   MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
 
-function MakeProcedure0(const Name : string) : TPsSubroutine;
+function MakeProcedure0(const Name : string) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -902,7 +902,8 @@ begin
   Result.Args.Count := 0
 end;
 
-function MakeProcedure1(const Name : string; Arg : TPsVariable) : TPsSubroutine;
+function MakeProcedure1(const Name : string;
+                        Arg : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -912,7 +913,7 @@ begin
 end;
 
 function MakeProcedure2(const Name : string;
-                        Arg1, Arg2 : TPsVariable) : TPsSubroutine;
+                        Arg1, Arg2 : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -923,7 +924,7 @@ begin
 end;
 
 function MakeProcedure3(const Name : string;
-                        Arg1, Arg2, Arg3 : TPsVariable) : TPsSubroutine;
+                        Arg1, Arg2, Arg3 : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -935,7 +936,7 @@ begin
 end;
 
 function MakeFunction0(const Name : string;
-                       RetTypePtr : TPsTypePtr) : TPsSubroutine;
+                       RetTypePtr : TSDType) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -943,8 +944,8 @@ begin
   Result.ReturnTypePtr := RetTypePtr
 end;
 
-function MakeFunction1(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg : TPsVariable) : TPsSubroutine;
+function MakeFunction1(const Name : string; RetTypePtr : TSDType;
+                       Arg : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -954,8 +955,8 @@ begin
   Result.Args.Defs[1] := Arg
 end;
 
-function MakeFunction2(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg1, Arg2 : TPsVariable) : TPsSubroutine;
+function MakeFunction2(const Name : string; RetTypePtr : TSDType;
+                       Arg1, Arg2 : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -966,8 +967,8 @@ begin
   Result.Args.Defs[2] := Arg2
 end;
 
-function MakeFunction3(const Name : string; RetTypePtr : TPsTypePtr;
-                       Arg1, Arg2, Arg3 : TPsVariable) : TPsSubroutine;
+function MakeFunction3(const Name : string; RetTypePtr : TSDType;
+                       Arg1, Arg2, Arg3 : TSDVariableDef) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -979,14 +980,14 @@ begin
   Result.Args.Defs[3] := Arg3
 end;
 
-function _UnaliasType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function _UnaliasType(TypePtr : TSDType) : TSDType;
 begin
   Result := TypePtr;
   while Result^.AliasFor <> nil do
     Result := Result^.AliasFor
 end;
 
-function _NewType(Cls : TPsTypeClass) : TPsTypePtr;
+function _NewType(Cls : TSDTypeClass) : TSDType;
 begin
   Result := _AddDef(SdcType)^.TypePtr;
   Result^.Name := '';
@@ -995,7 +996,7 @@ begin
   Result^.WasUsed := false
 end;
 
-function MakeBaseType(const Name : String; Cls : TPsTypeClass) : TPsTypePtr;
+function MakeBaseType(const Name : String; Cls : TSDTypeClass) : TSDType;
 begin
   Result := _NewType(Cls);
   Result^.Name := Name;
@@ -1005,17 +1006,17 @@ end;
 function _DefIsFileType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  Wanted : TPsFileTypeDef absolute Ctx;
+  Wanted : TSDTFile absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcFile)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcFile)
             and (Def^.TypePtr^.FileDef.Cls = Wanted.Cls)
-            and ((Wanted.Cls <> TfcBinary)
+            and ((Wanted.Cls <> SdtfcBinary)
             or IsSameType(Def^.TypePtr^.FileDef.TypePtr, Wanted.TypePtr))
 end;
 
-function _MakeFileType(Cls : TPsFileClass; TypePtr : TPsTypePtr) : TPsTypePtr;
+function _MakeFileType(Cls : TSDTFileClass; TypePtr : TSDType) : TSDType;
 var 
-  FileDef : TPsFileTypeDef;
+  FileDef : TSDTFile;
   Def : TSDefinition;
 begin
   { TODO check that the type is appropriate }
@@ -1025,30 +1026,30 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcFile);
+    Result := _NewType(SdtcFile);
     Result^.FileDef := FileDef
   end
 end;
 
-function MakeGenericFileType : TPsTypePtr;
+function MakeGenericFileType : TSDType;
 begin
-  Result := _MakeFileType(TfcNone, nil)
+  Result := _MakeFileType(SdtfcNone, nil)
 end;
 
-function MakeTextType : TPsTypePtr;
+function MakeTextType : TSDType;
 begin
-  Result := _MakeFileType(TfcText, nil)
+  Result := _MakeFileType(SdtfcText, nil)
 end;
 
-function MakeFileType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function MakeFileType(TypePtr : TSDType) : TSDType;
 begin
-  Result := _MakeFileType(TfcBinary, TypePtr)
+  Result := _MakeFileType(SdtfcBinary, TypePtr)
 end;
 
-function MakeEnumType(const Enum : TPsEnumDef) : TPsTypePtr;
+function MakeEnumType(const Enum : TSDTEnumDef) : TSDType;
 var Pos : integer;
 begin
-  Result := _NewType(TtcEnum);
+  Result := _NewType(SdtcEnum);
   Result^.EnumPtr := NewEnum(Enum);
   { It's hard to detect when an enumerated type was used }
   Result^.WasUsed := true;
@@ -1056,27 +1057,27 @@ begin
     AddEnumValName(Pos, Result)
 end;
 
-function MakeRecordType(const Rec : TPsRecordDef) : TPsTypePtr;
+function MakeRecordType(const Rec : TSDTRecordDef) : TSDType;
 begin
-  Result := _NewType(TtcRecord);
+  Result := _NewType(SdtcRecord);
   Result^.RecPtr := NewRecord(Rec)
 end;
 
 function _DefIsArrayType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  Wanted : TPsArrayTypeDef absolute Ctx;
+  Wanted : TSDTArray absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcArray)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcArray)
             and IsSameType(Def^.TypePtr^.ArrayDef.IndexTypePtr,
             Wanted.IndexTypePtr)
             and IsSameType(Def^.TypePtr^.ArrayDef.ValueTypePtr,
             Wanted.ValueTypePtr)
 end;
 
-function MakeArrayType(IndexType, ValueType : TPsTypePtr) : TPsTypePtr;
+function MakeArrayType(IndexType, ValueType : TSDType) : TSDType;
 var 
-  ArrayDef : TPsArrayTypeDef;
+  ArrayDef : TSDTArray;
   Def : TSDefinition;
 begin
   if not IsBoundedType(IndexType) then
@@ -1088,7 +1089,7 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcArray);
+    Result := _NewType(SdtcArray);
     Result^.ArrayDef := ArrayDef
   end
 end;
@@ -1096,19 +1097,19 @@ end;
 function _DefIsRangeType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  Wanted : TPsRangeTypeDef absolute Ctx;
+  Wanted : TSDTRange absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcRange)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcRange)
             and IsSameType(Def^.TypePtr^.RangeDef.BaseTypePtr,
             Wanted.BaseTypePtr)
             and (Def^.TypePtr^.RangeDef.First = Wanted.First)
             and (Def^.TypePtr^.RangeDef.Last = Wanted.Last)
 end;
 
-function MakeRangeType(TypePtr : TPsTypePtr;
-                       First, Last : integer) : TPsTypePtr;
+function MakeRangeType(TypePtr : TSDType;
+                       First, Last : integer) : TSDType;
 var 
-  RangeDef : TPsRangeTypeDef;
+  RangeDef : TSDTRange;
   Def : TSDefinition;
 begin
   if First > Last then
@@ -1120,7 +1121,7 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcRange);
+    Result := _NewType(SdtcRange);
     Result^.RangeDef := RangeDef
   end
 end;
@@ -1128,13 +1129,13 @@ end;
 function _DefIsPointerType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  TypePtr : TPsTypePtr absolute Ctx;
+  TypePtr : TSDType absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcPointer)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcPointer)
             and IsSameType(Def^.TypePtr^.PointedTypePtr, TypePtr)
 end;
 
-function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function MakePointerType(TypePtr : TSDType) : TSDType;
 var 
   Def : TSDefinition;
 begin
@@ -1142,7 +1143,7 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcPointer);
+    Result := _NewType(SdtcPointer);
     Result^.PointedTypePtr := TypePtr
   end
 end;
@@ -1152,11 +1153,11 @@ var
   Def : TSDefinition absolute Item;
   TargetName : string absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcPointerForward)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcPointerForward)
             and (Def^.TypePtr^.TargetName^ = TargetName)
 end;
 
-function MakePointerForwardType(TargetName : string) : TPsTypePtr;
+function MakePointerForwardType(TargetName : string) : TSDType;
 var 
   Def : TSDefinition;
 begin
@@ -1165,7 +1166,7 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcPointerForward);
+    Result := _NewType(SdtcPointerForward);
     new(Result^.TargetName);
     Result^.TargetName^ := TargetName
   end
@@ -1174,13 +1175,13 @@ end;
 function _DefIsSetType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  TypePtr : TPsTypePtr absolute Ctx;
+  TypePtr : TSDType absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcSet)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcSet)
             and IsSameType(Def^.TypePtr^.ElementTypePtr, TypePtr)
 end;
 
-function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
+function MakeSetType(TypePtr : TSDType) : TSDType;
 var 
   Def : TSDefinition;
 begin
@@ -1188,12 +1189,12 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcSet);
+    Result := _NewType(SdtcSet);
     Result^.ElementTypePtr := TypePtr
   end
 end;
 
-function AreSameArgs(const A, B : TPsFnArgs) : boolean;
+function AreSameArgs(const A, B : TSDSubroutineArgs) : boolean;
 var Pos : integer;
 begin
   Result := A.Count = B.Count;
@@ -1207,19 +1208,19 @@ end;
 function _DefIsFunctionType(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
-  FnDef : TPsFnDef absolute Ctx;
+  FnDef : TSDTSubroutineDef absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcFunction)
+  Result := (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcFunction)
             and IsSameType(Def^.TypePtr^.FnDefPtr^.ReturnTypePtr,
             FnDef.ReturnTypePtr)
             and AreSameArgs(Def^.TypePtr^.FnDefPtr^.Args, FnDef.Args)
 end;
 
-function MakeFunctionType(const Args : TPsFnArgs;
-                          ReturnTypePtr : TPsTypePtr) : TPsTypePtr;
+function MakeFunctionType(const Args : TSDSubroutineArgs;
+                          ReturnTypePtr : TSDType) : TSDType;
 var 
   Def : TSDefinition;
-  FnDef : TPsFnDef;
+  FnDef : TSDTSubroutineDef;
 begin
   FnDef.ReturnTypePtr := ReturnTypePtr;
   FnDef.Args := Args;
@@ -1227,14 +1228,14 @@ begin
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
-    Result := _NewType(TtcFunction);
+    Result := _NewType(SdtcFunction);
     Result^.FnDefPtr := NewFnDef;
     Result^.FnDefPtr^.ReturnTypePtr := FnDef.ReturnTypePtr;
     Result^.FnDefPtr^.Args := FnDef.Args
   end
 end;
 
-function MakeAliasType(const Name : string; TypePtr : TPsTypePtr) : TPsTypePtr;
+function MakeAliasType(const Name : string; TypePtr : TSDType) : TSDType;
 begin
   TypePtr := _UnaliasType(TypePtr);
   Result := _NewType(TypePtr^.Cls);

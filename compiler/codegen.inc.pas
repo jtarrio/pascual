@@ -10,9 +10,9 @@ var
     LastOut : TOutputType;
   end;
 
-procedure OutVariableDeclaration(VarDef : TPsVariable);
+procedure OutVariableDeclaration(VarDef : TSDVariableDef);
 forward;
-procedure OutTypeReference(TypePtr : TPsTypePtr);
+procedure OutTypeReference(TypePtr : TSDType);
 forward;
 
 procedure _OutComma;
@@ -131,77 +131,77 @@ begin
   end
 end;
 
-function _BinOpPrec(Expr : TExpression) : integer;
+function _BinOpPrec(Expr : TSExpression) : integer;
 var IsSetLeft, IsSetRight : boolean;
 begin
   IsSetLeft := IsSetType(Expr^.Binary.Left^.TypePtr);
   IsSetRight := IsSetType(Expr^.Binary.Right^.TypePtr);
   case Expr^.Binary.Op of 
-    XoAdd: if IsStringyType(Expr^.TypePtr) then Result := 1
-           else Result := 4;
-    XoSub: Result := 4;
-    XoMul: Result := 3;
-    XoDivReal: Result := 3;
-    XoDivInt: Result := 3;
-    XoMod: Result := 3;
-    XoAnd: if IsBooleanType(Expr^.TypePtr) then Result := 11
-           else Result := 8;
-    XoOr: if IsBooleanType(Expr^.TypePtr) then Result := 12
-          else Result := 10;
-    XoXor: if IsBooleanType(Expr^.TypePtr) then Result := 7
-           else Result := 9;
-    XoShl: Result := 5;
-    XoShr: Result := 5;
-    XoIn: if ExIsImmediate(Expr^.Binary.Right) then Result := 12
-          else Result := 1;
-    XoEq: if IsSetLeft and IsSetRight then Result := 1
-          else Result := 7;
-    XoNe: if IsSetLeft and IsSetRight then Result := 1
-          else Result := 7;
-    XoLt : Result := 6;
-    XoGt : Result := 6;
-    XoLtEq : if IsSetLeft and IsSetRight then Result := 1
-             else Result := 6;
-    XoGtEq : if IsSetLeft and IsSetRight then Result := 1
-             else Result := 6;
+    SeoAdd: if IsStringyType(Expr^.TypePtr) then Result := 1
+            else Result := 4;
+    SeoSub: Result := 4;
+    SeoMul: Result := 3;
+    SeoDivReal: Result := 3;
+    SeoDivInt: Result := 3;
+    SeoMod: Result := 3;
+    SeoAnd: if IsBooleanType(Expr^.TypePtr) then Result := 11
+            else Result := 8;
+    SeoOr: if IsBooleanType(Expr^.TypePtr) then Result := 12
+           else Result := 10;
+    SeoXor: if IsBooleanType(Expr^.TypePtr) then Result := 7
+            else Result := 9;
+    SeoShl: Result := 5;
+    SeoShr: Result := 5;
+    SeoIn: if ExIsImmediate(Expr^.Binary.Right) then Result := 12
+           else Result := 1;
+    SeoEq: if IsSetLeft and IsSetRight then Result := 1
+           else Result := 7;
+    SeoNe: if IsSetLeft and IsSetRight then Result := 1
+           else Result := 7;
+    SeoLt : Result := 6;
+    SeoGt : Result := 6;
+    SeoLtEq : if IsSetLeft and IsSetRight then Result := 1
+              else Result := 6;
+    SeoGtEq : if IsSetLeft and IsSetRight then Result := 1
+              else Result := 6;
     else InternalError('Unknown precedence for operator in ' +
                        ExDescribe(Expr))
   end
 end;
 
-function _Precedence(Expr : TExpression) : integer;
+function _Precedence(Expr : TSExpression) : integer;
 begin
   case Expr^.Cls of 
-    XcImmediate : Result := 0;
-    XcToString : Result := 0;
-    XcToReal : Result := 2;
-    XcToUntypedPtr : Result := _Precedence(Expr^.ToUntypedPtrParent);
-    XcToGenericFile : Result := _Precedence(Expr^.ToGenericFileParent);
-    XcWithTmpVar : Result := 0;
-    XcSubrange : Result := 0;
-    XcSet : Result := 0;
-    XcVariable : if Expr^.VarPtr^.IsReference then Result := 2
-                 else Result := 0;
-    XcField : Result := 1;
-    XcArray : Result := 1;
-    XcPointer : Result := 2;
-    XcAddress : Result := 2;
-    XcStringChar : Result := 1;
-    XcFnRef : Result := 0;
-    XcFnCall : Result := 1;
-    XcPseudoFnRef : Result := 0;
-    XcSizeof : Result := 1;
-    XcConvertToStr : Result := 1;
-    XcConvertToVal : Result := 1;
-    XcRead : Result := 1;
-    XcWrite : Result := 1;
-    XcUnaryOp : Result := 2;
-    XcBinaryOp : Result := _BinOpPrec(Expr);
+    SecImmediate : Result := 0;
+    SecToString : Result := 0;
+    SecToReal : Result := 2;
+    SecToUntypedPtr : Result := _Precedence(Expr^.ToUntypedPtrParent);
+    SecToGenericFile : Result := _Precedence(Expr^.ToGenericFileParent);
+    SecWithTmpVar : Result := 0;
+    SecSubrange : Result := 0;
+    SecSet : Result := 0;
+    SecVariable : if Expr^.VarPtr^.IsReference then Result := 2
+                  else Result := 0;
+    SecField : Result := 1;
+    SecArray : Result := 1;
+    SecPointer : Result := 2;
+    SecAddress : Result := 2;
+    SecStringChar : Result := 1;
+    SecFnRef : Result := 0;
+    SecFnCall : Result := 1;
+    SecPseudoFnRef : Result := 0;
+    SecSizeof : Result := 1;
+    SecConvertToStr : Result := 1;
+    SecConvertToVal : Result := 1;
+    SecRead : Result := 1;
+    SecWrite : Result := 1;
+    SecUnaryOp : Result := 2;
+    SecBinaryOp : Result := _BinOpPrec(Expr);
     else InternalError('Unknown precedence for ' + ExDescribe(Expr))
   end
 end;
 
-procedure _OutExpressionParensPrec(Expr : TExpression; Prec : integer);
+procedure _OutExpressionParensPrec(Expr : TSExpression; Prec : integer);
 var UseParens : boolean;
 begin
   UseParens := _Precedence(Expr) > Prec;
@@ -210,17 +210,17 @@ begin
   if UseParens then write(Codegen.Output, ')')
 end;
 
-procedure _OutExpressionParens(Expr, Ref : TExpression);
+procedure _OutExpressionParens(Expr, Ref : TSExpression);
 begin
   _OutExpressionParensPrec(Expr, _Precedence(Ref))
 end;
 
-procedure _OutExpressionParensExtra(Expr, Ref : TExpression);
+procedure _OutExpressionParensExtra(Expr, Ref : TSExpression);
 begin
   _OutExpressionParensPrec(Expr, _Precedence(Ref) - 1)
 end;
 
-procedure _OutSetTypeName(TypePtr : TPsTypePtr);
+procedure _OutSetTypeName(TypePtr : TSDType);
 var NumBytes : integer;
 begin
   NumBytes := GetTypeHighBound(TypePtr^.ElementTypePtr) div 8 -
@@ -228,11 +228,11 @@ begin
   write(Codegen.Output, 'PSet', 8 * NumBytes)
 end;
 
-procedure _OutSetImmediate(Expr : TExpression);
+procedure _OutSetImmediate(Expr : TSExpression);
 var 
   LowBound, HighBound, LowBoundByte, SetSize : integer;
-  Bounds : TExSetImmBounds;
-  ElemTypePtr : TPsTypePtr;
+  Bounds : TSESetImmBounds;
+  ElemTypePtr : TSDType;
   SetElems : array[1..32] of integer;
   Pos, ByteNum, BitNum : integer;
 begin
@@ -266,11 +266,11 @@ begin
   write(Codegen.Output, ' }');
 end;
 
-procedure _OutExSet(Expr : TExpression);
+procedure _OutExSet(Expr : TSExpression);
 var 
-  ElementTypePtr : TPsTypePtr;
-  Bounds : TExSetExprBounds;
-  First, Last : TExpression;
+  ElementTypePtr : TSDType;
+  Bounds : TSESetExprBounds;
+  First, Last : TSExpression;
   LowBoundByte : integer;
 begin
   ElementTypePtr := Expr^.TypePtr^.ElementTypePtr;
@@ -299,32 +299,32 @@ begin
   write(Codegen.Output, 'dst; })')
 end;
 
-procedure _OutExImmediate(Expr : TExpression);
+procedure _OutExImmediate(Expr : TSExpression);
 begin
   with Expr^.Immediate do
     case Cls of 
-      XicNil : write(Codegen.Output, 'PNil');
-      XicBoolean : if BooleanVal then write(Codegen.Output, '1')
-                   else write(Codegen.Output, '0');
-      XicInteger : write(Codegen.Output, IntegerVal);
-      XicReal : write(Codegen.Output, RealVal);
-      XicChar : _OutChar(CharVal);
-      XicString : _OutString(StringVal);
-      XicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal]);
-      XicSet : _OutSetImmediate(Expr);
+      SeicNil : write(Codegen.Output, 'PNil');
+      SeicBoolean : if BooleanVal then write(Codegen.Output, '1')
+                    else write(Codegen.Output, '0');
+      SeicInteger : write(Codegen.Output, IntegerVal);
+      SeicReal : write(Codegen.Output, RealVal);
+      SeicChar : _OutChar(CharVal);
+      SeicString : _OutString(StringVal);
+      SeicEnum : write(Codegen.Output, EnumPtr^.Values[EnumOrdinal]);
+      SeicSet : _OutSetImmediate(Expr);
     end
 end;
 
-procedure _OutBounds(TypePtr : TPsTypePtr);
+procedure _OutBounds(TypePtr : TSDType);
 begin
   write(Codegen.Output, GetTypeLowBound(TypePtr));
   _OutComma;
   write(Codegen.Output, GetTypeHighBound(TypePtr))
 end;
 
-procedure _OutArrayIndex(Index : TExpression; TypePtr : TPsTypePtr);
+procedure _OutArrayIndex(Index : TSExpression; TypePtr : TSDType);
 var LowBound : integer;
-  Size : TExpression;
+  Size : TSExpression;
 begin
   LowBound := GetTypeLowBound(TypePtr^.ArrayDef.IndexTypePtr);
   Size := ExOpSub(ExOpOrd(ExCopy(Index)), ExIntegerConstant(LowBound));
@@ -332,18 +332,18 @@ begin
   ExDispose(Size)
 end;
 
-procedure _OutAddress(Expr : TExpression);
+procedure _OutAddress(Expr : TSExpression);
 begin
-  if Expr^.Cls = XcToGenericFile then _OutAddress(Expr^.ToGenericFileParent)
-  else if Expr^.Cls = XcToReal then _OutAddress(Expr^.ToRealParent)
-  else if Expr^.Cls = XcToString then _OutAddress(Expr^.ToStrParent)
-  else if Expr^.Cls = XcPointer then OutExpression(Expr^.PointerExpr)
-  else if Expr^.Cls = XcToUntypedPtr then
+  if Expr^.Cls = SecToGenericFile then _OutAddress(Expr^.ToGenericFileParent)
+  else if Expr^.Cls = SecToReal then _OutAddress(Expr^.ToRealParent)
+  else if Expr^.Cls = SecToString then _OutAddress(Expr^.ToStrParent)
+  else if Expr^.Cls = SecPointer then OutExpression(Expr^.PointerExpr)
+  else if Expr^.Cls = SecToUntypedPtr then
   begin
     write(Codegen.Output, '(void**)&');
     _OutExpressionParensPrec(Expr, 1)
   end
-  else if (Expr^.Cls = XcVariable) and (Expr^.VarPtr^.IsReference) then
+  else if (Expr^.Cls = SecVariable) and (Expr^.VarPtr^.IsReference) then
          write(Codegen.Output, Expr^.VarPtr^.Name)
   else
   begin
@@ -352,7 +352,7 @@ begin
   end
 end;
 
-procedure _OutExSubrange(Expr : TExpression);
+procedure _OutExSubrange(Expr : TSExpression);
 begin
   if not Options.CheckBounds then OutExpression(Expr^.SubrangeParent)
   else
@@ -365,7 +365,7 @@ begin
   end
 end;
 
-procedure _OutExVariable(Expr : TExpression);
+procedure _OutExVariable(Expr : TSExpression);
 begin
   if Expr^.VarPtr^.IsReference then
     write(Codegen.Output, '*', Expr^.VarPtr^.Name)
@@ -373,16 +373,16 @@ begin
     write(Codegen.Output, Expr^.VarPtr^.Name)
 end;
 
-procedure _OutExFieldAccess(Expr : TExpression);
+procedure _OutExFieldAccess(Expr : TSExpression);
 begin
   with Expr^.RecExpr^ do
   begin
-    if Cls = XcPointer then
+    if Cls = SecPointer then
     begin
       _OutExpressionParens(PointerExpr, Expr);
       write(Codegen.Output, '->')
     end
-    else if (Cls = XcVariable) and VarPtr^.IsReference then
+    else if (Cls = SecVariable) and VarPtr^.IsReference then
            write(Codegen.Output, VarPtr^.Name, '->')
     else
     begin
@@ -394,16 +394,16 @@ begin
   end
 end;
 
-procedure _OutExStringChar(Expr : TExpression);
+procedure _OutExStringChar(Expr : TSExpression);
 begin
   with Expr^.StringExpr^ do
   begin
-    if Cls = XcPointer then
+    if Cls = SecPointer then
     begin
       _OutExpressionParens(PointerExpr, Expr);
       write(Codegen.Output, '->chr[')
     end
-    else if (Cls = XcVariable) and VarPtr^.IsReference then
+    else if (Cls = SecVariable) and VarPtr^.IsReference then
            write(Codegen.Output, VarPtr^.Name, '->chr[')
     else
     begin
@@ -415,8 +415,8 @@ begin
   end
 end;
 
-procedure _OutExFunctionCallArgs(const ArgDefs : TPsFnArgs;
-                                 const ArgValues : TExFunctionArgs);
+procedure _OutExFunctionCallArgs(const ArgDefs : TSDSubroutineArgs;
+                                 const ArgValues : TSEFunctionArgs);
 var Pos : integer;
 begin
   write(Codegen.Output, '(');
@@ -434,17 +434,17 @@ begin
   write(Codegen.Output, ')')
 end;
 
-procedure _OutExFunctionCall(Expr : TExpression);
+procedure _OutExFunctionCall(Expr : TSExpression);
 begin
   _OutExpressionParens(Expr^.FnExpr, Expr);
-  if Expr^.FnExpr^.Cls = XcFnRef then
+  if Expr^.FnExpr^.Cls = SecFnRef then
     _OutExFunctionCallArgs(Expr^.FnExpr^.FnPtr^.Args, Expr^.CallArgs)
   else
     _OutExFunctionCallArgs(Expr^.FnExpr^.TypePtr^.FnDefPtr^.Args,
                            Expr^.CallArgs)
 end;
 
-procedure _OutOrd(Expr : TExpression);
+procedure _OutOrd(Expr : TSExpression);
 begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
   if IsCharType(Expr^.Unary.Parent^.TypePtr) then
@@ -455,8 +455,8 @@ begin
   else OutExpression(Expr^.Unary.Parent)
 end;
 
-procedure _OutPred(Expr : TExpression);
-var TmpExpr : TExpression;
+procedure _OutPred(Expr : TSExpression);
+var TmpExpr : TSExpression;
 begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
@@ -486,8 +486,8 @@ begin
   end
 end;
 
-procedure _OutSucc(Expr : TExpression);
-var TmpExpr : TExpression;
+procedure _OutSucc(Expr : TSExpression);
+var TmpExpr : TSExpression;
 begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
@@ -516,109 +516,110 @@ begin
   end
 end;
 
-procedure _OutExUnaryOp(Expr : TExpression);
+procedure _OutExUnaryOp(Expr : TSExpression);
 begin
-  if Expr^.Unary.Op = XoOrd then _OutOrd(Expr)
-  else if Expr^.Unary.Op = XoPred then _OutPred(Expr)
-  else if Expr^.Unary.Op = XoSucc then _OutSucc(Expr)
-  else if Expr^.Unary.Op = XoNeg then
+  if Expr^.Unary.Op = SeoOrd then _OutOrd(Expr)
+  else if Expr^.Unary.Op = SeoPred then _OutPred(Expr)
+  else if Expr^.Unary.Op = SeoSucc then _OutSucc(Expr)
+  else if Expr^.Unary.Op = SeoNeg then
   begin
     write(Codegen.Output, '-');
     _OutExpressionParens(Expr^.Unary.Parent, Expr)
   end
-  else if (Expr^.Unary.Op = XoNot) and IsBooleanType(Expr^.TypePtr) then
+  else if (Expr^.Unary.Op = SeoNot) and IsBooleanType(Expr^.TypePtr) then
   begin
     write(Codegen.Output, '!');
     _OutExpressionParens(Expr^.Unary.Parent, Expr)
   end
-  else if (Expr^.Unary.Op = XoNot) and IsIntegerType(Expr^.TypePtr) then
+  else if (Expr^.Unary.Op = SeoNot) and IsIntegerType(Expr^.TypePtr) then
   begin
     write(Codegen.Output, '~');
     _OutExpressionParens(Expr^.Unary.Parent, Expr)
   end
 end;
 
-function _IsArithmeticOp(Op : TExOperator) : boolean;
+function _IsArithmeticOp(Op : TSEOperator) : boolean;
 begin
-  _IsArithmeticOp := Op in [XoAdd, XoSub, XoMul, XoDivReal, XoDivInt, XoMod]
+  _IsArithmeticOp := Op in [SeoAdd, SeoSub, SeoMul, SeoDivReal, SeoDivInt,
+                     SeoMod]
 end;
 
-function _GetArithmeticOp(Op : TExOperator) : string;
+function _GetArithmeticOp(Op : TSEOperator) : string;
 begin
   case Op of 
-    XoAdd : _GetArithmeticOp := '+';
-    XoSub : _GetArithmeticOp := '-';
-    XoMul : _GetArithmeticOp := '*';
-    XoDivReal : _GetArithmeticOp := '/';
-    XoDivInt : _GetArithmeticOp := '/';
-    XoMod : _GetArithmeticOp := '%';
+    SeoAdd : _GetArithmeticOp := '+';
+    SeoSub : _GetArithmeticOp := '-';
+    SeoMul : _GetArithmeticOp := '*';
+    SeoDivReal : _GetArithmeticOp := '/';
+    SeoDivInt : _GetArithmeticOp := '/';
+    SeoMod : _GetArithmeticOp := '%';
   end
 end;
 
-function _IsLogicalOrBitwiseOp(Op : TExOperator) : boolean;
+function _IsLogicalOrBitwiseOp(Op : TSEOperator) : boolean;
 begin
-  _IsLogicalOrBitwiseOp := Op in [XoAnd, XoOr, XoXor]
+  _IsLogicalOrBitwiseOp := Op in [SeoAnd, SeoOr, SeoXor]
 end;
 
-function _IsBitwiseOp(Op : TExOperator) : boolean;
+function _IsBitwiseOp(Op : TSEOperator) : boolean;
 begin
-  _IsBitwiseOp := Op in [XoShl, XoShr]
+  _IsBitwiseOp := Op in [SeoShl, SeoShr]
 end;
 
-function _GetLogicalOp(Op : TExOperator) : string;
+function _GetLogicalOp(Op : TSEOperator) : string;
 begin
   case Op of 
-    XoAnd: Result := '&&';
-    XoOr: Result := '||';
-    XoXor: Result := '!=';
+    SeoAnd: Result := '&&';
+    SeoOr: Result := '||';
+    SeoXor: Result := '!=';
     else InternalError('Unimplemented logical operator ' +
                        ExDescribeOperator(Op))
   end
 end;
 
-function _GetBitwiseOp(Op : TExOperator) : string;
+function _GetBitwiseOp(Op : TSEOperator) : string;
 begin
   case Op of 
-    XoAnd: Result := '&';
-    XoOr: Result := '|';
-    XoXor: Result := '^';
-    XoShl: Result := '<<';
-    XoShr: Result := '>>';
+    SeoAnd: Result := '&';
+    SeoOr: Result := '|';
+    SeoXor: Result := '^';
+    SeoShl: Result := '<<';
+    SeoShr: Result := '>>';
     else InternalError('Unimplemented bitwise operator ' +
                        ExDescribeOperator(Op))
   end
 end;
 
-function _IsRelationalOp(Op : TExOperator) : boolean;
+function _IsRelationalOp(Op : TSEOperator) : boolean;
 begin
-  _IsRelationalOp := Op in [XoEq, XoNe, XoLt, XoGt, XoLtEq, XoGtEq]
+  _IsRelationalOp := Op in [SeoEq, SeoNe, SeoLt, SeoGt, SeoLtEq, SeoGtEq]
 end;
 
-function _GetRelationalOp(Op : TExOperator) : string;
+function _GetRelationalOp(Op : TSEOperator) : string;
 begin
   case Op of 
-    XoEq: _GetRelationalOp := '==';
-    XoNe : _GetRelationalOp := '!=';
-    XoLt : _GetRelationalOp := '<';
-    XoGt : _GetRelationalOp := '>';
-    XoLtEq : _GetRelationalOp := '<=';
-    XoGtEq : _GetRelationalOp := '>='
+    SeoEq: _GetRelationalOp := '==';
+    SeoNe : _GetRelationalOp := '!=';
+    SeoLt : _GetRelationalOp := '<';
+    SeoGt : _GetRelationalOp := '>';
+    SeoLtEq : _GetRelationalOp := '<=';
+    SeoGtEq : _GetRelationalOp := '>='
   end
 end;
 
-procedure _OutExSetOperation(Left, Right: TExpression; Op : TExOperator);
+procedure _OutExSetOperation(Left, Right: TSExpression; Op : TSEOperator);
 var 
-  ElemTypePtr : TPsTypePtr;
+  ElemTypePtr : TSDType;
   LowBound, HighBound, LowBoundByte, SetSize : integer;
 begin
   ElemTypePtr := Right^.TypePtr^.ElementTypePtr;
-  if Op = XoLtEq then _OutExSetOperation(Right, Left, XoGtEq)
-  else if Op = XoNe then
+  if Op = SeoLtEq then _OutExSetOperation(Right, Left, SeoGtEq)
+  else if Op = SeoNe then
   begin
     write(Codegen.Output, '!');
-    _OutExSetOperation(Left, Right, XoEq)
+    _OutExSetOperation(Left, Right, SeoEq)
   end
-  else if Op = XoIn then
+  else if Op = SeoIn then
   begin
     LowBoundByte := GetTypeLowBound(ElemTypePtr) div 8;
     write(Codegen.Output, 'set_in(');
@@ -634,7 +635,7 @@ begin
     LowBound := GetTypeLowBound(ElemTypePtr);
     HighBound := GetTypeHighBound(ElemTypePtr);
     SetSize := HighBound div 8 - LowBound div 8 + 1;
-    if Op = XoEq then
+    if Op = SeoEq then
     begin
       write(Codegen.Output, 'set_equals(');
       _OutExpressionParensPrec(Left, 1);
@@ -642,7 +643,7 @@ begin
       _OutExpressionParensPrec(Right, 1);
       write(Codegen.Output, '.bits, ', SetSize, ')')
     end
-    else if Op = XoGtEq then
+    else if Op = SeoGtEq then
     begin
       write(Codegen.Output, 'set_issuperset(');
       _OutExpressionParensPrec(Left, 1);
@@ -654,9 +655,9 @@ begin
     begin
       write(Codegen.Output, '({ PSet', SetSize * 8, ' dst; ');
       case Op of 
-        XoAdd: write(Codegen.Output, 'set_union(');
-        XoSub: write(Codegen.Output, 'set_difference(');
-        XoMul: write(Codegen.Output, 'set_intersection(');
+        SeoAdd: write(Codegen.Output, 'set_union(');
+        SeoSub: write(Codegen.Output, 'set_difference(');
+        SeoMul: write(Codegen.Output, 'set_intersection(');
         else
           InternalError('Materialized set operation not implemented: ' +
                         ExDescribeOperator(Op))
@@ -669,7 +670,7 @@ begin
   end
 end;
 
-procedure _OutCmpConcatArg(Expr : TExpression);
+procedure _OutCmpConcatArg(Expr : TSExpression);
 begin
   if ExIsImmediate(Expr) and IsStringType(Expr^.TypePtr) then
   begin
@@ -694,11 +695,11 @@ begin
   end
 end;
 
-procedure _OutConcatArgs(Expr : TExpression; Last : boolean);
+procedure _OutConcatArgs(Expr : TSExpression; Last : boolean);
 begin
   if not IsStringyType(Expr^.TypePtr) then
     InternalError('Expected a stringy type for ' + ExDescribe(Expr))
-  else if (Expr^.Cls <> XcBinaryOp) or (Expr^.Binary.Op <> XoAdd) then
+  else if (Expr^.Cls <> SecBinaryOp) or (Expr^.Binary.Op <> SeoAdd) then
   begin
     if Last then write(Codegen.Output, 'CpEnd | ');
     _OutCmpConcatArg(Expr);
@@ -711,7 +712,7 @@ begin
   end
 end;
 
-procedure _OutExBinaryOp(Expr : TExpression);
+procedure _OutExBinaryOp(Expr : TSExpression);
 begin
   with Expr^.Binary do
   begin
@@ -739,7 +740,7 @@ begin
     end
     else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
     begin
-      if Op = XoAdd then
+      if Op = SeoAdd then
       begin
         write(Codegen.Output, 'CONCAT(');
         _OutConcatArgs(Expr, {Last=}true);
@@ -757,12 +758,12 @@ begin
       begin
         write(Codegen.Output, 'cmp_str(');
         case Op of 
-          XoEq: write(Codegen.Output, 'CoEq, ');
-          XoNe: write(Codegen.Output, 'CoNotEq, ');
-          XoLt: write(Codegen.Output, 'CoBefore, ');
-          XoGt: write(Codegen.Output, 'CoAfter, ');
-          XoLtEq: write(Codegen.Output, 'CoBeforeOrEq, ');
-          XoGtEq: write(Codegen.Output, 'CoAfterOrEq, ');
+          SeoEq: write(Codegen.Output, 'CoEq, ');
+          SeoNe: write(Codegen.Output, 'CoNotEq, ');
+          SeoLt: write(Codegen.Output, 'CoBefore, ');
+          SeoGt: write(Codegen.Output, 'CoAfter, ');
+          SeoLtEq: write(Codegen.Output, 'CoBeforeOrEq, ');
+          SeoGtEq: write(Codegen.Output, 'CoAfterOrEq, ');
           else ErrorInvalidOperator(Expr, Op)
         end;
         _OutCmpConcatArg(Left);
@@ -783,10 +784,10 @@ begin
   end
 end;
 
-procedure _OutExWithTmpVar(Expr : TExpression);
+procedure _OutExWithTmpVar(Expr : TSExpression);
 begin
   write(Codegen.Output, '({ ');
-  while Expr^.Cls = XcWithTmpVar do
+  while Expr^.Cls = SecWithTmpVar do
   begin
     OutVariableDeclaration(Expr^.TmpVar^.VarPtr^);
     write(Codegen.Output, ' = ');
@@ -798,14 +799,14 @@ begin
   write(Codegen.Output, '; })')
 end;
 
-procedure _OutExSizeof(Expr : TExpression);
+procedure _OutExSizeof(Expr : TSExpression);
 begin
   write(Codegen.Output, 'sizeof(');
   OutTypeReference(Expr^.SizeofTypePtr);
   write(Codegen.Output, ')')
 end;
 
-function ShortTypeName(TypePtr : TPsTypePtr) : char;
+function ShortTypeName(TypePtr : TSDType) : char;
 begin
   if IsBooleanType(TypePtr) then ShortTypeName := 'b'
   else if IsIntegerType(TypePtr) then ShortTypeName := 'i'
@@ -816,8 +817,8 @@ begin
     'READ, WRITE, STR, or VAL')
 end;
 
-procedure _OutExConvertToStr(Expr : TExpression);
-var Src, Dst, Width, Prec : TExpression;
+procedure _OutExConvertToStr(Expr : TSExpression);
+var Src, Dst, Width, Prec : TSExpression;
 begin
   Src := Expr^.ToStrSrc.Arg;
   Dst := Expr^.ToStrDest;
@@ -865,8 +866,8 @@ begin
   end
 end;
 
-procedure _OutExConvertToVal(Expr : TExpression);
-var Src, Dst, Code, TmpExpr : TExpression;
+procedure _OutExConvertToVal(Expr : TSExpression);
+var Src, Dst, Code, TmpExpr : TSExpression;
 begin
   Src := Expr^.ToValSrc;
   Dst := Expr^.ToValDest;
@@ -900,12 +901,12 @@ begin
   end
 end;
 
-procedure _OutExRead(Expr : TExpression);
+procedure _OutExRead(Expr : TSExpression);
 var 
-  Src : TExpression;
-  ReadArg : TExReadArgList;
+  Src : TSExpression;
+  ReadArg : TSEReadArgList;
   Linefeed : boolean;
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
 begin
   Src := Expr^.ReadFile;
   Linefeed := Expr^.Readln;
@@ -926,10 +927,10 @@ begin
     begin
       TypePtr := GetFundamentalType(ReadArg^.Dest^.TypePtr);
       case TypePtr^.Cls of 
-        TtcInteger: write(Codegen.Output, ', RwpInt');
-        TtcReal: write(Codegen.Output, ', RwpReal');
-        TtcChar: write(Codegen.Output, ', RwpChar');
-        TtcString: write(Codegen.Output, ', RwpString');
+        SdtcInteger: write(Codegen.Output, ', RwpInt');
+        SdtcReal: write(Codegen.Output, ', RwpReal');
+        SdtcChar: write(Codegen.Output, ', RwpChar');
+        SdtcString: write(Codegen.Output, ', RwpString');
         else ErrorForExpr('Expression has invalid type for READ', ReadArg^.Dest)
       end;
       if ReadArg^.Next = nil then
@@ -952,12 +953,12 @@ begin
   write(Codegen.Output, ')')
 end;
 
-procedure _OutExWrite(Expr : TExpression);
+procedure _OutExWrite(Expr : TSExpression);
 var 
-  Dst : TExpression;
-  WriteArg : TExWriteArgList;
+  Dst : TSExpression;
+  WriteArg : TSEWriteArgList;
   Linefeed : boolean;
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
 begin
   Dst := Expr^.WriteFile;
   Linefeed := Expr^.WriteLn;
@@ -978,20 +979,20 @@ begin
     begin
       TypePtr := GetFundamentalType(WriteArg^.Value.Arg^.TypePtr);
       case TypePtr^.Cls of 
-        TtcBoolean: write(Codegen.Output, ', RwpBool');
-        TtcInteger: write(Codegen.Output, ', RwpInt');
-        TtcReal: write(Codegen.Output, ', RwpReal');
-        TtcChar: write(Codegen.Output, ', RwpChar');
-        TtcEnum: write(Codegen.Output, ', RwpEnum');
-        TtcString:
-                   begin
-                     if ExIsImmediate(WriteArg^.Value.Arg) then
-                       write(Codegen.Output, ', RwpLenPtr')
-                     else if WriteArg^.Value.Arg^.IsAddressable then
-                            write(Codegen.Output, ', RwpStringPtr')
-                     else
-                       write(Codegen.Output, ', RwpString')
-                   end;
+        SdtcBoolean: write(Codegen.Output, ', RwpBool');
+        SdtcInteger: write(Codegen.Output, ', RwpInt');
+        SdtcReal: write(Codegen.Output, ', RwpReal');
+        SdtcChar: write(Codegen.Output, ', RwpChar');
+        SdtcEnum: write(Codegen.Output, ', RwpEnum');
+        SdtcString:
+                    begin
+                      if ExIsImmediate(WriteArg^.Value.Arg) then
+                        write(Codegen.Output, ', RwpLenPtr')
+                      else if WriteArg^.Value.Arg^.IsAddressable then
+                             write(Codegen.Output, ', RwpStringPtr')
+                      else
+                        write(Codegen.Output, ', RwpString')
+                    end;
         else ErrorForExpr('Expression has invalid type for WRITE',
                           WriteArg^.Value.Arg)
       end;
@@ -1044,52 +1045,52 @@ end;
 procedure OutExpression;
 begin
   case Expr^.Cls of 
-    XcImmediate: _OutExImmediate(Expr);
-    XcToString:
-                begin
-                  write(Codegen.Output, 'str_of(');
-                  OutExpression(Expr^.ToStrParent);
-                  write(Codegen.Output, ')')
-                end;
-    XcToReal:
-              begin
-                write(Codegen.Output, '(double)');
-                OutExpression(Expr^.ToRealParent)
-              end;
-    XcToUntypedPtr: OutExpression(Expr^.ToUntypedPtrParent);
-    XcToGenericFile: OutExpression(Expr^.ToGenericFileParent);
-    XcWithTmpVar: _OutExWithTmpVar(Expr);
-    XcSubrange: _OutExSubrange(Expr);
-    XcSet: _OutExSet(Expr);
-    XcVariable : _OutExVariable(Expr);
-    XcField: _OutExFieldAccess(Expr);
-    XcArray:
-             begin
-               _OutExpressionParens(Expr^.ArrayExpr, Expr);
-               write(Codegen.Output, '[');
-               _OutArrayIndex(Expr^.ArrayIndex, Expr^.ArrayExpr^.TypePtr);
-               write(Codegen.Output, ']')
-             end;
-    XcPointer:
+    SecImmediate: _OutExImmediate(Expr);
+    SecToString:
+                 begin
+                   write(Codegen.Output, 'str_of(');
+                   OutExpression(Expr^.ToStrParent);
+                   write(Codegen.Output, ')')
+                 end;
+    SecToReal:
                begin
-                 write(Codegen.Output, '*');
-                 _OutExpressionParens(Expr^.PointerExpr, Expr)
+                 write(Codegen.Output, '(double)');
+                 OutExpression(Expr^.ToRealParent)
                end;
-    XcAddress: _OutAddress(Expr^.AddressExpr);
-    XcStringChar: _OutExStringChar(Expr);
-    XcFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
-    XcFnCall: _OutExFunctionCall(Expr);
-    XcSizeof: _OutExSizeof(Expr);
-    XcConvertToStr: _OutExConvertToStr(Expr);
-    XcConvertToVal: _OutExConvertToVal(Expr);
-    XcRead: _OutExRead(Expr);
-    XcWrite: _OutExWrite(Expr);
-    XcUnaryOp: _OutExUnaryOp(Expr);
-    XcBinaryOp: _OutExBinaryOp(Expr)
+    SecToUntypedPtr: OutExpression(Expr^.ToUntypedPtrParent);
+    SecToGenericFile: OutExpression(Expr^.ToGenericFileParent);
+    SecWithTmpVar: _OutExWithTmpVar(Expr);
+    SecSubrange: _OutExSubrange(Expr);
+    SecSet: _OutExSet(Expr);
+    SecVariable : _OutExVariable(Expr);
+    SecField: _OutExFieldAccess(Expr);
+    SecArray:
+              begin
+                _OutExpressionParens(Expr^.ArrayExpr, Expr);
+                write(Codegen.Output, '[');
+                _OutArrayIndex(Expr^.ArrayIndex, Expr^.ArrayExpr^.TypePtr);
+                write(Codegen.Output, ']')
+              end;
+    SecPointer:
+                begin
+                  write(Codegen.Output, '*');
+                  _OutExpressionParens(Expr^.PointerExpr, Expr)
+                end;
+    SecAddress: _OutAddress(Expr^.AddressExpr);
+    SecStringChar: _OutExStringChar(Expr);
+    SecFnRef: write(Codegen.Output, Expr^.FnPtr^.ExternalName);
+    SecFnCall: _OutExFunctionCall(Expr);
+    SecSizeof: _OutExSizeof(Expr);
+    SecConvertToStr: _OutExConvertToStr(Expr);
+    SecConvertToVal: _OutExConvertToVal(Expr);
+    SecRead: _OutExRead(Expr);
+    SecWrite: _OutExWrite(Expr);
+    SecUnaryOp: _OutExUnaryOp(Expr);
+    SecBinaryOp: _OutExBinaryOp(Expr)
   end
 end;
 
-procedure OutEnumValues(EnumPtr : TPsEnumPtr);
+procedure OutEnumValues(EnumPtr : TSDTEnum);
 var 
   PosInEnum : integer;
 begin
@@ -1113,7 +1114,7 @@ begin
   else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
-    if (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = TtcEnum) then
+    if (Def^.Cls = SdcType) and (Def^.TypePtr^.Cls = SdtcEnum) then
     begin
       if not Def^.TypePtr^.EnumPtr^.ValuesHaveBeenOutput then
         OutEnumValues(Def^.TypePtr^.EnumPtr);
@@ -1123,7 +1124,7 @@ begin
   end
 end;
 
-function _GetRangeType(TypePtr : TPsTypePtr) : string;
+function _GetRangeType(TypePtr : TSDType) : string;
 type 
   Types = (U8, S8, U16, S16, U32, S32);
 const 
@@ -1156,40 +1157,40 @@ begin
     if T in FitTypes then Result := TypeInfo[T].Name
 end;
 
-procedure OutTypeReference(TypePtr : TPsTypePtr);
-var TheType : TPsTypePtr;
+procedure OutTypeReference(TypePtr : TSDType);
+var TheType : TSDType;
 begin
   if TypePtr = nil then write(Codegen.Output, 'void')
-  else if TypePtr^.Cls = TtcPointer then
+  else if TypePtr^.Cls = SdtcPointer then
   begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*')
   end
-  else if TypePtr^.Cls = TtcBoolean then write(Codegen.Output, 'PBoolean')
-  else if TypePtr^.Cls = TtcInteger then write(Codegen.Output, 'PInteger')
-  else if TypePtr^.Cls = TtcReal then write(Codegen.Output, 'PReal')
-  else if TypePtr^.Cls = TtcChar then write(Codegen.Output, 'PChar')
-  else if TypePtr^.Cls = TtcString then write(Codegen.Output, 'PString')
-  else if TypePtr^.Cls = TtcFile then write(Codegen.Output, 'PFile')
-  else if TypePtr^.Cls = TtcEnum then
+  else if TypePtr^.Cls = SdtcBoolean then write(Codegen.Output, 'PBoolean')
+  else if TypePtr^.Cls = SdtcInteger then write(Codegen.Output, 'PInteger')
+  else if TypePtr^.Cls = SdtcReal then write(Codegen.Output, 'PReal')
+  else if TypePtr^.Cls = SdtcChar then write(Codegen.Output, 'PChar')
+  else if TypePtr^.Cls = SdtcString then write(Codegen.Output, 'PString')
+  else if TypePtr^.Cls = SdtcFile then write(Codegen.Output, 'PFile')
+  else if TypePtr^.Cls = SdtcEnum then
   begin
     if TypePtr^.EnumPtr^.HasBeenDefined and (TypePtr^.Name <> '') then
       write(Codegen.Output, TypePtr^.Name)
     else
       write(Codegen.Output, 'enum enum', TypePtr^.EnumPtr^.Id)
   end
-  else if TypePtr^.Cls = TtcRange then
+  else if TypePtr^.Cls = SdtcRange then
          write(Codegen.Output, _GetRangeType(TypePtr))
-  else if TypePtr^.Cls = TtcSet then
+  else if TypePtr^.Cls = SdtcSet then
          _OutSetTypeName(TypePtr)
-  else if TypePtr^.Cls = TtcRecord then
+  else if TypePtr^.Cls = SdtcRecord then
   begin
     if TypePtr^.RecPtr^.HasBeenDefined and (TypePtr^.Name <> '') then
       write(Codegen.Output, TypePtr^.Name)
     else
       write(Codegen.Output, 'struct record', TypePtr^.RecPtr^.Id)
   end
-  else if TypePtr^.Cls = TtcArray then
+  else if TypePtr^.Cls = SdtcArray then
   begin
     TheType := TypePtr;
     while IsArrayType(TheType) do
@@ -1207,10 +1208,10 @@ begin
     InternalError('Error writing type reference: ' + TypeName(TypePtr))
 end;
 
-procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndType(const Name : string; TypePtr : TSDType);
 forward;
 
-procedure OutNameAndRecord(const Name : string; RecPtr : TPsRecPtr);
+procedure OutNameAndRecord(const Name : string; RecPtr : TSDTRecord);
 var 
   Pos : integer;
   NumVariant : integer;
@@ -1268,7 +1269,7 @@ begin
   write(Codegen.Output, Name)
 end;
 
-procedure OutNameAndEnum(const Name : string; EnumPtr : TPsEnumPtr);
+procedure OutNameAndEnum(const Name : string; EnumPtr : TSDTEnum);
 var 
   Pos : integer;
 begin
@@ -1290,9 +1291,9 @@ begin
   write(Codegen.Output, ' ', Name)
 end;
 
-procedure OutNameAndArray(const Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndArray(const Name : string; TypePtr : TSDType);
 var 
-  TheType : TPsTypePtr;
+  TheType : TSDType;
 begin
   TheType := TypePtr;
   while IsArrayType(TheType) do
@@ -1307,7 +1308,7 @@ begin
   end
 end;
 
-procedure OutNameAndFunction(const Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndFunction(const Name : string; TypePtr : TSDType);
 var Pos : integer;
 begin
   OutNameAndType('(*' + Name + ')', TypePtr^.FnDefPtr^.ReturnTypePtr);
@@ -1320,50 +1321,50 @@ begin
   write(Codegen.Output, ')')
 end;
 
-procedure OutNameAndType(const Name : string; TypePtr : TPsTypePtr);
+procedure OutNameAndType(const Name : string; TypePtr : TSDType);
 var Sp : string;
 begin
   if Name[1] <> '*' then Sp := ' '
   else Sp := '';
   if TypePtr = nil then write(Codegen.Output, 'void', Sp, Name)
-  else if TypePtr^.Cls = TtcPointer then
+  else if TypePtr^.Cls = SdtcPointer then
   begin
     OutTypeReference(TypePtr^.PointedTypePtr);
     write(Codegen.Output, '*', Sp, Name)
   end
   else if (TypePtr^.AliasFor <> nil) and (TypePtr^.Name <> '') then
          write(Codegen.Output, TypePtr^.Name, Sp, Name)
-  else if TypePtr^.Cls = TtcBoolean then
+  else if TypePtr^.Cls = SdtcBoolean then
          write(Codegen.Output, 'PBoolean', Sp, Name)
-  else if TypePtr^.Cls = TtcInteger then
+  else if TypePtr^.Cls = SdtcInteger then
          write(Codegen.Output, 'PInteger', Sp, Name)
-  else if TypePtr^.Cls = TtcReal then
+  else if TypePtr^.Cls = SdtcReal then
          write(Codegen.Output, 'PReal', Sp, Name)
-  else if TypePtr^.Cls = TtcChar then
+  else if TypePtr^.Cls = SdtcChar then
          write(Codegen.Output, 'PChar', Sp, Name)
-  else if TypePtr^.Cls = TtcString then
+  else if TypePtr^.Cls = SdtcString then
          write(Codegen.Output, 'PString', Sp, Name)
-  else if TypePtr^.Cls = TtcFile then
+  else if TypePtr^.Cls = SdtcFile then
          write(Codegen.Output, 'PFile', Sp, Name)
-  else if TypePtr^.Cls = TtcEnum then
+  else if TypePtr^.Cls = SdtcEnum then
          OutNameAndEnum(Name, TypePtr^.EnumPtr)
-  else if TypePtr^.Cls = TtcRange then
+  else if TypePtr^.Cls = SdtcRange then
          write(Codegen.Output, _GetRangeType(TypePtr), Sp, Name)
-  else if TypePtr^.Cls = TtcSet then
+  else if TypePtr^.Cls = SdtcSet then
   begin
     _OutSetTypeName(TypePtr);
     write(Codegen.Output, Sp, Name)
   end
-  else if TypePtr^.Cls = TtcRecord then
+  else if TypePtr^.Cls = SdtcRecord then
          OutNameAndRecord(Name, TypePtr^.RecPtr)
-  else if TypePtr^.Cls = TtcArray then OutNameAndArray(Name, TypePtr)
-  else if TypePtr^.Cls = TtcFunction then OutNameAndFunction(Name, TypePtr)
+  else if TypePtr^.Cls = SdtcArray then OutNameAndArray(Name, TypePtr)
+  else if TypePtr^.Cls = SdtcFunction then OutNameAndFunction(Name, TypePtr)
   else
     InternalError('Error writing name and type: ' + Name + ', ' +
                   TypeName(TypePtr))
 end;
 
-procedure OutTypeDefinition(TypePtr : TPsTypePtr);
+procedure OutTypeDefinition(TypePtr : TSDType);
 var 
   Name : string;
 begin
@@ -1430,7 +1431,7 @@ begin
   write(Codegen.Output, ' }')
 end;
 
-procedure OutVariableDeclaration(VarDef : TPsVariable);
+procedure OutVariableDeclaration(VarDef : TSDVariableDef);
 var Name : string;
 begin
   Name := VarDef.Name;
@@ -1481,7 +1482,7 @@ begin
   _OutNewline
 end;
 
-procedure OutFunctionPrototype(Def : TPsSubroutine);
+procedure OutFunctionPrototype(Def : TSDSubroutineDef);
 var 
   Pos : integer;
 begin
@@ -1641,7 +1642,7 @@ begin
 end;
 
 procedure OutRepeatEnd;
-var TmpExpr : TExpression;
+var TmpExpr : TSExpression;
 begin
   OutEndSameLine;
   write(Codegen.Output, ' while (');
@@ -1668,8 +1669,8 @@ end;
 
 procedure OutForBegin;
 var 
-  LimitType : TPsTypePtr;
-  First, Last : TPsVariable;
+  LimitType : TSDType;
+  First, Last : TSDVariableDef;
 begin
   LimitType := Iter^.TypePtr;
   if IsEnumType(LimitType) then LimitType := PrimitiveTypes.PtInteger;

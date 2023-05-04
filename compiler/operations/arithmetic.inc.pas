@@ -1,5 +1,5 @@
-function _ExOpArithmetic_Integers(Left, Right : TExpression;
-                                  Op : TExOperator) : TExpression;
+function _ExOpArithmetic_Integers(Left, Right : TSExpression;
+                                  Op : TSEOperator) : TSExpression;
 var 
   HasLtNull, HasRtNull, HasLtNeg, HasRtNeg : boolean;
   LtNull, RtNull, LtNeg, RtNeg : integer;
@@ -14,17 +14,17 @@ begin
   LtNeg := 0;
   RtNeg := 0;
   case Op of 
-    XoAdd:
+    SeoAdd:
            begin
              HasLtNull := true;
              HasRtNull := true;
            end;
-    XoSub:
+    SeoSub:
            begin
              HasLtNeg := true;
              HasRtNull := true;
            end;
-    XoMul:
+    SeoMul:
            begin
              HasLtNull := true;
              LtNull := 1;
@@ -35,7 +35,7 @@ begin
              HasRtNeg := true;
              RtNeg := -1;
            end;
-    XoDivInt:
+    SeoDivInt:
               begin
                 HasRtNull := true;
                 RtNull := 1;
@@ -72,11 +72,11 @@ begin
     Lt := Left^.Immediate.IntegerVal;
     Rt := Right^.Immediate.IntegerVal;
     case Op of 
-      XoAdd: Ret := Lt + Rt;
-      XoSub: Ret := Lt - Rt;
-      XoMul: Ret := Lt * Rt;
-      XoDivInt: Ret := Lt div Rt;
-      XoMod: Ret := Lt mod Rt;
+      SeoAdd: Ret := Lt + Rt;
+      SeoSub: Ret := Lt - Rt;
+      SeoMul: Ret := Lt * Rt;
+      SeoDivInt: Ret := Lt div Rt;
+      SeoMod: Ret := Lt mod Rt;
     end;
     Result := Left;
     Result^.Immediate.IntegerVal := Ret;
@@ -86,8 +86,8 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtInteger)
 end;
 
-function _ExOpArithmetic_Numbers(Left, Right : TExpression;
-                                 Op : TExOperator) : TExpression;
+function _ExOpArithmetic_Numbers(Left, Right : TSExpression;
+                                 Op : TSEOperator) : TSExpression;
 var 
   HasLtNull, HasRtNull, HasLtNeg, HasRtNeg : boolean;
   LtNull, RtNull, LtNeg, RtNeg : real;
@@ -102,17 +102,17 @@ begin
   LtNeg := 0;
   RtNeg := 0;
   case Op of 
-    XoAdd:
+    SeoAdd:
            begin
              HasLtNull := true;
              HasRtNull := true;
            end;
-    XoSub:
+    SeoSub:
            begin
              HasLtNeg := true;
              HasRtNull := true;
            end;
-    XoMul:
+    SeoMul:
            begin
              HasLtNull := true;
              LtNull := 1;
@@ -121,7 +121,7 @@ begin
              HasRtNeg := true;
              RtNeg := -1;
            end;
-    XoDivReal:
+    SeoDivReal:
                begin
                  HasRtNull := true;
                  RtNull := 1;
@@ -160,10 +160,10 @@ begin
     Lt := Left^.Immediate.RealVal;
     Rt := Right^.Immediate.RealVal;
     case Op of 
-      XoAdd: Ret := Lt + Rt;
-      XoSub: Ret := Lt - Rt;
-      XoMul: Ret := Lt * Rt;
-      XoDivReal: Ret := Lt / Rt;
+      SeoAdd: Ret := Lt + Rt;
+      SeoSub: Ret := Lt - Rt;
+      SeoMul: Ret := Lt * Rt;
+      SeoDivReal: Ret := Lt / Rt;
     end;
     Result := Left;
     Result^.Immediate.RealVal := Ret;
@@ -173,16 +173,16 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtReal)
 end;
 
-function _ExOpAdd_Strings(Left, Right : TExpression) : TExpression;
+function _ExOpAdd_Strings(Left, Right : TSExpression) : TSExpression;
 var Lt, Rt : string;
 begin
-  if ExIsImmediateOfClass(Left, XicString)
+  if ExIsImmediateOfClass(Left, SeicString)
      and (Left^.Immediate.StringVal = '') then
   begin
     ExDispose(Left);
     Result := Right
   end
-  else if ExIsImmediateOfClass(Right, XicString)
+  else if ExIsImmediateOfClass(Right, SeicString)
           and (Right^.Immediate.StringVal = '') then
   begin
     ExDispose(Right);
@@ -190,22 +190,22 @@ begin
   end
   else if ExIsImmediate(Left) and ExIsImmediate(Right) then
   begin
-    if Left^.Immediate.Cls = XicChar then Lt := Left^.Immediate.CharVal
+    if Left^.Immediate.Cls = SeicChar then Lt := Left^.Immediate.CharVal
     else Lt := Left^.Immediate.StringVal;
-    if Right^.Immediate.Cls = XicChar then Rt := Right^.Immediate.CharVal
+    if Right^.Immediate.Cls = SeicChar then Rt := Right^.Immediate.CharVal
     else Rt := Right^.Immediate.StringVal;
     Result := Left;
     Result^.Immediate.StringVal := Lt + Rt;
-    Result^.Immediate.Cls := XicString;
+    Result^.Immediate.Cls := SeicString;
     Result^.TypePtr := PrimitiveTypes.PtString;
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoAdd, PrimitiveTypes.PtString)
+    Result := _ExOp_MakeBinary(Left, Right, SeoAdd, PrimitiveTypes.PtString)
 end;
 
-function _ExOpUnion_Sets(Left, Right : TExpression) : TExpression;
-var NewBds, OldBds : TExSetImmBounds;
+function _ExOpUnion_Sets(Left, Right : TSExpression) : TSExpression;
+var NewBds, OldBds : TSESetImmBounds;
 begin
   ExSetCoerceToCommon(Left, Right);
   if ExIsImmediate(Left) and (Left^.SetBounds = nil) then
@@ -238,11 +238,11 @@ begin
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoAdd, Left^.TypePtr)
+    Result := _ExOp_MakeBinary(Left, Right, SeoAdd, Left^.TypePtr)
 end;
 
-function _ExOpDifference_Sets(Left, Right : TExpression) : TExpression;
-var LtBds, RtBds, NewBds : TExSetImmBounds;
+function _ExOpDifference_Sets(Left, Right : TSExpression) : TSExpression;
+var LtBds, RtBds, NewBds : TSESetImmBounds;
 begin
   ExSetCoerceToCommon(Left, Right);
   if ExIsImmediate(Left) and (Left^.SetBounds = nil) then
@@ -297,11 +297,11 @@ begin
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoSub, Left^.TypePtr)
+    Result := _ExOp_MakeBinary(Left, Right, SeoSub, Left^.TypePtr)
 end;
 
-function _ExOpIntersection_Sets(Left, Right : TExpression) : TExpression;
-var LtBds, RtBds, NewBds : TExSetImmBounds;
+function _ExOpIntersection_Sets(Left, Right : TSExpression) : TSExpression;
+var LtBds, RtBds, NewBds : TSESetImmBounds;
 begin
   ExSetCoerceToCommon(Left, Right);
   if ExIsImmediate(Left) and (Left^.SetBounds = nil) then
@@ -353,76 +353,76 @@ begin
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoMul, Left^.TypePtr)
+    Result := _ExOp_MakeBinary(Left, Right, SeoMul, Left^.TypePtr)
 end;
 
-function ExOpNeg(Expr : TExpression) : TExpression;
+function ExOpNeg(Expr : TSExpression) : TSExpression;
 begin
   EnsureNumericExpr(Expr);
   if ExIsImmediate(Expr) then
   begin
     with Expr^.Immediate do
-      if Cls = XicInteger then IntegerVal := -IntegerVal
+      if Cls = SeicInteger then IntegerVal := -IntegerVal
       else RealVal := -RealVal;
     Result := Expr
   end
   else
-    Result := _ExOp_MakeUnary(Expr, XoNeg, Expr^.TypePtr)
+    Result := _ExOp_MakeUnary(Expr, SeoNeg, Expr^.TypePtr)
 end;
 
-function ExOpAdd(Left, Right : TExpression) : TExpression;
+function ExOpAdd(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpArithmetic_Integers(Left, Right, XoAdd)
+    Result := _ExOpArithmetic_Integers(Left, Right, SeoAdd)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpArithmetic_Numbers(Left, Right, XoAdd)
+         Result := _ExOpArithmetic_Numbers(Left, Right, SeoAdd)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
          Result := _ExOpAdd_Strings(Left, Right)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpUnion_Sets(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoAdd)
+  else ErrorInvalidOperator2(Left, Right, SeoAdd)
 end;
 
-function ExOpSub(Left, Right : TExpression) : TExpression;
+function ExOpSub(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpArithmetic_Integers(Left, Right, XoSub)
+    Result := _ExOpArithmetic_Integers(Left, Right, SeoSub)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpArithmetic_Numbers(Left, Right, XoSub)
+         Result := _ExOpArithmetic_Numbers(Left, Right, SeoSub)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpDifference_Sets(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoSub)
+  else ErrorInvalidOperator2(Left, Right, SeoSub)
 end;
 
-function ExOpMul(Left, Right : TExpression) : TExpression;
+function ExOpMul(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpArithmetic_Integers(Left, Right, XoMul)
+    Result := _ExOpArithmetic_Integers(Left, Right, SeoMul)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpArithmetic_Numbers(Left, Right, XoMul)
+         Result := _ExOpArithmetic_Numbers(Left, Right, SeoMul)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpIntersection_Sets(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoMul)
+  else ErrorInvalidOperator2(Left, Right, SeoMul)
 end;
 
-function ExOpDivReal(Left, Right : TExpression) : TExpression;
+function ExOpDivReal(Left, Right : TSExpression) : TSExpression;
 begin
   if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr)
      and (IsRealType(Left^.TypePtr) or IsRealType(Right^.TypePtr)) then
-    Result := _ExOpArithmetic_Numbers(Left, Right, XoDivReal)
-  else ErrorInvalidOperator2(Left, Right, XoDivReal)
+    Result := _ExOpArithmetic_Numbers(Left, Right, SeoDivReal)
+  else ErrorInvalidOperator2(Left, Right, SeoDivReal)
 end;
 
-function ExOpDivInt(Left, Right : TExpression) : TExpression;
+function ExOpDivInt(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpArithmetic_Integers(Left, Right, XoDivInt)
-  else ErrorInvalidOperator2(Left, Right, XoDivInt)
+    Result := _ExOpArithmetic_Integers(Left, Right, SeoDivInt)
+  else ErrorInvalidOperator2(Left, Right, SeoDivInt)
 end;
 
-function ExOpMod(Left, Right : TExpression) : TExpression;
+function ExOpMod(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpArithmetic_Integers(Left, Right, XoMod)
-  else ErrorInvalidOperator2(Left, Right, XoMod)
+    Result := _ExOpArithmetic_Integers(Left, Right, SeoMod)
+  else ErrorInvalidOperator2(Left, Right, SeoMod)
 end;

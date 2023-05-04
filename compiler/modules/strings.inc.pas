@@ -1,5 +1,5 @@
-function _ModStrings_Concat_Parse(FnExpr : TExpression) : TExpression;
-var Operand : TExpression;
+function _ModStrings_Concat_Parse(FnExpr : TSExpression) : TSExpression;
+var Operand : TSExpression;
 begin
   ExDispose(FnExpr);
   Result := nil;
@@ -15,10 +15,10 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
-function _ModStrings_Str_Parse(FnExpr : TExpression) : TExpression;
+function _ModStrings_Str_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Src : TExWriteArg;
-  Dest : TExpression;
+  Src : TSEWriteArg;
+  Dest : TSExpression;
 begin
   WantTokenAndRead(TkLparen);
   Src := Pf_WriteArg_Parse;
@@ -37,9 +37,9 @@ begin
   Result := ExConvertToStr(Src.Arg, Src.Width, Src.Prec, Dest)
 end;
 
-function _ModStrings_Val_Parse(FnExpr : TExpression) : TExpression;
+function _ModStrings_Val_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Src, Dest, Code : TExpression;
+  Src, Dest, Code : TSExpression;
 begin
   WantTokenAndRead(TkLparen);
   Src := ExOutrange(PsExpression);

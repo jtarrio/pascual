@@ -19,7 +19,6 @@ begin
 end;
 
 {$I containers.inc.pas}
-{$I typedefs.inc.pas}
 {$I ast.inc.pas}
 {$I expression.forward.inc.pas}
 {$I operations/forward.inc.pas}

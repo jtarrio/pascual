@@ -1,5 +1,5 @@
-function _ExOpBitwise_Integers(Left, Right : TExpression;
-                               Op : TExOperator) : TExpression;
+function _ExOpBitwise_Integers(Left, Right : TSExpression;
+                               Op : TSEOperator) : TSExpression;
 begin
   if ExIsImmediate(Right) and (Right^.Immediate.IntegerVal = 0) then
   begin
@@ -10,10 +10,10 @@ begin
   begin
     Result := Left;
     case Op of 
-      XoShl:
+      SeoShl:
              Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shl
                                              Right^.Immediate.IntegerVal;
-      XoShr:
+      SeoShr:
              Result^.Immediate.IntegerVal := Left^.Immediate.IntegerVal shr
                                              Right^.Immediate.IntegerVal;
     end;
@@ -23,16 +23,16 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtInteger)
 end;
 
-function ExOpShl(Left, Right : TExpression) : TExpression;
+function ExOpShl(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpBitwise_Integers(Left, Right, XoShl)
-  else ErrorInvalidOperator2(Left, Right, XoShl)
+    Result := _ExOpBitwise_Integers(Left, Right, SeoShl)
+  else ErrorInvalidOperator2(Left, Right, SeoShl)
 end;
 
-function ExOpShr(Left, Right : TExpression) : TExpression;
+function ExOpShr(Left, Right : TSExpression) : TSExpression;
 begin
   if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-    Result := _ExOpBitwise_Integers(Left, Right, XoShr)
-  else ErrorInvalidOperator2(Left, Right, XoShr)
+    Result := _ExOpBitwise_Integers(Left, Right, SeoShr)
+  else ErrorInvalidOperator2(Left, Right, SeoShr)
 end;

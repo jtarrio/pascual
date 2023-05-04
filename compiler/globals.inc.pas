@@ -6,12 +6,12 @@ begin
   PushGlobalDefs(GlobalDefinitions);
 
   { Primitive types }
-  PrimitiveTypes.PtNil := MakeBaseType('NIL', TtcNil);
-  PrimitiveTypes.PtBoolean := MakeBaseType('BOOLEAN', TtcBoolean);
-  PrimitiveTypes.PtInteger := MakeBaseType('INTEGER', TtcInteger);
-  PrimitiveTypes.PtReal := MakeBaseType('REAL', TtcReal);
-  PrimitiveTypes.PtChar := MakeBaseType('CHAR', TtcChar);
-  PrimitiveTypes.PtString := MakeBaseType('STRING', TtcString);
+  PrimitiveTypes.PtNil := MakeBaseType('NIL', SdtcNil);
+  PrimitiveTypes.PtBoolean := MakeBaseType('BOOLEAN', SdtcBoolean);
+  PrimitiveTypes.PtInteger := MakeBaseType('INTEGER', SdtcInteger);
+  PrimitiveTypes.PtReal := MakeBaseType('REAL', SdtcReal);
+  PrimitiveTypes.PtChar := MakeBaseType('CHAR', SdtcChar);
+  PrimitiveTypes.PtString := MakeBaseType('STRING', SdtcString);
   PrimitiveTypes.PtText := AddTypeName('TEXT', MakeTextType)^.TypePtr;
   PrimitiveTypes.PtFile := MakeGenericFileType;
   PrimitiveTypes.PtEmptySet := MakeSetType(nil);

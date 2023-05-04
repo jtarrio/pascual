@@ -1,13 +1,18 @@
+type 
+  TPsIdentifier = record
+    Name : string;
+  end;
+
 procedure ReadToken;
 forward;
 
-function PsTypeDenoter : TPsTypePtr;
+function PsTypeDenoter : TSDType;
 forward;
 
-function PsExpression : TExpression;
+function PsExpression : TSExpression;
 forward;
 
-function PsVariable : TExpression;
+function PsVariable : TSExpression;
 forward;
 
 procedure PsStatement;
@@ -62,7 +67,7 @@ begin
   if Lexer.Token.Id = Id then ReadToken
 end;
 
-function PsTypeIdentifier : TPsTypePtr;
+function PsTypeIdentifier : TSDType;
 begin
   WantToken(TkIdentifier);
   Result := FindNameOfClass(Lexer.Token.Value,
@@ -76,8 +81,8 @@ begin
   Result.Name := GetTokenValueAndRead(TkIdentifier);
 end;
 
-function PsImmediate : TExpression;
-var Expr : TExpression;
+function PsImmediate : TSExpression;
+var Expr : TSExpression;
 begin
   Expr := PsExpression;
   if not ExIsImmediate(Expr) then
@@ -85,8 +90,8 @@ begin
   PsImmediate := Expr
 end;
 
-function PsEnumeratedType : TPsTypePtr;
-var Enum : TPsEnumDef;
+function PsEnumeratedType : TSDType;
+var Enum : TSDTEnumDef;
 begin
   WantTokenAndRead(TkLparen);
   Enum.Size := 0;
@@ -102,11 +107,11 @@ begin
   Result := MakeEnumType(Enum)
 end;
 
-procedure PsRecordField(var Rec : TPsRecordDef; Delimiter : TLxTokenId);
+procedure PsRecordField(var Rec : TSDTRecordDef; Delimiter : TLxTokenId);
 var 
   Name : string;
   LastField, Field : integer;
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
 begin
   LastField := Rec.Size;
   repeat
@@ -131,11 +136,11 @@ begin
   SkipToken(TkSemicolon);
 end;
 
-procedure PsRecordVariants(var Rec : TPsRecordDef);
+procedure PsRecordVariants(var Rec : TSDTRecordDef);
 var 
   Tag : TPsIdentifier;
-  TagType : TPsTypePtr;
-  CaseLabel : TExpression;
+  TagType : TSDType;
+  CaseLabel : TSExpression;
 begin
   WantTokenAndRead(TkCase);
   Tag := PsIdentifier;
@@ -171,8 +176,8 @@ begin
   until Lexer.Token.Id = TkEnd;
 end;
 
-function PsRecordType(IsPacked : boolean) : TPsTypePtr;
-var Rec : TPsRecordDef;
+function PsRecordType(IsPacked : boolean) : TSDType;
+var Rec : TSDTRecordDef;
 begin
   WantTokenAndRead(TkRecord);
   Rec.Size := 0;
@@ -186,12 +191,12 @@ begin
   Result := MakeRecordType(Rec)
 end;
 
-procedure PsArguments(var Args : TPsFnArgs);
+procedure PsArguments(var Args : TSDSubroutineArgs);
 var 
   IsConst : boolean;
   IsVar : boolean;
   LastArg, Arg : integer;
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
 begin
   WantTokenAndRead(TkLparen);
   Args.Count := 0;
@@ -203,7 +208,7 @@ begin
     LastArg := Args.Count;
     repeat
       Args.Count := Args.Count + 1;
-      if Args.Count > MaxFnArgs then
+      if Args.Count > MaxSubroutineArgs then
         CompileError('Too many arguments declared for subroutine');
       Args.Defs[Args.Count].Name := GetTokenValueAndRead(TkIdentifier);
       Args.Defs[Args.Count].IsConstant := IsConst;
@@ -229,23 +234,23 @@ begin
   SkipToken(TkRparen)
 end;
 
-function PsResultType : TPsTypePtr;
+function PsResultType : TSDType;
 begin
   PsResultType := PsTypeIdentifier
 end;
 
-function PsProcedureType : TPsTypePtr;
-var Args : TPsFnArgs;
+function PsProcedureType : TSDType;
+var Args : TSDSubroutineArgs;
 begin
   WantTokenAndRead(TkProcedure);
   if Lexer.Token.Id = TkLParen then PsArguments(Args);
   Result := MakeFunctionType(Args, nil)
 end;
 
-function PsFunctionType : TPsTypePtr;
+function PsFunctionType : TSDType;
 var 
-  Args : TPsFnArgs;
-  ReturnType : TPsTypePtr;
+  Args : TSDSubroutineArgs;
+  ReturnType : TSDType;
 begin
   WantTokenAndRead(TkFunction);
   WantToken2(TkLParen, TkColon);
@@ -255,8 +260,8 @@ begin
   Result := MakeFunctionType(Args, ReturnType)
 end;
 
-function _PsArrayTypeInternal : TPsTypePtr;
-var IndexType, ValueType : TPsTypePtr;
+function _PsArrayTypeInternal : TSDType;
+var IndexType, ValueType : TSDType;
 begin
   IndexType := PsTypeDenoter;
   WantToken2(TkComma, TkRbracket);
@@ -274,14 +279,14 @@ begin
   Result := MakeArrayType(IndexType, ValueType)
 end;
 
-function PsArrayType : TPsTypePtr;
+function PsArrayType : TSDType;
 begin
   WantTokenAndRead(TkArray);
   WantTokenAndRead(TkLbracket);
   Result := _PsArrayTypeInternal
 end;
 
-function PsPointerType : TPsTypePtr;
+function PsPointerType : TSDType;
 var NamePtr : TSDName;
 begin
   WantTokenAndRead(TkCaret);
@@ -296,9 +301,9 @@ begin
   ReadToken
 end;
 
-function PsRangeType : TPsTypePtr;
+function PsRangeType : TSDType;
 var 
-  First, Last : TExpression;
+  First, Last : TSExpression;
 begin
   First := PsImmediate;
   WantTokenAndRead(TkRange);
@@ -314,8 +319,8 @@ begin
   ExDispose(Last)
 end;
 
-function PsSetType : TPsTypePtr;
-var ElementTypePtr : TPsTypePtr;
+function PsSetType : TSDType;
+var ElementTypePtr : TSDType;
 begin
   WantTokenAndRead(TkSet);
   WantTokenAndRead(TkOf);
@@ -329,7 +334,7 @@ begin
   Result := MakeSetType(ElementTypePtr)
 end;
 
-function PsFileType : TPsTypePtr;
+function PsFileType : TSDType;
 begin
   WantTokenAndRead(TkFile);
   WantTokenAndRead(TkOf);
@@ -367,16 +372,16 @@ begin
     CompileError('Expected type denoter, found ' + LxTokenStr);
 end;
 
-procedure _ResolvePointerForward(TypePtr : TPsTypePtr);
+procedure _ResolvePointerForward(TypePtr : TSDType);
 var 
-  TargetPtr : TPsTypePtr;
+  TargetPtr : TSDType;
 begin
   if IsPointerForwardType(TypePtr) then
   begin
     TargetPtr := FindNameOfClass(TypePtr^.TargetName^,
                  SdncType, {Required=}true)^.TypePtr;
     dispose(TypePtr^.TargetName);
-    TypePtr^.Cls := TtcPointer;
+    TypePtr^.Cls := SdtcPointer;
     TypePtr^.PointedTypePtr := TargetPtr;
     TargetPtr^.WasUsed := true
   end
@@ -385,7 +390,7 @@ end;
 procedure PsTypeDefinitions;
 var 
   Name : string;
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
   Checkpoint : TSDefinition;
 begin
   Checkpoint := CurrentScope^.LatestDef;
@@ -410,10 +415,10 @@ begin
   AddConstant(Constant);
 end;
 
-procedure PsConstantValue(TypePtr : TPsTypePtr);
+procedure PsConstantValue(TypePtr : TSDType);
 forward;
 
-procedure PsConstantArray(TypePtr : TPsTypePtr);
+procedure PsConstantArray(TypePtr : TSDType);
 var ConstSize, WantedSize : integer;
 begin
   WantTokenAndRead(TkLparen);
@@ -435,10 +440,10 @@ begin
     ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr))
 end;
 
-procedure PsConstantRecord(TypePtr : TPsTypePtr);
+procedure PsConstantRecord(TypePtr : TSDType);
 var 
   FieldId : TPsIdentifier;
-  FieldType : TPsTypePtr;
+  FieldType : TSDType;
 begin
   WantTokenAndRead(TkLparen);
   OutConstantRecordBegin;
@@ -457,8 +462,8 @@ begin
   WantTokenAndRead(TkRparen)
 end;
 
-procedure PsConstantValue(TypePtr : TPsTypePtr);
-var Expr : TExpression;
+procedure PsConstantValue(TypePtr : TSDType);
+var Expr : TSExpression;
 begin
   if IsArrayType(TypePtr) then PsConstantArray(TypePtr)
   else if IsRecordType(TypePtr) then PsConstantRecord(TypePtr)
@@ -472,7 +477,7 @@ end;
 
 procedure PsTypedConstant(const Name : string);
 var 
-  TypePtr : TPsTypePtr;
+  TypePtr : TSDType;
 begin
   WantTokenAndRead(TkColon);
   TypePtr := PsTypeDenoter;
@@ -507,8 +512,8 @@ const
 var 
   NumNames : integer;
   Names : array[1..MaxVarNames] of string;
-  TypePtr : TPsTypePtr;
-  Location : TExpression;
+  TypePtr : TSDType;
+  Location : TSExpression;
   Checkpoint : TSDefinition;
 begin
   Checkpoint := CurrentScope^.LatestDef;
@@ -547,13 +552,13 @@ begin
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
-procedure PsFunctionBody(SrPtr : TPsSubrPtr);
+procedure PsFunctionBody(SrPtr : TSDSubroutine);
 var 
   { TODO move to AST }
   FnDefs : TSScope;
   Pos : integer;
   Checkpoint : TSDefinition;
-  ResultPtr : TPsVarPtr;
+  ResultPtr : TSDVariable;
 begin
   new(FnDefs);
   StartLocalScope(FnDefs, SrPtr);
@@ -584,7 +589,7 @@ end;
 
 procedure PsProcedureDefinition;
 var 
-  Def : TPsSubroutine;
+  Def : TSDSubroutineDef;
 begin
   Def := EmptyFunction();
   WantTokenAndRead(TkProcedure);
@@ -606,7 +611,7 @@ end;
 
 procedure PsFunctionDefinition;
 var 
-  Def : TPsSubroutine;
+  Def : TSDSubroutineDef;
 begin
   Def := EmptyFunction();
   WantTokenAndRead(TkFunction);
@@ -690,14 +695,14 @@ begin
   PsProgramBlock
 end;
 
-function PsPointerDeref(Ptr : TExpression) : TExpression;
+function PsPointerDeref(Ptr : TSExpression) : TSExpression;
 begin
-  if Ptr^.Cls = XcVariable then Ptr^.VarPtr^.WasUsed := true;
+  if Ptr^.Cls = SecVariable then Ptr^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkCaret);
   PsPointerDeref := ExPointerAccess(Ptr)
 end;
 
-function PsFunctionArgs : TExFunctionArgs;
+function PsFunctionArgs : TSEFunctionArgs;
 begin
   Result.Size := 0;
   if Lexer.Token.Id = TkLParen then
@@ -714,25 +719,25 @@ begin
   end
 end;
 
-function PsFunctionCall(Fn : TExpression) : TExpression;
+function PsFunctionCall(Fn : TSExpression) : TSExpression;
 begin
-  if (Fn^.Cls = XcFnRef) and (Fn^.FnPtr <> CurrentScope^.CurrentFn) then
+  if (Fn^.Cls = SecFnRef) and (Fn^.FnPtr <> CurrentScope^.CurrentFn) then
     Fn^.FnPtr^.WasUsed := true
-  else if Fn^.Cls = XcVariable then Fn^.VarPtr^.WasUsed := true;
+  else if Fn^.Cls = SecVariable then Fn^.VarPtr^.WasUsed := true;
 
-  if Fn^.Cls = XcFnRef then
+  if Fn^.Cls = SecFnRef then
     Result := ExFunctionCall(Fn, PsFunctionArgs)
   else if IsFunctionType(Fn^.TypePtr) then
          Result := ExFunctionCall(Fn, PsFunctionArgs)
-  else if Fn^.Cls = XcPseudoFnRef then
+  else if Fn^.Cls = SecPseudoFnRef then
          Result := Fn^.PseudoFnPtr^.ParseFn(Fn)
 end;
 
-function PsArrayAccess(Arr : TExpression) : TExpression;
+function PsArrayAccess(Arr : TSExpression) : TSExpression;
 var 
-  Idx : TExpression;
+  Idx : TSExpression;
 begin
-  if Arr^.Cls = XcVariable then Arr^.VarPtr^.WasUsed := true;
+  if Arr^.Cls = SecVariable then Arr^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkLbracket);
   repeat
     Idx := PsExpression;
@@ -748,11 +753,11 @@ begin
   Result := Arr
 end;
 
-function PsFieldAccess(Rec : TExpression) : TExpression;
+function PsFieldAccess(Rec : TSExpression) : TSExpression;
 var 
   Fld : TPsIdentifier;
 begin
-  if Rec^.Cls = XcVariable then Rec^.VarPtr^.WasUsed := true;
+  if Rec^.Cls = SecVariable then Rec^.VarPtr^.WasUsed := true;
   WantTokenAndRead(TkDot);
   Fld := PsIdentifier;
   PsFieldAccess := ExFieldAccess(Rec,
@@ -760,12 +765,12 @@ begin
 end;
 
 function _PsVariableInternal(ForStatement : boolean;
-                             CallFns : boolean) : TExpression;
+                             CallFns : boolean) : TSExpression;
 var 
   Id : TPsIdentifier;
-  WithVarPtr : TPsWithVarPtr;
+  WithVarPtr : TSDWithVarPtr;
   Found : TSDName;
-  Expr : TExpression;
+  Expr : TSExpression;
   Done : boolean;
 begin
   Id := PsIdentifier;
@@ -786,12 +791,12 @@ begin
   else if Found^.Cls = SdncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)
   else CompileError('Invalid identifier: ' + Id.Name);
 
-  Done := ForStatement and (Expr^.Cls = XcFnRef)
+  Done := ForStatement and (Expr^.Cls = SecFnRef)
           and (Expr^.FnPtr = CurrentScope^.CurrentFn)
           and (Lexer.Token.Id = TkAssign);
   while not Done do
   begin
-    if CallFns and (Expr^.Cls in [XcFnRef, XcPseudoFnRef]) then
+    if CallFns and (Expr^.Cls in [SecFnRef, SecPseudoFnRef]) then
       Expr := PsFunctionCall(Expr)
     else if CallFns and IsFunctionType(Expr^.TypePtr)
             and (Lexer.Token.Id = TkLparen) then
@@ -802,26 +807,26 @@ begin
     else Done := true
   end;
 
-  if (Expr^.Cls = XcVariable) and not ForStatement then
+  if (Expr^.Cls = SecVariable) and not ForStatement then
     Expr^.VarPtr^.WasUsed := true
-  else if (Expr^.Cls = XcFnRef)
+  else if (Expr^.Cls = SecFnRef)
           and (Expr^.FnPtr <> CurrentScope^.CurrentFn) then
          Expr^.FnPtr^.WasUsed := true;
 
   Result := Expr
 end;
 
-function PsVariable : TExpression;
+function PsVariable : TSExpression;
 begin
   Result := _PsVariableInternal({ForStatement=}false, {CallFns=}true)
 end;
 
-function PsVariableOrFunction : TExpression;
+function PsVariableOrFunction : TSExpression;
 begin
   Result := _PsVariableInternal({ForStatement=}false, {CallFns=}false)
 end;
 
-function PsVariableForStatement : TExpression;
+function PsVariableForStatement : TSExpression;
 begin
   Result := _PsVariableInternal({ForStatement=}true, {CallFns=}true)
 end;
@@ -943,8 +948,8 @@ begin
   if Code <> 0 then CompileError('Could not parse real number: ' + Pstr)
 end;
 
-function PsSetConstructor : TExpression;
-var First, Last : TExpression;
+function PsSetConstructor : TSExpression;
+var First, Last : TSExpression;
 begin
   Result := ExSet;
   WantTokenAndRead(TkLbracket);
@@ -969,9 +974,9 @@ begin
   WantTokenAndRead(TkRbracket)
 end;
 
-function PsFactor : TExpression;
+function PsFactor : TSExpression;
 var 
-  Expr : TExpression;
+  Expr : TSExpression;
   Str : string;
 begin
   if Lexer.Token.Id = TkCaret then LxGetStringFromCaret;
@@ -1013,8 +1018,8 @@ begin
   PsFactor := Expr
 end;
 
-function PsBinaryOp(Left, Right : TExpression;
-                    Op : TLxTokenId) : TExpression;
+function PsBinaryOp(Left, Right : TSExpression;
+                    Op : TLxTokenId) : TSExpression;
 begin
   case Op of 
     TkPlus: Result := ExOpAdd(Left, Right);
@@ -1039,10 +1044,10 @@ begin
   end;
 end;
 
-function PsTerm : TExpression;
+function PsTerm : TSExpression;
 var 
   Op : TLxTokenId;
-  Expr : TExpression;
+  Expr : TSExpression;
 begin
   Expr := PsFactor;
   while IsOpMultiplying(Lexer.Token) do
@@ -1054,11 +1059,11 @@ begin
   PsTerm := Expr
 end;
 
-function PsSimpleExpression : TExpression;
+function PsSimpleExpression : TSExpression;
 var 
   Negative : boolean;
   Op : TLxTokenId;
-  Expr : TExpression;
+  Expr : TSExpression;
 begin
   Negative := Lexer.Token.Id = TkMinus;
   if Negative then ReadToken
@@ -1077,7 +1082,7 @@ end;
 function PsExpression;
 var 
   Op : TLxTokenId;
-  Expr : TExpression;
+  Expr : TSExpression;
 begin
   Expr := PsSimpleExpression;
   while IsOpRelational(Lexer.Token) do
@@ -1089,10 +1094,10 @@ begin
   PsExpression := Expr
 end;
 
-procedure PsAssign(Lhs, Rhs : TExpression);
-var ResultVarPtr : TPsVarPtr;
+procedure PsAssign(Lhs, Rhs : TSExpression);
+var ResultVarPtr : TSDVariable;
 begin
-  if Lhs^.Cls = XcFnRef then
+  if Lhs^.Cls = SecFnRef then
   begin
     if Lhs^.FnPtr <> CurrentScope^.CurrentFn then
       ErrorForExpr('Cannot assign a value to a function', Lhs);
@@ -1132,8 +1137,8 @@ end;
 
 procedure PsIdentifierStatement;
 var 
-  Lhs : TExpression;
-  OrigLhs : TExpression;
+  Lhs : TSExpression;
+  OrigLhs : TSExpression;
   UsesTmpVars : boolean;
 begin
   Lhs := PsVariableForStatement;
@@ -1147,7 +1152,7 @@ begin
     if IsFunctionType(Lhs^.TypePtr) then Lhs := PsFunctionCall(Lhs);
     OrigLhs := Lhs;
     UsesTmpVars := false;
-    while Lhs^.Cls = XcWithTmpVar do
+    while Lhs^.Cls = SecWithTmpVar do
     begin
       if not UsesTmpVars then
       begin
@@ -1171,7 +1176,7 @@ begin
 end;
 
 procedure PsIfStatement;
-var Cond : TExpression;
+var Cond : TSExpression;
 begin
   WantTokenAndRead(TkIf);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
@@ -1191,9 +1196,9 @@ end;
 
 procedure PsCaseStatement;
 var 
-  CasePtr : TExpression;
-  CaseTypePtr : TPsTypePtr;
-  CaseLabel : TExpression;
+  CasePtr : TSExpression;
+  CaseTypePtr : TSDType;
+  CaseLabel : TSExpression;
 begin
   WantTokenAndRead(TkCase);
   CasePtr := PsExpression;
@@ -1228,7 +1233,7 @@ begin
 end;
 
 procedure PsRepeatStatement;
-var Cond : TExpression;
+var Cond : TSExpression;
 begin
   WantTokenAndRead(TkRepeat);
   OutRepeatBegin;
@@ -1245,7 +1250,7 @@ begin
 end;
 
 procedure PsWhileStatement;
-var Cond : TExpression;
+var Cond : TSExpression;
 begin
   WantTokenAndRead(TkWhile);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
@@ -1258,7 +1263,7 @@ end;
 
 procedure PsForStatement;
 var 
-  Iter, First, Last : TExpression;
+  Iter, First, Last : TSExpression;
   Ascending : boolean;
 begin
   WantTokenAndRead(TkFor);
@@ -1267,7 +1272,7 @@ begin
     ErrorForExpr('Iterator must not be the result of a function', Iter);
   EnsureAssignableExpr(Iter);
   EnsureOrdinalExpr(Iter);
-  if Iter^.Cls = XcVariable then
+  if Iter^.Cls = SecVariable then
   begin
     Iter^.VarPtr^.WasInitialized := true;
     Iter^.VarPtr^.WasUsed := true
@@ -1289,8 +1294,8 @@ end;
 
 procedure PsWithStatement;
 var 
-  Base : TExpression;
-  VarPtr : TPsVarPtr;
+  Base : TSExpression;
+  VarPtr : TSDVariable;
 begin
   WantToken(TkWith);
   OutSequenceBegin;

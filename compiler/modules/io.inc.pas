@@ -1,5 +1,5 @@
-function _ModIo_TypeIsValidForFileRead(InFile, Expr : TExpression) : boolean;
-const ReadableTypes = [TtcInteger, TtcReal, TtcChar, TtcString];
+function _ModIo_TypeIsValidForFileRead(InFile, Expr : TSExpression) : boolean;
+const ReadableTypes = [SdtcInteger, SdtcReal, SdtcChar, SdtcString];
 begin
   if Expr^.TypePtr = nil then Result := false
   else if IsTextType(InFile^.TypePtr) then
@@ -9,9 +9,9 @@ begin
   else Result := false
 end;
 
-function _ModIo_TypeIsValidForFileWrite(OutFile, Expr : TExpression) : boolean;
-const WritableTypes = [TtcBoolean, TtcInteger, TtcReal, TtcChar, TtcString,
-                      TtcEnum];
+function _ModIo_TypeIsValidForFileWrite(OutFile, Expr : TSExpression) : boolean;
+const WritableTypes = [SdtcBoolean, SdtcInteger, SdtcReal, SdtcChar, SdtcString,
+                      SdtcEnum];
 begin
   if Expr^.TypePtr = nil then Result := false
   else if IsTextType(OutFile^.TypePtr) then
@@ -21,18 +21,18 @@ begin
   else Result := false
 end;
 
-function _ModIo_NeedsToMakeAddressable(OutFile, Expr : TExpression) : boolean;
+function _ModIo_NeedsToMakeAddressable(OutFile, Expr : TSExpression) : boolean;
 begin
   Result := not IsTextType(OutFile^.TypePtr) and not Expr^.IsAddressable
 end;
 
-function _ModIoRead_Parse(FnExpr : TExpression) : TExpression;
+function _ModIoRead_Parse(FnExpr : TSExpression) : TSExpression;
 var 
   First : boolean;
-  ReadVar : TExpression;
-  InFile : TExpression;
+  ReadVar : TSExpression;
+  InFile : TSExpression;
   NewLine : boolean;
-  ArgList, ReadArg : TExReadArgList;
+  ArgList, ReadArg : TSEReadArgList;
   ArgAddPoint : TListAddPoint;
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
@@ -76,8 +76,8 @@ begin
   Result := ExRead(InFile, ArgList, NewLine)
 end;
 
-function _ModIoWrite_EvaluateZeroArg(Expr : TExpression) : TExpression;
-var Args : TExFunctionArgs;
+function _ModIoWrite_EvaluateZeroArg(Expr : TSExpression) : TSExpression;
+var Args : TSEFunctionArgs;
 begin
   Args.Size := 0;
   if IsFunctionType(Expr^.TypePtr)
@@ -87,13 +87,13 @@ begin
   else Result := Expr
 end;
 
-function _ModIoWrite_Parse(FnExpr : TExpression) : TExpression;
+function _ModIoWrite_Parse(FnExpr : TSExpression) : TSExpression;
 var 
   First : boolean;
-  WriteValue : TExWriteArg;
-  OutFile : TExpression;
+  WriteValue : TSEWriteArg;
+  OutFile : TSExpression;
   NewLine : boolean;
-  ArgList, WriteArg : TExWriteArgList;
+  ArgList, WriteArg : TSEWriteArgList;
   ArgAddPoint : TListAddPoint;
 begin
   NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
@@ -157,11 +157,11 @@ begin
     else Str[Pos] := Lowercase(Str[Pos]);
 end;
 
-function _ModIo_FileFun_Parse(FnExpr : TExpression) : TExpression;
+function _ModIo_FileFun_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Args : TExFunctionArgs;
+  Args : TSEFunctionArgs;
   FnName : string;
-  SrPtr : TPsSubrPtr;
+  SrPtr : TSDSubroutine;
 begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
@@ -173,12 +173,12 @@ begin
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
-function _ModIo_FileResetFun_Parse(FnExpr : TExpression) : TExpression;
+function _ModIo_FileResetFun_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Args : TExFunctionArgs;
+  Args : TSEFunctionArgs;
   FnName : string;
-  SrPtr : TPsSubrPtr;
-  FileTypePtr : TPsTypePtr;
+  SrPtr : TSDSubroutine;
+  FileTypePtr : TSDType;
 begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
@@ -186,7 +186,7 @@ begin
   SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
-  if Args.Values[1]^.Cls = XcToGenericFile then
+  if Args.Values[1]^.Cls = SecToGenericFile then
     FileTypePtr := Args.Values[1]^.ToGenericFileParent^.TypePtr
   else FileTypePtr := Args.Values[1]^.TypePtr;
   if IsTextType(FileTypePtr) or IsGenericFileType(FileTypePtr) then
@@ -197,7 +197,7 @@ begin
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
-procedure _AddIoProc1(Name : string; Arg1 : TPsVariable);
+procedure _AddIoProc1(Name : string; Arg1 : TSDVariableDef);
 begin
   AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
@@ -205,7 +205,7 @@ begin
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddIoProc2(Name : string; Arg1, Arg2 : TPsVariable);
+procedure _AddIoProc2(Name : string; Arg1, Arg2 : TSDVariableDef);
 begin
   AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
@@ -213,7 +213,7 @@ begin
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddIoFun1(Name : string; RetType : TPsTypePtr; Arg1 : TPsVariable);
+procedure _AddIoFun1(Name : string; RetType : TSDType; Arg1 : TSDVariableDef);
 begin
   AddPseudoFn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
@@ -236,7 +236,7 @@ begin
   MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddFileProc1(Name : string; Arg1 : TPsVariable);
+procedure _AddFileProc1(Name : string; Arg1 : TSDVariableDef);
 begin
   _AddIoProc2(Name, MakeVarArg('F', PrimitiveTypes.PtFile), Arg1)
 end;
@@ -246,12 +246,12 @@ begin
   _AddIoProc1(Name, MakeConstArg('DIR', PrimitiveTypes.PtString))
 end;
 
-procedure _AddFileFun(Name : string; ReturnTypePtr : TPsTypePtr);
+procedure _AddFileFun(Name : string; ReturnTypePtr : TSDType);
 begin
   _AddIoFun1(Name, ReturnTypePtr, MakeVarArg('F', PrimitiveTypes.PtFile))
 end;
 
-procedure _AddConstFileFun(Name : string; ReturnTypePtr : TPsTypePtr);
+procedure _AddConstFileFun(Name : string; ReturnTypePtr : TSDType);
 begin
   _AddIoFun1(Name, ReturnTypePtr, MakeConstArg('F', PrimitiveTypes.PtFile))
 end;

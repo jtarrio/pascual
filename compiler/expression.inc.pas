@@ -1,4 +1,4 @@
-function _NewExpr(Cls : TExpressionClass) : TExpression;
+function _NewExpr(Cls : TSExpressionClass) : TSExpression;
 begin
   new(Result);
   Result^.Cls := Cls;
@@ -9,10 +9,10 @@ begin
   Result^.IsStatement := false;
 end;
 
-procedure _DisposeImmediate(var Imm : TExImmediate);
-var Bounds : TExSetImmBounds;
+procedure _DisposeImmediate(var Imm : TSEImmediate);
+var Bounds : TSESetImmBounds;
 begin
-  if Imm.Cls = XicSet then
+  if Imm.Cls = SeicSet then
   begin
     while Imm.SetBounds <> nil do
     begin
@@ -23,8 +23,8 @@ begin
   end
 end;
 
-procedure _DisposeBounds(Bounds : TExSetExprBounds);
-var Next : TExSetExprBounds;
+procedure _DisposeBounds(Bounds : TSESetExprBounds);
+var Next : TSESetExprBounds;
 begin
   while Bounds <> nil do
   begin
@@ -36,15 +36,15 @@ begin
   end
 end;
 
-procedure _DisposeWriteArg(var WriteArg : TExWriteArg);
+procedure _DisposeWriteArg(var WriteArg : TSEWriteArg);
 begin
   ExDispose(WriteArg.Arg);
   if WriteArg.Width <> nil then ExDispose(WriteArg.Width);
   if WriteArg.Prec <> nil then ExDispose(WriteArg.Prec)
 end;
 
-procedure _DisposeReadExpr(var Expr : TExpression);
-var ReadArg : TExReadArgList;
+procedure _DisposeReadExpr(var Expr : TSExpression);
+var ReadArg : TSEReadArgList;
 begin
   ExDispose(Expr^.ReadFile);
   while List_Shift(Expr^.ReadArgs, ReadArg) do
@@ -54,8 +54,8 @@ begin
   end
 end;
 
-procedure _DisposeWriteExpr(var Expr : TExpression);
-var WriteArg : TExWriteArgList;
+procedure _DisposeWriteExpr(var Expr : TSExpression);
+var WriteArg : TSEWriteArgList;
 begin
   ExDispose(Expr^.WriteFile);
   while List_Shift(Expr^.WriteArgs, WriteArg) do
@@ -69,72 +69,72 @@ procedure ExDispose;
 var Pos : integer;
 begin
   case Expr^.Cls of 
-    XcImmediate: _DisposeImmediate(Expr^.Immediate);
-    XcToString: ExDispose(Expr^.ToStrParent);
-    XcToReal: ExDispose(Expr^.ToRealParent);
-    XcToUntypedPtr: ExDispose(Expr^.ToUntypedPtrParent);
-    XcToGenericFile: ExDispose(Expr^.ToGenericFileParent);
-    XcWithTmpVar:
-                  begin
-                    ExDispose(Expr^.TmpVar);
-                    ExDispose(Expr^.TmpVarValue);
-                    ExDispose(Expr^.TmpVarChild);
-                  end;
-    XcSubrange: ExDispose(Expr^.SubrangeParent);
-    XcSet:
-           begin
-             ExDispose(Expr^.SetBase);
-             _DisposeBounds(Expr^.SetBounds);
-           end;
-    XcField: ExDispose(Expr^.RecExpr);
-    XcArray:
-             begin
-               ExDispose(Expr^.ArrayExpr);
-               ExDispose(Expr^.ArrayIndex);
-             end;
-    XcPointer: ExDispose(Expr^.PointerExpr);
-    XcAddress: ExDispose(Expr^.AddressExpr);
-    XcStringChar:
-                  begin
-                    ExDispose(Expr^.StringExpr);
-                    ExDispose(Expr^.StringIndex);
-                  end;
-    XcFnCall:
+    SecImmediate: _DisposeImmediate(Expr^.Immediate);
+    SecToString: ExDispose(Expr^.ToStrParent);
+    SecToReal: ExDispose(Expr^.ToRealParent);
+    SecToUntypedPtr: ExDispose(Expr^.ToUntypedPtrParent);
+    SecToGenericFile: ExDispose(Expr^.ToGenericFileParent);
+    SecWithTmpVar:
+                   begin
+                     ExDispose(Expr^.TmpVar);
+                     ExDispose(Expr^.TmpVarValue);
+                     ExDispose(Expr^.TmpVarChild);
+                   end;
+    SecSubrange: ExDispose(Expr^.SubrangeParent);
+    SecSet:
+            begin
+              ExDispose(Expr^.SetBase);
+              _DisposeBounds(Expr^.SetBounds);
+            end;
+    SecField: ExDispose(Expr^.RecExpr);
+    SecArray:
               begin
-                ExDispose(Expr^.FnExpr);
-                for Pos := 1 to Expr^.CallArgs.Size do
-                  ExDispose(Expr^.CallArgs.Values[Pos]);
+                ExDispose(Expr^.ArrayExpr);
+                ExDispose(Expr^.ArrayIndex);
               end;
-    XcConvertToStr:
-                    begin
-                      _DisposeWriteArg(Expr^.ToStrSrc);
-                      ExDispose(Expr^.ToStrDest)
-                    end;
-    XcConverttoVal:
+    SecPointer: ExDispose(Expr^.PointerExpr);
+    SecAddress: ExDispose(Expr^.AddressExpr);
+    SecStringChar:
+                   begin
+                     ExDispose(Expr^.StringExpr);
+                     ExDispose(Expr^.StringIndex);
+                   end;
+    SecFnCall:
+               begin
+                 ExDispose(Expr^.FnExpr);
+                 for Pos := 1 to Expr^.CallArgs.Size do
+                   ExDispose(Expr^.CallArgs.Values[Pos]);
+               end;
+    SecConvertToStr:
+                     begin
+                       _DisposeWriteArg(Expr^.ToStrSrc);
+                       ExDispose(Expr^.ToStrDest)
+                     end;
+    SecConvertToVal:
                     begin
                       ExDispose(Expr^.ToValSrc);
                       ExDispose(Expr^.ToValDest);
                       ExDispose(Expr^.ToValCode)
                     end;
-    XcRead: _DisposeReadExpr(Expr);
-    XcWrite: _DisposeWriteExpr(Expr);
-    XcUnaryOp: ExDispose(Expr^.Unary.Parent);
-    XcBinaryOp:
-                begin
-                  ExDispose(Expr^.Binary.Left);
-                  ExDispose(Expr^.Binary.Right);
-                end;
+    SecRead: _DisposeReadExpr(Expr);
+    SecWrite: _DisposeWriteExpr(Expr);
+    SecUnaryOp: ExDispose(Expr^.Unary.Parent);
+    SecBinaryOp:
+                 begin
+                   ExDispose(Expr^.Binary.Left);
+                   ExDispose(Expr^.Binary.Right);
+                 end;
   end;
   dispose(Expr);
 end;
 
-function _CopyImmediate(const Imm : TExImmediate) : TExImmediate;
-var
-  Src, Dst : TExSetImmBounds;
+function _CopyImmediate(const Imm : TSEImmediate) : TSEImmediate;
+var 
+  Src, Dst : TSESetImmBounds;
   AddPoint : TListAddPoint;
 begin
   Result := Imm;
-  if Imm.Cls = XicSet then
+  if Imm.Cls = SeicSet then
   begin
     Src := Imm.SetBounds;
     Result.SetBounds := nil;
@@ -149,9 +149,9 @@ begin
   end
 end;
 
-function _CopyBounds(Bounds : TExSetExprBounds) : TExSetExprBounds;
-var
-  Src, Dst : TExSetExprBounds;
+function _CopyBounds(Bounds : TSESetExprBounds) : TSESetExprBounds;
+var 
+  Src, Dst : TSESetExprBounds;
   AddPoint : TListAddPoint;
 begin
   Src := Bounds;
@@ -168,7 +168,7 @@ begin
   end
 end;
 
-function _CopyWriteArg(const WriteArg : TExWriteArg) : TExWriteArg;
+function _CopyWriteArg(const WriteArg : TSEWriteArg) : TSEWriteArg;
 begin
   Result.Arg := ExCopy(WriteArg.Arg);
   if WriteArg.Width = nil then Result.Width := nil
@@ -177,9 +177,9 @@ begin
   else Result.Prec := ExCopy(WriteArg.Prec)
 end;
 
-procedure _CopyReadExpr(var Expr, Copy : TExpression);
+procedure _CopyReadExpr(var Expr, Copy : TSExpression);
 var 
-  Src, Dst : TExReadArgList;
+  Src, Dst : TSEReadArgList;
   AddPoint : TListAddPoint;
 begin
   Copy^.ReadFile := ExCopy(Expr^.ReadFile);
@@ -196,9 +196,9 @@ begin
   end
 end;
 
-procedure _CopyWriteExpr(var Expr, Copy : TExpression);
+procedure _CopyWriteExpr(var Expr, Copy : TSExpression);
 var 
-  Src, Dst : TExWriteArgList;
+  Src, Dst : TSEWriteArgList;
   AddPoint : TListAddPoint;
 begin
   Copy^.WriteFile := ExCopy(Expr^.WriteFile);
@@ -217,7 +217,7 @@ end;
 
 function ExCopy;
 var 
-  Copy : TExpression;
+  Copy : TSExpression;
   Pos : integer;
 begin
   Copy := _NewExpr(Expr^.Cls);
@@ -226,85 +226,85 @@ begin
   Copy^.IsAddressable := Expr^.IsAddressable;
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
-    XcImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
-    XcToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
-    XcToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
-    XcToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.
-                                                ToUntypedPtrParent);
-    XcToGenericFile: Copy^.ToGenericFileParent := ExCopy(Expr^.
-                                                  ToGenericFileParent);
-    XcWithTmpVar :
-                   begin
-                     Copy^.TmpVar := ExCopy(Expr^.TmpVar);
-                     Copy^.TmpVarValue := ExCopy(Expr^.TmpVarValue);
-                     Copy^.TmpVarChild := ExCopy(Expr^.TmpVarChild);
-                   end;
-    XcSubrange : Copy^.SubrangeParent := ExCopy(Expr^.SubrangeParent);
-    XcSet :
-            begin
-              Copy^.SetBase := ExCopy(Expr^.SetBase);
-              Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
-            end;
-    XcVariable: Copy^.VarPtr := Expr^.VarPtr;
-    XcField:
+    SecImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
+    SecToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
+    SecToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
+    SecToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.
+                                                 ToUntypedPtrParent);
+    SecToGenericFile: Copy^.ToGenericFileParent := ExCopy(Expr^.
+                                                   ToGenericFileParent);
+    SecWithTmpVar :
+                    begin
+                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
+                      Copy^.TmpVarValue := ExCopy(Expr^.TmpVarValue);
+                      Copy^.TmpVarChild := ExCopy(Expr^.TmpVarChild);
+                    end;
+    SecSubrange : Copy^.SubrangeParent := ExCopy(Expr^.SubrangeParent);
+    SecSet :
              begin
-               Copy^.RecExpr := ExCopy(Expr^.RecExpr);
-               Copy^.RecFieldNum := Expr^.RecFieldNum
+               Copy^.SetBase := ExCopy(Expr^.SetBase);
+               Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
              end;
-    XcArray:
-             begin
-               Copy^.ArrayExpr := ExCopy(Expr^.ArrayExpr);
-               Copy^.ArrayIndex := ExCopy(Expr^.ArrayIndex)
-             end;
-    XcPointer: Copy^.PointerExpr := ExCopy(Expr^.PointerExpr);
-    XcAddress: Copy^.AddressExpr := ExCopy(Expr^.AddressExpr);
-    XcStringChar:
-                  begin
-                    Copy^.StringExpr := ExCopy(Expr^.StringExpr);
-                    Copy^.StringIndex := ExCopy(Expr^.StringIndex)
-                  end;
-    XcFnRef: Copy^.FnPtr := Expr^.FnPtr;
-    XcFnCall:
+    SecVariable: Copy^.VarPtr := Expr^.VarPtr;
+    SecField:
               begin
-                Copy^.FnExpr := ExCopy(Expr^.FnExpr);
-                Copy^.CallArgs.Size := Expr^.CallArgs.Size;
-                for Pos := 1 to Expr^.CallArgs.Size do
-                  Copy^.CallArgs.Values[Pos] := ExCopy(Expr^.CallArgs
-                                                .Values[Pos])
+                Copy^.RecExpr := ExCopy(Expr^.RecExpr);
+                Copy^.RecFieldNum := Expr^.RecFieldNum
               end;
-    XcPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
-    XcSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
-    XcConvertToStr:
-                    begin
-                      Copy^.ToStrSrc := _CopyWriteArg(Expr^.ToStrSrc);
-                      Copy^.ToStrDest := ExCopy(Expr^.ToStrDest)
-                    end;
-    XcConvertToVal:
-                    begin
-                      Copy^.ToValSrc := ExCopy(Expr^.ToValSrc);
-                      Copy^.ToValDest := ExCopy(Expr^.ToValDest);
-                      Copy^.ToValCode := ExCopy(Expr^.ToValCode)
-                    end;
-    XcRead: _CopyReadExpr(Expr, Copy);
-    XcWrite: _CopyWriteExpr(Expr, Copy);
-    XcUnaryOp:
+    SecArray:
+              begin
+                Copy^.ArrayExpr := ExCopy(Expr^.ArrayExpr);
+                Copy^.ArrayIndex := ExCopy(Expr^.ArrayIndex)
+              end;
+    SecPointer: Copy^.PointerExpr := ExCopy(Expr^.PointerExpr);
+    SecAddress: Copy^.AddressExpr := ExCopy(Expr^.AddressExpr);
+    SecStringChar:
+                   begin
+                     Copy^.StringExpr := ExCopy(Expr^.StringExpr);
+                     Copy^.StringIndex := ExCopy(Expr^.StringIndex)
+                   end;
+    SecFnRef: Copy^.FnPtr := Expr^.FnPtr;
+    SecFnCall:
                begin
-                 Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
-                 Copy^.Unary.Op := Expr^.Unary.Op
+                 Copy^.FnExpr := ExCopy(Expr^.FnExpr);
+                 Copy^.CallArgs.Size := Expr^.CallArgs.Size;
+                 for Pos := 1 to Expr^.CallArgs.Size do
+                   Copy^.CallArgs.Values[Pos] := ExCopy(Expr^.CallArgs
+                                                 .Values[Pos])
                end;
-    XcBinaryOp:
+    SecPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
+    SecSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
+    SecConvertToStr:
+                     begin
+                       Copy^.ToStrSrc := _CopyWriteArg(Expr^.ToStrSrc);
+                       Copy^.ToStrDest := ExCopy(Expr^.ToStrDest)
+                     end;
+    SecConvertToVal:
+                     begin
+                       Copy^.ToValSrc := ExCopy(Expr^.ToValSrc);
+                       Copy^.ToValDest := ExCopy(Expr^.ToValDest);
+                       Copy^.ToValCode := ExCopy(Expr^.ToValCode)
+                     end;
+    SecRead: _CopyReadExpr(Expr, Copy);
+    SecWrite: _CopyWriteExpr(Expr, Copy);
+    SecUnaryOp:
                 begin
-                  Copy^.Binary.Left := ExCopy(Expr^.Binary.Left);
-                  Copy^.Binary.Right := ExCopy(Expr^.Binary.Right);
-                  Copy^.Binary.Op := Expr^.Binary.Op
+                  Copy^.Unary.Parent := ExCopy(Expr^.Unary.Parent);
+                  Copy^.Unary.Op := Expr^.Unary.Op
                 end;
+    SecBinaryOp:
+                 begin
+                   Copy^.Binary.Left := ExCopy(Expr^.Binary.Left);
+                   Copy^.Binary.Right := ExCopy(Expr^.Binary.Right);
+                   Copy^.Binary.Op := Expr^.Binary.Op
+                 end;
     else InternalError('Cannot copy expression: ' + ExDescribe(Expr))
   end;
   ExCopy := Copy
 end;
 
-function _DescribeImmSetInternal(Bounds : TExSetImmBounds;
-                                 SetOfTypePtr : TPsTypePtr) : string;
+function _DescribeImmSetInternal(Bounds : TSESetImmBounds;
+                                 SetOfTypePtr : TSDType) : string;
 begin
   Result := '';
   while Bounds <> nil do
@@ -319,98 +319,98 @@ begin
   end
 end;
 
-function _DescribeImmSet(Bounds : TExSetImmBounds;
-                         SetOfTypePtr : TPsTypePtr) : string;
+function _DescribeImmSet(Bounds : TSESetImmBounds;
+                         SetOfTypePtr : TSDType) : string;
 begin
   Result := '[' + _DescribeImmSetInternal(Bounds, SetOfTypePtr) + ']'
 end;
 
-function _DescribeImmediate(Expr : TExpression) : string;
+function _DescribeImmediate(Expr : TSExpression) : string;
 begin
   with Expr^.Immediate do
     case Cls of 
-      XicNil: Result := 'nil';
-      XicBoolean: Str(BooleanVal, Result);
-      XicInteger: Str(IntegerVal, Result);
-      XicReal: Str(RealVal, Result);
-      XicChar: Result := UnparseChar(CharVal);
-      XicString: Result := UnparseString(StringVal);
-      XicEnum: Result := EnumPtr^.Values[EnumOrdinal];
-      XicSet: Result := _DescribeImmSet(SetBounds, SetOfTypePtr);
+      SeicNil: Result := 'nil';
+      SeicBoolean: Str(BooleanVal, Result);
+      SeicInteger: Str(IntegerVal, Result);
+      SeicReal: Str(RealVal, Result);
+      SeicChar: Result := UnparseChar(CharVal);
+      SeicString: Result := UnparseString(StringVal);
+      SeicEnum: Result := EnumPtr^.Values[EnumOrdinal];
+      SeicSet: Result := _DescribeImmSet(SetBounds, SetOfTypePtr);
       else InternalError('Cannot describe immediate value')
     end
 end;
 
-const _ExPrecedences : array[TExpressionClass] of integer 
+const _ExPrecedences : array[TSExpressionClass] of integer 
                        = (
-                          {XcImmediate=}0, {XcToString=}-1, {XcToReal=}-1,
-                          {XcToUntypedPtr=}-1, {XcToGenericFile=}-1,
-                          {XcWithTmpVar=}-1, {XcSubrange=}0, {XcSet=}0,
-                          {XcVariable=}0, {XcField=}1, {XcArray=}1,
-                          {XcPointer=}1, {XcAddress=}1, {XcStringChar=}1,
-                          {XcFnRef=}0, {XcFnCall=}0, {XcPseudoFnRef=}0,
-                          {XcSizeof=}1, {XcConvertToStr=}1, {XcConvertToVal=}1,
-                          {XcRead=}1, {XcWrite=}1, {XcUnaryOp=}-1,
-                          {XcBinaryOp=}-1);
-const _ExOperators : array[TExOperator] of record
+                          {SecImmediate=}0, {SecToString=}-1, {SecToReal=}-1,
+                          {SecToUntypedPtr=}-1, {SecToGenericFile=}-1,
+                          {SecWithTmpVar=}-1, {SecSubrange=}0, {SecSet=}0,
+                          {SecVariable=}0, {SecField=}1, {SecArray=}1,
+                          {SecPointer=}1, {SecAddress=}1, {SecStringChar=}1,
+                          {SecFnRef=}0, {SecFnCall=}0, {SecPseudoFnRef=}0,
+                          {SecSizeof=}1, {SecConvertToStr=}1,
+                          {SecConvertToVal=}1, {SecRead=}1, {SecWrite=}1,
+                          {SecUnaryOp=}-1, {SecBinaryOp=}-1);
+const _ExOperators : array[TSEOperator] of record
   Precedence: integer;
   Name: string
 end 
 = (
-    {XoAdd=}(Precedence: 4; Name: '+'),
-    {XoSub=}(Precedence: 4; Name: '-'),
-    {XoMul=}(Precedence: 4; Name: '*'),
-    {XoDivReal=}(Precedence: 3; Name: '/'),
-    {XoDivInt=}(Precedence: 3; Name: 'DIV'),
-    {XoMod=}(Precedence: 3; Name: 'MOD'),
-    {XoNeg=}(Precedence: 4; Name: '-'),
-    {XoAnd=}(Precedence: 3; Name: 'AND'),
-    {XoOr=}(Precedence: 4; Name: 'OR'),
-    {XoXor=}(Precedence: 4; Name: 'XOR'),
-    {XoShl=}(Precedence: 3; Name: 'SHL'),
-    {XoShr=}(Precedence: 3; Name: 'SHR'),
-    {XoNot=}(Precedence: 1; Name: 'NOT'),
-    {XoIn=}(Precedence: 5; Name: 'IN'),
-    {XoEq=}(Precedence: 5; Name: '='),
-    {XoNe=}(Precedence: 5; Name: '<>'),
-    {XoLt=}(Precedence: 5; Name: '<'),
-    {XoGt=}(Precedence: 5; Name: '>'),
-    {XoLtEq=}(Precedence: 5; Name: '<='),
-    {XoGtEq=}(Precedence: 5; Name: '>='),
-    {XoOrd=}(Precedence: 1; Name: 'ORD'),
-    {XoPred=}(Precedence: 1; Name: 'PREC'),
-    {XoSucc=}(Precedence: 1; Name: 'SUCC')
+    {SeoAdd=}(Precedence: 4; Name: '+'),
+    {SeoSub=}(Precedence: 4; Name: '-'),
+    {SeoMul=}(Precedence: 4; Name: '*'),
+    {SeoDivReal=}(Precedence: 3; Name: '/'),
+    {SeoDivInt=}(Precedence: 3; Name: 'DIV'),
+    {SeoMod=}(Precedence: 3; Name: 'MOD'),
+    {SeoNeg=}(Precedence: 4; Name: '-'),
+    {SeoAnd=}(Precedence: 3; Name: 'AND'),
+    {SeoOr=}(Precedence: 4; Name: 'OR'),
+    {SeoXor=}(Precedence: 4; Name: 'XOR'),
+    {SeoShl=}(Precedence: 3; Name: 'SHL'),
+    {SeoShr=}(Precedence: 3; Name: 'SHR'),
+    {SeoNot=}(Precedence: 1; Name: 'NOT'),
+    {SeoIn=}(Precedence: 5; Name: 'IN'),
+    {SeoEq=}(Precedence: 5; Name: '='),
+    {SeoNe=}(Precedence: 5; Name: '<>'),
+    {SeoLt=}(Precedence: 5; Name: '<'),
+    {SeoGt=}(Precedence: 5; Name: '>'),
+    {SeoLtEq=}(Precedence: 5; Name: '<='),
+    {SeoGtEq=}(Precedence: 5; Name: '>='),
+    {SeoOrd=}(Precedence: 1; Name: 'ORD'),
+    {SeoPred=}(Precedence: 1; Name: 'PREC'),
+    {SeoSucc=}(Precedence: 1; Name: 'SUCC')
   );
 
-function _ExprPrecedence(Expr : TExpression) : integer;
+function _ExprPrecedence(Expr : TSExpression) : integer;
 begin
   Result := _ExPrecedences[Expr^.Cls];
   if Result < 0 then
   begin
     case Expr^.Cls of 
-      XcToString: Result := _ExprPrecedence(Expr^.ToStrParent);
-      XcToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
-      XcToUntypedPtr: Result := _ExprPrecedence(Expr^.ToUntypedPtrParent);
-      XcToGenericFile: Result := _ExprPrecedence(Expr^.ToGenericFileParent);
-      XcWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
-      XcSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
-      XcUnaryOp: Result := _ExOperators[Expr^.Unary.Op].Precedence;
-      XcBinaryOp: Result := _ExOperators[Expr^.Binary.Op].Precedence;
+      SecToString: Result := _ExprPrecedence(Expr^.ToStrParent);
+      SecToReal: Result := _ExprPrecedence(Expr^.ToRealParent);
+      SecToUntypedPtr: Result := _ExprPrecedence(Expr^.ToUntypedPtrParent);
+      SecToGenericFile: Result := _ExprPrecedence(Expr^.ToGenericFileParent);
+      SecWithTmpVar: Result := _ExprPrecedence(Expr^.TmpVarChild);
+      SecSubrange: Result := _ExprPrecedence(Expr^.SubrangeParent);
+      SecUnaryOp: Result := _ExOperators[Expr^.Unary.Op].Precedence;
+      SecBinaryOp: Result := _ExOperators[Expr^.Binary.Op].Precedence;
     end
   end;
   if Result < 0 then
     CompileError('Unknown precedence for expression')
 end;
 
-function ExDescribeOperator(Op : TExOperator) : string;
+function ExDescribeOperator(Op : TSEOperator) : string;
 begin
   Result := _ExOperators[Op].Name
 end;
 
-function _DescribeUnaryOpExpr(Expr : TExpression) : string;
+function _DescribeUnaryOpExpr(Expr : TSExpression) : string;
 var UseParens : boolean;
 begin
-  if Expr^.Unary.Op in [XoOrd, XoPred, XoSucc] then
+  if Expr^.Unary.Op in [SeoOrd, SeoPred, SeoSucc] then
   begin
     Result := ExDescribeOperator(Expr^.Unary.Op) + '(' +
               ExDescribe(Expr^.Unary.Parent) + ')'
@@ -418,7 +418,7 @@ begin
   else
   begin
     Result := ExDescribeOperator(Expr^.Unary.Op);
-    if Expr^.Unary.Op <> XoNeg then Result := Result + ' ';
+    if Expr^.Unary.Op <> SeoNeg then Result := Result + ' ';
     UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Unary.Parent);
     if UseParens then Result := Result + '(';
     Result := Result + ExDescribe(Expr^.Unary.Parent);
@@ -426,7 +426,7 @@ begin
   end
 end;
 
-function _DescribeBinaryOpExpr(Expr : TExpression) : string;
+function _DescribeBinaryOpExpr(Expr : TSExpression) : string;
 var UseParens : boolean;
 begin
   UseParens := _ExprPrecedence(Expr) < _ExprPrecedence(Expr^.Binary.Left);
@@ -441,22 +441,22 @@ begin
   if UseParens then Result := Result + ')';
 end;
 
-function _DescribeWithTmpVar(Expr : TExpression) : string;
+function _DescribeWithTmpVar(Expr : TSExpression) : string;
 begin
   Result := '{with ';
-  while Expr^.Cls = XcWithTmpVar do
+  while Expr^.Cls = SecWithTmpVar do
   begin
     Result := Result + ExDescribe(Expr^.TmpVar) + ':=' +
               ExDescribe(Expr^.TmpVarValue);
     Expr := Expr^.TmpVarChild;
-    if Expr^.Cls = XcWithTmpVar then Result := Result + ', '
+    if Expr^.Cls = SecWithTmpVar then Result := Result + ', '
   end;
   Result := Result + '} ' + ExDescribe(Expr)
 end;
 
-function _DescribeSet(Expr : TExpression) : string;
+function _DescribeSet(Expr : TSExpression) : string;
 var 
-  Bounds : TExSetExprBounds;
+  Bounds : TSESetExprBounds;
 begin
   Result := '[' + _DescribeImmSetInternal(Expr^.SetBase^.Immediate.SetBounds,
             Expr^.SetBase^.Immediate.SetOfTypePtr);
@@ -478,144 +478,144 @@ var
   Pos : integer;
 begin
   case Expr^.Cls of 
-    XcImmediate: Result := _DescribeImmediate(Expr);
-    XcToString: Result := ExDescribe(Expr^.ToStrParent);
-    XcToReal: Result := ExDescribe(Expr^.ToRealParent);
-    XcToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
-    XcToGenericFile: Result := ExDescribe(Expr^.ToGenericFileParent);
-    XcWithTmpVar: Result := _DescribeWithTmpVar(Expr);
-    XcSubrange: Result := ExDescribe(Expr^.ToStrParent);
-    XcSet: Result := _DescribeSet(Expr);
-    XcVariable: if Expr^.VarPtr^.IsAliasFor = nil then
-                  Result := Expr^.VarPtr^.Name
-                else
-                  Result := ExDescribe(Expr^.VarPtr^.IsAliasFor);
-    XcField: Result := ExDescribe(Expr^.RecExpr) + '.' +
-                       Expr^.RecExpr^.TypePtr^.RecPtr^
-                       .Fields[Expr^.RecFieldNum].Name;
-    XcArray: Result := ExDescribe(Expr^.ArrayExpr) +
-                       '[' + ExDescribe(Expr^.ArrayIndex) + ']';
-    XcPointer: Result := ExDescribe(Expr^.PointerExpr) + '^';
-    XcAddress: Result := '@' + ExDescribe(Expr^.AddressExpr);
-    XcStringChar: Result := ExDescribe(Expr^.StringExpr) + '[' +
-                            ExDescribe(Expr^.StringIndex) + ']';
-    XcFnRef: Result := Expr^.FnPtr^.Name;
-    XcFnCall:
-              begin
-                Result := ExDescribe(Expr^.FnExpr) + '(';
-                for Pos := 1 to Expr^.CallArgs.Size do
-                begin
-                  if Pos <> 1 then Result := Result + ', ';
-                  Result := Result + ExDescribe(Expr^.CallArgs.Values[Pos])
-                end;
-                Result := Result + ')'
-              end;
-    XcPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
-    XcSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
-    XcConvertToStr: with Expr^.ToStrSrc do
-                      if Width = nil then
-                        Result := 'STR(' + ExDescribe(Arg) + ', ' +
-                                  ExDescribe(Expr^.ToStrDest) + ')'
-                      else if Prec = nil then
-                             Result := 'STR(' + ExDescribe(Arg) + ':' +
-                                       ExDescribe(Width) + ', ' +
-                                       ExDescribe(Expr^.ToStrDest) + ')'
-                      else Result := 'STR(' + ExDescribe(Arg) + ':' +
-                                     ExDescribe(Width) + ':' +
-                                     ExDescribe(Prec) + ', ' +
-                                     ExDescribe(Expr^.ToStrDest) + ')';
-    XcConvertToVal: Result := 'VAL(' + ExDescribe(Expr^.ToValSrc) + ', ' +
-                              ExDescribe(Expr^.ToValDest) + ', ' +
-                              ExDescribe( Expr^.ToValCode) + ')';
-    XcRead: if Expr^.ReadLn then Result := 'READLN(...)'
-            else Result := 'READ(...)';
-    XcWrite: if Expr^.WriteLn then Result := 'WRITELN(...)'
-             else Result := 'WRITE(...)';
-    XcUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
-    XcBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
+    SecImmediate: Result := _DescribeImmediate(Expr);
+    SecToString: Result := ExDescribe(Expr^.ToStrParent);
+    SecToReal: Result := ExDescribe(Expr^.ToRealParent);
+    SecToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
+    SecToGenericFile: Result := ExDescribe(Expr^.ToGenericFileParent);
+    SecWithTmpVar: Result := _DescribeWithTmpVar(Expr);
+    SecSubrange: Result := ExDescribe(Expr^.ToStrParent);
+    SecSet: Result := _DescribeSet(Expr);
+    SecVariable: if Expr^.VarPtr^.IsAliasFor = nil then
+                   Result := Expr^.VarPtr^.Name
+                 else
+                   Result := ExDescribe(Expr^.VarPtr^.IsAliasFor);
+    SecField: Result := ExDescribe(Expr^.RecExpr) + '.' +
+                        Expr^.RecExpr^.TypePtr^.RecPtr^
+                        .Fields[Expr^.RecFieldNum].Name;
+    SecArray: Result := ExDescribe(Expr^.ArrayExpr) +
+                        '[' + ExDescribe(Expr^.ArrayIndex) + ']';
+    SecPointer: Result := ExDescribe(Expr^.PointerExpr) + '^';
+    SecAddress: Result := '@' + ExDescribe(Expr^.AddressExpr);
+    SecStringChar: Result := ExDescribe(Expr^.StringExpr) + '[' +
+                             ExDescribe(Expr^.StringIndex) + ']';
+    SecFnRef: Result := Expr^.FnPtr^.Name;
+    SecFnCall:
+               begin
+                 Result := ExDescribe(Expr^.FnExpr) + '(';
+                 for Pos := 1 to Expr^.CallArgs.Size do
+                 begin
+                   if Pos <> 1 then Result := Result + ', ';
+                   Result := Result + ExDescribe(Expr^.CallArgs.Values[Pos])
+                 end;
+                 Result := Result + ')'
+               end;
+    SecPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
+    SecSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
+    SecConvertToStr: with Expr^.ToStrSrc do
+                       if Width = nil then
+                         Result := 'STR(' + ExDescribe(Arg) + ', ' +
+                                   ExDescribe(Expr^.ToStrDest) + ')'
+                       else if Prec = nil then
+                              Result := 'STR(' + ExDescribe(Arg) + ':' +
+                                        ExDescribe(Width) + ', ' +
+                                        ExDescribe(Expr^.ToStrDest) + ')'
+                       else Result := 'STR(' + ExDescribe(Arg) + ':' +
+                                      ExDescribe(Width) + ':' +
+                                      ExDescribe(Prec) + ', ' +
+                                      ExDescribe(Expr^.ToStrDest) + ')';
+    SecConvertToVal: Result := 'VAL(' + ExDescribe(Expr^.ToValSrc) + ', ' +
+                               ExDescribe(Expr^.ToValDest) + ', ' +
+                               ExDescribe( Expr^.ToValCode) + ')';
+    SecRead: if Expr^.ReadLn then Result := 'READLN(...)'
+             else Result := 'READ(...)';
+    SecWrite: if Expr^.WriteLn then Result := 'WRITELN(...)'
+              else Result := 'WRITE(...)';
+    SecUnaryOp: Result := _DescribeUnaryOpExpr(Expr);
+    SecBinaryOp: Result := _DescribeBinaryOpExpr(Expr);
     else InternalError('Cannot describe expression')
   end
 end;
 
-function ExCoerce(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
+function ExCoerce(Expr : TSExpression; TypePtr : TSDType) : TSExpression;
 forward;
 
-function _ExImmediate(Cls : TExImmediateClass) : TExpression;
-var Expr : TExpression;
+function _ExImmediate(Cls : TSEImmediateClass) : TSExpression;
+var Expr : TSExpression;
 begin
-  Expr := _NewExpr(XcImmediate);
+  Expr := _NewExpr(SecImmediate);
   Expr^.Immediate.Cls := Cls;
   _ExImmediate := Expr
 end;
 
-function ExNil : TExpression;
+function ExNil : TSExpression;
 begin
-  Result := _ExImmediate(XicNil);
+  Result := _ExImmediate(SeicNil);
   Result^.TypePtr := PrimitiveTypes.PtNil
 end;
 
-function ExBooleanConstant(Value : boolean) : TExpression;
+function ExBooleanConstant(Value : boolean) : TSExpression;
 begin
-  Result := _ExImmediate(XicBoolean);
+  Result := _ExImmediate(SeicBoolean);
   Result^.Immediate.BooleanVal := Value;
   Result^.TypePtr := PrimitiveTypes.PtBoolean
 end;
 
-function ExIntegerConstant(Value : integer) : TExpression;
+function ExIntegerConstant(Value : integer) : TSExpression;
 begin
-  Result := _ExImmediate(XicInteger);
+  Result := _ExImmediate(SeicInteger);
   Result^.Immediate.IntegerVal := Value;
   Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
-function ExRealConstant(Value : real) : TExpression;
+function ExRealConstant(Value : real) : TSExpression;
 begin
-  Result := _ExImmediate(XicReal);
+  Result := _ExImmediate(SeicReal);
   Result^.Immediate.RealVal := Value;
   Result^.TypePtr := PrimitiveTypes.PtReal
 end;
 
-function ExCharConstant(Value : char) : TExpression;
+function ExCharConstant(Value : char) : TSExpression;
 begin
-  Result := _ExImmediate(XicChar);
+  Result := _ExImmediate(SeicChar);
   Result^.Immediate.CharVal := Value;
   Result^.TypePtr := PrimitiveTypes.PtChar
 end;
 
-function ExStringConstant(Value : string) : TExpression;
+function ExStringConstant(Value : string) : TSExpression;
 begin
-  Result := _ExImmediate(XicString);
+  Result := _ExImmediate(SeicString);
   Result^.Immediate.StringVal := Value;
   Result^.TypePtr := PrimitiveTypes.PtString
 end;
 
-function ExEnumConstant(Ordinal : integer; TypePtr : TPsTypePtr) : TExpression;
+function ExEnumConstant(Ordinal : integer; TypePtr : TSDType) : TSExpression;
 begin
   EnsureEnumType(TypePtr);
   if (Ordinal < 0) or (Ordinal > TypePtr^.EnumPtr^.Size - 1) then
     CompileError('Invalid value for ' + TypeName(TypePtr));
-  Result := _ExImmediate(XicEnum);
+  Result := _ExImmediate(SeicEnum);
   Result^.Immediate.EnumOrdinal := Ordinal;
   Result^.Immediate.EnumPtr := TypePtr^.EnumPtr;
   Result^.TypePtr := TypePtr
 end;
 
-function ExSetConstant(Bounds : TExSetImmBounds;
-                       TypePtr : TPsTypePtr) : TExpression;
-var ElementType : TPsTypePtr;
+function ExSetConstant(Bounds : TSESetImmBounds;
+                       TypePtr : TSDType) : TSExpression;
+var ElementType : TSDType;
 begin
   ElementType := TypePtr^.ElementTypePtr;
   if ElementType <> nil then EnsureOrdinalType(ElementType);
-  Result := _ExImmediate(XicSet);
+  Result := _ExImmediate(SeicSet);
   Result^.Immediate.SetBounds := Bounds;
   Result^.Immediate.SetOfTypePtr := ElementType;
   Result^.TypePtr := TypePtr
 end;
 
-function ExSetAddBounds(Bounds : TExSetImmBounds;
-                        First, Last : integer) : TExSetImmBounds;
+function ExSetAddBounds(Bounds : TSESetImmBounds;
+                        First, Last : integer) : TSESetImmBounds;
 var 
-  Prev, This, NewBounds : TExSetImmBounds;
+  Prev, This, NewBounds : TSESetImmBounds;
   Done : boolean;
 begin
   if First > Last then
@@ -685,32 +685,32 @@ begin
   until Done;
 end;
 
-function ExIsImmediate(Expr : TExpression) : boolean;
+function ExIsImmediate(Expr : TSExpression) : boolean;
 begin
-  Result := Expr^.Cls = XcImmediate
+  Result := Expr^.Cls = SecImmediate
 end;
 
-function ExIsImmediateOfClass(Expr : TExpression;
-                              Cls : TExImmediateClass) : boolean;
+function ExIsImmediateOfClass(Expr : TSExpression;
+                              Cls : TSEImmediateClass) : boolean;
 begin
-  Result := (Expr^.Cls = XcImmediate) and (Expr^.Immediate.Cls = Cls)
+  Result := (Expr^.Cls = SecImmediate) and (Expr^.Immediate.Cls = Cls)
 end;
 
-function ExSet : TExpression;
+function ExSet : TSExpression;
 begin
-  Result := _ExImmediate(XicSet);
+  Result := _ExImmediate(SeicSet);
   Result^.Immediate.SetBounds := nil;
   Result^.Immediate.SetOfTypePtr := nil;
   Result^.TypePtr := PrimitiveTypes.PtEmptySet
 end;
 
-function ExSetAddRange(SetExpr : TExpression;
-                       First, Last : TExpression) : TExpression;
+function ExSetAddRange(SetExpr : TSExpression;
+                       First, Last : TSExpression) : TSExpression;
 var 
-  ElementTypePtr : TPsTypePtr;
-  ImmSet : TExpression;
-  ExprSet : TExpression;
-  NewBounds : TExSetExprBounds;
+  ElementTypePtr : TSDType;
+  ImmSet : TSExpression;
+  ExprSet : TSExpression;
+  NewBounds : TSESetExprBounds;
 begin
   ElementTypePtr := SetExpr^.TypePtr^.ElementTypePtr;
   if ElementTypePtr = nil then
@@ -751,7 +751,7 @@ begin
   begin
     if ExprSet = nil then
     begin
-      ExprSet := _NewExpr(XcSet);
+      ExprSet := _NewExpr(SecSet);
       ExprSet^.SetBase := ImmSet;
       ExprSet^.SetBounds := nil;
       ExprSet^.TypePtr := ImmSet^.TypePtr;
@@ -766,7 +766,7 @@ begin
   else Result := ImmSet
 end;
 
-function ExToString(Parent : TExpression) : TExpression;
+function ExToString(Parent : TSExpression) : TSExpression;
 var Str : string;
 begin
   EnsureStringyExpr(Parent);
@@ -775,13 +775,13 @@ begin
     if ExIsImmediate(Parent) then
     begin
       Str := Parent^.Immediate.CharVal;
-      Parent^.Immediate.Cls := XicString;
+      Parent^.Immediate.Cls := SeicString;
       Parent^.Immediate.StringVal := Str;
       Result := Parent
     end
     else
     begin
-      Result := _NewExpr(XcToString);
+      Result := _NewExpr(SecToString);
       Result^.ToStrParent := Parent;
       Result^.TypePtr := PrimitiveTypes.PtString;
       Result^.IsFunctionResult := Parent^.IsFunctionResult
@@ -790,29 +790,29 @@ begin
   else  Result := Parent
 end;
 
-function ExToReal(Parent : TExpression) : TExpression;
+function ExToReal(Parent : TSExpression) : TSExpression;
 var Value : real;
 begin
   if ExIsImmediate(Parent) then
   begin
     Value := Parent^.Immediate.IntegerVal;
-    Parent^.Immediate.Cls := XicReal;
+    Parent^.Immediate.Cls := SeicReal;
     Parent^.Immediate.RealVal := Value;
     Parent^.TypePtr := PrimitiveTypes.PtReal;
     Result := Parent
   end
   else
   begin
-    Result := _NewExpr(XcToReal);
+    Result := _NewExpr(SecToReal);
     Result^.ToRealParent := Parent;
     Result^.TypePtr := PrimitiveTypes.PtReal;
     Result^.IsFunctionResult := Parent^.IsFunctionResult
   end;
 end;
 
-function ExToUntypedPtr(Parent : TExpression) : TExpression;
+function ExToUntypedPtr(Parent : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcToUntypedPtr);
+  Result := _NewExpr(SecToUntypedPtr);
   Result^.ToUntypedPtrParent := Parent;
   Result^.TypePtr := PrimitiveTypes.PtUntypedPtr;
   Result^.IsFunctionResult := Parent^.IsFunctionResult;
@@ -820,9 +820,9 @@ begin
   Result^.IsAddressable := Parent^.IsAddressable
 end;
 
-function ExToGenericFile(Parent : TExpression) : TExpression;
+function ExToGenericFile(Parent : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcToGenericFile);
+  Result := _NewExpr(SecToGenericFile);
   Result^.ToGenericFileParent := Parent;
   Result^.TypePtr := PrimitiveTypes.PtFile;
   Result^.IsFunctionResult := Parent^.IsFunctionResult;
@@ -830,9 +830,9 @@ begin
   Result^.IsAddressable := Parent^.IsAddressable
 end;
 
-function ExWithTmpVar(TmpVar, Value, Child : TExpression) : TExpression;
+function ExWithTmpVar(TmpVar, Value, Child : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcWithTmpVar);
+  Result := _NewExpr(SecWithTmpVar);
   Result^.TmpVar := TmpVar;
   Result^.TmpVarValue := Value;
   Result^.TmpVarChild := Child;
@@ -844,14 +844,14 @@ begin
   TmpVar^.VarPtr^.WasUsed := true
 end;
 
-function ExSubrange(Parent : TExpression; TypePtr : TPsTypePtr)
-: TExpression;
+function ExSubrange(Parent : TSExpression; TypePtr : TSDType)
+: TSExpression;
 forward;
 
-function ExOutrange(Expr : TExpression) : TExpression;
-var TmpExpr : TExpression;
+function ExOutrange(Expr : TSExpression) : TSExpression;
+var TmpExpr : TSExpression;
 begin
-  while Expr^.Cls = XcSubrange do
+  while Expr^.Cls = SecSubrange do
   begin
     TmpExpr := ExCopy(Expr^.SubrangeParent);
     ExDispose(Expr);
@@ -861,23 +861,23 @@ begin
   Result := Expr
 end;
 
-function ExVariable(VarPtr : TPsVarPtr) : TExpression;
+function ExVariable(VarPtr : TSDVariable) : TSExpression;
 begin
-  Result := _NewExpr(XcVariable);
+  Result := _NewExpr(SecVariable);
   Result^.VarPtr := VarPtr;
   Result^.TypePtr := VarPtr^.TypePtr;
   Result^.IsAssignable := not VarPtr^.IsConstant;
   Result^.IsAddressable := true
 end;
 
-function ExFieldAccess(Parent : TExpression; FieldNum : integer)
-: TExpression;
+function ExFieldAccess(Parent : TSExpression; FieldNum : integer)
+: TSExpression;
 begin
   EnsureRecordExpr(Parent);
   if (FieldNum < 1)
      or (FieldNum > Parent^.TypePtr^.RecPtr^.Size) then
     CompileError('Invalid field for type ' + TypeName(Parent^.TypePtr));
-  Result := _NewExpr(XcField);
+  Result := _NewExpr(SecField);
   Result^.RecExpr := Parent;
   Result^.RecFieldNum := FieldNum;
   Result^.TypePtr := Parent^.TypePtr^.RecPtr^
@@ -887,10 +887,10 @@ begin
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExArrayAccess(Parent, Subscript : TExpression) : TExpression;
+function ExArrayAccess(Parent, Subscript : TSExpression) : TSExpression;
 begin
   EnsureArrayExpr(Parent);
-  Result := _NewExpr(XcArray);
+  Result := _NewExpr(SecArray);
   Result^.ArrayExpr := Parent;
   Result^.ArrayIndex := ExCoerce(Subscript,
                         Parent^.TypePtr^.ArrayDef.IndexTypePtr);
@@ -900,10 +900,10 @@ begin
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExPointerAccess(Parent : TExpression) : TExpression;
+function ExPointerAccess(Parent : TSExpression) : TSExpression;
 begin
   EnsurePointerExpr(Parent);
-  Result := _NewExpr(XcPointer);
+  Result := _NewExpr(SecPointer);
   Result^.PointerExpr := Parent;
   Result^.TypePtr := Parent^.TypePtr^.PointedTypePtr;
   Result^.IsAssignable := true;
@@ -911,11 +911,11 @@ begin
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExAddressOf(Parent : TExpression) : TExpression;
+function ExAddressOf(Parent : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcAddress);
+  Result := _NewExpr(SecAddress);
   Result^.AddressExpr := Parent;
-  if Parent^.Cls = XcFnRef then
+  if Parent^.Cls = SecFnRef then
     Result^.TypePtr := MakeFunctionType(Parent^.FnPtr^.Args,
                        Parent^.FnPtr^.ReturnTypePtr)
   else
@@ -926,11 +926,11 @@ begin
   end
 end;
 
-function ExStringChar(Parent, Subscript : TExpression) : TExpression;
+function ExStringChar(Parent, Subscript : TSExpression) : TSExpression;
 begin
   EnsureStringyExpr(Parent);
   EnsureIntegerExpr(Subscript);
-  Result := _NewExpr(XcStringChar);
+  Result := _NewExpr(SecStringChar);
   Result^.ArrayExpr := ExToString(Parent);
   Result^.ArrayIndex := Subscript;
   Result^.TypePtr := PrimitiveTypes.PtChar;
@@ -939,24 +939,24 @@ begin
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExFnRef(FnPtr : TPsSubrPtr) : TExpression;
+function ExFnRef(FnPtr : TSDSubroutine) : TSExpression;
 begin
-  Result := _NewExpr(XcFnRef);
+  Result := _NewExpr(SecFnRef);
   Result^.FnPtr := FnPtr;
   Result^.TypePtr := nil
 end;
 
-function _ExFunctionCall(FnExpr : TExpression;
-                         const ArgDefs : TPsFnArgs;
-                         ReturnTypePtr : TPsTypePtr;
-                         const Args : TExFunctionArgs) : TExpression;
+function _ExFunctionCall(FnExpr : TSExpression;
+                         const ArgDefs : TSDSubroutineArgs;
+                         ReturnTypePtr : TSDType;
+                         const Args : TSEFunctionArgs) : TSExpression;
 var 
   Pos : integer;
-  FnCall : TExpression;
+  FnCall : TSExpression;
 begin
   if Args.Size <> ArgDefs.Count then
     CompileError('Wrong number of arguments in call to ' + ExDescribe(FnExpr));
-  FnCall := _NewExpr(XcFnCall);
+  FnCall := _NewExpr(SecFnCall);
   FnCall^.FnExpr := FnExpr;
   FnCall^.CallArgs.Size := Args.Size;
   FnCall^.TypePtr := ReturnTypePtr;
@@ -992,10 +992,10 @@ begin
   end
 end;
 
-function ExFunctionCall(FnExpr : TExpression;
-                        const Args : TExFunctionArgs) : TExpression;
+function ExFunctionCall(FnExpr : TSExpression;
+                        const Args : TSEFunctionArgs) : TSExpression;
 begin
-  if FnExpr^.Cls = XcFnRef then
+  if FnExpr^.Cls = SecFnRef then
     Result := _ExFunctionCall(FnExpr, FnExpr^.FnPtr^.Args,
               FnExpr^.FnPtr^.ReturnTypePtr, Args)
   else if IsFunctionType(FnExpr^.TypePtr) then
@@ -1005,23 +1005,23 @@ begin
     ErrorForExpr('Cannot call non-function', FnExpr)
 end;
 
-function ExPseudoFn(SpecialFn : TPsPseudoFnPtr) : TExpression;
+function ExPseudoFn(SpecialFn : TSDPsfn) : TSExpression;
 begin
-  Result := _NewExpr(XcPseudoFnRef);
+  Result := _NewExpr(SecPseudoFnRef);
   Result^.TypePtr := nil;
   Result^.PseudoFnPtr := SpecialFn
 end;
 
-function ExSizeof(TypePtr : TPsTypePtr) : TExpression;
+function ExSizeof(TypePtr : TSDType) : TSExpression;
 begin
-  Result := _NewExpr(XcSizeof);
+  Result := _NewExpr(SecSizeof);
   Result^.SizeofTypePtr := TypePtr;
   Result^.TypePtr := PrimitiveTypes.PtInteger
 end;
 
-function ExConvertToStr(Src, Width, Prec, Dest : TExpression) : TExpression;
+function ExConvertToStr(Src, Width, Prec, Dest : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcConvertToStr);
+  Result := _NewExpr(SecConvertToStr);
   Result^.TypePtr := nil;
   Result^.ToStrSrc.Arg := Src;
   Result^.ToStrSrc.Width := Width;
@@ -1030,9 +1030,9 @@ begin
   Result^.IsStatement := true
 end;
 
-function ExConvertToVal(Src, Dest, Code : TExpression) : TExpression;
+function ExConvertToVal(Src, Dest, Code : TSExpression) : TSExpression;
 begin
-  Result := _NewExpr(XcConvertToVal);
+  Result := _NewExpr(SecConvertToVal);
   Result^.TypePtr := nil;
   Result^.ToValSrc := Src;
   Result^.ToValDest := Dest;
@@ -1040,10 +1040,10 @@ begin
   Result^.IsStatement := true
 end;
 
-function ExRead(ReadFile : TExpression; Args : TExReadArgList;
-                NewLine : boolean) : TExpression;
+function ExRead(ReadFile : TSExpression; Args : TSEReadArgList;
+                NewLine : boolean) : TSExpression;
 begin
-  Result := _NewExpr(XcRead);
+  Result := _NewExpr(SecRead);
   Result^.TypePtr := nil;
   Result^.ReadFile := ReadFile;
   Result^.ReadArgs := Args;
@@ -1051,10 +1051,10 @@ begin
   Result^.IsStatement := true
 end;
 
-function ExWrite(WriteFile : TExpression; Args : TExWriteArgList;
-                 NewLine : boolean) : TExpression;
+function ExWrite(WriteFile : TSExpression; Args : TSEWriteArgList;
+                 NewLine : boolean) : TSExpression;
 begin
-  Result := _NewExpr(XcWrite);
+  Result := _NewExpr(SecWrite);
   Result^.TypePtr := nil;
   Result^.WriteFile := WriteFile;
   Result^.WriteArgs := Args;
@@ -1062,30 +1062,30 @@ begin
   Result^.IsStatement := true
 end;
 
-function ExGetOrdinal(Expr : TExpression) : integer;
+function ExGetOrdinal(Expr : TSExpression) : integer;
 begin
   if not ExIsImmediate(Expr) then
     ErrorForExpr('Expected an immediate value', Expr);
   with Expr^.Immediate do
     case Cls of 
-      XicBoolean : Result := Ord(BooleanVal);
-      XicInteger : Result := IntegerVal;
-      XicChar : Result := Ord(CharVal);
-      XicEnum : Result := EnumOrdinal;
+      SeicBoolean : Result := Ord(BooleanVal);
+      SeicInteger : Result := IntegerVal;
+      SeicChar : Result := Ord(CharVal);
+      SeicEnum : Result := EnumOrdinal;
       else ErrorForExpr('Expected an ordinal', Expr)
     end
 end;
 
 function ExGetAntiOrdinal(Ordinal : integer;
-                          TypePtr : TPsTypePtr) : TExpression;
+                          TypePtr : TSDType) : TSExpression;
 begin
   TypePtr := GetFundamentalType(TypePtr);
   case TypePtr^.Cls of 
-    TtcBoolean: if Ordinal = 0 then Result := ExBooleanConstant(false)
-                else Result := ExBooleanConstant(true);
-    TtcInteger: Result := ExIntegerConstant(Ordinal);
-    TtcChar: Result := ExCharConstant(Chr(Ordinal));
-    TtcEnum: Result := ExEnumConstant(Ordinal, TypePtr);
+    SdtcBoolean: if Ordinal = 0 then Result := ExBooleanConstant(false)
+                 else Result := ExBooleanConstant(true);
+    SdtcInteger: Result := ExIntegerConstant(Ordinal);
+    SdtcChar: Result := ExCharConstant(Chr(Ordinal));
+    SdtcEnum: Result := ExEnumConstant(Ordinal, TypePtr);
     else InternalError('Cannot compute anti-ordinal for ' + TypeName(TypePtr))
   end
 end;
@@ -1105,13 +1105,13 @@ begin
   end
   else
   begin
-    Result := _NewExpr(XcSubrange);
+    Result := _NewExpr(SecSubrange);
     Result^.SubrangeParent := Parent;
     Result^.TypePtr := TypePtr
   end
 end;
 
-function ExRerange(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
+function ExRerange(Expr : TSExpression; TypePtr : TSDType) : TSExpression;
 begin
   if (TypePtr^.RangeDef.First <= Expr^.TypePtr^.RangeDef.First)
      and (Expr^.TypePtr^.RangeDef.Last <= TypePtr^.RangeDef.Last) then
@@ -1123,8 +1123,8 @@ begin
     Result := ExSubrange(ExOutrange(Expr), TypePtr)
 end;
 
-procedure ExSetCoerceToCommon(Left, Right : TExpression);
-var LeftType, RightType : TPsTypePtr;
+procedure ExSetCoerceToCommon(Left, Right : TSExpression);
+var LeftType, RightType : TSDType;
 begin
   LeftType := Left^.TypePtr;
   RightType := Right^.TypePtr;
@@ -1138,10 +1138,10 @@ begin
          TypeName(Right^.TypePtr))
 end;
 
-function _ExCoerceSet(Expr : TExpression; TypePtr : TPsTypePtr) : TExpression;
+function _ExCoerceSet(Expr : TSExpression; TypePtr : TSDType) : TSExpression;
 var 
   Outcome : (Pass, Reject, Replace);
-  ExprElemType, DestElemType : TPsTypePtr;
+  ExprElemType, DestElemType : TSDType;
 begin
   ExprElemType := Expr^.TypePtr^.ElementTypePtr;
   DestElemType := TypePtr^.ElementTypePtr;
@@ -1149,7 +1149,7 @@ begin
   else if not IsFundamentallySameType(ExprElemType, DestElemType) then
          Outcome := Reject
   else if ExIsImmediate(Expr) then Outcome := Replace
-  else if Expr^.Cls = XcSet then Outcome := Replace
+  else if Expr^.Cls = SecSet then Outcome := Replace
   else if (GetTypeLowBound(ExprElemType) = GetTypeLowBound(DestElemType))
           and (GetTypeHighBound(ExprElemType) = GetTypeHighBound(DestElemType))
          then Outcome := Pass
@@ -1161,7 +1161,7 @@ begin
     Replace :
               begin
                 Expr^.TypePtr := TypePtr;
-                if Expr^.Cls = XcSet then Expr^.SetBase^.TypePtr := TypePtr
+                if Expr^.Cls = SecSet then Expr^.SetBase^.TypePtr := TypePtr
               end;
     Pass : { do nothing };
   end;
@@ -1201,21 +1201,21 @@ begin
     ErrorForExpr('Cannot treat value as ' + TypeName(TypePtr), Expr)
 end;
 
-procedure ExMarkInitialized(Lhs : TExpression);
+procedure ExMarkInitialized(Lhs : TSExpression);
 var IsTerminal : boolean;
 begin
   IsTerminal := false;
   while not IsTerminal do
     case Lhs^.Cls of 
-      XcField: Lhs := Lhs^.RecExpr;
-      XcArray: Lhs := Lhs^.ArrayExpr;
-      XcStringChar: Lhs := Lhs^.StringExpr;
-      XcToString: Lhs := Lhs^.ToStrParent;
-      XcToReal: Lhs := Lhs^.ToRealParent;
-      XcToGenericFile: Lhs := Lhs^.ToGenericFileParent;
+      SecField: Lhs := Lhs^.RecExpr;
+      SecArray: Lhs := Lhs^.ArrayExpr;
+      SecStringChar: Lhs := Lhs^.StringExpr;
+      SecToString: Lhs := Lhs^.ToStrParent;
+      SecToReal: Lhs := Lhs^.ToRealParent;
+      SecToGenericFile: Lhs := Lhs^.ToGenericFileParent;
       else IsTerminal := true
     end;
-  if Lhs^.Cls = XcVariable then
+  if Lhs^.Cls = SecVariable then
   begin
     Lhs^.VarPtr^.WasInitialized := true;
     if Lhs^.VarPtr^.IsReference then Lhs^.VarPtr^.WasUsed := true

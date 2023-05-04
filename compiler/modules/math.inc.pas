@@ -1,9 +1,9 @@
-function _ModMath_Abs_Parse(FnExpr : TExpression) : TExpression;
+function _ModMath_Abs_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   Result := Pf_Overload_Parse(FnExpr, 'ABS')
 end;
 
-function _ModMath_Sqr_Parse(FnExpr : TExpression) : TExpression;
+function _ModMath_Sqr_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   Result := Pf_Overload_Parse(FnExpr, 'SQR')
 end;

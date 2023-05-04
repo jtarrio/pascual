@@ -1,5 +1,5 @@
-function _ExOpRelational_Booleans(Left, Right : TExpression;
-                               Op : TExOperator) : TExpression;
+function _ExOpRelational_Booleans(Left, Right : TSExpression;
+                                  Op : TSEOperator) : TSExpression;
 var Lt, Rt, Ret : boolean;
 begin
   if ExIsImmediate(Left) and ExIsImmediate(Right) then
@@ -7,12 +7,12 @@ begin
     Lt := Left^.Immediate.BooleanVal;
     Rt := Right^.Immediate.BooleanVal;
     case Op of 
-      XoEq: Ret := Lt = Rt;
-      XoNe: Ret := Lt <> Rt;
-      XoLt: Ret := Lt < Rt;
-      XoGt: Ret := Lt > Rt;
-      XoLtEq: Ret := Lt <= Rt;
-      XoGtEq: Ret := Lt >= Rt;
+      SeoEq: Ret := Lt = Rt;
+      SeoNe: Ret := Lt <> Rt;
+      SeoLt: Ret := Lt < Rt;
+      SeoGt: Ret := Lt > Rt;
+      SeoLtEq: Ret := Lt <= Rt;
+      SeoGtEq: Ret := Lt >= Rt;
     end;
     Result := Left;
     Result^.Immediate.BooleanVal := Ret;
@@ -22,8 +22,8 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpRelational_Integers(Left, Right : TExpression;
-                               Op : TExOperator) : TExpression;
+function _ExOpRelational_Integers(Left, Right : TSExpression;
+                                  Op : TSEOperator) : TSExpression;
 var 
   Lt, Rt : integer;
   Ret : boolean;
@@ -33,16 +33,16 @@ begin
     Lt := Left^.Immediate.IntegerVal;
     Rt := Right^.Immediate.IntegerVal;
     case Op of 
-      XoEq: Ret := Lt = Rt;
-      XoNe: Ret := Lt <> Rt;
-      XoLt: Ret := Lt < Rt;
-      XoGt: Ret := Lt > Rt;
-      XoLtEq: Ret := Lt <= Rt;
-      XoGtEq: Ret := Lt >= Rt;
+      SeoEq: Ret := Lt = Rt;
+      SeoNe: Ret := Lt <> Rt;
+      SeoLt: Ret := Lt < Rt;
+      SeoGt: Ret := Lt > Rt;
+      SeoLtEq: Ret := Lt <= Rt;
+      SeoGtEq: Ret := Lt >= Rt;
     end;
     Result := Left;
     Result^.Immediate.BooleanVal := Ret;
-    Result^.Immediate.Cls := XicBoolean;
+    Result^.Immediate.Cls := SeicBoolean;
     Result^.TypePtr := PrimitiveTypes.PtBoolean;
     ExDispose(Right)
   end
@@ -50,8 +50,8 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpRelational_Numbers(Left, Right : TExpression;
-                              Op : TExOperator) : TExpression;
+function _ExOpRelational_Numbers(Left, Right : TSExpression;
+                                 Op : TSEOperator) : TSExpression;
 var 
   Lt, Rt : real;
   Ret : boolean;
@@ -63,16 +63,16 @@ begin
     Lt := Left^.Immediate.RealVal;
     Rt := Right^.Immediate.RealVal;
     case Op of 
-      XoEq: Ret := Lt = Rt;
-      XoNe: Ret := Lt <> Rt;
-      XoLt: Ret := Lt < Rt;
-      XoGt: Ret := Lt > Rt;
-      XoLtEq: Ret := Lt <= Rt;
-      XoGtEq: Ret := Lt >= Rt;
+      SeoEq: Ret := Lt = Rt;
+      SeoNe: Ret := Lt <> Rt;
+      SeoLt: Ret := Lt < Rt;
+      SeoGt: Ret := Lt > Rt;
+      SeoLtEq: Ret := Lt <= Rt;
+      SeoGtEq: Ret := Lt >= Rt;
     end;
     Result := Left;
     Result^.Immediate.BooleanVal := Ret;
-    Result^.Immediate.Cls := XicBoolean;
+    Result^.Immediate.Cls := SeicBoolean;
     Result^.TypePtr := PrimitiveTypes.PtBoolean;
     ExDispose(Right)
   end
@@ -80,29 +80,29 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpRelational_Strings(Left, Right : TExpression;
-                              Op : TExOperator) : TExpression;
+function _ExOpRelational_Strings(Left, Right : TSExpression;
+                                 Op : TSEOperator) : TSExpression;
 var 
   Lt, Rt : string;
   Ret : boolean;
 begin
   if ExIsImmediate(Left) and ExIsImmediate(Right) then
   begin
-    if Left^.Immediate.Cls = XicChar then Lt := Left^.Immediate.CharVal
+    if Left^.Immediate.Cls = SeicChar then Lt := Left^.Immediate.CharVal
     else Lt := Left^.Immediate.StringVal;
-    if Right^.Immediate.Cls = XicChar then Rt := Right^.Immediate.CharVal
+    if Right^.Immediate.Cls = SeicChar then Rt := Right^.Immediate.CharVal
     else Rt := Right^.Immediate.StringVal;
     case Op of 
-      XoEq: Ret := Lt = Rt;
-      XoNe: Ret := Lt <> Rt;
-      XoLt: Ret := Lt < Rt;
-      XoGt: Ret := Lt > Rt;
-      XoLtEq: Ret := Lt <= Rt;
-      XoGtEq: Ret := Lt >= Rt;
+      SeoEq: Ret := Lt = Rt;
+      SeoNe: Ret := Lt <> Rt;
+      SeoLt: Ret := Lt < Rt;
+      SeoGt: Ret := Lt > Rt;
+      SeoLtEq: Ret := Lt <= Rt;
+      SeoGtEq: Ret := Lt >= Rt;
     end;
     Result := Left;
     Result^.Immediate.BooleanVal := Ret;
-    Result^.Immediate.Cls := XicBoolean;
+    Result^.Immediate.Cls := SeicBoolean;
     Result^.TypePtr := PrimitiveTypes.PtBoolean;
     ExDispose(Right)
   end
@@ -110,8 +110,8 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpRelational_Enums(Left, Right : TExpression;
-                            Op : TExOperator) : TExpression;
+function _ExOpRelational_Enums(Left, Right : TSExpression;
+                               Op : TSEOperator) : TSExpression;
 var 
   Lt, Rt : integer;
   Ret : boolean;
@@ -121,16 +121,16 @@ begin
     Lt := Left^.Immediate.EnumOrdinal;
     Rt := Right^.Immediate.EnumOrdinal;
     case Op of 
-      XoEq: Ret := Lt = Rt;
-      XoNe: Ret := Lt <> Rt;
-      XoLt: Ret := Lt < Rt;
-      XoGt: Ret := Lt > Rt;
-      XoLtEq: Ret := Lt <= Rt;
-      XoGtEq: Ret := Lt >= Rt;
+      SeoEq: Ret := Lt = Rt;
+      SeoNe: Ret := Lt <> Rt;
+      SeoLt: Ret := Lt < Rt;
+      SeoGt: Ret := Lt > Rt;
+      SeoLtEq: Ret := Lt <= Rt;
+      SeoGtEq: Ret := Lt >= Rt;
     end;
     Result := Left;
     Result^.Immediate.BooleanVal := Ret;
-    Result^.Immediate.Cls := XicBoolean;
+    Result^.Immediate.Cls := SeicBoolean;
     Result^.TypePtr := PrimitiveTypes.PtBoolean;
     ExDispose(Right)
   end
@@ -138,9 +138,9 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, Op, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpEq_Sets(Left, Right : TExpression) : TExpression;
+function _ExOpEq_Sets(Left, Right : TSExpression) : TSExpression;
 var 
-  LtBds, RtBds : TExSetImmBounds;
+  LtBds, RtBds : TSESetImmBounds;
   Equals : boolean;
 begin
   ExSetCoerceToCommon(Left, Right);
@@ -161,12 +161,12 @@ begin
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoEq, PrimitiveTypes.PtBoolean)
+    Result := _ExOp_MakeBinary(Left, Right, SeoEq, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpGtEq_Sets(Left, Right : TExpression) : TExpression;
+function _ExOpGtEq_Sets(Left, Right : TSExpression) : TSExpression;
 var 
-  LtBds, RtBds : TExSetImmBounds;
+  LtBds, RtBds : TSESetImmBounds;
   IsGtEq : boolean;
 begin
   ExSetCoerceToCommon(Left, Right);
@@ -191,19 +191,19 @@ begin
     ExDispose(Right)
   end
   else
-    Result := _ExOp_MakeBinary(Left, Right, XoGtEq, PrimitiveTypes.PtBoolean)
+    Result := _ExOp_MakeBinary(Left, Right, SeoGtEq, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpIn_Impl(Needle, Haystack : TExpression) : TExpression;
+function _ExOpIn_Impl(Needle, Haystack : TSExpression) : TSExpression;
 var 
-  ElemType : TPsTypePtr;
-  ImmSet : TExpression;
-  ExprSet : TExpression;
-  ImmBounds : TExSetImmBounds;
-  ExprBounds : TExSetExprBounds;
-  Cond : TExpression;
-  TmpVar : TPsVarPtr;
-  Wanted : TExpression;
+  ElemType : TSDType;
+  ImmSet : TSExpression;
+  ExprSet : TSExpression;
+  ImmBounds : TSESetImmBounds;
+  ExprBounds : TSESetExprBounds;
+  Cond : TSExpression;
+  TmpVar : TSDVariable;
+  Wanted : TSExpression;
 begin
   ElemType := Haystack^.TypePtr^.ElementTypePtr;
   if ElemType = nil then ElemType := Needle^.TypePtr
@@ -272,145 +272,146 @@ begin
   ExDispose(Haystack)
 end;
 
-function _ExOpEq_Pointers(Left, Right : TExpression) : TExpression;
+function _ExOpEq_Pointers(Left, Right : TSExpression) : TSExpression;
 begin
-  Result := _ExOp_MakeBinary(Left, Right, XoEq, PrimitiveTypes.PtBoolean)
+  Result := _ExOp_MakeBinary(Left, Right, SeoEq, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpNe_Pointers(Left, Right : TExpression) : TExpression;
+function _ExOpNe_Pointers(Left, Right : TSExpression) : TSExpression;
 begin
-  Result := _ExOp_MakeBinary(Left, Right, XoNe, PrimitiveTypes.PtBoolean)
+  Result := _ExOp_MakeBinary(Left, Right, SeoNe, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpEq_Functions(Left, Right : TExpression) : TExpression;
+function _ExOpEq_Functions(Left, Right : TSExpression) : TSExpression;
 begin
-  Result := _ExOp_MakeBinary(Left, Right, XoEq, PrimitiveTypes.PtBoolean)
+  Result := _ExOp_MakeBinary(Left, Right, SeoEq, PrimitiveTypes.PtBoolean)
 end;
 
-function _ExOpNe_Functions(Left, Right : TExpression) : TExpression;
+function _ExOpNe_Functions(Left, Right : TSExpression) : TSExpression;
 begin
-  Result := _ExOp_MakeBinary(Left, Right, XoNe, PrimitiveTypes.PtBoolean)
+  Result := _ExOp_MakeBinary(Left, Right, SeoNe, PrimitiveTypes.PtBoolean)
 end;
 
-function ExOpIn(Left, Right : TExpression) : TExpression;
+function ExOpIn(Left, Right : TSExpression) : TSExpression;
 begin
   if IsSetType(Right^.TypePtr) then
   begin
-    if ExIsImmediate(Right) or (Right^.Cls = XcSet) then
+    if ExIsImmediate(Right) or (Right^.Cls = SecSet) then
       Result := _ExOpIn_Impl(Left, Right)
-    else Result := _ExOp_MakeBinary(Left, Right, XoIn, PrimitiveTypes.PtBoolean)
+    else Result := _ExOp_MakeBinary(Left, Right, SeoIn,
+                   PrimitiveTypes.PtBoolean)
   end
-  else ErrorInvalidOperator2(Left, Right, XoXor)
+  else ErrorInvalidOperator2(Left, Right, SeoXor)
 end;
 
-function ExOpEq(Left, Right : TExpression) : TExpression;
+function ExOpEq(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoEq)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoEq)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoEq)
+         Result := _ExOpRelational_Integers(Left, Right, SeoEq)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoEq)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoEq)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoEq)
+         Result := _ExOpRelational_Strings(Left, Right, SeoEq)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoEq)
+         Result := _ExOpRelational_Enums(Left, Right, SeoEq)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpEq_Sets(Left, Right)
   else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
          Result := _ExOpEq_Pointers(Left, Right)
   else if AreFunctionsCompatible(Left^.TypePtr, Right^.TypePtr) then
-  Result := _ExOpEq_Functions(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoEq)
+         Result := _ExOpEq_Functions(Left, Right)
+  else ErrorInvalidOperator2(Left, Right, SeoEq)
 end;
 
-function ExOpNe(Left, Right : TExpression) : TExpression;
+function ExOpNe(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoNe)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoNe)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoNe)
+         Result := _ExOpRelational_Integers(Left, Right, SeoNe)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoNe)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoNe)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoNe)
+         Result := _ExOpRelational_Strings(Left, Right, SeoNe)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoNe)
+         Result := _ExOpRelational_Enums(Left, Right, SeoNe)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := ExOpNot(_ExOpEq_Sets(Left, Right))
   else if ArePointersCompatible(Left^.TypePtr, Right^.TypePtr) then
          Result := _ExOpNe_Pointers(Left, Right)
   else if AreFunctionsCompatible(Left^.TypePtr, Right^.TypePtr) then
-  Result := _ExOpNe_Functions(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoNe)
+         Result := _ExOpNe_Functions(Left, Right)
+  else ErrorInvalidOperator2(Left, Right, SeoNe)
 end;
 
-function ExOpLt(Left, Right : TExpression) : TExpression;
+function ExOpLt(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoLt)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoLt)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoLt)
+         Result := _ExOpRelational_Integers(Left, Right, SeoLt)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoLt)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoLt)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoLt)
+         Result := _ExOpRelational_Strings(Left, Right, SeoLt)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoLt)
-  else ErrorInvalidOperator2(Left, Right, XoLt)
+         Result := _ExOpRelational_Enums(Left, Right, SeoLt)
+  else ErrorInvalidOperator2(Left, Right, SeoLt)
 end;
 
-function ExOpGt(Left, Right : TExpression) : TExpression;
+function ExOpGt(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoGt)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoGt)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoGt)
+         Result := _ExOpRelational_Integers(Left, Right, SeoGt)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoGt)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoGt)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoGt)
+         Result := _ExOpRelational_Strings(Left, Right, SeoGt)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoGt)
-  else ErrorInvalidOperator2(Left, Right, XoGt)
+         Result := _ExOpRelational_Enums(Left, Right, SeoGt)
+  else ErrorInvalidOperator2(Left, Right, SeoGt)
 end;
 
-function ExOpLtEq(Left, Right : TExpression) : TExpression;
+function ExOpLtEq(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoLtEq)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoLtEq)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoLtEq)
+         Result := _ExOpRelational_Integers(Left, Right, SeoLtEq)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoLtEq)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoLtEq)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoLtEq)
+         Result := _ExOpRelational_Strings(Left, Right, SeoLtEq)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoLtEq)
+         Result := _ExOpRelational_Enums(Left, Right, SeoLtEq)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpGtEq_Sets(Right, Left)
-  else ErrorInvalidOperator2(Left, Right, XoLtEq)
+  else ErrorInvalidOperator2(Left, Right, SeoLtEq)
 end;
 
-function ExOpGtEq(Left, Right : TExpression) : TExpression;
+function ExOpGtEq(Left, Right : TSExpression) : TSExpression;
 begin
   if IsBooleanType(Left^.TypePtr) and IsBooleanType(Right^.TypePtr) then
-    Result := _ExOpRelational_Booleans(Left, Right, XoGtEq)
+    Result := _ExOpRelational_Booleans(Left, Right, SeoGtEq)
   else if IsIntegerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
-         Result := _ExOpRelational_Integers(Left, Right, XoGtEq)
+         Result := _ExOpRelational_Integers(Left, Right, SeoGtEq)
   else if IsNumericType(Left^.TypePtr) and IsNumericType(Right^.TypePtr) then
-         Result := _ExOpRelational_Numbers(Left, Right, XoGtEq)
+         Result := _ExOpRelational_Numbers(Left, Right, SeoGtEq)
   else if IsStringyType(Left^.TypePtr) and IsStringyType(Right^.TypePtr) then
-         Result := _ExOpRelational_Strings(Left, Right, XoGtEq)
+         Result := _ExOpRelational_Strings(Left, Right, SeoGtEq)
   else if IsEnumType(Left^.TypePtr)
           and IsSameType(Left^.TypePtr, Right^.TypePtr) then
-         Result := _ExOpRelational_Enums(Left, Right, XoGtEq)
+         Result := _ExOpRelational_Enums(Left, Right, SeoGtEq)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpGtEq_Sets(Left, Right)
-  else ErrorInvalidOperator2(Left, Right, XoGtEq)
+  else ErrorInvalidOperator2(Left, Right, SeoGtEq)
 end;

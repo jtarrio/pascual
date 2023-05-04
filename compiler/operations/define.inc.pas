@@ -1,17 +1,17 @@
-function _ExOp_MakeUnary(Expr : TExpression; Op : TExOperator;
-                       ResultType : TPsTypePtr) : TExpression;
+function _ExOp_MakeUnary(Expr : TSExpression; Op : TSEOperator;
+                       ResultType : TSDType) : TSExpression;
 begin
-  Result := _NewExpr(XcUnaryOp);
+  Result := _NewExpr(SecUnaryOp);
   Result^.Unary.Parent := Expr;
   Result^.Unary.Op := Op;
   Result^.TypePtr := ResultType;
   Result^.IsFunctionResult := Expr^.IsFunctionResult
 end;
 
-function _ExOp_MakeBinary(Left, Right : TExpression; Op : TExOperator;
-                          ResultType : TPsTypePtr) : TExpression;
+function _ExOp_MakeBinary(Left, Right : TSExpression; Op : TSEOperator;
+                          ResultType : TSDType) : TSExpression;
 begin
-  Result := _NewExpr(XcBinaryOp);
+  Result := _NewExpr(SecBinaryOp);
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;
   Result^.Binary.Op := Op;

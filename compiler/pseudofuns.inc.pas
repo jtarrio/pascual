@@ -1,4 +1,4 @@
-function _Pf_Unary_Parse : TExpression;
+function _Pf_Unary_Parse : TSExpression;
 begin
   WantTokenAndRead(TkLparen);
   Result := PsExpression;
@@ -6,7 +6,7 @@ begin
 end;
 
 function _Pf_Fun_Overload(const NamePrefix : string;
-                          TypePtr : TPsTypePtr) : string;
+                          TypePtr : TSDType) : string;
 begin
   if IsBooleanType(TypePtr) then Result := NamePrefix + '_b'
   else if IsIntegerType(TypePtr) then Result := NamePrefix + '_i'
@@ -17,12 +17,12 @@ begin
     'overload of ' + NamePrefix)
 end;
 
-function Pf_Overload_Parse(FnExpr : TExpression;
-                           NamePrefix : string) : TExpression;
+function Pf_Overload_Parse(FnExpr : TSExpression;
+                           NamePrefix : string) : TSExpression;
 var 
-  Arg : TExpression;
-  Args : TExFunctionArgs;
-  SrPtr : TPsSubrPtr;
+  Arg : TSExpression;
+  Args : TSEFunctionArgs;
+  SrPtr : TSDSubroutine;
 begin
   ExDispose(FnExpr);
   Arg := nil;
@@ -49,7 +49,7 @@ begin
   end
 end;
 
-function Pf_WriteArg_Parse : TExWriteArg;
+function Pf_WriteArg_Parse : TSEWriteArg;
 begin
   Result.Width := nil;
   Result.Prec := nil;
@@ -69,11 +69,11 @@ begin
   end
 end;
 
-function PfDispose_Parse(FnExpr : TExpression) : TExpression;
+function PfDispose_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Ptr : TExpression;
-  SrPtr : TPsSubrPtr;
-  Args : TExFunctionArgs;
+  Ptr : TSExpression;
+  SrPtr : TSDSubroutine;
+  Args : TSEFunctionArgs;
 begin
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
@@ -87,11 +87,11 @@ begin
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
-function PfNew_Parse(FnExpr : TExpression) : TExpression;
+function PfNew_Parse(FnExpr : TSExpression) : TSExpression;
 var 
-  Ptr : TExpression;
-  SrPtr : TPsSubrPtr;
-  Args : TExFunctionArgs;
+  Ptr : TSExpression;
+  SrPtr : TSDSubroutine;
+  Args : TSEFunctionArgs;
 begin
   Ptr := _Pf_Unary_Parse;
   EnsureAssignableExpr(Ptr);
@@ -106,24 +106,24 @@ begin
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
-function PfOrd_Parse(FnExpr : TExpression) : TExpression;
+function PfOrd_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   ExDispose(FnExpr);
   Result := ExOpOrd(_Pf_Unary_Parse)
 end;
 
-function PfPred_Parse(FnExpr : TExpression) : TExpression;
+function PfPred_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   ExDispose(FnExpr);
   Result := ExOpPred(_Pf_Unary_Parse)
 end;
 
-function PfRandom_Parse(FnExpr : TExpression) : TExpression;
+function PfRandom_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   Result := Pf_Overload_Parse(FnExpr, 'RANDOM')
 end;
 
-function PfSizeof_Parse(FnExpr : TExpression) : TExpression;
+function PfSizeof_Parse(FnExpr : TSExpression) : TSExpression;
 var 
   Id : TPsIdentifier;
   Found : TSDNameObj;
@@ -141,7 +141,7 @@ begin
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
 end;
 
-function PfSucc_Parse(FnExpr : TExpression) : TExpression;
+function PfSucc_Parse(FnExpr : TSExpression) : TSExpression;
 begin
   ExDispose(FnExpr);
   Result := ExOpSucc(_Pf_Unary_Parse)

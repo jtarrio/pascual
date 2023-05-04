@@ -10,7 +10,7 @@ pascual: bootstrap $(RTDIR)/libpascual.a compiler.pas \
 				 errors.inc.pas expression.forward.inc.pas expression.inc.pas \
 				 globals.inc.pas lexer.inc.pas parser.inc.pas \
 				 progdefs.forward.inc.pas progdefs.inc.pas \
-				 pseudofuns.inc.pas typedefs.inc.pas \
+				 pseudofuns.inc.pas \
 				 modules/*.pas \
 				 operations/*.pas
 	PC=./bootstrap PINCDIR=$(RTDIR) PLIBDIR=$(RTDIR) ./pascualc compiler.pas -o pascual
