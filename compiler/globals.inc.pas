@@ -55,7 +55,7 @@ begin
   AddFunction(MakeProcedure0('RANDOMIZE'));
 
   { Mark everything as initialized and used }
-  Def := CurrentDefs^.Latest;
+  Def := CurrentScope^.LatestDef;
   while Def <> nil do
   begin
     case Def^.Cls of 

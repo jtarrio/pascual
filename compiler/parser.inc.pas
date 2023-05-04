@@ -388,7 +388,7 @@ var
   TypePtr : TPsTypePtr;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := CurrentDefs^.Latest;
+  Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkType);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
@@ -487,7 +487,7 @@ var
   Name : string;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := CurrentDefs^.Latest;
+  Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkConst);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
@@ -511,7 +511,7 @@ var
   Location : TExpression;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := CurrentDefs^.Latest;
+  Checkpoint := CurrentScope^.LatestDef;
   WantTokenAndRead(TkVar);
   repeat
     NumNames := 0;
@@ -550,14 +550,14 @@ end;
 procedure PsFunctionBody(FnPtr : TPsFnPtr);
 var 
   { TODO move to AST }
-  FnDefs : TPsDefs;
+  FnDefs : TSScope;
   Pos : integer;
   Checkpoint : TPsDefPtr;
   ResultPtr : TPsVarPtr;
 begin
   new(FnDefs);
   StartLocalScope(FnDefs, FnPtr);
-  Checkpoint := CurrentDefs^.Latest;
+  Checkpoint := CurrentScope^.LatestDef;
   for Pos := 1 to FnPtr^.Args.Count do
     AddVariable(FnPtr^.Args.Defs[Pos]);
   OutFunctionDefinition(FnPtr);
@@ -685,7 +685,7 @@ function PsProgram : TSProgram;
 begin
   new(Result);
   Result^.Name := PsProgramHeading;
-  PushLocalDefs(@Result^.Defs, GlobalDefinitions);
+  StartLocalScope(@Result^.Scope, nil);
   PsDefinitions;
   PsProgramBlock
 end;
@@ -716,7 +716,7 @@ end;
 
 function PsFunctionCall(Fn : TExpression) : TExpression;
 begin
-  if (Fn^.Cls = XcFnRef) and (Fn^.FnPtr <> CurrentDefs^.CurrentFn) then
+  if (Fn^.Cls = XcFnRef) and (Fn^.FnPtr <> CurrentScope^.CurrentFn) then
     Fn^.FnPtr^.WasUsed := true
   else if Fn^.Cls = XcVariable then Fn^.VarPtr^.WasUsed := true;
 
@@ -787,7 +787,7 @@ begin
   else CompileError('Invalid identifier: ' + Id.Name);
 
   Done := ForStatement and (Expr^.Cls = XcFnRef)
-          and (Expr^.FnPtr = CurrentDefs^.CurrentFn)
+          and (Expr^.FnPtr = CurrentScope^.CurrentFn)
           and (Lexer.Token.Id = TkAssign);
   while not Done do
   begin
@@ -804,7 +804,8 @@ begin
 
   if (Expr^.Cls = XcVariable) and not ForStatement then
     Expr^.VarPtr^.WasUsed := true
-  else if (Expr^.Cls = XcFnRef) and (Expr^.FnPtr <> CurrentDefs^.CurrentFn) then
+  else if (Expr^.Cls = XcFnRef)
+          and (Expr^.FnPtr <> CurrentScope^.CurrentFn) then
          Expr^.FnPtr^.WasUsed := true;
 
   Result := Expr
@@ -1093,7 +1094,7 @@ var ResultVarPtr : TPsVarPtr;
 begin
   if Lhs^.Cls = XcFnRef then
   begin
-    if Lhs^.FnPtr <> CurrentDefs^.CurrentFn then
+    if Lhs^.FnPtr <> CurrentScope^.CurrentFn then
       ErrorForExpr('Cannot assign a value to a function', Lhs);
     ResultVarPtr := FindNameOfClass('RESULT',
                     TncVariable, {Required=}true)^.VarPtr;

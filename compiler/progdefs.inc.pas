@@ -1,6 +1,6 @@
 var 
-  GlobalDefinitions : TPsDefs;
-  CurrentDefs : TPsDefs;
+  GlobalDefinitions : TSScope;
+  CurrentScope : TSScope;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText, PtFile,
     PtEmptySet, PtUntypedPtr : TPsTypePtr
@@ -10,38 +10,23 @@ function DefCounter(CounterType : TPsCounterType) : integer;
 var Ctr : ^integer;
 begin
   case CounterType of 
-    TctEnum: Ctr := @CurrentDefs^.Counters.EnumCtr;
-    TctRecord: Ctr := @CurrentDefs^.Counters.RecordCtr;
-    TctTmpVar: Ctr := @CurrentDefs^.Counters.TmpVarCtr;
+    TctEnum: Ctr := @CurrentScope^.Counters.EnumCtr;
+    TctRecord: Ctr := @CurrentScope^.Counters.RecordCtr;
+    TctTmpVar: Ctr := @CurrentScope^.Counters.TmpVarCtr;
   end;
   Ctr^ := Ctr^ + 1;
   Result := Ctr^
 end;
 
-procedure PushGlobalDefs(Defs : TPsDefs);
+procedure PushGlobalDefs(Defs : TSScope);
 begin
   Defs^.Parent := nil;
-  Defs^.Latest := nil;
+  Defs^.LatestDef := nil;
   Defs^.Counters.EnumCtr := 0;
   Defs^.Counters.RecordCtr := 0;
   Defs^.Counters.TmpVarCtr := 0;
   Defs^.CurrentFn := nil;
-  CurrentDefs := Defs
-end;
-
-procedure PushLocalDefs(Defs : TPsDefs; Parent : TPsDefs);
-begin
-  Defs^.Parent := Parent;
-  Defs^.Latest := nil;
-  Defs^.Counters := CurrentDefs^.Counters;
-  Defs^.CurrentFn := CurrentDefs^.CurrentFn;
-  CurrentDefs := Defs
-end;
-
-procedure PopDefs;
-begin
-  CurrentDefs := CurrentDefs^.Parent;
-  if CurrentDefs = nil then InternalError('Popped global definitions')
+  CurrentScope := Defs
 end;
 
 function NewEnum(const Enum : TPsEnumDef) : TPsEnumPtr;
@@ -77,12 +62,12 @@ end;
 procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
-  if CurrentDefs^.CurrentFn = nil then
+  if CurrentScope^.CurrentFn = nil then
     Where := ''
-  else if CurrentDefs^.CurrentFn^.ReturnTypePtr = nil then
-         Where := ' in procedure ' + CurrentDefs^.CurrentFn^.Name
+  else if CurrentScope^.CurrentFn^.ReturnTypePtr = nil then
+         Where := ' in procedure ' + CurrentScope^.CurrentFn^.Name
   else
-    Where := ' in function ' + CurrentDefs^.CurrentFn^.Name;
+    Where := ' in function ' + CurrentScope^.CurrentFn^.Name;
 
   case Def^.Cls of 
     TdcVariable:
@@ -126,25 +111,29 @@ begin
     TdcPseudoFn : new(Result^.PseudoFnPtr);
     TdcWithVar : new(Result^.WithVarPtr);
   end;
-  Stack_Push(CurrentDefs^.Latest, Result)
+  Stack_Push(CurrentScope^.LatestDef, Result)
 end;
 
-procedure StartLocalScope(Defs : TPsDefs; NewFunction : TPsFnPtr);
+procedure StartLocalScope(Defs : TSScope; NewFunction : TPsFnPtr);
 begin
-  PushLocalDefs(Defs, CurrentDefs);
-  CurrentDefs^.CurrentFn := NewFunction
+  Defs^.Parent := CurrentScope;
+  Defs^.LatestDef := nil;
+  Defs^.Counters := CurrentScope^.Counters;
+  Defs^.CurrentFn := NewFunction;
+  CurrentScope := Defs
 end;
 
 procedure CloseLocalScope;
 var Def : TPsDefPtr;
 begin
-  Def := CurrentDefs^.Latest;
+  Def := CurrentScope^.LatestDef;
   while Def <> nil do
   begin
     _CheckUnusedSymbols(Def);
     Def := Def^.Older
   end;
-  PopDefs
+  CurrentScope := CurrentScope^.Parent;
+  if CurrentScope = nil then InternalError('Closed the global scope')
 end;
 
 function _FindDef(var FoundDef : TPsDefPtr;
@@ -152,12 +141,12 @@ function _FindDef(var FoundDef : TPsDefPtr;
                   var Context {:Any};
                   FromLocalScope : boolean) : boolean;
 var 
-  DefSet : TPsDefs;
+  DefSet : TSScope;
   Found : boolean;
 begin
-  DefSet := CurrentDefs;
+  DefSet := CurrentScope;
   repeat
-    Found := Stack_Find(DefSet^.Latest, FoundDef, Predicate, Context);
+    Found := Stack_Find(DefSet^.LatestDef, FoundDef, Predicate, Context);
     if not Found and not FromLocalScope then DefSet := DefSet^.Parent;
   until Found or FromLocalScope or (DefSet = nil);
   Result := Found

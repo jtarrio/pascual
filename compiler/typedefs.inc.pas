@@ -256,11 +256,3 @@ type
       TdcPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr);
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
   end;
-
-  TPsDefs = ^TPsDefsObj;
-  TPsDefsObj = record
-    Parent : TPsDefs;
-    Latest : TPsDefPtr;
-    CurrentFn : TPsFnPtr;
-    Counters : TPsCounters;
-  end;
