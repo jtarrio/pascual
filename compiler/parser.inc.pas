@@ -388,7 +388,7 @@ var
   TypePtr : TPsTypePtr;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := Defs.Latest;
+  Checkpoint := CurrentDefs^.Latest;
   WantTokenAndRead(TkType);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
@@ -487,7 +487,7 @@ var
   Name : string;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := Defs.Latest;
+  Checkpoint := CurrentDefs^.Latest;
   WantTokenAndRead(TkConst);
   repeat
     Name := GetTokenValueAndRead(TkIdentifier);
@@ -511,7 +511,7 @@ var
   Location : TExpression;
   Checkpoint : TPsDefPtr;
 begin
-  Checkpoint := Defs.Latest;
+  Checkpoint := CurrentDefs^.Latest;
   WantTokenAndRead(TkVar);
   repeat
     NumNames := 0;
@@ -554,7 +554,7 @@ var
   ResultPtr : TPsVarPtr;
 begin
   StartLocalScope(FnPtr);
-  Checkpoint := Defs.Latest;
+  Checkpoint := CurrentDefs^.Latest;
   for Pos := 1 to FnPtr^.Args.Count do
     AddVariable(FnPtr^.Args.Defs[Pos]);
   OutFunctionDefinition(FnPtr);
@@ -689,8 +689,8 @@ end;
 
 function PsFunctionCall(Fn : TExpression) : TExpression;
 begin
-  if (Fn^.Cls = XcFnRef) and (Fn^.FnPtr <> Defs.CurrentFn) then Fn^.FnPtr^.
-    WasUsed := true
+  if (Fn^.Cls = XcFnRef) and (Fn^.FnPtr <> CurrentDefs^.CurrentFn) then
+    Fn^.FnPtr^.WasUsed := true
   else if Fn^.Cls = XcVariable then Fn^.VarPtr^.WasUsed := true;
 
   if Fn^.Cls = XcFnRef then
@@ -760,7 +760,7 @@ begin
   else CompileError('Invalid identifier: ' + Id.Name);
 
   Done := ForStatement and (Expr^.Cls = XcFnRef)
-          and (Expr^.FnPtr = Defs.CurrentFn)
+          and (Expr^.FnPtr = CurrentDefs^.CurrentFn)
           and (Lexer.Token.Id = TkAssign);
   while not Done do
   begin
@@ -777,7 +777,7 @@ begin
 
   if (Expr^.Cls = XcVariable) and not ForStatement then
     Expr^.VarPtr^.WasUsed := true
-  else if (Expr^.Cls = XcFnRef) and (Expr^.FnPtr <> Defs.CurrentFn) then
+  else if (Expr^.Cls = XcFnRef) and (Expr^.FnPtr <> CurrentDefs^.CurrentFn) then
          Expr^.FnPtr^.WasUsed := true;
 
   Result := Expr
@@ -1066,7 +1066,7 @@ var ResultVarPtr : TPsVarPtr;
 begin
   if Lhs^.Cls = XcFnRef then
   begin
-    if Lhs^.FnPtr <> Defs.CurrentFn then
+    if Lhs^.FnPtr <> CurrentDefs^.CurrentFn then
       ErrorForExpr('Cannot assign a value to a function', Lhs);
     ResultVarPtr := FindNameOfClass('RESULT',
                     TncVariable, {Required=}true)^.VarPtr;

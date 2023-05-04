@@ -1,5 +1,5 @@
 var 
-  Defs : TPsDefs;
+  CurrentDefs : ^TPsDefs;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText, PtFile,
     PtEmptySet, PtUntypedPtr : TPsTypePtr
@@ -9,9 +9,9 @@ function DefCounter(CounterType : TPsCounterType) : integer;
 var Ctr : ^integer;
 begin
   case CounterType of 
-    TctEnum: Ctr := @Defs.Counters.EnumCtr;
-    TctRecord: Ctr := @Defs.Counters.RecordCtr;
-    TctTmpVar: Ctr := @Defs.Counters.TmpVarCtr;
+    TctEnum: Ctr := @CurrentDefs^.Counters.EnumCtr;
+    TctRecord: Ctr := @CurrentDefs^.Counters.RecordCtr;
+    TctTmpVar: Ctr := @CurrentDefs^.Counters.TmpVarCtr;
   end;
   Ctr^ := Ctr^ + 1;
   Result := Ctr^
@@ -19,11 +19,12 @@ end;
 
 procedure InitDefs;
 begin
-  Defs.Latest := nil;
-  Defs.Counters.EnumCtr := 0;
-  Defs.Counters.RecordCtr := 0;
-  Defs.Counters.TmpVarCtr := 0;
-  Defs.CurrentFn := nil;
+  new(CurrentDefs);
+  CurrentDefs^.Latest := nil;
+  CurrentDefs^.Counters.EnumCtr := 0;
+  CurrentDefs^.Counters.RecordCtr := 0;
+  CurrentDefs^.Counters.TmpVarCtr := 0;
+  CurrentDefs^.CurrentFn := nil;
 end;
 
 function NewEnum(const Enum : TPsEnumDef) : TPsEnumPtr;
@@ -107,12 +108,12 @@ end;
 procedure _CheckUnusedSymbols(Def : TPsDefPtr);
 var Where : string;
 begin
-  if Defs.CurrentFn = nil then
+  if CurrentDefs^.CurrentFn = nil then
     Where := ''
-  else if Defs.CurrentFn^.ReturnTypePtr = nil then
-         Where := ' in procedure ' + Defs.CurrentFn^.Name
+  else if CurrentDefs^.CurrentFn^.ReturnTypePtr = nil then
+         Where := ' in procedure ' + CurrentDefs^.CurrentFn^.Name
   else
-    Where := ' in function ' + Defs.CurrentFn^.Name;
+    Where := ' in function ' + CurrentDefs^.CurrentFn^.Name;
 
   case Def^.Cls of 
     TdcVariable:
@@ -161,13 +162,13 @@ begin
                          Result^.CurrentFn := nil
                        end
   end;
-  Stack_Push(Defs.Latest, Result)
+  Stack_Push(CurrentDefs^.Latest, Result)
 end;
 
 function _DeleteDef(var DeletedDef : TPsDefEntry) : boolean;
 var DeletedItem : TPsDefPtr;
 begin
-  Result := Stack_Pop(Defs.Latest, DeletedItem);
+  Result := Stack_Pop(CurrentDefs^.Latest, DeletedItem);
   if Result then
   begin
     _CheckUnusedSymbols(DeletedItem);
@@ -182,10 +183,10 @@ var
 begin
   Def := _AddDef(TdcScopeBoundary);
   Def^.TemporaryScope := Temporary;
-  Def^.Counters := Defs.Counters;
-  Def^.CurrentFn := Defs.CurrentFn;
+  Def^.Counters := CurrentDefs^.Counters;
+  Def^.CurrentFn := CurrentDefs^.CurrentFn;
   if not Temporary then
-    Defs.CurrentFn := NewFunction
+    CurrentDefs^.CurrentFn := NewFunction
 end;
 
 procedure _CloseScope(Temporary : boolean);
@@ -198,8 +199,8 @@ begin
   until not Deleted
         or ((DeletedDef.Cls = TdcScopeBoundary)
         and (Temporary or not DeletedDef.TemporaryScope));
-  Defs.CurrentFn := DeletedDef.CurrentFn;
-  Defs.Counters := DeletedDef.Counters
+  CurrentDefs^.CurrentFn := DeletedDef.CurrentFn;
+  CurrentDefs^.Counters := DeletedDef.Counters
 end;
 
 procedure StartLocalScope(NewFunction : TPsFnPtr);
@@ -246,7 +247,7 @@ var
 begin
   Ctx.FromLocalScope := FromLocalScope;
   Ctx.Name := Name;
-  if Stack_Find(Defs.Latest, Def, @_DefIsName, Ctx) then Result := Def^.NamePtr
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsName, Ctx) then Result := Def^.NamePtr
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
@@ -874,7 +875,7 @@ end;
 function FindWithVar(Name : string) : TPsWithVarPtr;
 var Def : TPsDefPtr;
 begin
-  if Stack_Find(Defs.Latest, Def, @_DefIsWithVar, Name) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsWithVar, Name) then
     Result := Def^.WithVarPtr
   else Result := nil
 end;
@@ -1107,7 +1108,7 @@ begin
   { TODO check that the type is appropriate }
   FileDef.Cls := Cls;
   FileDef.TypePtr := TypePtr;
-  if Stack_Find(Defs.Latest, Def, @_DefIsFileType, FileDef) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsFileType, FileDef) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1171,7 +1172,7 @@ begin
                  IndexType);
   ArrayDef.IndexTypePtr := IndexType;
   ArrayDef.ValueTypePtr := ValueType;
-  if Stack_Find(Defs.Latest, Def, @_DefIsArrayType, ArrayDef) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsArrayType, ArrayDef) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1204,7 +1205,7 @@ begin
   RangeDef.BaseTypePtr := GetFundamentalType(TypePtr);
   RangeDef.First := First;
   RangeDef.Last := Last;
-  if Stack_Find(Defs.Latest, Def, @_DefIsRangeType, RangeDef) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsRangeType, RangeDef) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1228,7 +1229,7 @@ function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(Defs.Latest, Def, @_DefIsPointerType, TypePtr) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsPointerType, TypePtr) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1251,7 +1252,7 @@ function MakePointerForwardType(TargetName : string) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(Defs.Latest, Def, @_DefIsPointerForwardType, TargetName) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsPointerForwardType, TargetName) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1274,7 +1275,7 @@ function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(Defs.Latest, Def, @_DefIsSetType, TypePtr) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsSetType, TypePtr) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1314,7 +1315,7 @@ var
 begin
   FnDef.ReturnTypePtr := ReturnTypePtr;
   FnDef.Args := Args;
-  if Stack_Find(Defs.Latest, Def, @_DefIsFunctionType, FnDef) then
+  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsFunctionType, FnDef) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
