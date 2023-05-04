@@ -231,19 +231,19 @@ type
     { Pointer to the definition. }
     case Cls : TSDefClass of 
       { Type. }
-      SdcType : (TypePtr : TSDTypeDef);
+      SdcType : (TypeDef : TSDTypeDef);
       { Untyped constant. }
-      SdcConstant : (ConstPtr : TSDConstantDef);
+      SdcConstant : (ConstDef : TSDConstantDef);
       { Variable. }
-      SdcVariable : (VarPtr : TSDVariableDef);
+      SdcVariable : (VarDef : TSDVariableDef);
       { Subroutine. }
-      SdcSubroutine : (SrPtr : TSDSubroutineDef);
+      SdcSubroutine : (SrDef : TSDSubroutineDef);
       { Pseudo-function. }
-      SdcPsfn : (PsfnPtr : TSDPsfnDef);
+      SdcPsfn : (PsfnDef : TSDPsfnDef);
       { Temporary variable. }
-      SdcWithVar : (WithVarPtr : TSDWithVarDef);
+      SdcWithVar : (WithVarDef : TSDWithVarDef);
       { Name. }
-      SdcName : (NamePtr : TSDNameDef);
+      SdcName : (NameDef : TSDNameDef);
   end;
 
   { Counters for records, enums, and temporary variables. }
