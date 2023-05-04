@@ -239,7 +239,7 @@ begin
   AddVariableName := Def
 end;
 
-function AddConstantName(const Name : string; Idx : TPsConstPtr) : TSDName;
+function AddConstantName(const Name : string; Idx : TSDConstant) : TSDName;
 var 
   Def : TSDName;
 begin
@@ -636,9 +636,9 @@ begin
   Result := DeepTypeName(TypePtr, false)
 end;
 
-function AddConstant(const Constant : TPsConstant) : TPsConstPtr;
+function AddConstant(const Constant : TSDConstantObj) : TSDConstant;
 var 
-  ConstPtr : TPsConstPtr;
+  ConstPtr : TSDConstant;
 begin
   if FindNameInLocalScope(Constant.Name, {Required=}false) <> nil then
     CompileError('Identifier ' + Constant.Name + ' already defined');
@@ -815,9 +815,9 @@ begin
 end;
 
 function MakeConstant(const Name : string; Value : TExpression)
-: TPsConstant;
+: TSDConstantObj;
 var 
-  Constant : TPsConstant;
+  Constant : TSDConstantObj;
 begin
   Constant.Name := Name;
   Constant.Value := Value;

@@ -402,7 +402,7 @@ begin
 end;
 
 procedure PsConstant(const Name : string);
-var Constant : TPsConstant;
+var Constant : TSDConstantObj;
 begin
   WantTokenAndRead(TkEquals);
   Constant.Name := Name;

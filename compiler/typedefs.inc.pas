@@ -128,7 +128,6 @@ type
 
   TPsRecPtr = ^TPsRecordDef;
   TPsFnDefPtr = ^TPsFnDef;
-  TPsConstPtr = ^TPsConstant;
   TPsWithVarPtr = ^TPsWithVar;
 
   TPsFileClass = (TfcNone, TfcText, TfcBinary);
@@ -181,10 +180,6 @@ type
     IsPacked : boolean;
     Id : integer;
     HasBeenDefined : boolean
-  end;
-  TPsConstant = record
-    Name : string;
-    Value : TExpression;
   end;
   TPsVariable = record
     Name : string;
