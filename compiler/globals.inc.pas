@@ -1,8 +1,9 @@
-procedure StartGlobalScope;
+procedure CreateGlobalDefinitions;
 var 
   Def : TPsDefPtr;
 begin
-  InitDefs;
+  new(GlobalDefinitions);
+  PushGlobalDefs(GlobalDefinitions);
 
   { Primitive types }
   PrimitiveTypes.PtNil := MakeBaseType('NIL', TtcNil);

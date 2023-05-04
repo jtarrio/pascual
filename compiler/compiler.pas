@@ -20,6 +20,7 @@ end;
 
 {$I containers.inc.pas}
 {$I typedefs.inc.pas}
+{$I ast.inc.pas}
 {$I expression.forward.inc.pas}
 {$I operations/forward.inc.pas}
 {$I progdefs.forward.inc.pas}
@@ -148,7 +149,7 @@ end;
 begin
   ClearState;
   ParseCmdline;
-  StartGlobalScope;
+  CreateGlobalDefinitions;
   ParseProgram;
   CloseLocalScope;
   Close(Lexer.Input.Src);

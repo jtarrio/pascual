@@ -1,5 +1,6 @@
 var 
-  CurrentDefs : ^TPsDefs;
+  GlobalDefinitions : TPsDefs;
+  CurrentDefs : TPsDefs;
   PrimitiveTypes : record
     PtNil, PtBoolean, PtInteger, PtReal, PtChar, PtString, PtText, PtFile,
     PtEmptySet, PtUntypedPtr : TPsTypePtr
@@ -17,14 +18,30 @@ begin
   Result := Ctr^
 end;
 
-procedure InitDefs;
+procedure PushGlobalDefs(Defs : TPsDefs);
 begin
-  new(CurrentDefs);
-  CurrentDefs^.Latest := nil;
-  CurrentDefs^.Counters.EnumCtr := 0;
-  CurrentDefs^.Counters.RecordCtr := 0;
-  CurrentDefs^.Counters.TmpVarCtr := 0;
-  CurrentDefs^.CurrentFn := nil;
+  Defs^.Parent := nil;
+  Defs^.Latest := nil;
+  Defs^.Counters.EnumCtr := 0;
+  Defs^.Counters.RecordCtr := 0;
+  Defs^.Counters.TmpVarCtr := 0;
+  Defs^.CurrentFn := nil;
+  CurrentDefs := Defs
+end;
+
+procedure PushLocalDefs(Defs : TPsDefs; Parent : TPsDefs);
+begin
+  Defs^.Parent := Parent;
+  Defs^.Latest := nil;
+  Defs^.Counters := CurrentDefs^.Counters;
+  Defs^.CurrentFn := CurrentDefs^.CurrentFn;
+  CurrentDefs := Defs
+end;
+
+procedure PopDefs;
+begin
+  CurrentDefs := CurrentDefs^.Parent;
+  if CurrentDefs = nil then InternalError('Popped global definitions')
 end;
 
 function NewEnum(const Enum : TPsEnumDef) : TPsEnumPtr;
@@ -223,6 +240,22 @@ begin
   _CloseScope({Temporary=}true)
 end;
 
+function _FindDef(var FoundDef : TPsDefPtr;
+                  Predicate : TStackPredicate;
+                  var Context {:Any};
+                  FromLocalScope : boolean) : boolean;
+var 
+  DefSet : TPsDefs;
+  Found : boolean;
+begin
+  DefSet := CurrentDefs;
+  repeat
+    Found := Stack_Find(DefSet^.Latest, FoundDef, Predicate, Context);
+    if not Found and not FromLocalScope then DefSet := DefSet^.Parent;
+  until Found or FromLocalScope or (DefSet = nil);
+  Result := Found
+end;
+
 function _DefIsName(var Item; var Ctx; var Stop : boolean) : boolean;
 var 
   Def : TPsDefPtr absolute Item;
@@ -247,7 +280,7 @@ var
 begin
   Ctx.FromLocalScope := FromLocalScope;
   Ctx.Name := Name;
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsName, Ctx) then Result := Def^.NamePtr
+  if _FindDef(Def, @_DefIsName, Ctx, FromLocalScope) then Result := Def^.NamePtr
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
@@ -875,7 +908,7 @@ end;
 function FindWithVar(Name : string) : TPsWithVarPtr;
 var Def : TPsDefPtr;
 begin
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsWithVar, Name) then
+  if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}false) then
     Result := Def^.WithVarPtr
   else Result := nil
 end;
@@ -1108,7 +1141,7 @@ begin
   { TODO check that the type is appropriate }
   FileDef.Cls := Cls;
   FileDef.TypePtr := TypePtr;
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsFileType, FileDef) then
+  if _FindDef(Def, @_DefIsFileType, FileDef, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1172,7 +1205,7 @@ begin
                  IndexType);
   ArrayDef.IndexTypePtr := IndexType;
   ArrayDef.ValueTypePtr := ValueType;
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsArrayType, ArrayDef) then
+  if _FindDef(Def, @_DefIsArrayType, ArrayDef, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1205,7 +1238,7 @@ begin
   RangeDef.BaseTypePtr := GetFundamentalType(TypePtr);
   RangeDef.First := First;
   RangeDef.Last := Last;
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsRangeType, RangeDef) then
+  if _FindDef(Def, @_DefIsRangeType, RangeDef, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1215,6 +1248,8 @@ begin
 end;
 
 function _DefIsPointerType(var Item; var Ctx; var Unused_Stop : boolean) :
+
+
                                                                          boolean
 ;
 var 
@@ -1229,7 +1264,7 @@ function MakePointerType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsPointerType, TypePtr) then
+  if _FindDef(Def, @_DefIsPointerType, TypePtr, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1252,7 +1287,8 @@ function MakePointerForwardType(TargetName : string) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsPointerForwardType, TargetName) then
+  if _FindDef(Def, @_DefIsPointerForwardType,
+     TargetName, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1275,7 +1311,7 @@ function MakeSetType(TypePtr : TPsTypePtr) : TPsTypePtr;
 var 
   Def : TPsDefPtr;
 begin
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsSetType, TypePtr) then
+  if _FindDef(Def, @_DefIsSetType, TypePtr, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin
@@ -1315,7 +1351,7 @@ var
 begin
   FnDef.ReturnTypePtr := ReturnTypePtr;
   FnDef.Args := Args;
-  if Stack_Find(CurrentDefs^.Latest, Def, @_DefIsFunctionType, FnDef) then
+  if _FindDef(Def, @_DefIsFunctionType, FnDef, {FromLocalScope=}false) then
     Result := _UnaliasType(Def^.TypePtr)
   else
   begin

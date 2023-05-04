@@ -646,10 +646,11 @@ begin
   until Done;
 end;
 
-procedure PsProgramHeading;
+function PsProgramHeading : string;
 begin
   WantTokenAndRead(TkProgram);
-  OutProgramHeading(GetTokenValueAndRead(TkIdentifier));
+  Result := GetTokenValueAndRead(TkIdentifier);
+  OutProgramHeading(Result);
   if Lexer.Token.Id = TkLparen then
   begin
     repeat
@@ -677,9 +678,11 @@ begin
   WantTokenAndRead(TkEnd)
 end;
 
-procedure PsProgram;
+function PsProgram : TSProgram;
 begin
-  PsProgramHeading;
+  new(Result);
+  Result^.Name := PsProgramHeading;
+  PushLocalDefs(@Result^.Defs, GlobalDefinitions);
   PsDefinitions;
   PsProgramBlock
 end;

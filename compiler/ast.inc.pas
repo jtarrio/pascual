@@ -3,6 +3,6 @@ type
 
   TSProgramObj = record
     Name : string;
-    Defs : TPsDefs;
+    Defs : TPsDefsObj;
   end;
 

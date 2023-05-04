@@ -1109,7 +1109,8 @@ procedure OutEnumValuesFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  Def := Checkpoint^.Newer;
+  if CheckPoint = nil then Def := nil
+  else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
     if (Def^.Cls = TdcType) and (Def^.TypePtr^.Cls = TtcEnum) then
@@ -1381,7 +1382,8 @@ procedure OutTypeDefinitionsFromCheckpoint;
 var 
   Def : TPsDefPtr;
 begin
-  Def := Checkpoint^.Newer;
+  if Checkpoint = nil then Def := nil
+  else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
     if Def^.Cls = TdcType then

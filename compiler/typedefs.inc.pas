@@ -263,7 +263,9 @@ type
                           CurrentFn : TPsFnPtr)
   end;
 
-  TPsDefs = record
+  TPsDefs = ^TPsDefsObj;
+  TPsDefsObj = record
+    Parent : TPsDefs;
     Latest : TPsDefPtr;
     CurrentFn : TPsFnPtr;
     Counters : TPsCounters;
