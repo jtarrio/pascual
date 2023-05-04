@@ -64,7 +64,7 @@ begin
                      Def^.VarPtr^.WasInitialized := true;
                      Def^.VarPtr^.WasUsed := true
                    end;
-      TdcFunction: Def^.FnPtr^.WasUsed := true;
+      TdcSubroutine: Def^.SrPtr^.WasUsed := true;
       TdcType: Def^.TypePtr^.WasUsed := true;
     end;
     Def := Def^.Older

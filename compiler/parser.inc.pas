@@ -547,7 +547,7 @@ begin
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
-procedure PsFunctionBody(FnPtr : TPsFnPtr);
+procedure PsFunctionBody(SrPtr : TPsSubrPtr);
 var 
   { TODO move to AST }
   FnDefs : TSScope;
@@ -556,15 +556,15 @@ var
   ResultPtr : TPsVarPtr;
 begin
   new(FnDefs);
-  StartLocalScope(FnDefs, FnPtr);
+  StartLocalScope(FnDefs, SrPtr);
   Checkpoint := CurrentScope^.LatestDef;
-  for Pos := 1 to FnPtr^.Args.Count do
-    AddVariable(FnPtr^.Args.Defs[Pos]);
-  OutFunctionDefinition(FnPtr);
+  for Pos := 1 to SrPtr^.Args.Count do
+    AddVariable(SrPtr^.Args.Defs[Pos]);
+  OutFunctionDefinition(SrPtr);
   OutEnumValuesFromCheckpoint(Checkpoint);
-  if FnPtr^.ReturnTypePtr <> nil then
+  if SrPtr^.ReturnTypePtr <> nil then
   begin
-    ResultPtr := AddVariable(MakeVariable('RESULT', FnPtr^.ReturnTypePtr));
+    ResultPtr := AddVariable(MakeVariable('RESULT', SrPtr^.ReturnTypePtr));
     ResultPtr^.WasUsed := true;
     OutVariableDefinition(ResultPtr, nil);
   end;
@@ -578,7 +578,7 @@ begin
   end;
   WantTokenAndRead(TkEnd);
   WantTokenAndRead(TkSemicolon);
-  OutFunctionEnd(FnPtr);
+  OutFunctionEnd(SrPtr);
   CloseLocalScope
 end;
 
@@ -780,7 +780,7 @@ begin
   else if Found = nil then CompileError('Unknown identifier: ' + Id.Name)
   else if Found^.Cls = TncVariable then Expr := ExVariable(Found^.VarPtr)
   else if Found^.Cls = TncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
-  else if Found^.Cls = TncFunction then Expr := ExFnRef(Found^.FnPtr)
+  else if Found^.Cls = TncFunction then Expr := ExFnRef(Found^.SrPtr)
   else if Found^.Cls = TncEnumVal then
          Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
   else if Found^.Cls = TncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)

@@ -7,7 +7,7 @@ type
   TPsTypePtr = ^TPsType;
   TPsEnumPtr = ^TPsEnumDef;
   TPsVarPtr = ^TPsVariable;
-  TPsFnPtr = ^TPsSubroutine;
+  TPsSubrPtr = ^TPsSubroutine;
   TPsPseudoFnPtr = ^TPsPseudoFn;
   TExSetImmBounds = ^TExSetImmBoundsObj;
   TExSetExprBounds = ^TExSetExprboundsObj;
@@ -102,7 +102,7 @@ type
       XcAddress : (AddressExpr : TExpression);
       XcStringChar : (StringExpr : TExpression;
                       StringIndex : TExpression);
-      XcFnRef : (FnPtr : TPsFnPtr);
+      XcFnRef : (FnPtr : TPsSubrPtr);
       XcFnCall : (FnExpr : TExpression;
                   CallArgs : TExFunctionArgs);
       XcPseudoFnRef : (PseudoFnPtr : TPsPseudoFnPtr);
@@ -230,6 +230,6 @@ type
       TncConstant : (ConstPtr : TPsConstPtr);
       TncEnumVal : (EnumTypePtr : TPsTypePtr;
                     Ordinal : integer);
-      TncFunction : (FnPtr : TPsFnPtr);
+      TncFunction : (SrPtr : TPsSubrPtr);
       TncPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr)
   end;

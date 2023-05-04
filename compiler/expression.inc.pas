@@ -939,7 +939,7 @@ begin
   Result^.IsFunctionResult := Parent^.IsFunctionResult
 end;
 
-function ExFnRef(FnPtr : TPsFnPtr) : TExpression;
+function ExFnRef(FnPtr : TPsSubrPtr) : TExpression;
 begin
   Result := _NewExpr(XcFnRef);
   Result^.FnPtr := FnPtr;

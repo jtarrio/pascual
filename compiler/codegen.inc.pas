@@ -1499,7 +1499,7 @@ end;
 procedure OutFunctionDeclaration;
 begin
   _OutBlankline(TotFunDec);
-  OutFunctionPrototype(FnPtr^);
+  OutFunctionPrototype(SrPtr^);
   write(Codegen.Output, ';');
   _OutNewline
 end;
@@ -1507,14 +1507,14 @@ end;
 procedure OutFunctionDefinition;
 begin
   _OutBlankline(TotFunDef);
-  OutFunctionPrototype(FnPtr^);
+  OutFunctionPrototype(SrPtr^);
   write(Codegen.Output, ' ');
   OutBegin
 end;
 
 procedure OutFunctionEnd;
 begin
-  if FnPtr^.ReturnTypePtr <> nil then
+  if SrPtr^.ReturnTypePtr <> nil then
   begin
     _OutIndent;
     write(Codegen.Output, 'return RESULT;');

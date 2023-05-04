@@ -22,7 +22,7 @@ function Pf_Overload_Parse(FnExpr : TExpression;
 var 
   Arg : TExpression;
   Args : TExFunctionArgs;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
 begin
   ExDispose(FnExpr);
   Arg := nil;
@@ -34,18 +34,18 @@ begin
   end;
   if Arg = nil then
   begin
-    FnPtr := FindNameOfClass(NamePrefix + '_n', TncFunction, {Required=}true)^.
-             FnPtr;
+    SrPtr := FindNameOfClass(NamePrefix + '_n', TncFunction, {Required=}true)^.
+             SrPtr;
     Args.Size := 0;
-    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+    Result := ExFunctionCall(ExFnRef(SrPtr), Args);
   end
   else
   begin
-    FnPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
-             TncFunction, {Required=}true)^.FnPtr;
+    SrPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
+             TncFunction, {Required=}true)^.SrPtr;
     Args.Size := 1;
     Args.Values[1] := Arg;
-    Result := ExFunctionCall(ExFnRef(FnPtr), Args);
+    Result := ExFunctionCall(ExFnRef(SrPtr), Args);
   end
 end;
 
@@ -72,7 +72,7 @@ end;
 function PfDispose_Parse(FnExpr : TExpression) : TExpression;
 var
   Ptr : TExpression;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
   Args : TExFunctionArgs;
 begin
   Ptr := _Pf_Unary_Parse;
@@ -83,14 +83,14 @@ begin
   ExDispose(FnExpr);
   Args.Size := 1;
   Args.Values[1] := Ptr;
-  FnPtr := FindNameOfClass('Dispose', TncFunction, {Required=}true)^.FnPtr;
-  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
+  SrPtr := FindNameOfClass('Dispose', TncFunction, {Required=}true)^.SrPtr;
+  Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 function PfNew_Parse(FnExpr : TExpression) : TExpression;
 var
   Ptr : TExpression;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
   Args : TExFunctionArgs;
 begin
   Ptr := _Pf_Unary_Parse;
@@ -102,8 +102,8 @@ begin
   Args.Size := 2;
   Args.Values[1] := Ptr;
   Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
-  FnPtr := FindNameOfClass('New', TncFunction, {Required=}true)^.FnPtr;
-  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
+  SrPtr := FindNameOfClass('New', TncFunction, {Required=}true)^.SrPtr;
+  Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 function PfOrd_Parse(FnExpr : TExpression) : TExpression;

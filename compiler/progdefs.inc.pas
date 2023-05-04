@@ -84,12 +84,12 @@ begin
                  else if not Def^.VarPtr^.WasInitialized then
                         CompileWarning('Variable ' + Def^.VarPtr^.Name +
                                        ' was not initialized' + Where);
-    TdcFunction: if not Def^.FnPtr^.WasUsed then
+    TdcSubroutine: if not Def^.SrPtr^.WasUsed then
                  begin
-                   if Def^.FnPtr^.ReturnTypePtr = nil then
-                     CompileWarning('Procedure ' + Def^.FnPtr^.Name +
+                   if Def^.SrPtr^.ReturnTypePtr = nil then
+                     CompileWarning('Procedure ' + Def^.SrPtr^.Name +
                                     ' was not used')
-                   else CompileWarning('Function ' + Def^.FnPtr^.Name +
+                   else CompileWarning('Function ' + Def^.SrPtr^.Name +
                                        ' was not used')
                  end;
     TdcType: if (Def^.TypePtr^.Name <> '') and not Def^.TypePtr^.WasUsed then
@@ -107,14 +107,14 @@ begin
     TdcType : new(Result^.TypePtr);
     TdcConstant : new(Result^.ConstPtr);
     TdcVariable : new(Result^.VarPtr);
-    TdcFunction : new(Result^.FnPtr);
+    TdcSubroutine : new(Result^.SrPtr);
     TdcPseudoFn : new(Result^.PseudoFnPtr);
     TdcWithVar : new(Result^.WithVarPtr);
   end;
   Stack_Push(CurrentScope^.LatestDef, Result)
 end;
 
-procedure StartLocalScope(Defs : TSScope; NewFunction : TPsFnPtr);
+procedure StartLocalScope(Defs : TSScope; NewFunction : TPsSubrPtr);
 begin
   Defs^.Parent := CurrentScope;
   Defs^.LatestDef := nil;
@@ -248,12 +248,12 @@ begin
   Result := Def
 end;
 
-function AddFunctionName(const Name : string; Idx : TPsFnPtr) : TPsNamePtr;
+function AddFunctionName(const Name : string; Idx : TPsSubrPtr) : TPsNamePtr;
 var 
   Def : TPsNamePtr;
 begin
   Def := _AddName(Name, TncFunction);
-  Def^.FnPtr := Idx;
+  Def^.SrPtr := Idx;
   AddFunctionName := Def
 end;
 
@@ -670,7 +670,7 @@ begin
   Result.WasUsed := false
 end;
 
-function IsSameFunctionDefinition(DeclPtr : TPsFnPtr;
+function IsSameFunctionDefinition(DeclPtr : TPsSubrPtr;
                                   Fun : TPsSubroutine) : boolean;
 var 
   Decl : TPsSubroutine;
@@ -695,33 +695,33 @@ var
 begin
   NamePtr := FindNameOfClassInLocalScope(Name, TncFunction, {Required=}false);
   HasForwardDeclaration := (NamePtr <> nil)
-                           and (NamePtr^.FnPtr^.IsDeclaration)
+                           and (NamePtr^.SrPtr^.IsDeclaration)
 end;
 
-function AddFunction(const Fun : TPsSubroutine) : TPsFnPtr;
+function AddFunction(const Fun : TPsSubroutine) : TPsSubrPtr;
 var 
   NamePtr : TPsNamePtr;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
   IsProcedure : boolean;
 begin
   IsProcedure := Fun.ReturnTypePtr = nil;
   NamePtr := FindNameInLocalScope(Fun.Name, {Required=}false);
   if NamePtr = nil then
   begin
-    FnPtr := _AddDef(TdcFunction)^.FnPtr;
-    FnPtr^ := Fun;
-    AddFunctionName(Fun.Name, FnPtr)
+    SrPtr := _AddDef(TdcSubroutine)^.SrPtr;
+    SrPtr^ := Fun;
+    AddFunctionName(Fun.Name, SrPtr)
   end
   else
   begin
     if (NamePtr^.Cls <> TncFunction) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
-    FnPtr := NamePtr^.FnPtr;
-    if FnPtr^.IsDeclaration then
+    SrPtr := NamePtr^.SrPtr;
+    if SrPtr^.IsDeclaration then
     begin
       if ((Fun.Args.Count = 0) and (Fun.ReturnTypePtr = nil))
-         or IsSameFunctionDefinition(FnPtr, Fun) then
-        FnPtr^.IsDeclaration := false
+         or IsSameFunctionDefinition(SrPtr, Fun) then
+        SrPtr^.IsDeclaration := false
       else
       begin
         if IsProcedure then
@@ -740,7 +740,7 @@ begin
         CompileError('Function ' + Fun.Name + ' already defined')
     end
   end;
-  AddFunction := FnPtr;
+  AddFunction := SrPtr;
 end;
 
 function FindField(TypePtr : TPsTypePtr; const Name : string;

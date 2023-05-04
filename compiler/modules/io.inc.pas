@@ -161,29 +161,29 @@ function _ModIo_FileFun_Parse(FnExpr : TExpression) : TExpression;
 var 
   Args : TExFunctionArgs;
   FnName : string;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
 begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  FnPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.FnPtr;
+  SrPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 1;
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
-  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
+  Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 function _ModIo_FileResetFun_Parse(FnExpr : TExpression) : TExpression;
 var 
   Args : TExFunctionArgs;
   FnName : string;
-  FnPtr : TPsFnPtr;
+  SrPtr : TPsSubrPtr;
   FileTypePtr : TPsTypePtr;
 begin
   FnName := FnExpr^.PseudoFnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  FnPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.FnPtr;
+  SrPtr := FindNameOfClass(FnName, TncFunction, {Required=}true)^.SrPtr;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
   if Args.Values[1]^.Cls = XcToGenericFile then
@@ -194,7 +194,7 @@ begin
   else
     Args.Values[Args.Size - 1] := ExSizeof(FileTypePtr^.FileDef.TypePtr);
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
-  Result := ExFunctionCall(ExFnRef(FnPtr), Args)
+  Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 procedure _AddIoProc1(Name : string; Arg1 : TPsVariable);

@@ -1,7 +1,7 @@
 type 
   TSDefinition = ^TSDefEntry;
   TSDefClass = (TdcName, TdcType, TdcConstant, TdcVariable,
-                TdcFunction, TdcPseudoFn, TdcWithVar);
+                TdcSubroutine, TdcPseudoFn, TdcWithVar);
   TSDefEntry = record
     Older : TSDefinition;
     Newer : TSDefinition;
@@ -10,7 +10,7 @@ type
       TdcType : (TypePtr : TPsTypePtr);
       TdcConstant : (ConstPtr : TPsConstPtr);
       TdcVariable : (VarPtr : TPsVarPtr);
-      TdcFunction : (FnPtr : TPsFnPtr);
+      TdcSubroutine : (SrPtr : TPsSubrPtr);
       TdcPseudoFn : (PseudoFnPtr : TPsPseudoFnPtr);
       TdcWithVar : (WithVarPtr : TPsWithVarPtr);
   end;
@@ -26,7 +26,7 @@ type
   TSScopeObj = record
     Parent : TSScope;
     LatestDef : TSDefinition;
-    CurrentFn : TPsFnPtr;
+    CurrentFn : TPsSubrPtr;
     Counters : TSCounters;
   end;
 
