@@ -111,11 +111,11 @@ begin
                        ExDispose(Expr^.ToStrDest)
                      end;
     SecConvertToVal:
-                    begin
-                      ExDispose(Expr^.ToValSrc);
-                      ExDispose(Expr^.ToValDest);
-                      ExDispose(Expr^.ToValCode)
-                    end;
+                     begin
+                       ExDispose(Expr^.ToValSrc);
+                       ExDispose(Expr^.ToValDest);
+                       ExDispose(Expr^.ToValCode)
+                     end;
     SecRead: _DisposeReadExpr(Expr);
     SecWrite: _DisposeWriteExpr(Expr);
     SecUnaryOp: ExDispose(Expr^.Unary.Parent);
@@ -272,7 +272,7 @@ begin
                    Copy^.CallArgs.Values[Pos] := ExCopy(Expr^.CallArgs
                                                  .Values[Pos])
                end;
-    SecPseudoFnRef: Copy^.PseudoFnPtr := Expr^.PseudoFnPtr;
+    SecPsfnRef: Copy^.PsfnPtr := Expr^.PsfnPtr;
     SecSizeof: Copy^.SizeofTypePtr := Expr^.SizeofTypePtr;
     SecConvertToStr:
                      begin
@@ -348,7 +348,7 @@ const _ExPrecedences : array[TSExpressionClass] of integer
                           {SecWithTmpVar=}-1, {SecSubrange=}0, {SecSet=}0,
                           {SecVariable=}0, {SecField=}1, {SecArray=}1,
                           {SecPointer=}1, {SecAddress=}1, {SecStringChar=}1,
-                          {SecFnRef=}0, {SecFnCall=}0, {SecPseudoFnRef=}0,
+                          {SecFnRef=}0, {SecFnCall=}0, {SecPsfnRef=}0,
                           {SecSizeof=}1, {SecConvertToStr=}1,
                           {SecConvertToVal=}1, {SecRead=}1, {SecWrite=}1,
                           {SecUnaryOp=}-1, {SecBinaryOp=}-1);
@@ -441,19 +441,6 @@ begin
   if UseParens then Result := Result + ')';
 end;
 
-function _DescribeWithTmpVar(Expr : TSExpression) : string;
-begin
-  Result := '{with ';
-  while Expr^.Cls = SecWithTmpVar do
-  begin
-    Result := Result + ExDescribe(Expr^.TmpVar) + ':=' +
-              ExDescribe(Expr^.TmpVarValue);
-    Expr := Expr^.TmpVarChild;
-    if Expr^.Cls = SecWithTmpVar then Result := Result + ', '
-  end;
-  Result := Result + '} ' + ExDescribe(Expr)
-end;
-
 function _DescribeSet(Expr : TSExpression) : string;
 var 
   Bounds : TSESetExprBounds;
@@ -483,7 +470,7 @@ begin
     SecToReal: Result := ExDescribe(Expr^.ToRealParent);
     SecToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
     SecToGenericFile: Result := ExDescribe(Expr^.ToGenericFileParent);
-    SecWithTmpVar: Result := _DescribeWithTmpVar(Expr);
+    SecWithTmpVar: Result := ExDescribe(Expr^.TmpVarChild);
     SecSubrange: Result := ExDescribe(Expr^.ToStrParent);
     SecSet: Result := _DescribeSet(Expr);
     SecVariable: if Expr^.VarPtr^.IsAliasFor = nil then
@@ -510,7 +497,7 @@ begin
                  end;
                  Result := Result + ')'
                end;
-    SecPseudoFnRef: Result := Expr^.PseudoFnPtr^.Name;
+    SecPsfnRef: Result := Expr^.PsfnPtr^.Name;
     SecSizeof: Result := 'SIZEOF(' + TypeName(Expr^.SizeofTypePtr) + ')';
     SecConvertToStr: with Expr^.ToStrSrc do
                        if Width = nil then
@@ -1005,11 +992,11 @@ begin
     ErrorForExpr('Cannot call non-function', FnExpr)
 end;
 
-function ExPseudoFn(SpecialFn : TSDPsfn) : TSExpression;
+function ExPsfn(SpecialFn : TSDPsfn) : TSExpression;
 begin
-  Result := _NewExpr(SecPseudoFnRef);
+  Result := _NewExpr(SecPsfnRef);
   Result^.TypePtr := nil;
-  Result^.PseudoFnPtr := SpecialFn
+  Result^.PsfnPtr := SpecialFn
 end;
 
 function ExSizeof(TypePtr : TSDType) : TSExpression;

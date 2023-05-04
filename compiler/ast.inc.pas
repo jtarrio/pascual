@@ -18,25 +18,6 @@ type
     Value : TSExpression;
   end;
 
-  { A variable or typed constant. }
-  TSDVariable = ^TSDVariableDef;
-  TSDVariableDef = record
-    { The variable's name. }
-    Name : string;
-    { The variable's type. }
-    TypePtr : TSDType;
-    { Does this variable contain a reference? }
-    IsReference : boolean;
-    { Is this variable actually a constant? }
-    IsConstant : boolean;
-    { Has this variable been initialized? }
-    WasInitialized : boolean;
-    { Has this variable been used? }
-    WasUsed : boolean;
-    { If this variable is an alias for an expression, the expression. }
-    IsAliasFor : TSExpression
-  end;
-
   { A file type. }
   { File class: unqualified, text, binary. }
   TSDTFileClass = (SdtfcNone, SdtfcText, SdtfcBinary);
@@ -94,12 +75,23 @@ type
   end;
   { A subroutine type (for a variable holding a subroutine pointer.) }
   TSDTSubroutine = ^TSDTSubroutineDef;
+  { A single subroutine argument. }
+  TSDSubroutineArg = record
+    { The argument's name. }
+    Name : string;
+    { The argument's type. }
+    TypePtr : TSDType;
+    { Does this argument contain a reference? }
+    IsReference : boolean;
+    { Is this argument actually a constant? }
+    IsConstant : boolean;
+  end;
   { Subroutine arguments. }
   TSDSubroutineArgs = record
     { Number of arguments. }
     Count : integer;
     { Argument definitions. }
-    Defs : array[1..MaxSubroutineArgs] of TSDVariableDef;
+    Defs : array[1..MaxSubroutineArgs] of TSDSubroutineArg;
   end;
   TSDTSubroutineDef = record
     { Subroutine arguments. }
@@ -135,6 +127,25 @@ type
       SdtcPointer : (PointedTypePtr : TSDType);
       SdtcPointerForward : (TargetName : ^string);
       SdtcFunction : (FnDefPtr : TSDTSubroutine);
+  end;
+
+  { A variable or typed constant. }
+  TSDVariable = ^TSDVariableDef;
+  TSDVariableDef = record
+    { The variable's name. }
+    Name : string;
+    { The variable's type. }
+    TypePtr : TSDType;
+    { Does this variable contain a reference? }
+    IsReference : boolean;
+    { Is this variable actually a constant? }
+    IsConstant : boolean;
+    { Has this variable been initialized? }
+    WasInitialized : boolean;
+    { Has this variable been used? }
+    WasUsed : boolean;
+    { If this variable is an alias for an expression, the expression. }
+    IsAliasFor : TSExpression
   end;
 
   { A subroutine. }
@@ -175,7 +186,7 @@ type
   { A name for a definition. }
   TSDName = ^TSDNameObj;
   TSDNameClass = (SdncConstant, SdncType, SdncEnumVal, SdncVariable,
-                  SdncSubroutine, SdncPseudoFn);
+                  SdncSubroutine, SdncPsfn);
   TSDNameObj = record
     { The name. }
     Name : string;
@@ -187,13 +198,13 @@ type
                      Ordinal : integer);
       SdncVariable : (VarPtr : TSDVariable);
       SdncSubroutine : (SrPtr : TSDSubroutine);
-      SdncPseudoFn : (PseudoFnPtr : TSDPsfn)
+      SdncPsfn : (PsfnPtr : TSDPsfn)
   end;
 
   { A defined type, constant, variable, etc. }
   TSDefinition = ^TSDefEntry;
   TSDefClass = (SdcName, SdcType, SdcConstant, SdcVariable,
-                SdcSubroutine, SdcPseudoFn, SdcWithVar);
+                SdcSubroutine, SdcPsfn, SdcWithVar);
   TSDefEntry = record
     { Older entry in the stack. }
     Older : TSDefinition;
@@ -205,7 +216,7 @@ type
       SdcConstant : (ConstPtr : TSDConstant);
       SdcVariable : (VarPtr : TSDVariable);
       SdcSubroutine : (SrPtr : TSDSubroutine);
-      SdcPseudoFn : (PseudoFnPtr : TSDPsfn);
+      SdcPsfn : (PsfnPtr : TSDPsfn);
       SdcWithVar : (WithVarPtr : TSDWithVarPtr);
       SdcName : (NamePtr : TSDName);
   end;
@@ -234,17 +245,20 @@ type
     Counters : TSCounters;
   end;
 
+  { Immediate bounds for a set constructor. }
   TSESetImmBounds = ^TSESetImmBoundsObj;
   TSESetImmBoundsObj = record
     Next : TSESetImmBounds;
     First, Last : integer
   end;
+  { Expression bounds for a set constructor. }
   TSESetExprBounds = ^TSESetExprBoundsObj;
   TSESetExprBoundsObj = record
     Next : TSESetExprBounds;
     First, Last : TSExpression
   end;
 
+  { Immediate expression. }
   TSEImmediateClass = (SeicNil, SeicBoolean, SeicInteger, SeicReal, SeicChar,
                        SeicString, SeicEnum, SeicSet);
   TSEImmediate = record
@@ -259,90 +273,126 @@ type
       SeicSet : (SetBounds : TSESetImmBounds;
                  SetOfTypePtr : TSDType)
   end;
+  { Function argument values. }
   TSEFunctionArgs = record
     Size : integer;
     Values : array[1..MaxSubroutineArgs] of TSExpression;
   end;
-  TSEWriteArg = record
-    Arg : TSExpression;
-    Width : TSExpression;
-    Prec : TSExpression
-  end;
+  { List of arguments for the READ procedure. }
   TSEReadArgList = ^TSEReadArgValue;
   TSEReadArgValue = record
     Next : TSEReadArgList;
     Dest : TSExpression
   end;
+  { List of arguments for the WRITE procedure. }
   TSEWriteArgList = ^TSEWriteArgValue;
+  TSEWriteArg = record
+    Arg : TSExpression;
+    Width : TSExpression;
+    Prec : TSExpression
+  end;
   TSEWriteArgValue = record
     Next : TSEWriteArgList;
     Value : TSEWriteArg
   end;
+  { Operators. }
   TSEOperator = (SeoAdd, SeoSub, SeoMul, SeoDivReal, SeoDivInt, SeoMod, SeoNeg,
                  SeoAnd, SeoOr, SeoXor, SeoShl, SeoShr, SeoNot,
                  SeoIn,
                  SeoEq, SeoNe, SeoLt, SeoGt, SeoLtEq, SeoGtEq,
                  SeoOrd, SeoPred, SeoSucc);
+  { Unary operation. }
   TSEUnaryOp = record
     Parent : TSExpression;
     Op : TSEOperator
   end;
+  { Binary operation. }
   TSEBinaryOp = record
     Left : TSExpression;
     Right : TSExpression;
     Op : TSEOperator
   end;
 
+  { Expressions. }
   TSExpressionClass = (SecImmediate, SecToString, SecToReal, SecToUntypedPtr,
                        SecToGenericFile, SecWithTmpVar, SecSubrange, SecSet,
                        SecVariable, SecField, SecArray, SecPointer, SecAddress,
-                       SecStringChar, SecFnRef, SecFnCall, SecPseudoFnRef,
+                       SecStringChar, SecFnRef, SecFnCall, SecPsfnRef,
                        SecSizeof, SecConvertToStr, SecConvertToVal, SecRead,
                        SecWrite, SecUnaryOp, SecBinaryOp);
   TSExpressionObj = record
+    { Type of this expression. }
     TypePtr : TSDType;
+    { Can you assign a value to the result of this expression? }
     IsAssignable : boolean;
+    { Can you get the address of the result of this expression? }
     IsAddressable : boolean;
+    { Is the result of this expression the result of a function? }
     IsFunctionResult : boolean;
+    { Can the result of this expression work as a standalone statement? }
     IsStatement : boolean;
     case Cls : TSExpressionClass of 
+      { Immediate expression. }
       SecImmediate : (Immediate : TSEImmediate);
+      { Character to string cast. }
       SecToString : (ToStrParent : TSExpression);
+      { Integer to real cast. }
       SecToReal : (ToRealParent : TSExpression);
+      { Typed pointer to untyped pointer cast. }
       SecToUntypedPtr : (ToUntypedPtrParent : TSExpression);
+      { Typed file to generic file cast. }
       SecToGenericFile : (ToGenericFileParent : TSExpression);
+      { An expression that uses a temporary variable. }
       SecWithTmpVar : (TmpVar : TSExpression;
                        TmpVarValue : TSExpression;
                        TmpVarChild : TSExpression);
+      { Base to subrange cast. }
       SecSubrange : (SubrangeParent : TSExpression);
+      { Non-immediate set constructor. }
       SecSet : (SetBase : TSExpression;
                 SetBounds : TSESetExprBounds);
+      { Variable access. }
       SecVariable : (VarPtr : TSDVariable);
+      { Field access. }
       SecField : (RecExpr : TSExpression;
                   RecFieldNum : integer);
+      { Array access. }
       SecArray : (ArrayExpr : TSExpression;
                   ArrayIndex : TSExpression);
+      { Pointer access. }
       SecPointer : (PointerExpr : TSExpression);
+      { Address-of. }
       SecAddress : (AddressExpr : TSExpression);
+      { String subscript. }
       SecStringChar : (StringExpr : TSExpression;
                        StringIndex : TSExpression);
+      { Reference to subroutine. }
       SecFnRef : (FnPtr : TSDSubroutine);
+      { Subroutine call. }
       SecFnCall : (FnExpr : TSExpression;
                    CallArgs : TSEFunctionArgs);
-      SecPseudoFnRef : (PseudoFnPtr : TSDPsfn);
+      { Reference to pseudo-function. }
+      SecPsfnRef : (PsfnPtr : TSDPsfn);
+      { SIZEOF() }
       SecSizeof : (SizeofTypePtr : TSDType);
+      { STR() }
       SecConvertToStr : (ToStrSrc : TSEWriteArg;
                          ToStrDest : TSExpression);
+      { VAL() }
       SecConvertToVal : (ToValSrc : TSExpression;
                          ToValDest : TSExpression;
                          ToValCode : TSExpression);
+      { READ()/READLN() }
       SecRead : (ReadFile : TSExpression;
                  ReadArgs : TSEReadArgList;
                  ReadLn : boolean);
+      { WRITE()/WRITELN() }
       SecWrite : (WriteFile : TSExpression;
                   WriteArgs : TSEWriteArgList;
                   WriteLn : boolean);
+      { Unary operation. }
       SecUnaryOp : (Unary : TSEUnaryOp);
+      { Binary operation. }
       SecBinaryOp : (Binary : TSEBinaryOp);
   end;
 

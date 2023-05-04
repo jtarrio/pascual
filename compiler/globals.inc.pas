@@ -24,14 +24,14 @@ begin
   AddConstant(MakeConstant('MAXINT', ExIntegerConstant(32767)));
 
   { Ordinal subroutines }
-  AddPseudoFn('ORD', @PfOrd_Parse);
-  AddPseudoFn('PRED', @PfPred_Parse);
-  AddPseudoFn('SUCC', @PfSucc_Parse);
+  AddPsfn('ORD', @PfOrd_Parse);
+  AddPsfn('PRED', @PfPred_Parse);
+  AddPsfn('SUCC', @PfSucc_Parse);
 
   { Memory subroutines }
-  AddPseudoFn('DISPOSE', @PfDispose_Parse);
-  AddPseudoFn('NEW', @PfNew_Parse);
-  AddPseudoFn('SIZEOF', @PfSizeof_Parse);
+  AddPsfn('DISPOSE', @PfDispose_Parse);
+  AddPsfn('NEW', @PfNew_Parse);
+  AddPsfn('SIZEOF', @PfSizeof_Parse);
   AddFunction(MakeProcedure1('Dispose',
               MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr)));
   AddFunction(MakeProcedure2('New',
@@ -43,7 +43,7 @@ begin
   RegisterGlobals_Strings;
 
   { Misc subroutines }
-  AddPseudoFn('RANDOM', @PfRandom_Parse);
+  AddPsfn('RANDOM', @PfRandom_Parse);
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));

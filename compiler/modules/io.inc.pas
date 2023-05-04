@@ -35,7 +35,7 @@ var
   ArgList, ReadArg : TSEReadArgList;
   ArgAddPoint : TListAddPoint;
 begin
-  NewLine := FnExpr^.PseudoFnPtr^.Name = 'READLN';
+  NewLine := FnExpr^.PsfnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
   InFile := ExVariable(FindNameOfClass('INPUT',
             SdncVariable, {Required=}true)^.VarPtr);
@@ -96,7 +96,7 @@ var
   ArgList, WriteArg : TSEWriteArgList;
   ArgAddPoint : TListAddPoint;
 begin
-  NewLine := FnExpr^.PseudoFnPtr^.Name = 'WRITELN';
+  NewLine := FnExpr^.PsfnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
   OutFile := ExVariable(FindNameOfClass('OUTPUT',
              SdncVariable, {Required=}true)^.VarPtr);
@@ -163,7 +163,7 @@ var
   FnName : string;
   SrPtr : TSDSubroutine;
 begin
-  FnName := FnExpr^.PseudoFnPtr^.Name;
+  FnName := FnExpr^.PsfnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
   SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
@@ -180,7 +180,7 @@ var
   SrPtr : TSDSubroutine;
   FileTypePtr : TSDType;
 begin
-  FnName := FnExpr^.PseudoFnPtr^.Name;
+  FnName := FnExpr^.PsfnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
   SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
@@ -197,25 +197,25 @@ begin
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
-procedure _AddIoProc1(Name : string; Arg1 : TSDVariableDef);
+procedure _AddIoProc1(Name : string; Arg1 : TSDSubroutineArg);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
+  AddPsfn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure2(Name, Arg1,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddIoProc2(Name : string; Arg1, Arg2 : TSDVariableDef);
+procedure _AddIoProc2(Name : string; Arg1, Arg2 : TSDSubroutineArg);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
+  AddPsfn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure3(Name, Arg1, Arg2,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddIoFun1(Name : string; RetType : TSDType; Arg1 : TSDVariableDef);
+procedure _AddIoFun1(Name : string; RetType : TSDType; Arg1 : TSDSubroutineArg);
 begin
-  AddPseudoFn(Name, @_ModIo_FileFun_Parse);
+  AddPsfn(Name, @_ModIo_FileFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeFunction2(Name, RetType, Arg1,
               MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
@@ -228,7 +228,7 @@ end;
 
 procedure _AddFileResetProc(Name : string);
 begin
-  AddPseudoFn(Name, @_ModIo_FileResetFun_Parse);
+  AddPsfn(Name, @_ModIo_FileResetFun_Parse);
   _UpFirst(Name);
   AddFunction(MakeProcedure3(Name,
               MakeVarArg('F', PrimitiveTypes.PtFile),
@@ -236,7 +236,7 @@ begin
   MakeArg('DIE_ON_ERROR', PrimitiveTypes.PtBoolean)))
 end;
 
-procedure _AddFileProc1(Name : string; Arg1 : TSDVariableDef);
+procedure _AddFileProc1(Name : string; Arg1 : TSDSubroutineArg);
 begin
   _AddIoProc2(Name, MakeVarArg('F', PrimitiveTypes.PtFile), Arg1)
 end;
@@ -265,10 +265,10 @@ begin
   AddVariable(MakeVariable('STDERR', PrimitiveTypes.PtText));
 
   { I/O subroutines }
-  AddPseudoFn('READ', @_ModIoRead_Parse);
-  AddPseudoFn('READLN', @_ModIoRead_Parse);
-  AddPseudoFn('WRITE', @_ModIoWrite_Parse);
-  AddPseudoFn('WRITELN', @_ModIoWrite_Parse);
+  AddPsfn('READ', @_ModIoRead_Parse);
+  AddPsfn('READLN', @_ModIoRead_Parse);
+  AddPsfn('WRITE', @_ModIoWrite_Parse);
+  AddPsfn('WRITELN', @_ModIoWrite_Parse);
   _AddFileProc1('ASSIGN', MakeConstArg('NAME', PrimitiveTypes.PtString));
   _AddFileProc('CLOSE');
   _AddFileFun('EOF', PrimitiveTypes.PtBoolean);

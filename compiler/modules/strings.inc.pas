@@ -64,9 +64,9 @@ end;
 procedure RegisterGlobals_Strings;
 begin
   { Character and String subroutines }
-  AddPseudoFn('CONCAT', @_ModStrings_Concat_Parse);
-  AddPseudoFn('STR', @_ModStrings_Str_Parse);
-  AddPseudoFn('VAL', @_ModStrings_Val_Parse);
+  AddPsfn('CONCAT', @_ModStrings_Concat_Parse);
+  AddPsfn('STR', @_ModStrings_Str_Parse);
+  AddPsfn('VAL', @_ModStrings_Val_Parse);
   AddFunction(MakeFunction1('CHR', PrimitiveTypes.PtChar,
               MakeArg('POS', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction3('COPY', PrimitiveTypes.PtString,

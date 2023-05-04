@@ -108,7 +108,7 @@ begin
     SdcConstant : new(Result^.ConstPtr);
     SdcVariable : new(Result^.VarPtr);
     SdcSubroutine : new(Result^.SrPtr);
-    SdcPseudoFn : new(Result^.PseudoFnPtr);
+    SdcPsfn : new(Result^.PsfnPtr);
     SdcWithVar : new(Result^.WithVarPtr);
   end;
   Stack_Push(CurrentScope^.LatestDef, Result)
@@ -180,7 +180,7 @@ begin
       SdncEnumVal : CompileError('Not an enumeration value: ' + NamePtr^.Name);
       SdncSubroutine : CompileError('Not a procedure or function: ' +
                                     NamePtr^.Name);
-      SdncPseudoFn : CompileError('Not a procedure or function: ' +
+      SdncPsfn : CompileError('Not a procedure or function: ' +
                                   NamePtr^.Name);
       else InternalError('Name class mismatch for ' + NamePtr^.Name)
     end;
@@ -267,15 +267,15 @@ begin
   AddEnumValName := Def
 end;
 
-function AddPseudoFn(const Name : string;
+function AddPsfn(const Name : string;
                      Parse : TSDPsfnParser) : TSDPsfn;
 var Def : TSDName;
 begin
-  Def := _AddName(Name, SdncPseudoFn);
-  Def^.PseudoFnPtr := _AddDef(SdcPseudoFn)^.PseudoFnPtr;
-  Def^.PseudoFnPtr^.Name := Name;
-  Def^.PseudoFnPtr^.ParseFn := Parse;
-  Result := Def^.PseudoFnPtr
+  Def := _AddName(Name, SdncPsfn);
+  Def^.PsfnPtr := _AddDef(SdcPsfn)^.PsfnPtr;
+  Def^.PsfnPtr^.Name := Name;
+  Def^.PsfnPtr^.ParseFn := Parse;
+  Result := Def^.PsfnPtr
 end;
 
 function CopyType(TypePtr : TSDType) : TSDTypeDef;
@@ -868,28 +868,26 @@ begin
 end;
 
 function _MakeArg(const Name : string; TypePtr : TSDType;
-                  IsRef, IsConst : boolean) : TSDVariableDef;
+                  IsRef, IsConst : boolean) : TSDSubroutineArg;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
   Result.IsReference := IsRef or IsConst;
-  Result.IsConstant := IsConst;
-  Result.WasInitialized := false;
-  Result.WasUsed := false;
-  Result.IsAliasFor := nil
+  Result.IsConstant := IsConst
 end;
 
-function MakeArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
+function MakeArg(const Name : string; TypePtr : TSDType) : TSDSubroutineArg;
 begin
   MakeArg := _MakeArg(Name, TypePtr, false, false)
 end;
 
-function MakeVarArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
+function MakeVarArg(const Name : string; TypePtr : TSDType) : TSDSubroutineArg;
 begin
   MakeVarArg := _MakeArg(Name, TypePtr, true, false)
 end;
 
-function MakeConstArg(const Name : string; TypePtr : TSDType) : TSDVariableDef;
+function MakeConstArg(const Name : string;
+                      TypePtr : TSDType) : TSDSubroutineArg;
 begin
   MakeConstArg := _MakeArg(Name, TypePtr, false, true)
 end;
@@ -903,7 +901,7 @@ begin
 end;
 
 function MakeProcedure1(const Name : string;
-                        Arg : TSDVariableDef) : TSDSubroutineDef;
+                        Arg : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -913,7 +911,7 @@ begin
 end;
 
 function MakeProcedure2(const Name : string;
-                        Arg1, Arg2 : TSDVariableDef) : TSDSubroutineDef;
+                        Arg1, Arg2 : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -924,7 +922,7 @@ begin
 end;
 
 function MakeProcedure3(const Name : string;
-                        Arg1, Arg2, Arg3 : TSDVariableDef) : TSDSubroutineDef;
+                        Arg1, Arg2, Arg3 : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -945,7 +943,7 @@ begin
 end;
 
 function MakeFunction1(const Name : string; RetTypePtr : TSDType;
-                       Arg : TSDVariableDef) : TSDSubroutineDef;
+                       Arg : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -956,7 +954,7 @@ begin
 end;
 
 function MakeFunction2(const Name : string; RetTypePtr : TSDType;
-                       Arg1, Arg2 : TSDVariableDef) : TSDSubroutineDef;
+                       Arg1, Arg2 : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;
@@ -968,7 +966,7 @@ begin
 end;
 
 function MakeFunction3(const Name : string; RetTypePtr : TSDType;
-                       Arg1, Arg2, Arg3 : TSDVariableDef) : TSDSubroutineDef;
+                       Arg1, Arg2, Arg3 : TSDSubroutineArg) : TSDSubroutineDef;
 begin
   Result := EmptyFunction;
   Result.Name := Name;

@@ -10,7 +10,9 @@ var
     LastOut : TOutputType;
   end;
 
-procedure OutVariableDeclaration(VarDef : TSDVariableDef);
+procedure OutVariableDeclaration(const VarDef : TSDVariableDef);
+forward;
+procedure OutArgumentDeclaration(const ArgDef : TSDSubroutineArg);
 forward;
 procedure OutTypeReference(TypePtr : TSDType);
 forward;
@@ -189,7 +191,7 @@ begin
     SecStringChar : Result := 1;
     SecFnRef : Result := 0;
     SecFnCall : Result := 1;
-    SecPseudoFnRef : Result := 0;
+    SecPsfnRef : Result := 0;
     SecSizeof : Result := 1;
     SecConvertToStr : Result := 1;
     SecConvertToVal : Result := 1;
@@ -1316,7 +1318,7 @@ begin
   for Pos := 1 to TypePtr^.FnDefPtr^.Args.Count do
   begin
     if Pos <> 1 then _OutComma;
-    OutVariableDeclaration(TypePtr^.FnDefPtr^.Args.Defs[Pos])
+    OutArgumentDeclaration(TypePtr^.FnDefPtr^.Args.Defs[Pos])
   end;
   write(Codegen.Output, ')')
 end;
@@ -1431,19 +1433,31 @@ begin
   write(Codegen.Output, ' }')
 end;
 
-procedure OutVariableDeclaration(VarDef : TSDVariableDef);
-var Name : string;
+procedure _OutVarArgDeclaration(Name : string;
+                                IsReference, IsConstant : boolean;
+                                TypePtr : TSDType);
 begin
-  Name := VarDef.Name;
-  if VarDef.IsConstant then
+  if IsConstant then
   begin
-    if VarDef.IsReference and IsPointerType(VarDef.TypePtr) then
+    if IsReference and IsPointerType(TypePtr) then
       Name := ' const ' + Name
     else
       write(Codegen.Output, 'const ')
   end;
-  if VarDef.IsReference then Name := '* ' + Name;
-  OutNameAndType(Name, VarDef.TypePtr)
+  if IsReference then Name := '* ' + Name;
+  OutNameAndType(Name, TypePtr)
+end;
+
+procedure OutVariableDeclaration(const VarDef : TSDVariableDef);
+begin
+  _OutVarArgDeclaration(VarDef.Name, VarDef.IsReference,
+                        VarDef.IsConstant, VarDef.TypePtr)
+end;
+
+procedure OutArgumentDeclaration(const ArgDef : TSDSubroutineArg);
+begin
+  _OutVarArgDeclaration(ArgDef.Name, ArgDef.IsReference,
+                        ArgDef.IsConstant, ArgDef.TypePtr)
 end;
 
 procedure OutVariableDefinition;
@@ -1492,7 +1506,7 @@ begin
   for Pos := 1 to Def.Args.Count do
   begin
     if Pos <> 1 then _OutComma;
-    OutVariableDeclaration(Def.Args.Defs[Pos])
+    OutArgumentDeclaration(Def.Args.Defs[Pos])
   end;
   write(Codegen.Output, ')')
 end;

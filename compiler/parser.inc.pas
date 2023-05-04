@@ -213,9 +213,6 @@ begin
       Args.Defs[Args.Count].Name := GetTokenValueAndRead(TkIdentifier);
       Args.Defs[Args.Count].IsConstant := IsConst;
       Args.Defs[Args.Count].IsReference := IsVar or IsConst;
-      Args.Defs[Args.Count].WasInitialized := true;
-      Args.Defs[Args.Count].WasUsed := false;
-      Args.Defs[Args.Count].IsAliasFor := nil;
       WantToken4(TkComma, TkColon, TkSemicolon, TkRparen);
       SkipToken(TkComma)
     until Lexer.Token.Id in [TkColon, TkSemicolon, TkRparen];
@@ -559,12 +556,25 @@ var
   Pos : integer;
   Checkpoint : TSDefinition;
   ResultPtr : TSDVariable;
+  VarArg : TSDVariableDef;
 begin
   new(FnDefs);
   StartLocalScope(FnDefs, SrPtr);
   Checkpoint := CurrentScope^.LatestDef;
   for Pos := 1 to SrPtr^.Args.Count do
-    AddVariable(SrPtr^.Args.Defs[Pos]);
+  begin
+    with SrPtr^.Args.Defs[Pos] do
+    begin
+      VarArg.Name := Name;
+      VarArg.TypePtr := TypePtr;
+      VarArg.IsConstant := IsConstant;
+      VarArg.IsReference := IsReference;
+      VarArg.WasInitialized := true;
+      VarArg.WasUsed := false;
+      VarArg.IsAliasFor := nil;
+      AddVariable(VarArg)
+    end
+  end;
   OutFunctionDefinition(SrPtr);
   OutEnumValuesFromCheckpoint(Checkpoint);
   if SrPtr^.ReturnTypePtr <> nil then
@@ -729,8 +739,8 @@ begin
     Result := ExFunctionCall(Fn, PsFunctionArgs)
   else if IsFunctionType(Fn^.TypePtr) then
          Result := ExFunctionCall(Fn, PsFunctionArgs)
-  else if Fn^.Cls = SecPseudoFnRef then
-         Result := Fn^.PseudoFnPtr^.ParseFn(Fn)
+  else if Fn^.Cls = SecPsfnRef then
+         Result := Fn^.PsfnPtr^.ParseFn(Fn)
 end;
 
 function PsArrayAccess(Arr : TSExpression) : TSExpression;
@@ -788,7 +798,7 @@ begin
   else if Found^.Cls = SdncSubroutine then Expr := ExFnRef(Found^.SrPtr)
   else if Found^.Cls = SdncEnumVal then
          Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
-  else if Found^.Cls = SdncPseudoFn then Expr := ExPseudoFn(Found^.PseudoFnPtr)
+  else if Found^.Cls = SdncPsfn then Expr := ExPsfn(Found^.PsfnPtr)
   else CompileError('Invalid identifier: ' + Id.Name);
 
   Done := ForStatement and (Expr^.Cls = SecFnRef)
@@ -796,7 +806,7 @@ begin
           and (Lexer.Token.Id = TkAssign);
   while not Done do
   begin
-    if CallFns and (Expr^.Cls in [SecFnRef, SecPseudoFnRef]) then
+    if CallFns and (Expr^.Cls in [SecFnRef, SecPsfnRef]) then
       Expr := PsFunctionCall(Expr)
     else if CallFns and IsFunctionType(Expr^.TypePtr)
             and (Lexer.Token.Id = TkLparen) then
