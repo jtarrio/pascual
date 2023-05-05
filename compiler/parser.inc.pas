@@ -15,7 +15,7 @@ forward;
 function PsVariable : TSExpression;
 forward;
 
-procedure PsStatement;
+function PsStatement : TSStatement;
 forward;
 
 procedure PsDefinitions;
@@ -549,6 +549,25 @@ begin
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
 
+function PsBody : TSSSequence;
+var 
+  AddPoint : TListAddPoint;
+  NewStatement : TSSSequence;
+begin
+  Result := nil;
+  AddPoint := List_GetAddPoint(Result);
+  WantTokenAndRead(TkBegin);
+  while Lexer.Token.Id <> TkEnd do
+  begin
+    new(NewStatement);
+    NewStatement^.Statement := PsStatement;
+    List_Add(AddPoint, NewStatement);
+    WantToken2(TkSemicolon, TkEnd);
+    SkipToken(TkSemicolon)
+  end;
+  WantTokenAndRead(TkEnd);
+end;
+
 procedure PsFunctionBody(SrPtr : TSDSubroutine);
 var 
   Pos : integer;
@@ -582,14 +601,7 @@ begin
     OutVariableDefinition(ResultPtr, nil);
   end;
   PsDefinitions;
-  WantTokenAndRead(TkBegin);
-  while Lexer.Token.Id <> TkEnd do
-  begin
-    PsStatement;
-    WantToken2(TkSemicolon, TkEnd);
-    SkipToken(TkSemicolon)
-  end;
-  WantTokenAndRead(TkEnd);
+  PsBody;
   WantTokenAndRead(TkSemicolon);
   OutFunctionEnd(SrPtr);
   CloseLocalScope
@@ -680,18 +692,11 @@ begin
   WantTokenAndRead(TkSemicolon);
 end;
 
-procedure PsProgramBlock;
+function PsProgramBlock : TSSSequence;
 begin
-  WantTokenAndRead(TkBegin);
   OutProgramBegin;
-  while Lexer.Token.Id <> TkEnd do
-  begin
-    PsStatement;
-    WantToken2(TkSemicolon, TkEnd);
-    SkipToken(TkSemicolon)
-  end;
+  Result := PsBody;
   OutProgramEnd;
-  WantTokenAndRead(TkEnd)
 end;
 
 function PsProgram : TSProgram;
@@ -700,7 +705,7 @@ begin
   Result^.Name := PsProgramHeading;
   StartLocalScope(@Result^.Scope, nil);
   PsDefinitions;
-  PsProgramBlock
+  Result^.Body := PsProgramBlock
 end;
 
 function PsPointerDeref(Ptr : TSExpression) : TSExpression;
@@ -1102,7 +1107,7 @@ begin
   PsExpression := Expr
 end;
 
-procedure PsAssign(Lhs, Rhs : TSExpression);
+function PsAssign(Lhs, Rhs : TSExpression) : TSStatement;
 var ResultVarPtr : TSDVariable;
 begin
   if Lhs^.Cls = SecFnRef then
@@ -1125,103 +1130,105 @@ begin
   end;
   ExMarkInitialized(Lhs);
   OutAssign(Lhs, Rhs);
-  ExDispose(Lhs);
-  ExDispose(Rhs)
+  Result := StAssign(Lhs, Rhs)
 end;
 
-procedure PsStatementSequence;
+function PsStatementSequence : TSStatement;
 begin
   OutSequenceBegin;
-  SkipToken(TkBegin);
-  while Lexer.Token.Id <> TkEnd do
-  begin
-    PsStatement;
-    WantToken2(TkSemicolon, TkEnd);
-    SkipToken(TkSemicolon);
-  end;
+  Result := StSequence;
+  Result^.Sequence := PsBody;
   OutSequenceEnd;
-  SkipToken(TkEnd)
 end;
 
-procedure PsIdentifierStatement;
+function PsProcCallStatement(Lhs : TSExpression;
+                             InSequence : boolean) : TSStatement;
 var 
-  Lhs : TSExpression;
-  OrigLhs : TSExpression;
-  UsesTmpVars : boolean;
+  Stmt : TSStatement;
+begin
+  if Lhs^.Cls = SecWithTmpVar then
+  begin
+    if not InSequence then OutSequenceBegin;
+    OutDeclareAndAssign(Lhs^.TmpVar^.VarPtr, Lhs^.TmpVarValue);
+    Stmt := PsProcCallStatement(Lhs^.TmpVarChild, true);
+    Result := StWith(ExVariable(Lhs^.TmpVar^.VarPtr), Lhs^.TmpVarValue, Stmt);
+    if not InSequence then OutSequenceEnd
+  end
+  else if Lhs^.IsStatement then
+  begin
+    OutExpressionStatement(Lhs);
+    Result := StProcCall(Lhs)
+  end
+  else if Lexer.Token.Id = TkEquals then
+         CompileError('Invalid statement' +
+                      ' (maybe you wrote ''='' instead of '':=''?)')
+  else CompileError('Invalid statement')
+end;
+
+function PsIdentifierStatement : TSStatement;
+var Lhs : TSExpression;
 begin
   Lhs := PsVariableForStatement;
   if Lexer.Token.Id = TkAssign then
   begin
     WantTokenAndRead(TkAssign);
-    PsAssign(Lhs, PsExpression);
+    Result := PsAssign(Lhs, PsExpression);
   end
   else
   begin
     if IsFunctionType(Lhs^.TypePtr) then Lhs := PsFunctionCall(Lhs);
-    OrigLhs := Lhs;
-    UsesTmpVars := false;
-    while Lhs^.Cls = SecWithTmpVar do
-    begin
-      if not UsesTmpVars then
-      begin
-        UsesTmpVars := true;
-        OutSequenceBegin
-      end;
-      OutDeclareAndAssign(Lhs^.TmpVar^.VarPtr, Lhs^.TmpVarValue);
-      Lhs := Lhs^.TmpVarChild
-    end;
-    if Lhs^.IsStatement then OutExpressionStatement(Lhs)
-    else if Lexer.Token.Id = TkEquals then
-           CompileError('Invalid statement' +
-                        ' (maybe you wrote ''='' instead of '':=''?)')
-    else CompileError('Invalid statement');
-    ExDispose(OrigLhs);
-    if UsesTmpVars then
-    begin
-      OutSequenceEnd
-    end
+    Result := PsProcCallStatement(Lhs, {InSequence=}false)
   end
 end;
 
-procedure PsIfStatement;
-var Cond : TSExpression;
+function PsIfStatement : TSStatement;
+var
+  Cond : TSExpression;
+  IfThen, IfElse : TSStatement;
 begin
+  IfThen := nil;
+  IfElse := nil;
   WantTokenAndRead(TkIf);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutIf(Cond);
-  ExDispose(Cond);
   WantTokenAndRead(TkThen);
   if Lexer.Token.Id = TkElse then OutEmptyStatement
-  else PsStatement;
+  else IfThen := PsStatement;
   if Lexer.Token.Id = TkElse then
   begin
     WantTokenAndRead(TkElse);
     OutElse;
-    PsStatement;
+    IfElse := PsStatement;
   end;
   OutIfEnd;
+  Result := StIf(Cond, IfThen, IfElse)
 end;
 
-procedure PsCaseStatement;
+function PsCaseStatement : TSStatement;
 var 
-  CasePtr : TSExpression;
+  CaseSelector : TSExpression;
   CaseTypePtr : TSDType;
   CaseLabel : TSExpression;
+  Stmt : TSStatement;
+  CaseList, CaseEntry : TSSCase;
+  AddPoint : TListAddPoint;
 begin
+  CaseList := nil;
+  AddPoint := List_GetAddPoint(CaseList);
   WantTokenAndRead(TkCase);
-  CasePtr := PsExpression;
-  CaseTypePtr := CasePtr^.TypePtr;
-  EnsureOrdinalExpr(CasePtr);
-  OutCaseBegin(CasePtr);
-  ExDispose(CasePtr);
+  CaseSelector := PsExpression;
+  CaseTypePtr := CaseSelector^.TypePtr;
+  EnsureOrdinalExpr(CaseSelector);
+  OutCaseBegin(CaseSelector);
   WantTokenAndRead(TkOf);
   repeat
     CaseLabel := ExCoerce(PsImmediate, CaseTypePtr);
     WantTokenAndRead(TkColon);
     OutCaseStatementBegin(CaseLabel);
-    ExDispose(CaseLabel);
-    PsStatement;
+    Stmt := PsStatement;
     OutCaseStatementEnd;
+    CaseEntry := StCaseEntry(CaseLabel, Stmt);
+    List_Add(AddPoint, CaseEntry);
     WantToken3(TkSemicolon, TkElse, TkEnd);
     SkipToken(TkSemicolon);
   until Lexer.Token.Id in [TkElse, TkEnd];
@@ -1230,7 +1237,9 @@ begin
   begin
     ReadToken;
     repeat
-      PsStatement;
+      Stmt := PsStatement;
+      CaseEntry := StCaseEntry(nil, Stmt);
+      List_Add(AddPoint, CaseEntry);
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon)
     until Lexer.Token.Id = TkEnd
@@ -1238,41 +1247,52 @@ begin
   OutCaseElseEnd;
   OutCaseEnd;
   WantTokenAndRead(TkEnd);
+  Result := StCase(CaseSelector, CaseList)
 end;
 
-procedure PsRepeatStatement;
-var Cond : TSExpression;
+function PsRepeatStatement : TSStatement;
+var
+  Cond : TSExpression;
+  Sequence, SeqEntry : TSSSequence;
+  AddPoint : TListAddPoint;
 begin
+  Sequence := nil;
+  AddPoint := List_GetAddPoint(Sequence);
   WantTokenAndRead(TkRepeat);
   OutRepeatBegin;
   while Lexer.Token.Id <> TkUntil do
   begin
-    PsStatement;
+    SeqEntry := StSequenceEntry(PsStatement);
+    List_Add(AddPoint, SeqEntry);
     WantToken2(TkSemicolon, TkUntil);
     SkipToken(TkSemicolon)
   end;
   WantTokenAndRead(TkUntil);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutRepeatEnd(Cond);
-  ExDispose(Cond)
+  ExDispose(Cond);
+  Result := StRepeat(Cond, Sequence)
 end;
 
-procedure PsWhileStatement;
-var Cond : TSExpression;
+function PsWhileStatement : TSStatement;
+var
+  Cond : TSExpression;
+  Stmt : TSStatement;
 begin
   WantTokenAndRead(TkWhile);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutWhileBegin(Cond);
-  ExDispose(Cond);
   WantTokenAndRead(TkDo);
-  PsStatement;
-  OutWhileEnd
+  Stmt := PsStatement;
+  OutWhileEnd;
+  Result := StWhile(Cond, Stmt)
 end;
 
-procedure PsForStatement;
+function PsForStatement : TSStatement;
 var 
   Iter, First, Last : TSExpression;
   Ascending : boolean;
+  Stmt : TSStatement;
 begin
   WantTokenAndRead(TkFor);
   Iter := PsExpression;
@@ -1293,17 +1313,16 @@ begin
   Last := ExCoerce(PsExpression, Iter^.TypePtr);
   WantTokenAndRead(TkDo);
   OutForBegin(Iter, First, Last, Ascending);
-  PsStatement;
+  Stmt := PsStatement;
   OutForEnd;
-  ExDispose(Iter);
-  ExDispose(First);
-  ExDispose(Last)
+  Result := StFor(Iter, First, Last, Ascending, Stmt)
 end;
 
-procedure PsWithStatement;
+function PsWithStatement : TSStatement;
 var 
   Base : TSExpression;
   VarPtr : TSDVariable;
+  Stmt : TSStatement;
 begin
   WantToken(TkWith);
   OutSequenceBegin;
@@ -1312,25 +1331,31 @@ begin
     Base := PsExpression;
     VarPtr := AddWithVar(Base);
     OutDeclareAndAssign(VarPtr, Base);
-    ExDispose(Base);
     WantToken2(TkComma, TkDo)
   until Lexer.Token.Id = TkDo;
   WantTokenAndRead(TkDo);
-  PsStatement;
-  OutSequenceEnd
+  Stmt := PsStatement;
+  OutSequenceEnd;
+  Result := StWith(ExVariable(VarPtr), Base, Stmt)
 end;
 
-procedure PsStatement;
+function PsEmptyStatement : TSStatement;
 begin
-  if Lexer.Token.Id = TkSemicolon then OutEmptyStatement
-  else if Lexer.Token.Id = TkBegin then PsStatementSequence
-  else if Lexer.Token.Id = TkIdentifier then PsIdentifierStatement
-  else if Lexer.Token.Id = TkIf then PsIfStatement
-  else if Lexer.Token.Id = TkCase then PsCaseStatement
-  else if Lexer.Token.Id = TkRepeat then PsRepeatStatement
-  else if Lexer.Token.Id = TkWhile then PsWhileStatement
-  else if Lexer.Token.Id = TkFor then PsForStatement
-  else if Lexer.Token.Id = TkWith then PsWithStatement
+  Result := StEmpty;
+  OutEmptyStatement
+end;
+
+function PsStatement : TSStatement;
+begin
+  if Lexer.Token.Id = TkSemicolon then Result := PsEmptyStatement
+  else if Lexer.Token.Id = TkBegin then Result := PsStatementSequence
+  else if Lexer.Token.Id = TkIdentifier then Result := PsIdentifierStatement
+  else if Lexer.Token.Id = TkIf then Result := PsIfStatement
+  else if Lexer.Token.Id = TkRepeat then Result := PsRepeatStatement
+  else if Lexer.Token.Id = TkWhile then Result := PsWhileStatement
+  else if Lexer.Token.Id = TkFor then Result := PsForStatement
+  else if Lexer.Token.Id = TkWith then Result := PsWithStatement
+  else if Lexer.Token.Id = TkCase then Result := PsCaseStatement
   else
     CompileError('Unexpected token ' + LxTokenStr)
 end;

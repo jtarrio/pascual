@@ -28,6 +28,7 @@ end;
 {$I progdefs.inc.pas}
 {$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
+{$I statement.inc.pas}
 {$I operations/define.inc.pas}
 {$I parser.inc.pas}
 {$I pseudofuns.inc.pas}

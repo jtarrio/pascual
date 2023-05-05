@@ -446,6 +446,63 @@ type
       SecBinaryOp : (Binary : TSEBinaryOp);
   end;
 
+  { A Pascal statement. }
+  TSStatement = ^TSStatementObj;
+
+  { A sequence of statements. }
+  TSSSequence = ^TSSSequenceEntry;
+  TSSSequenceEntry = record
+    { Next entry in the sequence. }
+    Next : TSSSequence;
+    { Statement in this entry. }
+    Statement : TSStatement;
+  end;
+
+  { An entry in a case statement. }
+  TSSCase = ^TSSCaseEntry;
+  TSSCaseEntry = record
+    { Next entry in the case statement. }
+    Next : TSSCase;
+    { Label for the entry. Nil for 'else'. }
+    CaseLabel : TSExpression;
+    { Statement in this entry. }
+    Statement : TSStatement;
+  end;
+
+  { Class of statement. }
+  TSStatementClass = (SscEmpty, SscSequence, SscAssign, SscProcCall,
+                      SscIf, SscRepeat, SscWhile, SscFor, SscWith, SscCase);
+  TSStatementObj = record
+    case Cls : TSStatementClass of 
+      { Sequence. }
+      SscSequence : (Sequence : TSSSequence);
+      { Assign. }
+      SscAssign : (Lhs, Rhs : TSExpression);
+      { Procedure call. }
+      SscProcCall : (ProcCall : TSExpression);
+      { If statement. }
+      SscIf : (IfCond : TSExpression;
+               IfThen : TSStatement;
+               IfElse : TSStatement);
+      { Repeat statement. }
+      SscRepeat : (UntilCond : TSExpression;
+                   RepeatSequence : TSSSequence);
+      { While statement. }
+      SscWhile : (WhileCond : TSExpression;
+                  WhileStatement : TSStatement);
+      { For statement. }
+      SscFor : (Iterator, First, Last : TSExpression;
+                Ascending : boolean;
+                ForStatement : TSStatement);
+      { With statement. }
+      SscWith : (WithVar, WithValue : TSExpression;
+                 WithStatement : TSStatement);
+      { Case statement. }
+      SscCase : (CaseSelector : TSExpression;
+                 CaseEntry : TSSCase);
+
+  end;
+
   { Program syntax node. }
   TSProgram = ^TSProgramObj;
   TSProgramObj = record
@@ -453,4 +510,6 @@ type
     Name : string;
     { Program's global scope. }
     Scope : TSScopeObj;
+    { Program body. }
+    Body : TSSSequence;
   end;
