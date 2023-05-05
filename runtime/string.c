@@ -142,7 +142,7 @@ PString CONCAT(enum ConcatCmpParamType paramtype, ...) {
         break;
       }
     }
-    paramtype = va_arg(args, enum ConcatCmpParamType);
+    if (!end) paramtype = va_arg(args, enum ConcatCmpParamType);
   } while (!end);
   va_end(args);
   return ret;
