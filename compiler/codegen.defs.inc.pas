@@ -20,7 +20,7 @@ procedure OutConstantRecordSeparator;
 forward;
 procedure OutConstantRecordEnd;
 forward;
-procedure OutVariableDefinition(VarPtr : TSDVariable; Location : TSExpression);
+procedure OutVariableDefinition(VarPtr : TSDVariable);
 forward;
 procedure OutConstantDefinitionBegin(VarPtr : TSDVariable);
 forward;

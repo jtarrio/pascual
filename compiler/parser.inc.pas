@@ -384,6 +384,19 @@ begin
   end
 end;
 
+procedure _ResolvePointerForwards(Checkpoint : TSDefinition);
+var 
+  Def : TSDefinition;
+begin
+  if Checkpoint = nil then Stack_GetOldest(CurrentScope^.LatestDef, Def)
+  else Def := Checkpoint^.Newer;
+  while Def <> nil do
+  begin
+    if Def^.Cls = SdcType then _ResolvePointerForward(@Def^.TypeDef);
+    Def := Def^.Newer
+  end
+end;
+
 procedure PsTypeDefinitions;
 var 
   Name : string;
@@ -399,6 +412,7 @@ begin
     WantTokenAndRead(TkSemicolon);
     MakeAliasType(Name, TypePtr)
   until Lexer.Token.Id <> TkIdentifier;
+  _ResolvePointerForwards(Checkpoint);
   OutTypeDefinitionsFromCheckpoint(Checkpoint);
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
@@ -412,10 +426,10 @@ begin
   AddConstant(Constant);
 end;
 
-procedure PsConstantValue(TypePtr : TSDType);
+function PsConstantValue(TypePtr : TSDType) : TSExpression;
 forward;
 
-procedure PsConstantArray(TypePtr : TSDType);
+function PsConstantArray(TypePtr : TSDType) : TSExpression;
 var ConstSize, WantedSize : integer;
 begin
   WantTokenAndRead(TkLparen);
@@ -434,10 +448,12 @@ begin
   WantedSize := GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr);
   if ConstSize <> WantedSize then
     CompileError('Array constant has size ' + IntToStr(ConstSize) +
-    ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr))
+    ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr));
+  { TODO fix hack }
+  Result := ExBooleanConstant(false)
 end;
 
-procedure PsConstantRecord(TypePtr : TSDType);
+function PsConstantRecord(TypePtr : TSDType) : TSExpression;
 var 
   FieldId : TPsIdentifier;
   FieldType : TSDType;
@@ -456,31 +472,34 @@ begin
     SkipToken(TkSemicolon)
   end;
   OutConstantRecordEnd;
-  WantTokenAndRead(TkRparen)
+  WantTokenAndRead(TkRparen);
+  { TODO fix hack }
+  Result := ExBooleanConstant(false)
 end;
 
-procedure PsConstantValue(TypePtr : TSDType);
-var Expr : TSExpression;
+function PsConstantValue(TypePtr : TSDType) : TSExpression;
 begin
-  if IsArrayType(TypePtr) then PsConstantArray(TypePtr)
-  else if IsRecordType(TypePtr) then PsConstantRecord(TypePtr)
+  if IsArrayType(TypePtr) then Result := PsConstantArray(TypePtr)
+  else if IsRecordType(TypePtr) then Result := PsConstantRecord(TypePtr)
   else
   begin
-    Expr := ExCoerce(PsImmediate, TypePtr);
-    OutExpression(Expr);
-    ExDispose(Expr)
+    Result := ExCoerce(PsImmediate, TypePtr);
+    OutExpression(Result)
   end
 end;
 
 procedure PsTypedConstant(const Name : string);
 var 
   TypePtr : TSDType;
+  VarPtr : TSDVariable;
 begin
   WantTokenAndRead(TkColon);
   TypePtr := PsTypeDenoter;
   WantTokenAndRead(TkEquals);
-  OutConstantDefinitionBegin(AddVariable(MakeTypedConstant(Name, TypePtr)));
-  PsConstantValue(TypePtr);
+  { TODO remove hack. }
+  VarPtr := AddVariable(MakeTypedConstant(Name, TypePtr, nil));
+  OutConstantDefinitionBegin(VarPtr);
+  VarPtr^.ConstantValue := PsConstantValue(TypePtr);
   OutConstantDefinitionEnd
 end;
 
@@ -539,10 +558,10 @@ begin
     begin
       if Location = nil then
         OutVariableDefinition(AddVariable(MakeVariable(Names[NumNames],
-                              TypePtr)), nil)
+                              TypePtr)))
       else
-        OutVariableDefinition(AddVariable(MakeReference(Names[NumNames],
-                              TypePtr)), Location)
+        OutVariableDefinition(AddVariable(MakeAbsolute(Names[NumNames],
+                              TypePtr, Location)))
     end;
     if Location <> nil then ExDispose(Location)
   until Lexer.Token.Id <> TkIdentifier;
@@ -573,35 +592,21 @@ var
   Pos : integer;
   Checkpoint : TSDefinition;
   ResultPtr : TSDVariable;
-  VarArg : TSDVariableDef;
 begin
   StartLocalScope(@SrPtr^.Scope, SrPtr);
   Checkpoint := CurrentScope^.LatestDef;
   for Pos := 1 to SrPtr^.Args.Count do
-  begin
-    with SrPtr^.Args.Defs[Pos] do
-    begin
-      VarArg.Name := Name;
-      VarArg.TypePtr := TypePtr;
-      VarArg.IsConstant := IsConstant;
-      VarArg.IsReference := IsReference;
-      VarArg.IsArgument := true;
-      VarArg.WasInitialized := true;
-      VarArg.WasUsed := false;
-      VarArg.IsAliasFor := nil;
-      AddVariable(VarArg)
-    end
-  end;
+    AddVariable(MakeFromArg(SrPtr^.Args.Defs[Pos]));
   OutFunctionDefinition(SrPtr);
   OutEnumValuesFromCheckpoint(Checkpoint);
   if SrPtr^.ReturnTypePtr <> nil then
   begin
     ResultPtr := AddVariable(MakeVariable('RESULT', SrPtr^.ReturnTypePtr));
     ResultPtr^.WasUsed := true;
-    OutVariableDefinition(ResultPtr, nil);
+    OutVariableDefinition(ResultPtr);
   end;
   PsDefinitions;
-  PsBody;
+  SrPtr^.Body := PsBody;
   WantTokenAndRead(TkSemicolon);
   OutFunctionEnd(SrPtr);
   CloseLocalScope
@@ -1183,7 +1188,7 @@ begin
 end;
 
 function PsIfStatement : TSStatement;
-var
+var 
   Cond : TSExpression;
   IfThen, IfElse : TSStatement;
 begin
@@ -1252,7 +1257,7 @@ begin
 end;
 
 function PsRepeatStatement : TSStatement;
-var
+var 
   Cond : TSExpression;
   Sequence, SeqEntry : TSSSequence;
   AddPoint : TListAddPoint;
@@ -1276,7 +1281,7 @@ begin
 end;
 
 function PsWhileStatement : TSStatement;
-var
+var 
   Cond : TSExpression;
   Stmt : TSStatement;
 begin

@@ -259,7 +259,7 @@ end;
 
 function AddPsfn(const Name : string;
                  Parse : TSDPsfnParser) : TSDPsfn;
-var
+var 
   NameDef : TSDName;
   Def : TSDefinition;
 begin
@@ -818,13 +818,15 @@ begin
   MakeConstant := Constant
 end;
 
-function MakeTypedConstant(const Name : string; TypePtr : TSDType)
-: TSDVariableDef;
+function MakeTypedConstant(const Name : string; TypePtr : TSDType;
+                           Value : TSExpression) : TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
   Result.IsReference := false;
+  Result.Location := nil;
   Result.IsConstant := true;
+  Result.ConstantValue := Value;
   Result.IsArgument := false;
   Result.WasInitialized := true;
   Result.WasUsed := false;
@@ -836,23 +838,42 @@ begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
   Result.IsReference := false;
+  Result.Location := nil;
   Result.IsConstant := false;
+  Result.ConstantValue := nil;
   Result.IsArgument := false;
   Result.WasInitialized := false;
   Result.WasUsed := false;
   Result.IsAliasFor := nil
 end;
 
-function MakeReference(const Name : string; TypePtr : TSDType) : TSDVariableDef;
+function MakeAbsolute(const Name : string; TypePtr : TSDType;
+                      Location : TSExpression) : TSDVariableDef;
 begin
   Result.Name := Name;
   Result.TypePtr := TypePtr;
   Result.IsReference := true;
+  Result.Location := Location;
   Result.IsConstant := false;
+  Result.ConstantValue := nil;
   Result.IsArgument := false;
   Result.WasInitialized := true;
   Result.WasUsed := false;
   Result.IsAliasFor := nil
+end;
+
+function MakeFromArg(const Arg : TSDSubroutineArg) : TSDVariableDef;
+begin
+  Result.Name := Arg.Name;
+  Result.TypePtr := Arg.TypePtr;
+  Result.IsReference := Arg.IsReference;
+  Result.Location := nil;
+  Result.IsConstant := Arg.IsConstant;
+  Result.ConstantValue := nil;
+  Result.IsArgument := true;
+  Result.WasInitialized := true;
+  Result.WasUsed := false;
+  Result.IsAliasFor := nil;
 end;
 
 function AddAliasVariable(const Prefix : string;

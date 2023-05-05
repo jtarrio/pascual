@@ -15,6 +15,10 @@ type
   TSDefinition = ^TSDefEntry;
   { A subroutine. }
   TSDSubroutine = ^TSDSubroutineDef;
+  { A Pascal statement. }
+  TSStatement = ^TSStatementObj;
+  { A sequence of statements. }
+  TSSSequence = ^TSSSequenceEntry;
 
   { Counters for records, enums, and temporary variables. }
   TSCounterType = (SctEnum, SctRecord, SctTmpVar);
@@ -178,8 +182,12 @@ type
     TypePtr : TSDType;
     { Does this variable contain a reference? }
     IsReference : boolean;
+    { If this is an absolute variable, its location. }
+    Location : TSExpression;
     { Is this variable actually a constant? }
     IsConstant : boolean;
+    { If this is a constant, its value. }
+    ConstantValue : TSExpression;
     { Is this variable actually a subroutine argument? }
     IsArgument : boolean;
     { Has this variable been initialized? }
@@ -202,6 +210,8 @@ type
     ReturnTypePtr : TSDType;
     { The definitions in this function's scope. }
     Scope : TSScopeObj;
+    { The statements in this function. }
+    Body : TSSSequence;
     { Is this a forward declaration? }
     IsDeclaration : boolean;
     { Has this subroutine been used? }
@@ -446,11 +456,7 @@ type
       SecBinaryOp : (Binary : TSEBinaryOp);
   end;
 
-  { A Pascal statement. }
-  TSStatement = ^TSStatementObj;
-
   { A sequence of statements. }
-  TSSSequence = ^TSSSequenceEntry;
   TSSSequenceEntry = record
     { Next entry in the sequence. }
     Next : TSSSequence;

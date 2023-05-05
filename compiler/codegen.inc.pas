@@ -1389,11 +1389,8 @@ begin
   else Def := Checkpoint^.Newer;
   while Def <> nil do
   begin
-    if Def^.Cls = SdcType then
-    begin
-      _ResolvePointerForward(@Def^.TypeDef);
-      if Def^.TypeDef.AliasFor <> nil then OutTypeDefinition(@Def^.TypeDef)
-    end;
+    if (Def^.Cls = SdcType) and (Def^.TypeDef.AliasFor <> nil) then
+      OutTypeDefinition(@Def^.TypeDef);
     Def := Def^.Newer
   end
 end;
@@ -1465,16 +1462,16 @@ begin
   _OutBlankline(TotVar);
   _OutIndent;
   OutVariableDeclaration(VarPtr^);
-  if Location <> nil then
+  if VarPtr^.Location <> nil then
   begin
     write(Codegen.Output, ' = ');
-    if not IsSameType(VarPtr^.TypePtr, Location^.TypePtr) then
+    if not IsSameType(VarPtr^.TypePtr, VarPtr^.Location^.TypePtr) then
     begin
       write(Codegen.Output, '(');
       OutTypeReference(VarPtr^.TypePtr);
       write(Codegen.Output, '*)')
     end;
-    _OutAddress(Location)
+    _OutAddress(VarPtr^.Location)
   end
   else if IsFileType(VarPtr^.TypePtr) then
          write(Codegen.Output, ' = (PFile){.handle = PNil}');
