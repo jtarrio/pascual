@@ -1274,7 +1274,6 @@ begin
   WantTokenAndRead(TkUntil);
   Cond := ExCoerce(PsExpression, PrimitiveTypes.PtBoolean);
   OutRepeatEnd(Cond);
-  ExDispose(Cond);
   Result := StRepeat(Cond, Sequence)
 end;
 
