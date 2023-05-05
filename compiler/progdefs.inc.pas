@@ -796,7 +796,9 @@ begin
   TmpVar.Name := 'with' + IntToStr(DefCounter(SctTmpVar));
   TmpVar.TypePtr := Base^.TypePtr;
   TmpVar.IsConstant := false;
+  TmpVar.ConstantValue := nil;
   TmpVar.IsReference := Base^.IsAddressable;
+  TmpVar.Location := nil;
   TmpVar.IsArgument := false;
   TmpVar.WasInitialized := true;
   TmpVar.WasUsed := true;

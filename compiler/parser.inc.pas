@@ -561,8 +561,7 @@ begin
       else
         OutVariableDefinition(AddVariable(MakeAbsolute(Names[NumNames],
                               TypePtr, Location)))
-    end;
-    if Location <> nil then ExDispose(Location)
+    end
   until Lexer.Token.Id <> TkIdentifier;
   OutEnumValuesFromCheckpoint(Checkpoint)
 end;
