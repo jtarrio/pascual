@@ -23,6 +23,30 @@ begin
   end
 end;
 
+procedure _DisposeArrayElems(Elem : TSEArrayElem);
+var NextElem : TSEArrayElem;
+begin
+  while Elem <> nil do
+  begin
+    NextElem := Elem^.Next;
+    ExDispose(Elem^.Value);
+    dispose(Elem);
+    Elem := NextElem
+  end
+end;
+
+procedure _DisposeRecordFields(Field : TSERecordField);
+var NextField : TSERecordField;
+begin
+  while Field <> nil do
+  begin
+    NextField := Field^.Next;
+    ExDispose(Field^.Value);
+    dispose(Field);
+    Field := NextField
+  end
+end;
+
 procedure _DisposeBounds(Bounds : TSESetExprBounds);
 var Next : TSESetExprBounds;
 begin
@@ -70,6 +94,13 @@ var Pos : integer;
 begin
   case Expr^.Cls of 
     SecImmediate: _DisposeImmediate(Expr^.Immediate);
+    SecArrayValue: _DisposeArrayElems(Expr^.ArrayElem);
+    SecRecordValue: _DisposeRecordFields(Expr^.RecordField);
+    SecSetValue:
+                 begin
+                   ExDispose(Expr^.SetBase);
+                   _DisposeBounds(Expr^.SetBounds);
+                 end;
     SecToString: ExDispose(Expr^.ToStrParent);
     SecToReal: ExDispose(Expr^.ToRealParent);
     SecToUntypedPtr: ExDispose(Expr^.ToUntypedPtrParent);
@@ -81,11 +112,6 @@ begin
                      ExDispose(Expr^.TmpVarChild);
                    end;
     SecSubrange: ExDispose(Expr^.SubrangeParent);
-    SecSet:
-            begin
-              ExDispose(Expr^.SetBase);
-              _DisposeBounds(Expr^.SetBounds);
-            end;
     SecField: ExDispose(Expr^.RecExpr);
     SecArray:
               begin
@@ -146,6 +172,41 @@ begin
       List_Add(AddPoint, Dst);
       Src := Src^.Next
     end
+  end
+end;
+
+function _CopyArrayElems(Elem : TSEArrayElem) : TSEArrayElem;
+var 
+  Src, Dst : TSEArrayElem;
+  AddPoint : TListAddPoint;
+begin
+  Src := Elem;
+  Result := nil;
+  AddPoint := List_GetAddPoint(Result);
+  while Src <> nil do
+  begin
+    new(Dst);
+    Dst^.Value := ExCopy(Src^.Value);
+    List_Add(AddPoint, Dst);
+    Src := Src^.Next
+  end
+end;
+
+function _CopyRecordFields(Field : TSERecordField) : TSERecordField;
+var 
+  Src, Dst : TSERecordField;
+  AddPoint : TListAddPoint;
+begin
+  Src := Field;
+  Result := nil;
+  AddPoint := List_GetAddPoint(Result);
+  while Src <> nil do
+  begin
+    new(Dst);
+    Dst^.Ordinal := Src^.Ordinal;
+    Dst^.Value := ExCopy(Src^.Value);
+    List_Add(AddPoint, Dst);
+    Src := Src^.Next
   end
 end;
 
@@ -227,6 +288,13 @@ begin
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
   case Expr^.Cls of 
     SecImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
+    SecArrayValue: Copy^.ArrayElem := _CopyArrayElems(Expr^.ArrayElem);
+    SecRecordValue: Copy^.RecordField := _CopyRecordFields(Expr^.RecordField);
+    SecSetValue :
+                  begin
+                    Copy^.SetBase := ExCopy(Expr^.SetBase);
+                    Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
+                  end;
     SecToString: Copy^.ToStrParent := ExCopy(Expr^.ToStrParent);
     SecToReal: Copy^.ToRealParent := ExCopy(Expr^.ToRealParent);
     SecToUntypedPtr: Copy^.ToUntypedPtrParent := ExCopy(Expr^.
@@ -240,11 +308,6 @@ begin
                       Copy^.TmpVarChild := ExCopy(Expr^.TmpVarChild);
                     end;
     SecSubrange : Copy^.SubrangeParent := ExCopy(Expr^.SubrangeParent);
-    SecSet :
-             begin
-               Copy^.SetBase := ExCopy(Expr^.SetBase);
-               Copy^.SetBounds := _CopyBounds(Expr^.SetBounds);
-             end;
     SecVariable: Copy^.VarPtr := Expr^.VarPtr;
     SecField:
               begin
@@ -343,9 +406,11 @@ end;
 
 const _ExPrecedences : array[TSExpressionClass] of integer 
                        = (
-                          {SecImmediate=}0, {SecToString=}-1, {SecToReal=}-1,
+                          {SecImmediate=}0, {SecArrayValue=}0,
+                          {SecRecordValue=}0, {SecSetValue=}0,
+                          {SecToString=}-1, {SecToReal=}-1,
                           {SecToUntypedPtr=}-1, {SecToGenericFile=}-1,
-                          {SecWithTmpVar=}-1, {SecSubrange=}0, {SecSet=}0,
+                          {SecWithTmpVar=}-1, {SecSubrange=}0,
                           {SecVariable=}0, {SecField=}1, {SecArray=}1,
                           {SecPointer=}1, {SecAddress=}1, {SecStringChar=}1,
                           {SecFnRef=}0, {SecFnCall=}0, {SecPsfnRef=}0,
@@ -441,7 +506,36 @@ begin
   if UseParens then Result := Result + ')';
 end;
 
-function _DescribeSet(Expr : TSExpression) : string;
+function _DescribeArrayValue(Expr : TSExpression) : string;
+var Elem : TSEArrayElem;
+begin
+  Result := '(';
+  Elem := Expr^.ArrayElem;
+  while Elem <> nil do
+  begin
+    Result := Result + ExDescribe(Elem^.Value);
+    Elem := Elem^.Next;
+    if Elem <> nil then Result := Result + ', '
+  end;
+  Result := Result + ')'
+end;
+
+function _DescribeRecordValue(Expr : TSExpression) : string;
+var Field : TSERecordField;
+begin
+  Result := '(';
+  Field := Expr^.RecordField;
+  while Field <> nil do
+  begin
+    Result := Result + Expr^.TypePtr^.RecPtr^.Fields[Field^.Ordinal].Name +
+              ':' + ExDescribe(Field^.Value);
+    Field := Field^.Next;
+    if Field <> nil then Result := Result + '; '
+  end;
+  Result := Result + ')'
+end;
+
+function _DescribeSetValue(Expr : TSExpression) : string;
 var 
   Bounds : TSESetExprBounds;
 begin
@@ -466,13 +560,15 @@ var
 begin
   case Expr^.Cls of 
     SecImmediate: Result := _DescribeImmediate(Expr);
+    SecArrayValue: Result := _DescribeArrayValue(Expr);
+    SecRecordValue: Result := _DescribeRecordValue(Expr);
+    SecSetValue: Result := _DescribeSetValue(Expr);
     SecToString: Result := ExDescribe(Expr^.ToStrParent);
     SecToReal: Result := ExDescribe(Expr^.ToRealParent);
     SecToUntypedPtr: Result := ExDescribe(Expr^.ToUntypedPtrParent);
     SecToGenericFile: Result := ExDescribe(Expr^.ToGenericFileParent);
     SecWithTmpVar: Result := ExDescribe(Expr^.TmpVarChild);
     SecSubrange: Result := ExDescribe(Expr^.ToStrParent);
-    SecSet: Result := _DescribeSet(Expr);
     SecVariable: if Expr^.VarPtr^.IsAliasFor = nil then
                    Result := Expr^.VarPtr^.Name
                  else
@@ -683,6 +779,20 @@ begin
   Result := (Expr^.Cls = SecImmediate) and (Expr^.Immediate.Cls = Cls)
 end;
 
+function ExArrayValue(TypePtr : TSDType; Elems : TSEArrayElem) : TSExpression;
+begin
+  Result := _NewExpr(SecArrayValue);
+  Result^.ArrayElem := Elems;
+  Result^.TypePtr := TypePtr
+end;
+
+function ExRecordValue(TypePtr : TSDType; Fields : TSERecordField) : TSExpression;
+begin
+  Result := _NewExpr(SecRecordValue);
+  Result^.RecordField := Fields;
+  Result^.TypePtr := TypePtr
+end;
+
 function ExSet : TSExpression;
 begin
   Result := _ExImmediate(SeicSet);
@@ -738,7 +848,7 @@ begin
   begin
     if ExprSet = nil then
     begin
-      ExprSet := _NewExpr(SecSet);
+      ExprSet := _NewExpr(SecSetValue);
       ExprSet^.SetBase := ImmSet;
       ExprSet^.SetBounds := nil;
       ExprSet^.TypePtr := ImmSet^.TypePtr;
@@ -1136,7 +1246,7 @@ begin
   else if not IsFundamentallySameType(ExprElemType, DestElemType) then
          Outcome := Reject
   else if ExIsImmediate(Expr) then Outcome := Replace
-  else if Expr^.Cls = SecSet then Outcome := Replace
+  else if Expr^.Cls = SecSetValue then Outcome := Replace
   else if (GetTypeLowBound(ExprElemType) = GetTypeLowBound(DestElemType))
           and (GetTypeHighBound(ExprElemType) = GetTypeHighBound(DestElemType))
          then Outcome := Pass
@@ -1148,7 +1258,9 @@ begin
     Replace :
               begin
                 Expr^.TypePtr := TypePtr;
-                if Expr^.Cls = SecSet then Expr^.SetBase^.TypePtr := TypePtr
+                if Expr^.Cls = SecSetValue then Expr^.SetBase^.TypePtr := 
+
+                                                                         TypePtr
               end;
     Pass : { do nothing };
   end;

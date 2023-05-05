@@ -296,7 +296,7 @@ function ExOpIn(Left, Right : TSExpression) : TSExpression;
 begin
   if IsSetType(Right^.TypePtr) then
   begin
-    if ExIsImmediate(Right) or (Right^.Cls = SecSet) then
+    if ExIsImmediate(Right) or (Right^.Cls = SecSetValue) then
       Result := _ExOpIn_Impl(Left, Right)
     else Result := _ExOp_MakeBinary(Left, Right, SeoIn,
                    PrimitiveTypes.PtBoolean)

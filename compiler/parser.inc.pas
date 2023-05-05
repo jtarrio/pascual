@@ -430,62 +430,63 @@ function PsConstantValue(TypePtr : TSDType) : TSExpression;
 forward;
 
 function PsConstantArray(TypePtr : TSDType) : TSExpression;
-var ConstSize, WantedSize : integer;
+var 
+  ConstSize, WantedSize : integer;
+  ArrayElems, NewElem : TSEArrayElem;
+  AddPoint : TListAddPoint;
 begin
+  ArrayElems := nil;
+  AddPoint := List_GetAddPoint(ArrayElems);
   WantTokenAndRead(TkLparen);
   ConstSize := 0;
-  OutConstantArrayBegin;
   while Lexer.Token.Id <> TkRparen do
   begin
     ConstSize := ConstSize + 1;
-    PsConstantValue(TypePtr^.ArrayDef.ValueTypePtr);
+    new(NewElem);
+    NewElem^.Value := PsConstantValue(TypePtr^.ArrayDef.ValueTypePtr);
+    List_Add(AddPoint, NewElem);
     WantToken2(TkComma, TkRparen);
-    if Lexer.Token.Id = TkComma then OutConstantArraySeparator;
     SkipToken(TkComma)
   end;
-  OutConstantArrayEnd;
   WantTokenAndRead(TkRparen);
   WantedSize := GetBoundedTypeSize(TypePtr^.ArrayDef.IndexTypePtr);
   if ConstSize <> WantedSize then
     CompileError('Array constant has size ' + IntToStr(ConstSize) +
     ' instead of ' + IntToStr(WantedSize) + ' for ' + TypeName(TypePtr));
-  { TODO fix hack }
-  Result := ExBooleanConstant(false)
+  Result := ExArrayValue(TypePtr, ArrayElems)
 end;
 
 function PsConstantRecord(TypePtr : TSDType) : TSExpression;
 var 
   FieldId : TPsIdentifier;
   FieldType : TSDType;
+  RecordFields, NewField : TSERecordField;
+  AddPoint : TListAddPoint;
 begin
+  RecordFields := nil;
+  AddPoint := List_GetAddPoint(RecordFields);
   WantTokenAndRead(TkLparen);
-  OutConstantRecordBegin;
   while Lexer.Token.Id <> TkRparen do
   begin
+    new(NewField);
     FieldId := PsIdentifier;
-    OutConstantRecordField(FieldId.Name);
     WantTokenAndRead(TkColon);
-    FieldType := FindFieldType(TypePtr, FieldId.Name, {Required=}true);
-    PsConstantValue(FieldType);
+    NewField^.Ordinal := FindField(TypePtr, FieldId.Name, {Required=}true);
+    FieldType := TypePtr^.RecPtr^.Fields[NewField^.Ordinal].TypePtr;
+    NewField^.Value := PsConstantValue(FieldType);
+    List_Add(AddPoint, NewField);
     WantToken2(TkSemicolon, TkRparen);
-    if Lexer.Token.Id = TkSemicolon then OutConstantRecordSeparator;
     SkipToken(TkSemicolon)
   end;
-  OutConstantRecordEnd;
   WantTokenAndRead(TkRparen);
-  { TODO fix hack }
-  Result := ExBooleanConstant(false)
+  Result := ExRecordValue(TypePtr, RecordFields)
 end;
 
 function PsConstantValue(TypePtr : TSDType) : TSExpression;
 begin
   if IsArrayType(TypePtr) then Result := PsConstantArray(TypePtr)
   else if IsRecordType(TypePtr) then Result := PsConstantRecord(TypePtr)
-  else
-  begin
-    Result := ExCoerce(PsImmediate, TypePtr);
-    OutExpression(Result)
-  end
+  else Result := ExCoerce(PsImmediate, TypePtr)
 end;
 
 procedure PsTypedConstant(const Name : string);
@@ -496,11 +497,9 @@ begin
   WantTokenAndRead(TkColon);
   TypePtr := PsTypeDenoter;
   WantTokenAndRead(TkEquals);
-  { TODO remove hack. }
-  VarPtr := AddVariable(MakeTypedConstant(Name, TypePtr, nil));
-  OutConstantDefinitionBegin(VarPtr);
-  VarPtr^.ConstantValue := PsConstantValue(TypePtr);
-  OutConstantDefinitionEnd
+  VarPtr := AddVariable(MakeTypedConstant(Name, TypePtr,
+            PsConstantValue(TypePtr)));
+  OutVariableDefinition(VarPtr)
 end;
 
 procedure PsConstDefinitions;

@@ -175,13 +175,15 @@ function _Precedence(Expr : TSExpression) : integer;
 begin
   case Expr^.Cls of 
     SecImmediate : Result := 0;
+    SecArrayValue : Result := 1;
+    SecRecordValue : Result := 1;
+    SecSetValue : Result := 0;
     SecToString : Result := 0;
     SecToReal : Result := 2;
     SecToUntypedPtr : Result := _Precedence(Expr^.ToUntypedPtrParent);
     SecToGenericFile : Result := _Precedence(Expr^.ToGenericFileParent);
     SecWithTmpVar : Result := 0;
     SecSubrange : Result := 0;
-    SecSet : Result := 0;
     SecVariable : if Expr^.VarPtr^.IsReference then Result := 2
                   else Result := 0;
     SecField : Result := 1;
@@ -268,7 +270,44 @@ begin
   write(Codegen.Output, ' }');
 end;
 
-procedure _OutExSet(Expr : TSExpression);
+procedure _OutExArrayValue(Expr : TSExpression);
+var Elem : TSEArrayElem;
+begin
+  Elem := Expr^.ArrayElem;
+  if Elem = nil then write(Codegen.Output, '{}')
+  else
+  begin
+    write(Codegen.Output, '{ ');
+    while Elem <> nil do
+    begin
+      OutExpression(Elem^.Value);
+      Elem := Elem^.Next;
+      if Elem <> nil then _OutComma
+    end;
+    write(Codegen.Output, ' }')
+  end
+end;
+
+procedure _OutExRecordValue(Expr : TSExpression);
+var Field : TSERecordField;
+begin
+  write(Codegen.Output, '{ ');
+  Field := Expr^.RecordField;
+  if Field = nil then write(Codegen.Output, '}')
+  else
+  begin
+    while Field <> nil do
+    begin
+      write(Codegen.Output, '.', Expr^.TypePtr^.RecPtr^.Fields[Field^.Ordinal].Name, ' = ');
+      OutExpression(Field^.Value);
+      Field := Field^.Next;
+      if Field <> nil then _OutComma
+    end;
+    write(Codegen.Output, ' }')
+  end
+end;
+
+procedure _OutExSetValue(Expr : TSExpression);
 var 
   ElementTypePtr : TSDType;
   Bounds : TSESetExprBounds;
@@ -1048,6 +1087,9 @@ procedure OutExpression;
 begin
   case Expr^.Cls of 
     SecImmediate: _OutExImmediate(Expr);
+    SecArrayValue: _OutExArrayValue(Expr);
+    SecRecordValue: _OutExRecordValue(Expr);
+    SecSetValue: _OutExSetValue(Expr);
     SecToString:
                  begin
                    write(Codegen.Output, 'str_of(');
@@ -1063,7 +1105,6 @@ begin
     SecToGenericFile: OutExpression(Expr^.ToGenericFileParent);
     SecWithTmpVar: _OutExWithTmpVar(Expr);
     SecSubrange: _OutExSubrange(Expr);
-    SecSet: _OutExSet(Expr);
     SecVariable : _OutExVariable(Expr);
     SecField: _OutExFieldAccess(Expr);
     SecArray:
@@ -1395,41 +1436,6 @@ begin
   end
 end;
 
-procedure OutConstantArrayBegin;
-begin
-  write(Codegen.Output, '{ ')
-end;
-
-procedure OutConstantArraySeparator;
-begin
-  _OutComma
-end;
-
-procedure OutConstantArrayEnd;
-begin
-  write(Codegen.Output, ' }')
-end;
-
-procedure OutConstantRecordBegin;
-begin
-  write(Codegen.Output, '{ ')
-end;
-
-procedure OutConstantRecordField(const Name : string);
-begin
-  write(Codegen.Output, '.', Name, ' = ')
-end;
-
-procedure OutConstantRecordSeparator;
-begin
-  _OutComma
-end;
-
-procedure OutConstantRecordEnd;
-begin
-  write(Codegen.Output, ' }')
-end;
-
 procedure _OutVarArgDeclaration(Name : string;
                                 IsReference, IsConstant : boolean;
                                 TypePtr : TSDType);
@@ -1462,7 +1468,12 @@ begin
   _OutBlankline(TotVar);
   _OutIndent;
   OutVariableDeclaration(VarPtr^);
-  if VarPtr^.Location <> nil then
+  if VarPtr^.IsConstant and (VarPtr^.ConstantValue <> nil) then
+  begin
+    write(Codegen.Output, ' = ');
+    OutExpression(VarPtr^.ConstantValue)
+  end
+  else if VarPtr^.Location <> nil then
   begin
     write(Codegen.Output, ' = ');
     if not IsSameType(VarPtr^.TypePtr, VarPtr^.Location^.TypePtr) then
@@ -1475,20 +1486,6 @@ begin
   end
   else if IsFileType(VarPtr^.TypePtr) then
          write(Codegen.Output, ' = (PFile){.handle = PNil}');
-  write(Codegen.Output, ';');
-  _OutNewline
-end;
-
-procedure OutConstantDefinitionBegin;
-begin
-  _OutBlankline(TotVar);
-  _OutIndent;
-  OutVariableDeclaration(VarPtr^);
-  write(Codegen.Output, ' = ')
-end;
-
-procedure OutConstantDefinitionEnd;
-begin
   write(Codegen.Output, ';');
   _OutNewline
 end;

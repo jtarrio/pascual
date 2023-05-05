@@ -287,6 +287,24 @@ type
       SdcName : (NameDef : TSDNameDef);
   end;
 
+  { Element of an array value. }
+  TSEArrayElem = ^TSEArrayElemObj;
+  TSEArrayElemObj = record
+    { Next element. }
+    Next : TSEArrayElem;
+    { Value. }
+    Value : TSExpression;
+  end;
+  { Element of an array value. }
+  TSERecordField = ^TSERecordFieldObj;
+  TSERecordFieldObj = record
+    { Next element. }
+    Next : TSERecordField;
+    { Field ordinal. }
+    Ordinal : integer;
+    { Value. }
+    Value : TSExpression;
+  end;
   { Immediate bounds for a set constructor. }
   TSESetImmBounds = ^TSESetImmBoundsObj;
   TSESetImmBoundsObj = record
@@ -374,8 +392,9 @@ type
   end;
 
   { Expressions. }
-  TSExpressionClass = (SecImmediate, SecToString, SecToReal, SecToUntypedPtr,
-                       SecToGenericFile, SecWithTmpVar, SecSubrange, SecSet,
+  TSExpressionClass = (SecImmediate, SecArrayValue, SecRecordValue, SecSetValue,
+                       SecToString, SecToReal, SecToUntypedPtr,
+                       SecToGenericFile, SecWithTmpVar, SecSubrange, 
                        SecVariable, SecField, SecArray, SecPointer, SecAddress,
                        SecStringChar, SecFnRef, SecFnCall, SecPsfnRef,
                        SecSizeof, SecConvertToStr, SecConvertToVal, SecRead,
@@ -394,6 +413,13 @@ type
     case Cls : TSExpressionClass of 
       { Immediate expression. }
       SecImmediate : (Immediate : TSEImmediate);
+      { Array value. }
+      SecArrayValue : (ArrayElem : TSEArrayElem);
+      { Record value. }
+      SecRecordValue : (RecordField : TSERecordField);
+      { Set value. }
+      SecSetValue : (SetBase : TSExpression;
+                SetBounds : TSESetExprBounds);
       { Character to string cast. }
       SecToString : (ToStrParent : TSExpression);
       { Integer to real cast. }
@@ -408,9 +434,6 @@ type
                        TmpVarChild : TSExpression);
       { Base to subrange cast. }
       SecSubrange : (SubrangeParent : TSExpression);
-      { Non-immediate set constructor. }
-      SecSet : (SetBase : TSExpression;
-                SetBounds : TSESetExprBounds);
       { Variable access. }
       SecVariable : (VarPtr : TSDVariable);
       { Field access. }
