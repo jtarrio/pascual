@@ -151,7 +151,6 @@ begin
   ParseCmdline;
   CreateGlobalDefinitions;
   ParseProgram;
-  CloseLocalScope;
   Close(Lexer.Input.Src);
   Close(Codegen.Output)
 end.

@@ -705,7 +705,8 @@ begin
   Result^.Name := PsProgramHeading;
   StartLocalScope(@Result^.Scope, nil);
   PsDefinitions;
-  Result^.Body := PsProgramBlock
+  Result^.Body := PsProgramBlock;
+  CloseLocalScope
 end;
 
 function PsPointerDeref(Ptr : TSExpression) : TSExpression;
@@ -1392,10 +1393,10 @@ begin
   until Stop;
 end;
 
-procedure ParseProgram;
+function ParseProgram : TSProgram;
 begin
   ReadToken;
-  PsProgram;
+  Result := PsProgram;
   WantTokenAndRead(TkDot);
   WantToken(TkEof);
 end;
