@@ -658,6 +658,7 @@ begin
   Result.Args.Count := 0;
   Result.ReturnTypePtr := nil;
   Result.IsDeclaration := false;
+  Result.HadDeclaration := false;
   Result.WasUsed := false
 end;
 
@@ -714,7 +715,10 @@ begin
     begin
       if ((Fun.Args.Count = 0) and (Fun.ReturnTypePtr = nil))
          or IsSameFunctionDefinition(Result, Fun) then
-        Result^.IsDeclaration := false
+      begin
+        Result^.IsDeclaration := false;
+        Result^.HadDeclaration := true
+      end
       else
       begin
         if IsProcedure then

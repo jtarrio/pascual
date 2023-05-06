@@ -214,6 +214,8 @@ type
     Body : TSSSequence;
     { Is this a forward declaration? }
     IsDeclaration : boolean;
+    { Did this function have a forward declaration? }
+    HadDeclaration : boolean;
     { Has this subroutine been used? }
     WasUsed : boolean
   end;

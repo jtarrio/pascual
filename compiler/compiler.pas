@@ -1,10 +1,15 @@
 program Pascual;
 
-var Options : record
-  SuppressWarnings : boolean;
-  CheckBounds : boolean;
-  CheckIoResult : boolean;
-end;
+{$I ast.inc.pas}
+{$I codegen/defs.inc.pas}
+
+var 
+  Options : record
+    SuppressWarnings : boolean;
+    CheckBounds : boolean;
+    CheckIoResult : boolean;
+  end;
+  Cg : TCodegen;
 
 procedure CompileError(Msg : string);
 forward;
@@ -19,14 +24,12 @@ begin
 end;
 
 {$I containers.inc.pas}
-{$I ast.inc.pas}
 {$I expression.forward.inc.pas}
 {$I operations/forward.inc.pas}
 {$I progdefs.forward.inc.pas}
 {$I errors.inc.pas}
 {$I lexer.inc.pas}
 {$I progdefs.inc.pas}
-{$I codegen.defs.inc.pas}
 {$I expression.inc.pas}
 {$I statement.inc.pas}
 {$I operations/define.inc.pas}
@@ -34,7 +37,6 @@ end;
 {$I pseudofuns.inc.pas}
 {$I modules/modules.inc.pas}
 {$I globals.inc.pas}
-{$I codegen.inc.pas}
 
 procedure CompileError(Msg : string);
 begin
@@ -134,23 +136,19 @@ begin
   if OutputFile = '' then Usage('Output file must be specified');
 
   if InputFile <> '-' then LxOpen(InputFile);
-  if OutputFile <> '-' then CodegenSetOutput(OutputFile);
+  if OutputFile <> '-' then Cg^.SetOutputFile(Cg, OutputFile);
   Options.SuppressWarnings := SuppressWarnings;
   Options.CheckBounds := true;
   Options.CheckIoResult := true;
 end;
 
-procedure ClearState;
-begin
-  LxReset;
-  CodegenReset;
-end;
+{$I codegen/c.inc.pas}
 
 begin
-  ClearState;
+  LxReset;
+  Cg_C_Init(Cg);
   ParseCmdline;
   CreateGlobalDefinitions;
-  ParseProgram;
-  Close(Lexer.Input.Src);
-  Close(Codegen.Output)
+  Cg^.Generate(Cg, ParseProgram);
+  Close(Lexer.Input.Src)
 end.
