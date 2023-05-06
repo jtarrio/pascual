@@ -1138,24 +1138,26 @@ begin
 end;
 
 function ExRead(ReadFile : TSExpression; Args : TSEReadArgList;
-                NewLine : boolean) : TSExpression;
+                NewLine : boolean; CheckIoResult : boolean) : TSExpression;
 begin
   Result := _NewExpr(SecRead);
   Result^.TypePtr := nil;
   Result^.ReadFile := ReadFile;
   Result^.ReadArgs := Args;
   Result^.ReadLn := NewLine;
+  Result^.CheckIoResultAfterRead := CheckIoResult;
   Result^.IsStatement := true
 end;
 
 function ExWrite(WriteFile : TSExpression; Args : TSEWriteArgList;
-                 NewLine : boolean) : TSExpression;
+                 NewLine : boolean; CheckIoResult : boolean) : TSExpression;
 begin
   Result := _NewExpr(SecWrite);
   Result^.TypePtr := nil;
   Result^.WriteFile := WriteFile;
   Result^.WriteArgs := Args;
   Result^.WriteLn := NewLine;
+  Result^.CheckIoResultAfterWrite := CheckIoResult;
   Result^.IsStatement := true
 end;
 

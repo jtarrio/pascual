@@ -470,11 +470,13 @@ type
       { READ()/READLN() }
       SecRead : (ReadFile : TSExpression;
                  ReadArgs : TSEReadArgList;
-                 ReadLn : boolean);
+                 ReadLn : boolean;
+                 CheckIoResultAfterRead : boolean);
       { WRITE()/WRITELN() }
       SecWrite : (WriteFile : TSExpression;
                   WriteArgs : TSEWriteArgList;
-                  WriteLn : boolean);
+                  WriteLn : boolean;
+                  CheckIoResultAfterWrite : boolean);
       { Unary operation. }
       SecUnaryOp : (Unary : TSEUnaryOp);
       { Binary operation. }

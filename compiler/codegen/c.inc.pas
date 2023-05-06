@@ -688,7 +688,7 @@ begin
   write(This^.Output, 'Read(');
   _CgC_OutExAddress(This, Src);
   write(This^.Output, ', ');
-  _CgC_OutExpression(This, ExBooleanConstant(Options.CheckIoResult));
+  _CgC_OutExpression(This, ExBooleanConstant(Expr^.CheckIoResultAfterRead));
   if ReadArg = nil then
   begin
     write(This^.Output, ', RwpEnd');
@@ -740,7 +740,7 @@ begin
   write(This^.Output, 'Write(');
   _CgC_OutExAddress(This, Dst);
   write(This^.Output, ', ');
-  _CgC_OutExpression(This, ExBooleanConstant(Options.CheckIoResult));
+  _CgC_OutExpression(This, ExBooleanConstant(Expr^.CheckIoResultAfterWrite));
   if WriteArg = nil then
   begin
     write(This^.Output, ', RwpEnd');

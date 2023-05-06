@@ -73,7 +73,7 @@ begin
     end;
     WantTokenAndRead(TkRparen)
   end;
-  Result := ExRead(InFile, ArgList, NewLine)
+  Result := ExRead(InFile, ArgList, NewLine, Options.CheckIoResult)
 end;
 
 function _ModIoWrite_EvaluateZeroArg(Expr : TSExpression) : TSExpression;
@@ -128,7 +128,7 @@ begin
         begin
           if Result = nil then
           begin
-            Result := ExWrite(OutFile, ArgList, NewLine);
+            Result := ExWrite(OutFile, ArgList, NewLine, Options.CheckIoResult);
             ArgAddPoint := List_GetAddPoint(Result^.WriteArgs)
           end;
           Result := ExWithTmpVar(ExVariable(AddAliasVariable(
@@ -146,7 +146,8 @@ begin
     end;
     WantTokenAndRead(TkRparen)
   end;
-  if Result = nil then Result := ExWrite(OutFile, ArgList, NewLine);
+  if Result = nil then
+  Result := ExWrite(OutFile, ArgList, NewLine, Options.CheckIoResult)
 end;
 
 procedure _UpFirst(var Str : string);
