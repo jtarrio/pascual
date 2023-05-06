@@ -1267,22 +1267,30 @@ begin
   Result := StFor(Iter, First, Last, Ascending, Stmt)
 end;
 
-function PsWithStatement : TSStatement;
+function _PsWithStatementInner : TSStatement;
 var 
   Base : TSExpression;
   VarPtr : TSDVariable;
   Stmt : TSStatement;
 begin
-  WantToken(TkWith);
-  repeat
-    ReadToken;
-    Base := PsExpression;
-    VarPtr := AddWithVar(Base);
-    WantToken2(TkComma, TkDo)
-  until Lexer.Token.Id = TkDo;
-  WantTokenAndRead(TkDo);
-  Stmt := PsStatement;
+  ReadToken;
+  Base := PsExpression;
+  VarPtr := AddWithVar(Base);
+  WantToken2(TkComma, TkDo);
+  if Lexer.Token.Id = TkComma then Stmt := _PsWithStatementInner
+  else
+  begin
+    WantTokenAndRead(TkDo);
+    Stmt := PsStatement
+  end;
   Result := StWith(ExVariable(VarPtr), Base, Stmt)
+end;
+
+
+function PsWithStatement : TSStatement;
+begin
+  WantToken(TkWith);
+  Result := _PsWithStatementInner
 end;
 
 function PsEmptyStatement : TSStatement;

@@ -1719,9 +1719,14 @@ begin
 end;
 
 procedure _CgC_OutStWith(This : TCgC; Stmt : TSStatement);
+var WasMultistatement : boolean;
 begin
-  _CgC_OutIndent(This);
-  _CgC_OutBegin(This);
+  WasMultistatement := This^.IsMultiStatement;
+  if not WasMultistatement then
+  begin
+    _CgC_OutIndent(This);
+    _CgC_OutBegin(This);
+  end;
   _CgC_OutIndent(This);
   _CgC_OutVariableDeclaration(This, Stmt^.WithVar^.VarPtr);
   write(This^.Output, ' = ');
@@ -1732,7 +1737,9 @@ begin
   write(This^.Output, ';');
   _CgC_OutNewline(This);
   _CgC_OutStatement(This, Stmt^.WithStatement);
-  _CgC_OutEnd(This)
+  if not WasMultistatement then
+    _CgC_OutEnd(This);
+  This^.IsMultiStatement := WasMultistatement
 end;
 
 procedure _CgC_OutStCase(This : TCgC; Stmt : TSStatement);
