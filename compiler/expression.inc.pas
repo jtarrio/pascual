@@ -287,6 +287,7 @@ begin
   Copy^.IsAssignable := Expr^.IsAssignable;
   Copy^.IsAddressable := Expr^.IsAddressable;
   Copy^.IsFunctionResult := Expr^.IsFunctionResult;
+  Copy^.CheckBounds := Expr^.CheckBounds;
   case Expr^.Cls of 
     SecImmediate: Copy^.Immediate := _CopyImmediate(Expr^.Immediate);
     SecArrayValue: Copy^.ArrayElem := _CopyArrayElems(Expr^.ArrayElem);
