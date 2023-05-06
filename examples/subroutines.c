@@ -66,10 +66,8 @@ void pascual_main() {
   Write(&OUTPUT, 1, RwpLenPtr, 2, "x=", RwpInt, X, RwpLenPtr, 3, " y=", RwpInt | RwpLn | RwpEnd, Y);
   SWAP(&X, &Y);
   Write(&OUTPUT, 1, RwpLenPtr, 2, "x=", RwpInt, X, RwpLenPtr, 3, " y=", RwpInt | RwpLn | RwpEnd, Y);
-  {
-    PString tmp1 = str_make(5, "Hello");
-    SAYCONSTREF(&tmp1);
-  }
+  PString tmp1 = str_make(5, "Hello");
+  SAYCONSTREF(&tmp1);
   X = ADD(Y, 3);
   X = ADD(Y, MULTIPLY(X, 2));
   Write(&OUTPUT, 1, RwpInt | RwpLn | RwpEnd, FIB(10));
