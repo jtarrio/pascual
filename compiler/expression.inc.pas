@@ -7,6 +7,7 @@ begin
   Result^.IsAddressable := false;
   Result^.IsFunctionResult := false;
   Result^.IsStatement := false;
+  Result^.CheckBounds := Options.CheckBounds
 end;
 
 procedure _DisposeImmediate(var Imm : TSEImmediate);

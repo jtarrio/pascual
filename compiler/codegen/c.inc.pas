@@ -447,7 +447,7 @@ end;
 
 procedure _CgC_OutExSubrange(This : TCgC; Expr : TSExpression);
 begin
-  if not Options.CheckBounds then
+  if not Expr^.CheckBounds then
     _CgC_OutExpression(This, Expr^.SubrangeParent)
   else
   begin
@@ -832,7 +832,7 @@ begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
-    if Options.CheckBounds then
+    if Expr^.CheckBounds then
     begin
       write(This^.Output, 'pred(');
       _CgC_OutExpression(This, Expr^.Unary.Parent);
@@ -863,7 +863,7 @@ begin
   EnsureOrdinalExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
-    if Options.CheckBounds then
+    if Expr^.CheckBounds then
     begin
       write(This^.Output, 'succ(');
       _CgC_OutExpression(This, Expr^.Unary.Parent);

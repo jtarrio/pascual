@@ -412,6 +412,8 @@ type
     IsFunctionResult : boolean;
     { Can the result of this expression work as a standalone statement? }
     IsStatement : boolean;
+    { Check bounds of the result? }
+    CheckBounds : boolean;
     case Cls : TSExpressionClass of 
       { Immediate expression. }
       SecImmediate : (Immediate : TSEImmediate);
