@@ -1174,6 +1174,8 @@ var
   Stmt : TSStatement;
   CaseList, CaseEntry : TSSCase;
   AddPoint : TListAddPoint;
+  SeqEntry : TSSSequence;
+  SeqAddPoint : TListAddPoint;
 begin
   CaseList := nil;
   AddPoint := List_GetAddPoint(CaseList);
@@ -1194,13 +1196,17 @@ begin
   if Lexer.Token.Id = TkElse then
   begin
     ReadToken;
-    repeat
-      Stmt := PsStatement;
-      CaseEntry := StCaseEntry(nil, Stmt);
-      List_Add(AddPoint, CaseEntry);
+    Stmt := StSequence;
+    SeqAddPoint := List_GetAddPoint(Stmt^.Sequence);
+    while Lexer.Token.Id <> TkEnd do
+    begin
+      SeqEntry := StSequenceEntry(PsStatement);
+      List_Add(SeqAddPoint, SeqEntry);
       WantToken2(TkSemicolon, TkEnd);
       SkipToken(TkSemicolon)
-    until Lexer.Token.Id = TkEnd
+    end;
+    CaseEntry := StCaseEntry(nil, Stmt);
+    List_Add(AddPoint, CaseEntry)
   end;
   WantTokenAndRead(TkEnd);
   Result := StCase(CaseSelector, CaseList)
