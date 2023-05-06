@@ -1,6 +1,11 @@
 /* Program: SUBROUTINES */
 #include "pascual.h"
 
+PInteger X;
+PInteger Y;
+
+void SECOND(PString NAME, PInteger LEVEL);
+
 void SAYHELLO() {
   Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 6, "Hello!");
 }
@@ -42,8 +47,6 @@ PInteger FIB(PInteger N) {
   return RESULT;
 }
 
-void SECOND(PString NAME, PInteger LEVEL);
-
 void FIRST(PString NAME, PInteger LEVEL) {
   Write(&OUTPUT, 1, RwpLenPtr, 6, "First ", RwpInt, LEVEL, RwpChar, ' ', RwpStringPtr | RwpLn | RwpEnd, &NAME);
   if (LEVEL > 1) SECOND(NAME, LEVEL - 1);
@@ -53,9 +56,6 @@ void SECOND(PString NAME, PInteger LEVEL) {
   Write(&OUTPUT, 1, RwpLenPtr, 7, "Second ", RwpInt, LEVEL, RwpChar, ' ', RwpStringPtr | RwpLn | RwpEnd, &NAME);
   if (LEVEL > 1) FIRST(NAME, LEVEL - 1);
 }
-
-PInteger X;
-PInteger Y;
 
 void pascual_main() {
   SAYHELLO();

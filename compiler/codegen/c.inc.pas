@@ -1533,7 +1533,8 @@ begin
   Def := FirstDef;
   while Def <> nil do
   begin
-    if (Def^.Cls = SdcVariable) and not Def^.VarDef.IsArgument then
+    if (Def^.Cls = SdcVariable) and not Def^.VarDef.IsArgument
+       and (Def^.VarDef.IsAliasFor = nil) then
       _CgC_OutVariableDefinition(This, @Def^.VarDef);
     Def := Def^.Newer
   end;
@@ -1718,16 +1719,12 @@ begin
 end;
 
 procedure _CgC_OutStWith(This : TCgC; Stmt : TSStatement);
-var WasMultistatement : boolean;
 begin
-  WasMultistatement := This^.IsMultiStatement;
-  if not WasMultistatement then
-  begin
-    _CgC_OutIndent(This);
-    _CgC_OutBegin(This);
-  end;
   _CgC_OutIndent(This);
-  write(This^.Output, Stmt^.WithVar^.VarPtr^.Name, ' = ');
+  _CgC_OutBegin(This);
+  _CgC_OutIndent(This);
+  _CgC_OutVariableDeclaration(This, Stmt^.WithVar^.VarPtr);
+  write(This^.Output, ' = ');
   if (Stmt^.WithVar^.VarPtr^.IsReference) then
     _CgC_OutExAddress(This, Stmt^.WithValue)
   else
@@ -1735,9 +1732,7 @@ begin
   write(This^.Output, ';');
   _CgC_OutNewline(This);
   _CgC_OutStatement(This, Stmt^.WithStatement);
-  if not WasMultistatement then
-    _CgC_OutEnd(This);
-  This^.IsMultiStatement := WasMultistatement
+  _CgC_OutEnd(This)
 end;
 
 procedure _CgC_OutStCase(This : TCgC; Stmt : TSStatement);
