@@ -1864,8 +1864,7 @@ begin
   new(This);
   This^.Base.SetOutputFile := @_CgC_SetOutputFile_Ext;
   This^.Base.Generate := @_CgC_Generate_Ext;
-  { TODO change This^.Output := Output; }
-  This^.Output := StdErr;
+  This^.Output := Output;
   This^.IsMultiStatement := false;
   This^.Indent := 0;
   This^.Newline := true;
