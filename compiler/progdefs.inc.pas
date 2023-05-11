@@ -776,6 +776,7 @@ var
   Name : string absolute Ctx;
 begin
   Result := (Def^.Cls = SdcWithVar)
+            and Def^.WithVarDef.IsActive
             and (FindFieldType(Def^.WithVarDef.VarPtr^.TypePtr,
             Name, False) <> nil)
 end;
@@ -788,12 +789,11 @@ begin
   else Result := nil
 end;
 
-function AddWithVar(Base : TSExpression) : TSDVariable;
+function AddWithVar(Base : TSExpression) : TSDWithVar;
 var 
   Def : TSDefinition;
   TmpVar : TSDVariableDef;
   TmpVarPtr : TSDVariable;
-  WithVarPtr : TSDWithVar;
 begin
   EnsureRecordExpr(Base);
 
@@ -809,9 +809,9 @@ begin
   TmpVar.IsAliasFor := ExCopy(Base);
   TmpVarPtr := AddVariable(TmpVar);
   Def := _AddDef(SdcWithVar);
-  WithVarPtr := @Def^.WithVarDef;
-  WithVarPtr^.VarPtr := TmpVarPtr;
-  AddWithVar := TmpVarPtr
+  Result := @Def^.WithVarDef;
+  Result^.VarPtr := TmpVarPtr;
+  Result^.IsActive := true
 end;
 
 function MakeConstant(const Name : string; Value : TSExpression)

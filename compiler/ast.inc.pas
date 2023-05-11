@@ -235,7 +235,9 @@ type
   TSDWithVar = ^TSDWithVarDef;
   TSDWithVarDef = record
     { Pointer to the "with" variable. }
-    VarPtr : TSDVariable
+    VarPtr : TSDVariable;
+    { Is this "with" variable active? }
+    IsActive : boolean;
   end;
 
   { A name for a definition. }

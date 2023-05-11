@@ -1276,12 +1276,12 @@ end;
 function _PsWithStatementInner : TSStatement;
 var 
   Base : TSExpression;
-  VarPtr : TSDVariable;
+  WithVarPtr : TSDWithVar;
   Stmt : TSStatement;
 begin
   ReadToken;
   Base := PsExpression;
-  VarPtr := AddWithVar(Base);
+  WithVarPtr := AddWithVar(Base);
   WantToken2(TkComma, TkDo);
   if Lexer.Token.Id = TkComma then Stmt := _PsWithStatementInner
   else
@@ -1289,7 +1289,8 @@ begin
     WantTokenAndRead(TkDo);
     Stmt := PsStatement
   end;
-  Result := StWith(ExVariable(VarPtr), Base, Stmt)
+  Result := StWith(ExVariable(WithVarPtr^.VarPtr), Base, Stmt);
+  WithVarPtr^.IsActive := false
 end;
 
 
