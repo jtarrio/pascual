@@ -15,10 +15,12 @@ void COPYFILE(PFile* FILEIN, PFile* FILEOUT) {
 }
 
 void pascual_main() {
-  PString tmp1 = str_make(13, "textfiles.pas");
+  PString tmp1;
+  PString tmp2;
+  tmp1 = str_make(13, "textfiles.pas");
   Assign(&INFILE, &tmp1, 1);
   Reset(&INFILE, 0, 1);
-  PString tmp2 = str_make(23, "/tmp/textfiles-copy.pas");
+  tmp2 = str_make(23, "/tmp/textfiles-copy.pas");
   Assign(&OUTFILE, &tmp2, 1);
   Rewrite(&OUTFILE, 0, 1);
   COPYFILE(&INFILE, &OUTFILE);

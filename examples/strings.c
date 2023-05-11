@@ -18,6 +18,7 @@ void LITERALS() {
 }
 
 void OPERATIONS() {
+  PString tmp1;
   Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 29, "Concatenating strings is easy");
   Write(&OUTPUT, 1, RwpLenPtr, 48, "You can also concatenate chars in the same way: ", RwpLenPtr | RwpLn | RwpEnd, 2, "ab");
   Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 56, "Note that, in Pascual, strings are limited to 255 bytes.");
@@ -28,7 +29,7 @@ void OPERATIONS() {
   Write(&OUTPUT, 1, RwpLenPtr, 13, "abc > bcd -> ", RwpBool | RwpLn | RwpEnd, 0);
   Write(&OUTPUT, 1, RwpLenPtr, 14, "abc <= bcd -> ", RwpBool | RwpLn | RwpEnd, 1);
   Write(&OUTPUT, 1, RwpLenPtr | RwpLn | RwpEnd, 52, "Use the Length() function to know a string's length.");
-  Write(&OUTPUT, 1, RwpLenPtr, 32, "For example, 'Hello' has length ", RwpInt | RwpLn | RwpEnd, ({ PString tmp1 = str_make(5, "Hello"); LENGTH(&tmp1); }));
+  Write(&OUTPUT, 1, RwpLenPtr, 32, "For example, 'Hello' has length ", RwpInt | RwpLn | RwpEnd, ({ tmp1 = str_make(5, "Hello"); LENGTH(&tmp1); }));
 }
 
 void VARIABLES() {
@@ -47,6 +48,7 @@ void VARIABLES() {
 void PROCEDURESANDFUNCTIONS() {
   PString A;
   PString B;
+  PString tmp1;
   A = str_make(59, "You can use the function Copy() to extract part of a string");
   Write(&OUTPUT, 1, RwpStringPtr, &A, RwpLenPtr, 2, ": ", RwpString | RwpLn | RwpEnd, COPY(&A, 13, 30));
   A = str_make(5, "abcde");
@@ -57,7 +59,7 @@ void PROCEDURESANDFUNCTIONS() {
   DELETE(&A, 3, 4);
   Write(&OUTPUT, 1, RwpLenPtr, 54, "Use Delete() to delete some characters from a string: ", RwpStringPtr | RwpLn | RwpEnd, &A);
   A = str_make(8, "abcdbcde");
-  Write(&OUTPUT, 1, RwpLenPtr, 50, "Use Pos() to find a string inside another string: ", RwpInt | RwpLn | RwpEnd, ({ PString tmp1 = str_make(3, "cdb"); POS(&tmp1, &A); }));
+  Write(&OUTPUT, 1, RwpLenPtr, 50, "Use Pos() to find a string inside another string: ", RwpInt | RwpLn | RwpEnd, ({ tmp1 = str_make(3, "cdb"); POS(&tmp1, &A); }));
 }
 
 void CONVERSIONS() {
