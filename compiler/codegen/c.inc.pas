@@ -16,8 +16,6 @@ forward;
 procedure _CgC_OutNameAndType(This : TCgC; const Name : string;
                               TypePtr : TSDType);
 forward;
-procedure _CgC_OutDefinitions(This : TCgC; Scope : TSScope);
-forward;
 procedure _CgC_OutExpression(This : TCgC; Expr : TSExpression);
 forward;
 procedure _CgC_OutBody(This : TCgC; Body : TSSSequence);
@@ -435,8 +433,7 @@ begin
   write(This^.Output, '({ ');
   while Expr^.Cls = SecWithTmpVar do
   begin
-    _CgC_OutVariableDeclaration(This, Expr^.TmpVar^.VarPtr);
-    write(This^.Output, ' = ');
+    write(This^.Output, Expr^.TmpVar^.VarPtr^.Name, ' = ');
     _CgC_OutExpression(This, Expr^.TmpVarValue);
     write(This^.Output, '; ');
     Expr := Expr^.TmpVarChild
@@ -1498,13 +1495,24 @@ begin
   _CgC_OutNewline(This)
 end;
 
-procedure _CgC_OutSubroutineDefinition(This : TCgC; Def : TSDSubroutine);
+procedure _CgC_OutLocalDefinitions(This : TCgC; FirstDef : TSDefinition);
+forward;
+
+{ Returns a pointer to the first definition in the given scope. }
+function _CgC_GetStartOfDefinitions(Scope : TSScope) : TSDefinition;
 begin
+  Stack_GetOldest(Scope^.LatestDef, Result)
+end;
+
+procedure _CgC_OutSubroutineDefinition(This : TCgC; Def : TSDSubroutine);
+var FirstDef : TSDefinition;
+begin
+  FirstDef := _CgC_GetStartOfDefinitions(@Def^.Scope);
   _CgC_OutBlankline(This, TotFunDef);
   _CgC_OutSubroutinePrototype(This, Def);
   write(This^.Output, ' ');
   _CgC_OutBegin(This);
-  _CgC_OutDefinitions(This, @Def^.Scope);
+  _CgC_OutLocalDefinitions(This, FirstDef);
   _CgC_OutBody(This, Def^.Body);
   if Def^.ReturnTypePtr <> nil then
   begin
@@ -1515,22 +1523,20 @@ begin
   _CgC_OutEnd(This);
 end;
 
-procedure _CgC_OutDefinitions(This : TCgC; Scope : TSScope);
-var FirstDef, Def : TSDefinition;
+{ Outputs defined types starting at the given Def. }
+procedure _CgC_OutDefinedTypes(This : TCgC; Def : TSDefinition);
 begin
-  Stack_GetOldest(Scope^.LatestDef, FirstDef);
-
-  { Output defined types. }
-  Def := FirstDef;
   while Def <> nil do
   begin
     if (Def^.Cls = SdcType) and (Def^.TypeDef.AliasFor <> nil) then
       _CgC_OutTypeDefinition(This, @Def^.TypeDef);
     Def := Def^.Newer
   end;
+end;
 
-  { Output variables and constants. }
-  Def := FirstDef;
+{ Outputs defined variables and constants starting at the given Def. }
+procedure _CgC_OutDefinedVariables(This : TCgC; Def : TSDefinition);
+begin
   while Def <> nil do
   begin
     if (Def^.Cls = SdcVariable) and not Def^.VarDef.IsArgument
@@ -1538,9 +1544,23 @@ begin
       _CgC_OutVariableDefinition(This, @Def^.VarDef);
     Def := Def^.Newer
   end;
+end;
 
-  { Output enum values. }
-  Def := FirstDef;
+{ Outputs defined temporary variables starting at the given Def. }
+procedure _CgC_OutDefinedTemporaryVariables(This : TCgC; Def : TSDefinition);
+begin
+  while Def <> nil do
+  begin
+    if (Def^.Cls = SdcVariable) and not Def^.VarDef.IsArgument
+       and (Def^.VarDef.IsAliasFor <> nil) then
+      _CgC_OutVariableDefinition(This, @Def^.VarDef);
+    Def := Def^.Newer
+  end;
+end;
+
+{ Outputs arrays with defined enum values starting at the given Def. }
+procedure _CgC_OutDefinedEnumValueArrays(This : TCgC; Def : TSDefinition);
+begin
   while Def <> nil do
   begin
     if (Def^.Cls = SdcType) and (Def^.TypeDef.Cls = SdtcEnum)
@@ -1551,33 +1571,49 @@ begin
     end;
     Def := Def^.Newer
   end;
+end;
 
-  { Output forward-declared function prototypes. }
-  Def := FirstDef;
+{ Outputs forward-declared function prototypes starting at the given Def. }
+procedure _CgC_OutDefinedFunctionPrototypes(This : TCgC; Def : TSDefinition);
+begin
   while Def <> nil do
   begin
     if (Def^.Cls = SdcSubroutine) and Def^.SrDef.HadDeclaration then
       _CgC_OutSubroutineDeclaration(This, @Def^.SrDef);
     Def := Def^.Newer
   end;
+end;
 
-  { Output non-forward-declared function definitions. }
-  Def := FirstDef;
+{ Outputs function definitions starting at the given Def. }
+{ The IsForwardDeclared parameter selects what functions are output: }
+{ those that were forward declared or the rest. }
+procedure _CgC_OutDefinedFunctions(This : TCgC; Def : TSDefinition;
+                                   IsForwardDeclared : boolean);
+begin
   while Def <> nil do
   begin
-    if (Def^.Cls = SdcSubroutine) and not Def^.SrDef.HadDeclaration then
+    if (Def^.Cls = SdcSubroutine)
+       and (Def^.SrDef.HadDeclaration = IsForwardDeclared) then
       _CgC_OutSubroutineDefinition(This, @Def^.SrDef);
     Def := Def^.Newer
   end;
+end;
 
-  { Output forward-declared function definitions. }
-  Def := FirstDef;
-  while Def <> nil do
-  begin
-    if (Def^.Cls = SdcSubroutine) and Def^.SrDef.HadDeclaration then
-      _CgC_OutSubroutineDefinition(This, @Def^.SrDef);
-    Def := Def^.Newer
-  end;
+procedure _CgC_OutGlobalDefinitions(This : TCgC; FirstDef : TSDefinition);
+begin
+  _CgC_OutDefinedTypes(This, FirstDef);
+  _CgC_OutDefinedVariables(This, FirstDef);
+  _CgC_OutDefinedEnumValueArrays(This, FirstDef);
+  _CgC_OutDefinedFunctionPrototypes(This, FirstDef);
+  _CgC_OutDefinedFunctionPrototypes(This, FirstDef);
+  _CgC_OutDefinedFunctions(This, FirstDef, {IsForwardDeclared=}false);
+  _CgC_OutDefinedFunctions(This, FirstDef, {IsForwardDeclared=}true);
+end;
+
+procedure _CgC_OutLocalDefinitions(This : TCgC; FirstDef : TSDefinition);
+begin
+  _CgC_OutGlobalDefinitions(This, FirstDef);
+  _CgC_OutDefinedTemporaryVariables(This, FirstDef)
 end;
 
 procedure _CgC_OutStEmpty(This : TCgC);
@@ -1728,8 +1764,7 @@ begin
     _CgC_OutBegin(This);
   end;
   _CgC_OutIndent(This);
-  _CgC_OutVariableDeclaration(This, Stmt^.WithVar^.VarPtr);
-  write(This^.Output, ' = ');
+  write(This^.Output, Stmt^.withVar^.VarPtr^.Name, ' = ');
   if (Stmt^.WithVar^.VarPtr^.IsReference) then
     _CgC_OutExAddress(This, Stmt^.WithValue)
   else
@@ -1824,18 +1859,20 @@ begin
 end;
 
 procedure _CgC_OutProgram(This : TCgC; Prog : TSProgram);
+var FirstDef : TSDefinition;
 begin
+  FirstDef := _CgC_GetStartOfDefinitions(@Prog^.Scope);
+
   write(This^.Output, '/* Program: ', Prog^.Name, ' */');
   _CgC_OutNewline(This);
   write(This^.Output, '#include "pascual.h"');
   _CgC_OutNewline(This);
-
-  _CgC_OutDefinitions(This, @Prog^.Scope);
-
+  _CgC_OutGlobalDefinitions(This, FirstDef);
   _CgC_OutBlankline(This, TotFunDef);
   _CgC_OutIndent(This);
   write(This^.Output, 'void pascual_main() ');
   _CgC_OutBegin(This);
+  _CgC_OutDefinedTemporaryVariables(This, FirstDef);
   _CgC_OutBody(This, Prog^.Body);
   _CgC_OutEnd(This)
 end;
