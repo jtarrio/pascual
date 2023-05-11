@@ -1858,6 +1858,7 @@ begin
   end
 end;
 
+{ Outputs the program given by Prog. }
 procedure _CgC_OutProgram(This : TCgC; Prog : TSProgram);
 var FirstDef : TSDefinition;
 begin
@@ -1881,27 +1882,26 @@ end;
 
 
 
-procedure _CgC_SetOutputFile(This : TCgC; const Name : string);
-var F : text;
+{ Definition of TCodegen.Base.SetOutputFile. }
+procedure _CgC_SetOutputFile_Ext(This : TCodegen; const Name : string);
+var 
+  Cg : TCgC absolute This;
+  F : text;
 begin
   Assign(F, Name);
   Rewrite(F);
-  This^.Output := F
+  Cg^.Output := F
 end;
 
-procedure _CgC_SetOutputFile_Ext(This : TCodegen; const Name : string);
-var Cg : TCgC absolute This;
-begin
-  _CgC_SetOutputFile(Cg, Name)
-end;
-
-procedure _CgC_Generate_Ext(This :TCodegen; AST : TSProgram);
+{ Definition of TCodegen.Base.Generate. }
+procedure _CgC_Generate_Ext(This : TCodegen; AST : TSProgram);
 var Cg : TCgC absolute This;
 begin
   _CgC_OutProgram(Cg, AST);
   close(Cg^.Output)
 end;
 
+{ Constructs a C code generator into Codegen. }
 procedure Cg_C_Init(var Codegen : TCodegen);
 var This : TCgC absolute Codegen;
 begin
