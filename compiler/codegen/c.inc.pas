@@ -1605,7 +1605,6 @@ begin
   _CgC_OutDefinedVariables(This, FirstDef);
   _CgC_OutDefinedEnumValueArrays(This, FirstDef);
   _CgC_OutDefinedFunctionPrototypes(This, FirstDef);
-  _CgC_OutDefinedFunctionPrototypes(This, FirstDef);
   _CgC_OutDefinedFunctions(This, FirstDef, {IsForwardDeclared=}false);
   _CgC_OutDefinedFunctions(This, FirstDef, {IsForwardDeclared=}true);
 end;
