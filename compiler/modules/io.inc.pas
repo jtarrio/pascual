@@ -136,6 +136,8 @@ begin
                     WriteValue.Arg, Result);
           WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;
+        if IsEnumType(WriteValue.Arg^.TypePtr) then
+            WriteValue.Arg^.TypePtr^.EnumPtr^.NeedValueArray := true;
         new(WriteArg);
         WriteArg^.Value := WriteValue;
         List_Add(ArgAddPoint, WriteArg)

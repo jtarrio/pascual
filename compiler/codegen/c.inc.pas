@@ -1564,10 +1564,10 @@ begin
   while Def <> nil do
   begin
     if (Def^.Cls = SdcType) and (Def^.TypeDef.Cls = SdtcEnum)
-       and not Def^.TypeDef.EnumPtr^.ValuesHaveBeenOutput then
+       and Def^.TypeDef.EnumPtr^.NeedValueArray then
     begin
       _CgC_OutEnumValues(This, Def^.TypeDef.EnumPtr);
-      Def^.TypeDef.EnumPtr^.ValuesHaveBeenOutput := true
+      Def^.TypeDef.EnumPtr^.NeedValueArray := false
     end;
     Def := Def^.Newer
   end;

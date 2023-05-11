@@ -73,8 +73,8 @@ type
     Id : integer;
     { Has this enum been defined in the output? }
     HasBeenDefined : boolean;
-    { Have this enum's values been output? }
-    ValuesHaveBeenOutput : boolean
+    { Do this enum's values need to be output as an array? }
+    NeedValueArray : boolean
   end;
   { A range type. }
   TSDTRange = record

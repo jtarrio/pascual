@@ -34,6 +34,8 @@ begin
     ErrorForExpr('Invalid type for source of STR', Src.Arg);
   ExMarkInitialized(Dest);
   ExDispose(FnExpr);
+  if IsEnumType(Src.Arg^.TypePtr) then
+      Src.Arg^.TypePtr^.EnumPtr^.NeedValueArray := true;
   Result := ExConvertToStr(Src.Arg, Src.Width, Src.Prec, Dest)
 end;
 
@@ -58,6 +60,8 @@ begin
   ExMarkInitialized(Dest);
   ExMarkInitialized(Code);
   ExDispose(FnExpr);
+  if IsEnumType(Dest^.TypePtr) then
+      Dest^.TypePtr^.EnumPtr^.NeedValueArray := true;
   Result := ExConvertToVal(Src, Dest, Code)
 end;
 

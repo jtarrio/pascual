@@ -48,7 +48,6 @@ void SUBRANGES() {
   REDS REDSUIT;
   BLACKS BLACKSUIT;
   PBits8 LETTER;
-  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   NUM = 27;
   REDSUIT = HEARTS;
   BLACKSUIT = SPADES;
@@ -67,8 +66,6 @@ void ARRAYS() {
   PIECE CHESSBOARD[8][8];
   PIECE OTHERCHESSBOARD[8][8];
   PReal MASHUP[13][26][2];
-  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
-  const char* enumvalues2[] = { "KING", "QUEEN", "BISHOP", "KNIGHT", "ROOK", "PAWN" };
   NAMES[0] = str_make(4, "Mark");
   SUITCOUNTS[1] = 3;
   CHESSBOARD[2][1] = PAWN;
@@ -120,7 +117,6 @@ void RECORDS() {
       };
     };
   } FOUR;
-  const char* enumvalues1[] = { "HEARTS", "DIAMONDS", "CLUBS", "SPADES" };
   ONE.A = 123;
   ONE.B =  1.23400000000000E+001;
   TWO = ONE;

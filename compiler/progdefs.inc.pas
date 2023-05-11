@@ -35,7 +35,7 @@ begin
   Result^ := Enum;
   Result^.Id := DefCounter(SctEnum);
   Result^.HasBeenDefined := false;
-  Result^.ValuesHaveBeenOutput := false
+  Result^.NeedValueArray := false
 end;
 
 function NewRecord(const Rec : TSDTRecordDef) : TSDTRecord;
