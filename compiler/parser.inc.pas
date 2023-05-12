@@ -91,7 +91,9 @@ begin
 end;
 
 function PsEnumeratedType : TSDType;
-var Enum : TSDTEnumDef;
+var 
+  Enum : TSDTEnumDef;
+  Pos : integer;
 begin
   WantTokenAndRead(TkLparen);
   Enum.Size := 0;
@@ -104,7 +106,11 @@ begin
     SkipToken(TkComma);
   until Lexer.Token.Id = TkRparen;
   WantTokenAndRead(TkRparen);
-  Result := MakeEnumType(Enum)
+  Result := MakeEnumType(Enum);
+  for Pos := 0 to Result^.EnumPtr^.Size - 1 do
+    AddConstant(MakeConstant(Result^.EnumPtr^.Values[Pos],
+                ExEnumConstant(Pos, Result)))
+
 end;
 
 procedure PsRecordField(var Rec : TSDTRecordDef; Delimiter : TLxTokenId);
@@ -360,7 +366,7 @@ begin
     Idx := FindName(Lexer.Token.Value, {Required=}false);
     if Idx = nil then
     else if Idx^.Cls = SdncType then Result := PsTypeIdentifier
-    else if Idx^.Cls in [SdncConstant, SdncEnumVal] then
+    else if Idx^.Cls = SdncConstant then
            Result := PsRangeType
   end
   else if Lexer.Token.Id in [TkInteger, TkString, TkMinus, TkPlus] then
@@ -776,8 +782,6 @@ begin
   else if Found^.Cls = SdncVariable then Expr := ExVariable(Found^.VarPtr)
   else if Found^.Cls = SdncConstant then Expr := ExCopy(Found^.ConstPtr^.Value)
   else if Found^.Cls = SdncSubroutine then Expr := ExFnRef(Found^.SrPtr)
-  else if Found^.Cls = SdncEnumVal then
-         Expr := ExEnumConstant(Found^.Ordinal, Found^.EnumTypePtr)
   else if Found^.Cls = SdncPsfn then Expr := ExPsfn(Found^.PsfnPtr)
   else CompileError('Invalid identifier: ' + Id.Name);
 

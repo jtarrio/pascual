@@ -242,7 +242,7 @@ type
 
   { A name for a definition. }
   TSDName = ^TSDNameDef;
-  TSDNameClass = (SdncConstant, SdncType, SdncEnumVal, SdncVariable,
+  TSDNameClass = (SdncConstant, SdncType, SdncVariable,
                   SdncSubroutine, SdncPsfn);
   TSDNameDef = record
     { The name. }
@@ -253,9 +253,6 @@ type
       SdncConstant : (ConstPtr : TSDConstant);
       { Type. }
       SdncType : (TypePtr : TSDType);
-      { Enumerated value. }
-      SdncEnumVal : (EnumTypePtr : TSDType;
-                     Ordinal : integer);
       { Variable. }
       SdncVariable : (VarPtr : TSDVariable);
       { Subroutine. }

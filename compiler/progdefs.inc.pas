@@ -168,7 +168,6 @@ begin
     case Cls of 
       SdncType : CompileError('Not a type: ' + NamePtr^.Name);
       SdncVariable : CompileError('Not a variable: ' + NamePtr^.Name);
-      SdncEnumVal : CompileError('Not an enumeration value: ' + NamePtr^.Name);
       SdncSubroutine : CompileError('Not a procedure or function: ' +
                                     NamePtr^.Name);
       SdncPsfn : CompileError('Not a procedure or function: ' +
@@ -245,16 +244,6 @@ begin
   Def := _AddName(Name, SdncSubroutine);
   Def^.SrPtr := Idx;
   AddFunctionName := Def
-end;
-
-function AddEnumValName(Ordinal : integer;
-                        TypeIdx : TSDType) : TSDName;
-var Def : TSDName;
-begin
-  Def := _AddName(TypeIdx^.EnumPtr^.Values[Ordinal], SdncEnumVal);
-  Def^.EnumTypePtr := TypeIdx;
-  Def^.Ordinal := Ordinal;
-  AddEnumValName := Def
 end;
 
 function AddPsfn(const Name : string;
@@ -1071,14 +1060,11 @@ begin
 end;
 
 function MakeEnumType(const Enum : TSDTEnumDef) : TSDType;
-var Pos : integer;
 begin
   Result := _NewType(SdtcEnum);
   Result^.EnumPtr := NewEnum(Enum);
   { It's hard to detect when an enumerated type was used }
-  Result^.WasUsed := true;
-  for Pos := 0 to Result^.EnumPtr^.Size - 1 do
-    AddEnumValName(Pos, Result)
+  Result^.WasUsed := true
 end;
 
 function MakeRecordType(const Rec : TSDTRecordDef) : TSDType;
