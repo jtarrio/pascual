@@ -137,7 +137,8 @@ begin
           WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;
         if IsEnumType(WriteValue.Arg^.TypePtr) then
-            WriteValue.Arg^.TypePtr^.EnumPtr^.NeedValueArray := true;
+          GetFundamentalType(WriteValue.Arg^.TypePtr)^.EnumPtr^
+          .NeedValueArray := true;
         new(WriteArg);
         WriteArg^.Value := WriteValue;
         List_Add(ArgAddPoint, WriteArg)
@@ -149,7 +150,7 @@ begin
     WantTokenAndRead(TkRparen)
   end;
   if Result = nil then
-  Result := ExWrite(OutFile, ArgList, NewLine, Options.CheckIoResult)
+    Result := ExWrite(OutFile, ArgList, NewLine, Options.CheckIoResult)
 end;
 
 procedure _UpFirst(var Str : string);
