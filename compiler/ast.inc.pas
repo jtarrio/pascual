@@ -261,7 +261,7 @@ type
       SdcSubroutine : (SrDef : TSDSubroutineDef);
       { Pseudo-function. }
       SdcPsfn : (PsfnDef : TSDPsfnDef);
-      { Temporary variable. }
+      { "With" variable. }
       SdcWithVar : (WithVarDef : TSDWithVarDef);
   end;
 
