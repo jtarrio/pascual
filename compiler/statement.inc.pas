@@ -72,7 +72,8 @@ begin
   Result^.ForStatement := Stmt
 end;
 
-function StWith(WithVar, Value : TSExpression;
+function StWith(WithVar: TSDVariable;
+                Value : TSExpression;
                 Stmt : TSStatement) : TSStatement;
 begin
   new(Result);

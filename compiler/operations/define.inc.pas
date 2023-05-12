@@ -1,6 +1,7 @@
 function _ExOp_MakeUnary(Expr : TSExpression; Op : TSEOperator;
-                       ResultType : TSDType) : TSExpression;
+                         ResultType : TSDType) : TSExpression;
 begin
+  ExClearTmpVar(Expr);
   Result := _NewExpr(SecUnaryOp);
   Result^.Unary.Parent := Expr;
   Result^.Unary.Op := Op;
@@ -11,6 +12,8 @@ end;
 function _ExOp_MakeBinary(Left, Right : TSExpression; Op : TSEOperator;
                           ResultType : TSDType) : TSExpression;
 begin
+  ExClearTmpVar(Left);
+  ExClearTmpVar(Right);
   Result := _NewExpr(SecBinaryOp);
   Result^.Binary.Left := Left;
   Result^.Binary.Right := Right;

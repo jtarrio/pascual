@@ -108,7 +108,6 @@ begin
     SecToGenericFile: ExDispose(Expr^.ToGenericFileParent);
     SecWithTmpVar:
                    begin
-                     ExDispose(Expr^.TmpVar);
                      ExDispose(Expr^.TmpVarValue);
                      ExDispose(Expr^.TmpVarChild);
                    end;
@@ -305,7 +304,7 @@ begin
                                                    ToGenericFileParent);
     SecWithTmpVar :
                     begin
-                      Copy^.TmpVar := ExCopy(Expr^.TmpVar);
+                      Copy^.TmpVarPtr := Expr^.TmpVarPtr;
                       Copy^.TmpVarValue := ExCopy(Expr^.TmpVarValue);
                       Copy^.TmpVarChild := ExCopy(Expr^.TmpVarChild);
                     end;
@@ -625,6 +624,12 @@ end;
 function ExCoerce(Expr : TSExpression; TypePtr : TSDType) : TSExpression;
 forward;
 
+procedure ExClearTmpVar(Expr : TSExpression);
+begin
+  if (Expr <> nil) and (Expr^.Cls = SecWithTmpVar) then
+    Expr^.TmpVarPtr^.InUse := false
+end;
+
 function _ExImmediate(Cls : TSEImmediateClass) : TSExpression;
 var Expr : TSExpression;
 begin
@@ -812,6 +817,8 @@ var
   ExprSet : TSExpression;
   NewBounds : TSESetExprBounds;
 begin
+  ExClearTmpVar(First);
+  ExClearTmpVar(Last);
   ElementTypePtr := SetExpr^.TypePtr^.ElementTypePtr;
   if ElementTypePtr = nil then
   begin
@@ -881,6 +888,7 @@ begin
     end
     else
     begin
+      ExClearTmpVar(Parent);
       Result := _NewExpr(SecToString);
       Result^.ToStrParent := Parent;
       Result^.TypePtr := PrimitiveTypes.PtString;
@@ -903,6 +911,7 @@ begin
   end
   else
   begin
+    ExClearTmpVar(Parent);
     Result := _NewExpr(SecToReal);
     Result^.ToRealParent := Parent;
     Result^.TypePtr := PrimitiveTypes.PtReal;
@@ -912,6 +921,7 @@ end;
 
 function ExToUntypedPtr(Parent : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   Result := _NewExpr(SecToUntypedPtr);
   Result^.ToUntypedPtrParent := Parent;
   Result^.TypePtr := PrimitiveTypes.PtUntypedPtr;
@@ -922,6 +932,7 @@ end;
 
 function ExToGenericFile(Parent : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   Result := _NewExpr(SecToGenericFile);
   Result^.ToGenericFileParent := Parent;
   Result^.TypePtr := PrimitiveTypes.PtFile;
@@ -930,18 +941,19 @@ begin
   Result^.IsAddressable := Parent^.IsAddressable
 end;
 
-function ExWithTmpVar(TmpVar, Value, Child : TSExpression) : TSExpression;
+function ExWithTmpVar(TmpVar : TSDTmpVar;
+                      Value, Child : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Value);
+  ExClearTmpVar(Child);
   Result := _NewExpr(SecWithTmpVar);
-  Result^.TmpVar := TmpVar;
+  Result^.TmpVarPtr := TmpVar;
   Result^.TmpVarValue := Value;
   Result^.TmpVarChild := Child;
   Result^.TypePtr := Child^.TypePtr;
   Result^.IsAssignable := Child^.IsAssignable;
   Result^.IsAddressable := Child^.IsAddressable;
-  Result^.IsFunctionResult := Child^.IsFunctionResult;
-  TmpVar^.VarPtr^.WasInitialized := true;
-  TmpVar^.VarPtr^.WasUsed := true
+  Result^.IsFunctionResult := Child^.IsFunctionResult
 end;
 
 function ExSubrange(Parent : TSExpression; TypePtr : TSDType)
@@ -951,6 +963,7 @@ forward;
 function ExOutrange(Expr : TSExpression) : TSExpression;
 var TmpExpr : TSExpression;
 begin
+  ExClearTmpVar(Expr);
   while Expr^.Cls = SecSubrange do
   begin
     TmpExpr := ExCopy(Expr^.SubrangeParent);
@@ -973,6 +986,7 @@ end;
 function ExFieldAccess(Parent : TSExpression; FieldNum : integer)
 : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   EnsureRecordExpr(Parent);
   if (FieldNum < 1)
      or (FieldNum > Parent^.TypePtr^.RecPtr^.Size) then
@@ -989,6 +1003,7 @@ end;
 
 function ExArrayAccess(Parent, Subscript : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   EnsureArrayExpr(Parent);
   Result := _NewExpr(SecArray);
   Result^.ArrayExpr := Parent;
@@ -1002,6 +1017,7 @@ end;
 
 function ExPointerAccess(Parent : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   EnsurePointerExpr(Parent);
   Result := _NewExpr(SecPointer);
   Result^.PointerExpr := Parent;
@@ -1013,6 +1029,7 @@ end;
 
 function ExAddressOf(Parent : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
   Result := _NewExpr(SecAddress);
   Result^.AddressExpr := Parent;
   if Parent^.Cls = SecFnRef then
@@ -1028,6 +1045,8 @@ end;
 
 function ExStringChar(Parent, Subscript : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Parent);
+  ExClearTmpVar(Subscript);
   EnsureStringyExpr(Parent);
   EnsureIntegerExpr(Subscript);
   Result := _NewExpr(SecStringChar);
@@ -1054,6 +1073,7 @@ var
   Pos : integer;
   FnCall : TSExpression;
 begin
+  ExClearTmpVar(FnExpr);
   if Args.Size <> ArgDefs.Count then
     CompileError('Wrong number of arguments in call to ' + ExDescribe(FnExpr));
   FnCall := _NewExpr(SecFnCall);
@@ -1065,6 +1085,7 @@ begin
   Result := FnCall;
   for Pos := 1 to Args.Size do
   begin
+    ExClearTmpVar(Args.Values[Pos]);
     FnCall^.CallArgs.Values[Pos] := ExCoerce(Args.Values[Pos],
                                     ArgDefs.Defs[Pos].TypePtr);
     if ArgDefs.Defs[Pos].IsReference then
@@ -1073,11 +1094,11 @@ begin
       begin
         if ArgDefs.Defs[Pos].IsConstant then
         begin
-          Result := ExWithTmpVar(ExVariable(AddAliasVariable(
+          Result := ExWithTmpVar(GetAliasVariable(
                     ArgDefs.Defs[Pos].TypePtr,
-                    FnCall^.CallArgs.Values[Pos])),
+                    FnCall^.CallArgs.Values[Pos]),
                     FnCall^.CallArgs.Values[Pos], Result);
-          FnCall^.CallArgs.Values[Pos] := ExCopy(Result^.TmpVar)
+          FnCall^.CallArgs.Values[Pos] := ExVariable(@Result^.TmpVarPtr^.VarDef)
         end
         else
           CompileError('Pass-by-reference argument must be assignable: ' +
@@ -1121,6 +1142,10 @@ end;
 
 function ExConvertToStr(Src, Width, Prec, Dest : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Src);
+  ExClearTmpVar(Width);
+  ExClearTmpVar(Prec);
+  ExClearTmpVar(Dest);
   Result := _NewExpr(SecConvertToStr);
   Result^.TypePtr := nil;
   Result^.ToStrSrc.Arg := Src;
@@ -1132,6 +1157,9 @@ end;
 
 function ExConvertToVal(Src, Dest, Code : TSExpression) : TSExpression;
 begin
+  ExClearTmpVar(Src);
+  ExClearTmpVar(Dest);
+  ExClearTmpVar(Code);
   Result := _NewExpr(SecConvertToVal);
   Result^.TypePtr := nil;
   Result^.ToValSrc := Src;
@@ -1142,7 +1170,15 @@ end;
 
 function ExRead(ReadFile : TSExpression; Args : TSEReadArgList;
                 NewLine : boolean; CheckIoResult : boolean) : TSExpression;
+var Arg : TSEReadArgList;
 begin
+  ExClearTmpVar(ReadFile);
+  Arg := Args;
+  while Arg <> nil do
+  begin
+    ExClearTmpVar(Arg^.Dest);
+    Arg := Arg^.Next
+  end;
   Result := _NewExpr(SecRead);
   Result^.TypePtr := nil;
   Result^.ReadFile := ReadFile;
@@ -1154,7 +1190,17 @@ end;
 
 function ExWrite(WriteFile : TSExpression; Args : TSEWriteArgList;
                  NewLine : boolean; CheckIoResult : boolean) : TSExpression;
+var Arg : TSEWriteArgList;
 begin
+  ExClearTmpVar(WriteFile);
+  Arg := Args;
+  while Arg <> nil do
+  begin
+    ExClearTmpVar(Arg^.Value.Arg);
+    ExClearTmpVar(Arg^.Value.Width);
+    ExClearTmpVar(Arg^.Value.Prec);
+    Arg := Arg^.Next
+  end;
   Result := _NewExpr(SecWrite);
   Result^.TypePtr := nil;
   Result^.WriteFile := WriteFile;
@@ -1166,6 +1212,7 @@ end;
 
 function ExGetOrdinal(Expr : TSExpression) : integer;
 begin
+  ExClearTmpVar(Expr);
   if not ExIsImmediate(Expr) then
     ErrorForExpr('Expected an immediate value', Expr);
   with Expr^.Immediate do
@@ -1207,6 +1254,7 @@ begin
   end
   else
   begin
+    ExClearTmpVar(Parent);
     Result := _NewExpr(SecSubrange);
     Result^.SubrangeParent := Parent;
     Result^.TypePtr := TypePtr
@@ -1228,6 +1276,8 @@ end;
 procedure ExSetCoerceToCommon(Left, Right : TSExpression);
 var LeftType, RightType : TSDType;
 begin
+  ExClearTmpVar(Left);
+  ExClearTmpVar(Right);
   LeftType := Left^.TypePtr;
   RightType := Right^.TypePtr;
   if (LeftType^.ElementTypePtr = nil) or ExIsImmediate(Left) then
@@ -1273,6 +1323,7 @@ end;
 
 function ExCoerce;
 begin
+  ExClearTmpVar(Expr);
   if IsFundamentallySameType(Expr^.TypePtr, TypePtr) then
   begin
     if IsRangeType(Expr^.TypePtr) and IsRangeType(TypePtr) then

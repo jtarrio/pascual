@@ -1094,10 +1094,11 @@ begin
 end;
 
 function PsAssign(Lhs, Rhs : TSExpression) : TSStatement;
-var
+var 
   Def : TSDefinition;
   ResultVarPtr : TSDVariable;
 begin
+  ExClearTmpVar(Rhs);
   if Lhs^.Cls = SecFnRef then
   begin
     if Lhs^.FnPtr <> CurrentScope^.CurrentFn then
@@ -1130,10 +1131,11 @@ function PsProcCallStatement(Lhs : TSExpression) : TSStatement;
 var 
   Stmt : TSStatement;
 begin
+  ExClearTmpVar(Lhs);
   if Lhs^.Cls = SecWithTmpVar then
   begin
     Stmt := PsProcCallStatement(Lhs^.TmpVarChild);
-    Result := StWith(ExVariable(Lhs^.TmpVar^.VarPtr), Lhs^.TmpVarValue, Stmt);
+    Result := StWith(@Lhs^.TmpVarPtr^.VarDef, Lhs^.TmpVarValue, Stmt);
   end
   else if Lhs^.IsStatement then Result := StProcCall(Lhs)
   else if Lexer.Token.Id = TkEquals then
@@ -1300,7 +1302,7 @@ begin
     WantTokenAndRead(TkDo);
     Stmt := PsStatement
   end;
-  Result := StWith(ExVariable(@WithVarPtr^.TmpVarPtr^.VarDef), Base, Stmt);
+  Result := StWith(@WithVarPtr^.TmpVarPtr^.VarDef, Base, Stmt);
   WithVarPtr^.IsActive := false;
   WithVarPtr^.TmpVarPtr^.InUse := false
 end;

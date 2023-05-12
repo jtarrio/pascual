@@ -202,7 +202,7 @@ var
   ImmBounds : TSESetImmBounds;
   ExprBounds : TSESetExprBounds;
   Cond : TSExpression;
-  TmpVar : TSDVariable;
+  TmpVar : TSDTmpVar;
   Wanted : TSExpression;
 begin
   ElemType := Haystack^.TypePtr^.ElementTypePtr;
@@ -210,8 +210,8 @@ begin
   else Needle := ExCoerce(Needle, ElemType);
   if Needle^.IsFunctionResult then
   begin
-    TmpVar := AddAliasVariable(ElemType, Needle);
-    Wanted := ExVariable(TmpVar)
+    TmpVar := GetAliasVariable(ElemType, Needle);
+    Wanted := ExVariable(@TmpVar^.VarDef)
   end
   else
   begin
@@ -266,7 +266,7 @@ begin
   end;
   if TmpVar <> nil then
   begin
-    Result := ExWithTmpVar(Wanted, Needle, Result);
+    Result := ExWithTmpVar(TmpVar, Needle, Result);
   end
   else ExDispose(Needle);
   ExDispose(Haystack)

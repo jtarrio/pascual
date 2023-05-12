@@ -133,10 +133,10 @@ begin
             Result := ExWrite(OutFile, ArgList, NewLine, Options.CheckIoResult);
             ArgAddPoint := List_GetAddPoint(Result^.WriteArgs)
           end;
-          Result := ExWithTmpVar(ExVariable(AddAliasVariable(
-                    WriteValue.Arg^.TypePtr, WriteValue.Arg)),
+          Result := ExWithTmpVar(GetAliasVariable(
+                    WriteValue.Arg^.TypePtr, WriteValue.Arg),
                     WriteValue.Arg, Result);
-          WriteValue.Arg := ExCopy(Result^.TmpVar)
+          WriteValue.Arg := ExVariable(@Result^.TmpVarPtr^.VarDef)
         end;
         if IsEnumType(WriteValue.Arg^.TypePtr) then
           GetFundamentalType(WriteValue.Arg^.TypePtr)^.EnumPtr^

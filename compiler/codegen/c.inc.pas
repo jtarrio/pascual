@@ -433,7 +433,7 @@ begin
   write(This^.Output, '({ ');
   while Expr^.Cls = SecWithTmpVar do
   begin
-    write(This^.Output, Expr^.TmpVar^.VarPtr^.Name, ' = ');
+    write(This^.Output, Expr^.TmpVarPtr^.VarDef.Name, ' = ');
     _CgC_OutExpression(This, Expr^.TmpVarValue);
     write(This^.Output, '; ');
     Expr := Expr^.TmpVarChild
@@ -1762,8 +1762,8 @@ begin
     _CgC_OutBegin(This);
   end;
   _CgC_OutIndent(This);
-  write(This^.Output, Stmt^.withVar^.VarPtr^.Name, ' = ');
-  if (Stmt^.WithVar^.VarPtr^.IsReference) then
+  write(This^.Output, Stmt^.WithVar^.Name, ' = ');
+  if (Stmt^.WithVar^.IsReference) then
     _CgC_OutExAddress(This, Stmt^.WithValue)
   else
     _CgC_OutExpression(This, Stmt^.WithValue);

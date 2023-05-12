@@ -383,7 +383,7 @@ type
   { Expressions. }
   TSExpressionClass = (SecImmediate, SecArrayValue, SecRecordValue, SecSetValue,
                        SecToString, SecToReal, SecToUntypedPtr,
-                       SecToGenericFile, SecWithTmpVar, SecSubrange, 
+                       SecToGenericFile, SecWithTmpVar, SecSubrange,
                        SecVariable, SecField, SecArray, SecPointer, SecAddress,
                        SecStringChar, SecFnRef, SecFnCall, SecPsfnRef,
                        SecSizeof, SecConvertToStr, SecConvertToVal, SecRead,
@@ -410,7 +410,7 @@ type
       SecRecordValue : (RecordField : TSERecordField);
       { Set value. }
       SecSetValue : (SetBase : TSExpression;
-                SetBounds : TSESetExprBounds);
+                     SetBounds : TSESetExprBounds);
       { Character to string cast. }
       SecToString : (ToStrParent : TSExpression);
       { Integer to real cast. }
@@ -420,7 +420,7 @@ type
       { Typed file to generic file cast. }
       SecToGenericFile : (ToGenericFileParent : TSExpression);
       { An expression that uses a temporary variable. }
-      SecWithTmpVar : (TmpVar : TSExpression;
+      SecWithTmpVar : (TmpVarPtr : TSDTmpVar;
                        TmpVarValue : TSExpression;
                        TmpVarChild : TSExpression);
       { Base to subrange cast. }
@@ -517,7 +517,8 @@ type
                 Ascending : boolean;
                 ForStatement : TSStatement);
       { With statement. }
-      SscWith : (WithVar, WithValue : TSExpression;
+      SscWith : (WithVar : TSDVariable;
+                 WithValue : TSExpression;
                  WithStatement : TSStatement);
       { Case statement. }
       SscCase : (CaseSelector : TSExpression;

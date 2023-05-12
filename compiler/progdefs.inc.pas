@@ -743,6 +743,13 @@ begin
   Result^.InUse := true
 end;
 
+function GetAliasVariable(TypePtr : TSDType;
+                          Expr : TSExpression) : TSDTmpVar;
+begin
+  Result := GetTemporaryVariable(TypePtr, {IsReference=}false);
+  Result^.VarDef.IsAliasFor := Expr
+end;
+
 function _DefIsWithVar(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
@@ -843,15 +850,6 @@ begin
   Result.WasInitialized := true;
   Result.WasUsed := false;
   Result.IsAliasFor := nil;
-end;
-
-function AddAliasVariable(TypePtr : TSDType;
-                          Expr : TSExpression) : TSDVariable;
-var TmpVar : TSDTmpVar;
-begin
-  TmpVar := GetTemporaryVariable(TypePtr, {IsReference=}false);
-  Result := @TmpVar^.VarDef;
-  Result^.IsAliasFor := Expr
 end;
 
 function _MakeArg(const Name : string; TypePtr : TSDType;
