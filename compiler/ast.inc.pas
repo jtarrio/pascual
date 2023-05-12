@@ -235,9 +235,7 @@ type
   TSDTmpVar = ^TSDTmpVarDef;
   TSDTmpVarDef = record
     { Temporary variable definition. }
-    VarDef : TSDVariableDef;
-    { Is this temporary variable in use? }
-    InUse : boolean
+    VarDef : TSDVariableDef
   end;
 
   { "With" variable. }

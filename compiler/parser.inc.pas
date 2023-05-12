@@ -1098,7 +1098,6 @@ var
   Def : TSDefinition;
   ResultVarPtr : TSDVariable;
 begin
-  ExClearTmpVar(Rhs);
   if Lhs^.Cls = SecFnRef then
   begin
     if Lhs^.FnPtr <> CurrentScope^.CurrentFn then
@@ -1131,7 +1130,6 @@ function PsProcCallStatement(Lhs : TSExpression) : TSStatement;
 var 
   Stmt : TSStatement;
 begin
-  ExClearTmpVar(Lhs);
   if Lhs^.Cls = SecWithTmpVar then
   begin
     Stmt := PsProcCallStatement(Lhs^.TmpVarChild);
@@ -1303,8 +1301,7 @@ begin
     Stmt := PsStatement
   end;
   Result := StWith(@WithVarPtr^.TmpVarPtr^.VarDef, Base, Stmt);
-  WithVarPtr^.IsActive := false;
-  WithVarPtr^.TmpVarPtr^.InUse := false
+  WithVarPtr^.IsActive := false
 end;
 
 

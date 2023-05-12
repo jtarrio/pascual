@@ -705,42 +705,25 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
-function _DefIsTmpVar(var Item; var Ctx) : boolean;
-var 
-  Def : TSDefinition absolute Item;
-  VarDef : TSDVariableDef absolute Ctx;
+function GetTemporaryVariable(TheTypePtr : TSDType;
+                              WantReference : boolean) : TSDTmpVar;
+var Def : TSDefinition;
 begin
-  Result := (Def^.Cls = SdcTmpVar)
-            and not Def^.TmpVarDef.InUse
-            and (Def^.TmpVarDef.VarDef.IsReference = VarDef.IsReference)
-            and (Def^.TmpVarDef.VarDef.TypePtr = VarDef.TypePtr)
-end;
-
-function GetTemporaryVariable(TypePtr : TSDType;
-                              IsReference : boolean) : TSDTmpVar;
-var 
-  Def : TSDefinition;
-  VarDef : TSDVariableDef;
-begin
-  VarDef.TypePtr := TypePtr;
-  VarDef.IsReference := IsReference;
-  if _FindDef(Def, @_DefIsTmpVar, VarDef, {FromLocalScope=}true) then
-    Result := @Def^.TmpVarDef
-  else
+  Def := _AddDef(SdcTmpVar);
+  Result := @Def^.TmpVarDef;
+  with Result^.VarDef do
   begin
-    VarDef.Name := 'tmp' + IntToStr(DefCounter(SctTmpVar));
-    VarDef.IsConstant := false;
-    VarDef.ConstantValue := nil;
-    VarDef.Location := nil;
-    VarDef.IsArgument := false;
-    VarDef.WasInitialized := true;
-    VarDef.WasUsed := true;
-    VarDef.IsAliasFor := nil;
-    Def := _AddDef(SdcTmpVar);
-    Result := @Def^.TmpVarDef;
-    Result^.VarDef := VarDef;
-  end;
-  Result^.InUse := true
+    Name := 'tmp' + IntToStr(DefCounter(SctTmpVar));
+    TypePtr := TheTypePtr;
+    IsConstant := false;
+    ConstantValue := nil;
+    IsReference := WantReference;
+    Location := nil;
+    IsArgument := false;
+    WasInitialized := true;
+    WasUsed := true;
+    IsAliasFor := nil
+  end
 end;
 
 function GetAliasVariable(TypePtr : TSDType;
