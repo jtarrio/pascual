@@ -2732,7 +2732,8 @@ TSEXPRESSIONOBJ* EXSETADDRANGE(TSEXPRESSIONOBJ* SETEXPR, TSEXPRESSIONOBJ* FIRST,
   TSEXPRESSIONOBJ* EXPRSET;
   TSESETEXPRBOUNDSOBJ* NEWBOUNDS;
   PString tmp1;
-  TSEIMMEDIATE* tmp2;
+  PString tmp2;
+  TSEIMMEDIATE* tmp3;
   ELEMENTTYPEPTR = SETEXPR->TYPEPTR->ELEMENTTYPEPTR;
   if (ELEMENTTYPEPTR == PNil) {
     ELEMENTTYPEPTR = GETFUNDAMENTALTYPE(FIRST->TYPEPTR);
@@ -2744,8 +2745,8 @@ TSEXPRESSIONOBJ* EXSETADDRANGE(TSEXPRESSIONOBJ* SETEXPR, TSEXPRESSIONOBJ* FIRST,
     ERRORFOREXPR(&tmp1, FIRST);
   }
   if (LAST != PNil && !ISFUNDAMENTALLYSAMETYPE(LAST->TYPEPTR, ELEMENTTYPEPTR) && !ISSAMETYPE(FIRST->TYPEPTR, LAST->TYPEPTR)) {
-    tmp1 = CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR));
-    ERRORFOREXPR(&tmp1, LAST);
+    tmp2 = CONCAT(CpLenPtr, 26, "Cannot add element to set ", CpEnd | CpString, ERRORDESCRIBEEXPR(SETEXPR));
+    ERRORFOREXPR(&tmp2, LAST);
   }
   if (EXISIMMEDIATE(SETEXPR)) {
     IMMSET = SETEXPR;
@@ -2757,8 +2758,8 @@ TSEXPRESSIONOBJ* EXSETADDRANGE(TSEXPRESSIONOBJ* SETEXPR, TSEXPRESSIONOBJ* FIRST,
   }
   if (EXISIMMEDIATE(FIRST) && LAST == PNil) LAST = EXCOPY(FIRST);
   if (EXISIMMEDIATE(FIRST) && EXISIMMEDIATE(LAST)) {
-    tmp2 = &IMMSET->IMMEDIATE;
-    tmp2->SETBOUNDS = EXSETADDBOUNDS(tmp2->SETBOUNDS, EXGETORDINAL(FIRST), EXGETORDINAL(LAST));
+    tmp3 = &IMMSET->IMMEDIATE;
+    tmp3->SETBOUNDS = EXSETADDBOUNDS(tmp3->SETBOUNDS, EXGETORDINAL(FIRST), EXGETORDINAL(LAST));
     EXDISPOSE(&FIRST);
     EXDISPOSE(&LAST);
   }
@@ -4353,6 +4354,7 @@ TSDTYPEDEF* PSSETTYPE() {
   TSDTYPEDEF* RESULT;
   TSDTYPEDEF* ELEMENTTYPEPTR;
   PString tmp1;
+  PString tmp2;
   WANTTOKENANDREAD(TKSET);
   WANTTOKENANDREAD(TKOF);
   ELEMENTTYPEPTR = PSTYPEDENOTER();
@@ -4361,8 +4363,8 @@ TSDTYPEDEF* PSSETTYPE() {
     ERRORFORTYPE(&tmp1, ELEMENTTYPEPTR);
   }
   if (GETBOUNDEDTYPESIZE(ELEMENTTYPEPTR) > 256) {
-    tmp1 = str_make(54, "Set element types may not contain more than 256 values");
-    ERRORFORTYPE(&tmp1, ELEMENTTYPEPTR);
+    tmp2 = str_make(54, "Set element types may not contain more than 256 values");
+    ERRORFORTYPE(&tmp2, ELEMENTTYPEPTR);
   }
   RESULT = MAKESETTYPE(ELEMENTTYPEPTR);
   return RESULT;
@@ -4503,6 +4505,7 @@ void PSVARDEFINITIONS() {
   TSDTYPEDEF* TYPEPTR;
   TSEXPRESSIONOBJ* LOCATION;
   TSDVARIABLEDEF tmp1;
+  TSDVARIABLEDEF tmp2;
   WANTTOKENANDREAD(TKVAR);
   do {
     NUMNAMES = 0;
@@ -4530,8 +4533,8 @@ void PSVARDEFINITIONS() {
           ADDVARIABLE(&tmp1);
         }
         else {
-          tmp1 = MAKEABSOLUTE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR, LOCATION);
-          ADDVARIABLE(&tmp1);
+          tmp2 = MAKEABSOLUTE(&NAMES[subrange(NUMNAMES, 1, 8) - 1], TYPEPTR, LOCATION);
+          ADDVARIABLE(&tmp2);
         }
       }
       break;
@@ -4562,6 +4565,7 @@ void PSFUNCTIONBODY(TSDSUBROUTINEDEF* SRPTR) {
   TSDVARIABLEDEF* RESULTPTR;
   TSDVARIABLEDEF tmp1;
   PString tmp2;
+  TSDVARIABLEDEF tmp3;
   STARTLOCALSCOPE(&SRPTR->SCOPE, SRPTR);
   for (PInteger first = 1, last = SRPTR->ARGS.COUNT; first <= last; /*breaks*/) {
     PBoolean done = 0;
@@ -4572,7 +4576,7 @@ void PSFUNCTIONBODY(TSDSUBROUTINEDEF* SRPTR) {
     break;
   }
   if (SRPTR->RETURNTYPEPTR != PNil) {
-    RESULTPTR = ({ tmp1 = ({ tmp2 = str_make(6, "RESULT"); MAKEVARIABLE(&tmp2, SRPTR->RETURNTYPEPTR); }); ADDVARIABLE(&tmp1); });
+    RESULTPTR = ({ tmp3 = ({ tmp2 = str_make(6, "RESULT"); MAKEVARIABLE(&tmp2, SRPTR->RETURNTYPEPTR); }); ADDVARIABLE(&tmp3); });
     RESULTPTR->WASUSED = 1;
   }
   PSDEFINITIONS();
@@ -4677,10 +4681,11 @@ TSEFUNCTIONARGS PSFUNCTIONARGS() {
 TSEXPRESSIONOBJ* PSFUNCTIONCALL(TSEXPRESSIONOBJ* FN) {
   TSEXPRESSIONOBJ* RESULT;
   TSEFUNCTIONARGS tmp1;
+  TSEFUNCTIONARGS tmp2;
   if (FN->CLS == SECFNREF && FN->FNPTR != CURRENTSCOPE->CURRENTFN) FN->FNPTR->WASUSED = 1;
   else if (FN->CLS == SECVARIABLE) FN->VARPTR->WASUSED = 1;
   if (FN->CLS == SECFNREF) RESULT = ({ tmp1 = PSFUNCTIONARGS(); EXFUNCTIONCALL(FN, &tmp1); });
-  else if (ISFUNCTIONTYPE(FN->TYPEPTR)) RESULT = ({ tmp1 = PSFUNCTIONARGS(); EXFUNCTIONCALL(FN, &tmp1); });
+  else if (ISFUNCTIONTYPE(FN->TYPEPTR)) RESULT = ({ tmp2 = PSFUNCTIONARGS(); EXFUNCTIONCALL(FN, &tmp2); });
   else if (FN->CLS == SECPSFNREF) RESULT = FN->PSFNPTR->PARSEFN(FN);
   return RESULT;
 }
@@ -4898,6 +4903,8 @@ TSEXPRESSIONOBJ* PSFACTOR() {
   TSEXPRESSIONOBJ* EXPR;
   PString STR;
   PString tmp1;
+  PString tmp2;
+  PString tmp3;
   if (LEXER.TOKEN.ID == TKCARET) LXGETSTRINGFROMCARET();
   if (LEXER.TOKEN.ID == TKNIL) {
     EXPR = EXNIL();
@@ -4908,8 +4915,8 @@ TSEXPRESSIONOBJ* PSFACTOR() {
     if (LENGTH(&STR) == 1) EXPR = EXCHARCONSTANT(STR.chr[1]);
     else EXPR = EXSTRINGCONSTANT(STR);
   }
-  else if (LEXER.TOKEN.ID == TKINTEGER) EXPR = EXINTEGERCONSTANT(({ tmp1 = GETTOKENVALUEANDREAD(TKINTEGER); PARSEINT(&tmp1); }));
-  else if (LEXER.TOKEN.ID == TKREAL) EXPR = EXREALCONSTANT(({ tmp1 = GETTOKENVALUEANDREAD(TKREAL); PARSEREAL(&tmp1); }));
+  else if (LEXER.TOKEN.ID == TKINTEGER) EXPR = EXINTEGERCONSTANT(({ tmp2 = GETTOKENVALUEANDREAD(TKINTEGER); PARSEINT(&tmp2); }));
+  else if (LEXER.TOKEN.ID == TKREAL) EXPR = EXREALCONSTANT(({ tmp3 = GETTOKENVALUEANDREAD(TKREAL); PARSEREAL(&tmp3); }));
   else if (LEXER.TOKEN.ID == TKIDENTIFIER) EXPR = PSVARIABLE();
   else if (LEXER.TOKEN.ID == TKLBRACKET) EXPR = PSSETCONSTRUCTOR();
   else if (LEXER.TOKEN.ID == TKLPAREN) {
@@ -5032,12 +5039,15 @@ TSSTATEMENTOBJ* PSASSIGN(TSEXPRESSIONOBJ* LHS, TSEXPRESSIONOBJ* RHS) {
   TSDEFENTRY* DEF;
   TSDVARIABLEDEF* RESULTVARPTR;
   PString tmp1;
+  PString tmp2;
+  PString tmp3;
+  PString tmp4;
   if (LHS->CLS == SECFNREF) {
     if (LHS->FNPTR != CURRENTSCOPE->CURRENTFN) {
       tmp1 = str_make(35, "Cannot assign a value to a function");
       ERRORFOREXPR(&tmp1, LHS);
     }
-    DEF = ({ tmp1 = str_make(6, "RESULT"); FINDNAMEOFCLASS(&tmp1, SDCVARIABLE, 1); });
+    DEF = ({ tmp2 = str_make(6, "RESULT"); FINDNAMEOFCLASS(&tmp2, SDCVARIABLE, 1); });
     RESULTVARPTR = &DEF->VARDEF;
     EXDISPOSE(&LHS);
     LHS = EXVARIABLE(RESULTVARPTR);
@@ -5045,12 +5055,12 @@ TSSTATEMENTOBJ* PSASSIGN(TSEXPRESSIONOBJ* LHS, TSEXPRESSIONOBJ* RHS) {
   RHS = EXCOERCE(RHS, LHS->TYPEPTR);
   if (!LHS->ISASSIGNABLE) {
     if (LHS->ISFUNCTIONRESULT) {
-      tmp1 = str_make(41, "Cannot assign to the result of a function");
-      ERRORFOREXPR(&tmp1, LHS);
+      tmp3 = str_make(41, "Cannot assign to the result of a function");
+      ERRORFOREXPR(&tmp3, LHS);
     }
     else {
-      tmp1 = str_make(27, "Cannot assign to a constant");
-      ERRORFOREXPR(&tmp1, LHS);
+      tmp4 = str_make(27, "Cannot assign to a constant");
+      ERRORFOREXPR(&tmp4, LHS);
     }
   }
   EXMARKINITIALIZED(LHS);
@@ -5299,6 +5309,7 @@ TSEXPRESSIONOBJ* PF_OVERLOAD_PARSE(TSEXPRESSIONOBJ* FNEXPR, PString NAMEPREFIX) 
   TSEFUNCTIONARGS ARGS;
   TSDSUBROUTINEDEF* SRPTR;
   PString tmp1;
+  PString tmp2;
   EXDISPOSE(&FNEXPR);
   ARG = PNil;
   if (LEXER.TOKEN.ID == TKLPAREN) {
@@ -5313,7 +5324,7 @@ TSEXPRESSIONOBJ* PF_OVERLOAD_PARSE(TSEXPRESSIONOBJ* FNEXPR, PString NAMEPREFIX) 
     RESULT = EXFUNCTIONCALL(EXFNREF(SRPTR), &ARGS);
   }
   else {
-    DEF = ({ tmp1 = _PF_FUN_OVERLOAD(&NAMEPREFIX, ARG->TYPEPTR); FINDNAMEOFCLASS(&tmp1, SDCSUBROUTINE, 1); });
+    DEF = ({ tmp2 = _PF_FUN_OVERLOAD(&NAMEPREFIX, ARG->TYPEPTR); FINDNAMEOFCLASS(&tmp2, SDCSUBROUTINE, 1); });
     SRPTR = &DEF->SRDEF;
     ARGS.SIZE = 1;
     ARGS.VALUES[0] = ARG;
@@ -5461,6 +5472,8 @@ TSEXPRESSIONOBJ* _MODIOREAD_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
   TSEREADARGVALUE* READARG;
   TLISTPTRS** ARGADDPOINT;
   PString tmp1;
+  PString tmp2;
+  PString tmp3;
   NEWLINE = cmp_str(CoEq, CpStringPtr, &FNEXPR->PSFNPTR->NAME, CpLenPtr, 6, "READLN");
   EXDISPOSE(&FNEXPR);
   DEF = ({ tmp1 = str_make(5, "INPUT"); FINDNAMEOFCLASS(&tmp1, SDCVARIABLE, 1); });
@@ -5477,15 +5490,15 @@ TSEXPRESSIONOBJ* _MODIOREAD_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
         EXDISPOSE(&INFILE);
         INFILE = READVAR;
         if (NEWLINE && !ISTEXTTYPE(INFILE->TYPEPTR)) {
-          tmp1 = str_make(28, "Invalid file type for READLN");
-          ERRORFOREXPR(&tmp1, INFILE);
+          tmp2 = str_make(28, "Invalid file type for READLN");
+          ERRORFOREXPR(&tmp2, INFILE);
         }
       }
       else {
         ENSUREASSIGNABLEEXPR(READVAR);
         if (!_MODIO_TYPEISVALIDFORFILEREAD(INFILE, READVAR)) {
-          tmp1 = CONCAT(CpLenPtr, 38, "Variable has invalid type for READ on ", CpEnd | CpString, TYPENAME(INFILE->TYPEPTR));
-          ERRORFOREXPR(&tmp1, READVAR);
+          tmp3 = CONCAT(CpLenPtr, 38, "Variable has invalid type for READ on ", CpEnd | CpString, TYPENAME(INFILE->TYPEPTR));
+          ERRORFOREXPR(&tmp3, READVAR);
         }
         New((void**)&READARG, sizeof(TSEREADARGVALUE));
         READARG->DEST = READVAR;
@@ -5522,6 +5535,8 @@ TSEXPRESSIONOBJ* _MODIOWRITE_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
   TSEWRITEARGVALUE* WRITEARG;
   TLISTPTRS** ARGADDPOINT;
   PString tmp1;
+  PString tmp2;
+  PString tmp3;
   NEWLINE = cmp_str(CoEq, CpStringPtr, &FNEXPR->PSFNPTR->NAME, CpLenPtr, 7, "WRITELN");
   EXDISPOSE(&FNEXPR);
   DEF = ({ tmp1 = str_make(6, "OUTPUT"); FINDNAMEOFCLASS(&tmp1, SDCVARIABLE, 1); });
@@ -5540,14 +5555,14 @@ TSEXPRESSIONOBJ* _MODIOWRITE_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
         EXDISPOSE(&OUTFILE);
         OUTFILE = WRITEVALUE.ARG;
         if (NEWLINE && !ISTEXTTYPE(OUTFILE->TYPEPTR)) {
-          tmp1 = str_make(29, "Invalid file type for WRITELN");
-          ERRORFOREXPR(&tmp1, OUTFILE);
+          tmp2 = str_make(29, "Invalid file type for WRITELN");
+          ERRORFOREXPR(&tmp2, OUTFILE);
         }
       }
       else {
         if (!_MODIO_TYPEISVALIDFORFILEWRITE(OUTFILE, WRITEVALUE.ARG)) {
-          tmp1 = CONCAT(CpLenPtr, 41, "Expression has invalid type for WRITE on ", CpEnd | CpString, TYPENAME(OUTFILE->TYPEPTR));
-          ERRORFOREXPR(&tmp1, WRITEVALUE.ARG);
+          tmp3 = CONCAT(CpLenPtr, 41, "Expression has invalid type for WRITE on ", CpEnd | CpString, TYPENAME(OUTFILE->TYPEPTR));
+          ERRORFOREXPR(&tmp3, WRITEVALUE.ARG);
         }
         if (_MODIO_NEEDSTOMAKEADDRESSABLE(OUTFILE, WRITEVALUE.ARG)) {
           if (RESULT == PNil) {
@@ -5689,41 +5704,54 @@ void _ADDCONSTFILEFUN(PString NAME, TSDTYPEDEF* RETURNTYPEPTR) {
 void REGISTERGLOBALS_IO() {
   PString tmp1;
   TSDVARIABLEDEF tmp2;
-  TSDSUBROUTINEDEF tmp3;
-  PString tmp4;
+  PString tmp3;
+  TSDVARIABLEDEF tmp4;
+  PString tmp5;
+  TSDVARIABLEDEF tmp6;
+  PString tmp7;
+  PString tmp8;
+  PString tmp9;
+  PString tmp10;
+  PString tmp11;
+  PString tmp12;
+  TSDSUBROUTINEDEF tmp13;
+  PString tmp14;
+  PString tmp15;
+  PString tmp16;
+  PString tmp17;
   tmp2 = ({ tmp1 = str_make(5, "INPUT"); MAKEVARIABLE(&tmp1, PRIMITIVETYPES.PTTEXT); });
   ADDVARIABLE(&tmp2);
-  tmp2 = ({ tmp1 = str_make(6, "OUTPUT"); MAKEVARIABLE(&tmp1, PRIMITIVETYPES.PTTEXT); });
-  ADDVARIABLE(&tmp2);
-  tmp2 = ({ tmp1 = str_make(6, "STDERR"); MAKEVARIABLE(&tmp1, PRIMITIVETYPES.PTTEXT); });
-  ADDVARIABLE(&tmp2);
-  tmp1 = str_make(4, "READ");
-  ADDPSFN(&tmp1, &_MODIOREAD_PARSE);
-  tmp1 = str_make(6, "READLN");
-  ADDPSFN(&tmp1, &_MODIOREAD_PARSE);
-  tmp1 = str_make(5, "WRITE");
-  ADDPSFN(&tmp1, &_MODIOWRITE_PARSE);
-  tmp1 = str_make(7, "WRITELN");
-  ADDPSFN(&tmp1, &_MODIOWRITE_PARSE);
-  _ADDFILEPROC1(str_make(6, "ASSIGN"), ({ tmp1 = str_make(4, "NAME"); MAKECONSTARG(&tmp1, PRIMITIVETYPES.PTSTRING); }));
+  tmp4 = ({ tmp3 = str_make(6, "OUTPUT"); MAKEVARIABLE(&tmp3, PRIMITIVETYPES.PTTEXT); });
+  ADDVARIABLE(&tmp4);
+  tmp6 = ({ tmp5 = str_make(6, "STDERR"); MAKEVARIABLE(&tmp5, PRIMITIVETYPES.PTTEXT); });
+  ADDVARIABLE(&tmp6);
+  tmp7 = str_make(4, "READ");
+  ADDPSFN(&tmp7, &_MODIOREAD_PARSE);
+  tmp8 = str_make(6, "READLN");
+  ADDPSFN(&tmp8, &_MODIOREAD_PARSE);
+  tmp9 = str_make(5, "WRITE");
+  ADDPSFN(&tmp9, &_MODIOWRITE_PARSE);
+  tmp10 = str_make(7, "WRITELN");
+  ADDPSFN(&tmp10, &_MODIOWRITE_PARSE);
+  _ADDFILEPROC1(str_make(6, "ASSIGN"), ({ tmp11 = str_make(4, "NAME"); MAKECONSTARG(&tmp11, PRIMITIVETYPES.PTSTRING); }));
   _ADDFILEPROC(str_make(5, "CLOSE"));
   _ADDFILEFUN(str_make(3, "EOF"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDFILEFUN(str_make(4, "EOLN"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDCONSTFILEFUN(str_make(7, "FILEPOS"), PRIMITIVETYPES.PTINTEGER);
   _ADDCONSTFILEFUN(str_make(8, "FILESIZE"), PRIMITIVETYPES.PTINTEGER);
   _ADDFILEPROC(str_make(5, "FLUSH"));
-  tmp3 = ({ tmp1 = str_make(8, "IORESULT"); MAKEFUNCTION0(&tmp1, PRIMITIVETYPES.PTINTEGER); });
-  ADDFUNCTION(&tmp3);
+  tmp13 = ({ tmp12 = str_make(8, "IORESULT"); MAKEFUNCTION0(&tmp12, PRIMITIVETYPES.PTINTEGER); });
+  ADDFUNCTION(&tmp13);
   _ADDFILERESETPROC(str_make(5, "RESET"));
   _ADDFILERESETPROC(str_make(7, "REWRITE"));
-  _ADDFILEPROC1(str_make(4, "SEEK"), ({ tmp1 = str_make(3, "POS"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); }));
+  _ADDFILEPROC1(str_make(4, "SEEK"), ({ tmp14 = str_make(3, "POS"); MAKEARG(&tmp14, PRIMITIVETYPES.PTINTEGER); }));
   _ADDFILEFUN(str_make(7, "SEEKEOF"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDFILEFUN(str_make(8, "SEEKEOLN"), PRIMITIVETYPES.PTBOOLEAN);
   _ADDDIRPROC(str_make(5, "CHDIR"));
   _ADDFILEPROC(str_make(5, "ERASE"));
-  _ADDIOPROC2(str_make(6, "GETDIR"), ({ tmp1 = str_make(5, "DRIVE"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); }), ({ tmp4 = str_make(3, "DIR"); MAKEVARARG(&tmp4, PRIMITIVETYPES.PTSTRING); }));
+  _ADDIOPROC2(str_make(6, "GETDIR"), ({ tmp15 = str_make(5, "DRIVE"); MAKEARG(&tmp15, PRIMITIVETYPES.PTINTEGER); }), ({ tmp16 = str_make(3, "DIR"); MAKEVARARG(&tmp16, PRIMITIVETYPES.PTSTRING); }));
   _ADDDIRPROC(str_make(5, "MKDIR"));
-  _ADDFILEPROC1(str_make(6, "RENAME"), ({ tmp4 = str_make(4, "NAME"); MAKECONSTARG(&tmp4, PRIMITIVETYPES.PTSTRING); }));
+  _ADDFILEPROC1(str_make(6, "RENAME"), ({ tmp17 = str_make(4, "NAME"); MAKECONSTARG(&tmp17, PRIMITIVETYPES.PTSTRING); }));
   _ADDDIRPROC(str_make(5, "RMDIR"));
 }
 
@@ -5743,43 +5771,88 @@ void REGISTERGLOBALS_MATH() {
   PString tmp1;
   TSDCONSTANTDEF tmp2;
   PString tmp3;
-  TSDSUBROUTINEDEF tmp4;
+  PString tmp4;
+  PString tmp5;
+  PString tmp6;
+  TSDSUBROUTINEDEF tmp7;
+  PString tmp8;
+  PString tmp9;
+  TSDSUBROUTINEDEF tmp10;
+  PString tmp11;
+  PString tmp12;
+  TSDSUBROUTINEDEF tmp13;
+  PString tmp14;
+  PString tmp15;
+  TSDSUBROUTINEDEF tmp16;
+  PString tmp17;
+  PString tmp18;
+  TSDSUBROUTINEDEF tmp19;
+  PString tmp20;
+  PString tmp21;
+  TSDSUBROUTINEDEF tmp22;
+  PString tmp23;
+  PString tmp24;
+  TSDSUBROUTINEDEF tmp25;
+  PString tmp26;
+  PString tmp27;
+  TSDSUBROUTINEDEF tmp28;
+  PString tmp29;
+  PString tmp30;
+  TSDSUBROUTINEDEF tmp31;
+  PString tmp32;
+  PString tmp33;
+  TSDSUBROUTINEDEF tmp34;
+  PString tmp35;
+  PString tmp36;
+  TSDSUBROUTINEDEF tmp37;
+  PString tmp38;
+  PString tmp39;
+  TSDSUBROUTINEDEF tmp40;
+  PString tmp41;
+  PString tmp42;
+  TSDSUBROUTINEDEF tmp43;
+  PString tmp44;
+  PString tmp45;
+  TSDSUBROUTINEDEF tmp46;
+  PString tmp47;
+  PString tmp48;
+  TSDSUBROUTINEDEF tmp49;
   tmp2 = ({ tmp1 = str_make(2, "PI"); MAKECONSTANT(&tmp1, EXREALCONSTANT( 3.14159265358979E+000)); });
   ADDCONSTANT(&tmp2);
-  tmp1 = str_make(3, "ABS");
-  ADDPSFN(&tmp1, &_MODMATH_ABS_PARSE);
-  tmp1 = str_make(3, "SQR");
-  ADDPSFN(&tmp1, &_MODMATH_SQR_PARSE);
-  tmp4 = ({ tmp3 = str_make(5, "ABS_i"); MAKEFUNCTION1(&tmp3, PRIMITIVETYPES.PTINTEGER, ({ tmp1 = str_make(3, "NUM"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(5, "ABS_r"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(3, "NUM"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(6, "ARCTAN"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(3, "TAN"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(3, "COS"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(5, "ANGLE"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(3, "EXP"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(3, "POW"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(4, "FRAC"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(3, "INT"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(2, "LN"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(3, "ODD"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTBOOLEAN, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(5, "ROUND"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTINTEGER, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(3, "SIN"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(5, "ANGLE"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(5, "SQR_i"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTINTEGER, ({ tmp3 = str_make(3, "NUM"); MAKEARG(&tmp3, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(5, "SQR_r"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_make(3, "NUM"); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(4, "SQRT"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTREAL, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp1 = str_make(5, "TRUNC"); MAKEFUNCTION1(&tmp1, PRIMITIVETYPES.PTINTEGER, ({ tmp3 = str_of('X'); MAKEARG(&tmp3, PRIMITIVETYPES.PTREAL); })); });
-  ADDFUNCTION(&tmp4);
+  tmp3 = str_make(3, "ABS");
+  ADDPSFN(&tmp3, &_MODMATH_ABS_PARSE);
+  tmp4 = str_make(3, "SQR");
+  ADDPSFN(&tmp4, &_MODMATH_SQR_PARSE);
+  tmp7 = ({ tmp6 = str_make(5, "ABS_i"); MAKEFUNCTION1(&tmp6, PRIMITIVETYPES.PTINTEGER, ({ tmp5 = str_make(3, "NUM"); MAKEARG(&tmp5, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp7);
+  tmp10 = ({ tmp9 = str_make(5, "ABS_r"); MAKEFUNCTION1(&tmp9, PRIMITIVETYPES.PTREAL, ({ tmp8 = str_make(3, "NUM"); MAKEARG(&tmp8, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp10);
+  tmp13 = ({ tmp12 = str_make(6, "ARCTAN"); MAKEFUNCTION1(&tmp12, PRIMITIVETYPES.PTREAL, ({ tmp11 = str_make(3, "TAN"); MAKEARG(&tmp11, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp13);
+  tmp16 = ({ tmp15 = str_make(3, "COS"); MAKEFUNCTION1(&tmp15, PRIMITIVETYPES.PTREAL, ({ tmp14 = str_make(5, "ANGLE"); MAKEARG(&tmp14, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp16);
+  tmp19 = ({ tmp18 = str_make(3, "EXP"); MAKEFUNCTION1(&tmp18, PRIMITIVETYPES.PTREAL, ({ tmp17 = str_make(3, "POW"); MAKEARG(&tmp17, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp19);
+  tmp22 = ({ tmp21 = str_make(4, "FRAC"); MAKEFUNCTION1(&tmp21, PRIMITIVETYPES.PTREAL, ({ tmp20 = str_of('X'); MAKEARG(&tmp20, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp22);
+  tmp25 = ({ tmp24 = str_make(3, "INT"); MAKEFUNCTION1(&tmp24, PRIMITIVETYPES.PTREAL, ({ tmp23 = str_of('X'); MAKEARG(&tmp23, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp25);
+  tmp28 = ({ tmp27 = str_make(2, "LN"); MAKEFUNCTION1(&tmp27, PRIMITIVETYPES.PTREAL, ({ tmp26 = str_of('X'); MAKEARG(&tmp26, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp28);
+  tmp31 = ({ tmp30 = str_make(3, "ODD"); MAKEFUNCTION1(&tmp30, PRIMITIVETYPES.PTBOOLEAN, ({ tmp29 = str_of('X'); MAKEARG(&tmp29, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp31);
+  tmp34 = ({ tmp33 = str_make(5, "ROUND"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTINTEGER, ({ tmp32 = str_of('X'); MAKEARG(&tmp32, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp34);
+  tmp37 = ({ tmp36 = str_make(3, "SIN"); MAKEFUNCTION1(&tmp36, PRIMITIVETYPES.PTREAL, ({ tmp35 = str_make(5, "ANGLE"); MAKEARG(&tmp35, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp37);
+  tmp40 = ({ tmp39 = str_make(5, "SQR_i"); MAKEFUNCTION1(&tmp39, PRIMITIVETYPES.PTINTEGER, ({ tmp38 = str_make(3, "NUM"); MAKEARG(&tmp38, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp40);
+  tmp43 = ({ tmp42 = str_make(5, "SQR_r"); MAKEFUNCTION1(&tmp42, PRIMITIVETYPES.PTREAL, ({ tmp41 = str_make(3, "NUM"); MAKEARG(&tmp41, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp43);
+  tmp46 = ({ tmp45 = str_make(4, "SQRT"); MAKEFUNCTION1(&tmp45, PRIMITIVETYPES.PTREAL, ({ tmp44 = str_of('X'); MAKEARG(&tmp44, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp46);
+  tmp49 = ({ tmp48 = str_make(5, "TRUNC"); MAKEFUNCTION1(&tmp48, PRIMITIVETYPES.PTINTEGER, ({ tmp47 = str_of('X'); MAKEARG(&tmp47, PRIMITIVETYPES.PTREAL); })); });
+  ADDFUNCTION(&tmp49);
 }
 
 TSEXPRESSIONOBJ* _MODSTRINGS_CONCAT_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
@@ -5855,91 +5928,156 @@ TSEXPRESSIONOBJ* _MODSTRINGS_VAL_PARSE(TSEXPRESSIONOBJ* FNEXPR) {
 void REGISTERGLOBALS_STRINGS() {
   PString tmp1;
   PString tmp2;
-  TSDSUBROUTINEDEF tmp3;
+  PString tmp3;
   PString tmp4;
   PString tmp5;
+  TSDSUBROUTINEDEF tmp6;
+  PString tmp7;
+  PString tmp8;
+  PString tmp9;
+  PString tmp10;
+  TSDSUBROUTINEDEF tmp11;
+  PString tmp12;
+  PString tmp13;
+  PString tmp14;
+  PString tmp15;
+  TSDSUBROUTINEDEF tmp16;
+  PString tmp17;
+  PString tmp18;
+  PString tmp19;
+  PString tmp20;
+  TSDSUBROUTINEDEF tmp21;
+  PString tmp22;
+  PString tmp23;
+  TSDSUBROUTINEDEF tmp24;
+  PString tmp25;
+  PString tmp26;
+  TSDSUBROUTINEDEF tmp27;
+  PString tmp28;
+  PString tmp29;
+  PString tmp30;
+  TSDSUBROUTINEDEF tmp31;
+  PString tmp32;
+  PString tmp33;
+  TSDSUBROUTINEDEF tmp34;
   tmp1 = str_make(6, "CONCAT");
   ADDPSFN(&tmp1, &_MODSTRINGS_CONCAT_PARSE);
-  tmp1 = str_make(3, "STR");
-  ADDPSFN(&tmp1, &_MODSTRINGS_STR_PARSE);
-  tmp1 = str_make(3, "VAL");
-  ADDPSFN(&tmp1, &_MODSTRINGS_VAL_PARSE);
-  tmp3 = ({ tmp2 = str_make(3, "CHR"); MAKEFUNCTION1(&tmp2, PRIMITIVETYPES.PTCHAR, ({ tmp1 = str_make(3, "POS"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp5 = str_make(4, "COPY"); MAKEFUNCTION3(&tmp5, PRIMITIVETYPES.PTSTRING, ({ tmp2 = str_make(3, "STR"); MAKECONSTARG(&tmp2, PRIMITIVETYPES.PTSTRING); }), ({ tmp1 = str_make(3, "POS"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); }), ({ tmp4 = str_make(3, "NUM"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp1 = str_make(6, "DELETE"); MAKEPROCEDURE3(&tmp1, ({ tmp5 = str_make(3, "STR"); MAKEVARARG(&tmp5, PRIMITIVETYPES.PTSTRING); }), ({ tmp4 = str_make(3, "POS"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); }), ({ tmp2 = str_make(3, "NUM"); MAKEARG(&tmp2, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp1 = str_make(6, "INSERT"); MAKEPROCEDURE3(&tmp1, ({ tmp5 = str_make(3, "INS"); MAKECONSTARG(&tmp5, PRIMITIVETYPES.PTSTRING); }), ({ tmp4 = str_make(6, "TARGET"); MAKEVARARG(&tmp4, PRIMITIVETYPES.PTSTRING); }), ({ tmp2 = str_make(3, "POS"); MAKEARG(&tmp2, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp4 = str_make(6, "LENGTH"); MAKEFUNCTION1(&tmp4, PRIMITIVETYPES.PTINTEGER, ({ tmp5 = str_make(3, "STR"); MAKECONSTARG(&tmp5, PRIMITIVETYPES.PTSTRING); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp4 = str_make(9, "LOWERCASE"); MAKEFUNCTION1(&tmp4, PRIMITIVETYPES.PTCHAR, ({ tmp5 = str_make(3, "CHR"); MAKEARG(&tmp5, PRIMITIVETYPES.PTCHAR); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp2 = str_make(3, "POS"); MAKEFUNCTION2(&tmp2, PRIMITIVETYPES.PTINTEGER, ({ tmp5 = str_make(6, "NEEDLE"); MAKECONSTARG(&tmp5, PRIMITIVETYPES.PTSTRING); }), ({ tmp4 = str_make(8, "HAYSTACK"); MAKECONSTARG(&tmp4, PRIMITIVETYPES.PTSTRING); })); });
-  ADDFUNCTION(&tmp3);
-  tmp3 = ({ tmp4 = str_make(6, "UPCASE"); MAKEFUNCTION1(&tmp4, PRIMITIVETYPES.PTCHAR, ({ tmp5 = str_make(3, "CHR"); MAKEARG(&tmp5, PRIMITIVETYPES.PTCHAR); })); });
-  ADDFUNCTION(&tmp3);
+  tmp2 = str_make(3, "STR");
+  ADDPSFN(&tmp2, &_MODSTRINGS_STR_PARSE);
+  tmp3 = str_make(3, "VAL");
+  ADDPSFN(&tmp3, &_MODSTRINGS_VAL_PARSE);
+  tmp6 = ({ tmp5 = str_make(3, "CHR"); MAKEFUNCTION1(&tmp5, PRIMITIVETYPES.PTCHAR, ({ tmp4 = str_make(3, "POS"); MAKEARG(&tmp4, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp6);
+  tmp11 = ({ tmp10 = str_make(4, "COPY"); MAKEFUNCTION3(&tmp10, PRIMITIVETYPES.PTSTRING, ({ tmp7 = str_make(3, "STR"); MAKECONSTARG(&tmp7, PRIMITIVETYPES.PTSTRING); }), ({ tmp8 = str_make(3, "POS"); MAKEARG(&tmp8, PRIMITIVETYPES.PTINTEGER); }), ({ tmp9 = str_make(3, "NUM"); MAKEARG(&tmp9, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp11);
+  tmp16 = ({ tmp15 = str_make(6, "DELETE"); MAKEPROCEDURE3(&tmp15, ({ tmp12 = str_make(3, "STR"); MAKEVARARG(&tmp12, PRIMITIVETYPES.PTSTRING); }), ({ tmp13 = str_make(3, "POS"); MAKEARG(&tmp13, PRIMITIVETYPES.PTINTEGER); }), ({ tmp14 = str_make(3, "NUM"); MAKEARG(&tmp14, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp16);
+  tmp21 = ({ tmp20 = str_make(6, "INSERT"); MAKEPROCEDURE3(&tmp20, ({ tmp17 = str_make(3, "INS"); MAKECONSTARG(&tmp17, PRIMITIVETYPES.PTSTRING); }), ({ tmp18 = str_make(6, "TARGET"); MAKEVARARG(&tmp18, PRIMITIVETYPES.PTSTRING); }), ({ tmp19 = str_make(3, "POS"); MAKEARG(&tmp19, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp21);
+  tmp24 = ({ tmp23 = str_make(6, "LENGTH"); MAKEFUNCTION1(&tmp23, PRIMITIVETYPES.PTINTEGER, ({ tmp22 = str_make(3, "STR"); MAKECONSTARG(&tmp22, PRIMITIVETYPES.PTSTRING); })); });
+  ADDFUNCTION(&tmp24);
+  tmp27 = ({ tmp26 = str_make(9, "LOWERCASE"); MAKEFUNCTION1(&tmp26, PRIMITIVETYPES.PTCHAR, ({ tmp25 = str_make(3, "CHR"); MAKEARG(&tmp25, PRIMITIVETYPES.PTCHAR); })); });
+  ADDFUNCTION(&tmp27);
+  tmp31 = ({ tmp30 = str_make(3, "POS"); MAKEFUNCTION2(&tmp30, PRIMITIVETYPES.PTINTEGER, ({ tmp28 = str_make(6, "NEEDLE"); MAKECONSTARG(&tmp28, PRIMITIVETYPES.PTSTRING); }), ({ tmp29 = str_make(8, "HAYSTACK"); MAKECONSTARG(&tmp29, PRIMITIVETYPES.PTSTRING); })); });
+  ADDFUNCTION(&tmp31);
+  tmp34 = ({ tmp33 = str_make(6, "UPCASE"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTCHAR, ({ tmp32 = str_make(3, "CHR"); MAKEARG(&tmp32, PRIMITIVETYPES.PTCHAR); })); });
+  ADDFUNCTION(&tmp34);
 }
 
 void CREATEGLOBALDEFINITIONS() {
   TSDEFENTRY* DEF;
   PString tmp1;
-  TSDCONSTANTDEF tmp2;
+  PString tmp2;
   PString tmp3;
-  TSDSUBROUTINEDEF tmp4;
+  PString tmp4;
   PString tmp5;
+  PString tmp6;
+  PString tmp7;
+  TSDCONSTANTDEF tmp8;
+  PString tmp9;
+  TSDCONSTANTDEF tmp10;
+  PString tmp11;
+  TSDCONSTANTDEF tmp12;
+  PString tmp13;
+  PString tmp14;
+  PString tmp15;
+  PString tmp16;
+  PString tmp17;
+  PString tmp18;
+  PString tmp19;
+  PString tmp20;
+  TSDSUBROUTINEDEF tmp21;
+  PString tmp22;
+  PString tmp23;
+  PString tmp24;
+  TSDSUBROUTINEDEF tmp25;
+  PString tmp26;
+  PString tmp27;
+  PString tmp28;
+  TSDSUBROUTINEDEF tmp29;
+  PString tmp30;
+  TSDSUBROUTINEDEF tmp31;
+  PString tmp32;
+  PString tmp33;
+  TSDSUBROUTINEDEF tmp34;
+  PString tmp35;
+  TSDSUBROUTINEDEF tmp36;
+  PString tmp37;
+  PString tmp38;
+  TSDSUBROUTINEDEF tmp39;
+  PString tmp40;
+  TSDSUBROUTINEDEF tmp41;
   New((void**)&GLOBALDEFINITIONS, sizeof(TSSCOPEOBJ));
   PUSHGLOBALDEFS(GLOBALDEFINITIONS);
   PRIMITIVETYPES.PTNIL = ({ tmp1 = str_make(3, "NIL"); MAKEBASETYPE(&tmp1, SDTCNIL); });
-  PRIMITIVETYPES.PTBOOLEAN = ({ tmp1 = str_make(7, "BOOLEAN"); MAKEBASETYPE(&tmp1, SDTCBOOLEAN); });
-  PRIMITIVETYPES.PTINTEGER = ({ tmp1 = str_make(7, "INTEGER"); MAKEBASETYPE(&tmp1, SDTCINTEGER); });
-  PRIMITIVETYPES.PTREAL = ({ tmp1 = str_make(4, "REAL"); MAKEBASETYPE(&tmp1, SDTCREAL); });
-  PRIMITIVETYPES.PTCHAR = ({ tmp1 = str_make(4, "CHAR"); MAKEBASETYPE(&tmp1, SDTCCHAR); });
-  PRIMITIVETYPES.PTSTRING = ({ tmp1 = str_make(6, "STRING"); MAKEBASETYPE(&tmp1, SDTCSTRING); });
+  PRIMITIVETYPES.PTBOOLEAN = ({ tmp2 = str_make(7, "BOOLEAN"); MAKEBASETYPE(&tmp2, SDTCBOOLEAN); });
+  PRIMITIVETYPES.PTINTEGER = ({ tmp3 = str_make(7, "INTEGER"); MAKEBASETYPE(&tmp3, SDTCINTEGER); });
+  PRIMITIVETYPES.PTREAL = ({ tmp4 = str_make(4, "REAL"); MAKEBASETYPE(&tmp4, SDTCREAL); });
+  PRIMITIVETYPES.PTCHAR = ({ tmp5 = str_make(4, "CHAR"); MAKEBASETYPE(&tmp5, SDTCCHAR); });
+  PRIMITIVETYPES.PTSTRING = ({ tmp6 = str_make(6, "STRING"); MAKEBASETYPE(&tmp6, SDTCSTRING); });
   PRIMITIVETYPES.PTTEXT = MAKETEXTTYPE();
   PRIMITIVETYPES.PTFILE = MAKEGENERICFILETYPE();
   PRIMITIVETYPES.PTEMPTYSET = MAKESETTYPE(PNil);
   PRIMITIVETYPES.PTUNTYPEDPTR = MAKEPOINTERTYPE(PNil);
-  tmp2 = ({ tmp1 = str_make(5, "FALSE"); MAKECONSTANT(&tmp1, EXBOOLEANCONSTANT(0)); });
-  ADDCONSTANT(&tmp2);
-  tmp2 = ({ tmp1 = str_make(4, "TRUE"); MAKECONSTANT(&tmp1, EXBOOLEANCONSTANT(1)); });
-  ADDCONSTANT(&tmp2);
-  tmp2 = ({ tmp1 = str_make(6, "MAXINT"); MAKECONSTANT(&tmp1, EXINTEGERCONSTANT(32767)); });
-  ADDCONSTANT(&tmp2);
-  tmp1 = str_make(3, "ORD");
-  ADDPSFN(&tmp1, &PFORD_PARSE);
-  tmp1 = str_make(4, "PRED");
-  ADDPSFN(&tmp1, &PFPRED_PARSE);
-  tmp1 = str_make(4, "SUCC");
-  ADDPSFN(&tmp1, &PFSUCC_PARSE);
-  tmp1 = str_make(7, "DISPOSE");
-  ADDPSFN(&tmp1, &PFDISPOSE_PARSE);
-  tmp1 = str_make(3, "NEW");
-  ADDPSFN(&tmp1, &PFNEW_PARSE);
-  tmp1 = str_make(6, "SIZEOF");
-  ADDPSFN(&tmp1, &PFSIZEOF_PARSE);
-  tmp4 = ({ tmp3 = str_make(7, "Dispose"); MAKEPROCEDURE1(&tmp3, ({ tmp1 = str_make(3, "PTR"); MAKEVARARG(&tmp1, PRIMITIVETYPES.PTUNTYPEDPTR); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp5 = str_make(3, "New"); MAKEPROCEDURE2(&tmp5, ({ tmp3 = str_make(3, "PTR"); MAKEVARARG(&tmp3, PRIMITIVETYPES.PTUNTYPEDPTR); }), ({ tmp1 = str_make(4, "SIZE"); MAKEARG(&tmp1, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
+  tmp8 = ({ tmp7 = str_make(5, "FALSE"); MAKECONSTANT(&tmp7, EXBOOLEANCONSTANT(0)); });
+  ADDCONSTANT(&tmp8);
+  tmp10 = ({ tmp9 = str_make(4, "TRUE"); MAKECONSTANT(&tmp9, EXBOOLEANCONSTANT(1)); });
+  ADDCONSTANT(&tmp10);
+  tmp12 = ({ tmp11 = str_make(6, "MAXINT"); MAKECONSTANT(&tmp11, EXINTEGERCONSTANT(32767)); });
+  ADDCONSTANT(&tmp12);
+  tmp13 = str_make(3, "ORD");
+  ADDPSFN(&tmp13, &PFORD_PARSE);
+  tmp14 = str_make(4, "PRED");
+  ADDPSFN(&tmp14, &PFPRED_PARSE);
+  tmp15 = str_make(4, "SUCC");
+  ADDPSFN(&tmp15, &PFSUCC_PARSE);
+  tmp16 = str_make(7, "DISPOSE");
+  ADDPSFN(&tmp16, &PFDISPOSE_PARSE);
+  tmp17 = str_make(3, "NEW");
+  ADDPSFN(&tmp17, &PFNEW_PARSE);
+  tmp18 = str_make(6, "SIZEOF");
+  ADDPSFN(&tmp18, &PFSIZEOF_PARSE);
+  tmp21 = ({ tmp20 = str_make(7, "Dispose"); MAKEPROCEDURE1(&tmp20, ({ tmp19 = str_make(3, "PTR"); MAKEVARARG(&tmp19, PRIMITIVETYPES.PTUNTYPEDPTR); })); });
+  ADDFUNCTION(&tmp21);
+  tmp25 = ({ tmp24 = str_make(3, "New"); MAKEPROCEDURE2(&tmp24, ({ tmp22 = str_make(3, "PTR"); MAKEVARARG(&tmp22, PRIMITIVETYPES.PTUNTYPEDPTR); }), ({ tmp23 = str_make(4, "SIZE"); MAKEARG(&tmp23, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp25);
   REGISTERGLOBALS_IO();
   REGISTERGLOBALS_MATH();
   REGISTERGLOBALS_STRINGS();
-  tmp5 = str_make(6, "RANDOM");
-  ADDPSFN(&tmp5, &PFRANDOM_PARSE);
-  tmp4 = ({ tmp3 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp3, ({ tmp5 = str_make(4, "CODE"); MAKEARG(&tmp5, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp5 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp5, PRIMITIVETYPES.PTINTEGER); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp3 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp3, PRIMITIVETYPES.PTSTRING, ({ tmp5 = str_of('I'); MAKEARG(&tmp5, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp5 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp5, PRIMITIVETYPES.PTREAL); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp3 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp3, PRIMITIVETYPES.PTINTEGER, ({ tmp5 = str_make(3, "NUM"); MAKEARG(&tmp5, PRIMITIVETYPES.PTINTEGER); })); });
-  ADDFUNCTION(&tmp4);
-  tmp4 = ({ tmp5 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp5); });
-  ADDFUNCTION(&tmp4);
+  tmp26 = str_make(6, "RANDOM");
+  ADDPSFN(&tmp26, &PFRANDOM_PARSE);
+  tmp29 = ({ tmp28 = str_make(4, "HALT"); MAKEPROCEDURE1(&tmp28, ({ tmp27 = str_make(4, "CODE"); MAKEARG(&tmp27, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp29);
+  tmp31 = ({ tmp30 = str_make(10, "PARAMCOUNT"); MAKEFUNCTION0(&tmp30, PRIMITIVETYPES.PTINTEGER); });
+  ADDFUNCTION(&tmp31);
+  tmp34 = ({ tmp33 = str_make(8, "PARAMSTR"); MAKEFUNCTION1(&tmp33, PRIMITIVETYPES.PTSTRING, ({ tmp32 = str_of('I'); MAKEARG(&tmp32, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp34);
+  tmp36 = ({ tmp35 = str_make(8, "RANDOM_n"); MAKEFUNCTION0(&tmp35, PRIMITIVETYPES.PTREAL); });
+  ADDFUNCTION(&tmp36);
+  tmp39 = ({ tmp38 = str_make(8, "RANDOM_i"); MAKEFUNCTION1(&tmp38, PRIMITIVETYPES.PTINTEGER, ({ tmp37 = str_make(3, "NUM"); MAKEARG(&tmp37, PRIMITIVETYPES.PTINTEGER); })); });
+  ADDFUNCTION(&tmp39);
+  tmp41 = ({ tmp40 = str_make(9, "RANDOMIZE"); MAKEPROCEDURE0(&tmp40); });
+  ADDFUNCTION(&tmp41);
   DEF = CURRENTSCOPE->LATESTDEF;
   while (DEF != PNil) {
     switch (DEF->CLS) {
@@ -7560,11 +7698,12 @@ void _CGC_OUTSTFOR(TCGC_OBJ* THIS, TSSTATEMENTOBJ* STMT) {
   TSDVARIABLEDEF FIRST;
   TSDVARIABLEDEF LAST;
   PString tmp1;
+  PString tmp2;
   WASMULTISTATEMENT = THIS->ISMULTISTATEMENT;
   LIMITTYPE = STMT->ITERATOR->TYPEPTR;
   if (ISENUMTYPE(LIMITTYPE)) LIMITTYPE = PRIMITIVETYPES.PTINTEGER;
   FIRST = ({ tmp1 = str_make(5, "first"); MAKEVARIABLE(&tmp1, LIMITTYPE); });
-  LAST = ({ tmp1 = str_make(4, "last"); MAKEVARIABLE(&tmp1, LIMITTYPE); });
+  LAST = ({ tmp2 = str_make(4, "last"); MAKEVARIABLE(&tmp2, LIMITTYPE); });
   _CGC_OUTINDENT(THIS);
   Write(&THIS->OUTPUT, 1, RwpLenPtr | RwpEnd, 5, "for (");
   _CGC_OUTVARIABLEDECLARATION(THIS, &FIRST);
@@ -8071,6 +8210,7 @@ PInteger EXGETORDINAL(TSEXPRESSIONOBJ* EXPR) {
   PInteger RESULT;
   PString tmp1;
   TSEIMMEDIATE* tmp2;
+  PString tmp3;
   if (!EXISIMMEDIATE(EXPR)) {
     tmp1 = str_make(27, "Expected an immediate value");
     ERRORFOREXPR(&tmp1, EXPR);
@@ -8090,8 +8230,8 @@ PInteger EXGETORDINAL(TSEXPRESSIONOBJ* EXPR) {
       RESULT = tmp2->ENUMORDINAL;
       break;
     default:
-      tmp1 = str_make(19, "Expected an ordinal");
-      ERRORFOREXPR(&tmp1, EXPR);
+      tmp3 = str_make(19, "Expected an ordinal");
+      ERRORFOREXPR(&tmp3, EXPR);
       break;
   }
   return RESULT;
