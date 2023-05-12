@@ -20,6 +20,7 @@ end;
 function Pf_Overload_Parse(FnExpr : TSExpression;
                            NamePrefix : string) : TSExpression;
 var 
+  Def : TSDefinition;
   Arg : TSExpression;
   Args : TSEFunctionArgs;
   SrPtr : TSDSubroutine;
@@ -34,15 +35,16 @@ begin
   end;
   if Arg = nil then
   begin
-    SrPtr := FindNameOfClass(NamePrefix + '_n',
-             SdncSubroutine, {Required=}true)^.SrPtr;
+    Def := FindNameOfClass(NamePrefix + '_n', SdcSubroutine, {Required=}true);
+    SrPtr := @Def^.SrDef;
     Args.Size := 0;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
   end
   else
   begin
-    SrPtr := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
-             SdncSubroutine, {Required=}true)^.SrPtr;
+    Def := FindNameOfClass(_Pf_Fun_Overload(NamePrefix, Arg^.TypePtr),
+             SdcSubroutine, {Required=}true);
+    SrPtr := @Def^.SrDef;
     Args.Size := 1;
     Args.Values[1] := Arg;
     Result := ExFunctionCall(ExFnRef(SrPtr), Args);
@@ -71,6 +73,7 @@ end;
 
 function PfDispose_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   Ptr : TSExpression;
   SrPtr : TSDSubroutine;
   Args : TSEFunctionArgs;
@@ -83,12 +86,14 @@ begin
   ExDispose(FnExpr);
   Args.Size := 1;
   Args.Values[1] := Ptr;
-  SrPtr := FindNameOfClass('Dispose', SdncSubroutine, {Required=}true)^.SrPtr;
+  Def := FindNameOfClass('Dispose', SdcSubroutine, {Required=}true);
+  SrPtr := @Def^.SrDef;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
 function PfNew_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   Ptr : TSExpression;
   SrPtr : TSDSubroutine;
   Args : TSEFunctionArgs;
@@ -102,7 +107,8 @@ begin
   Args.Size := 2;
   Args.Values[1] := Ptr;
   Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
-  SrPtr := FindNameOfClass('New', SdncSubroutine, {Required=}true)^.SrPtr;
+  Def := FindNameOfClass('New', SdcSubroutine, {Required=}true);
+  SrPtr := @Def^.SrDef;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
 
@@ -126,17 +132,17 @@ end;
 function PfSizeof_Parse(FnExpr : TSExpression) : TSExpression;
 var 
   Id : TPsIdentifier;
-  Found : TSDNameDef;
+  Found : TSDefinition;
 begin
   ExDispose(FnExpr);
   WantTokenAndRead(TkLparen);
   Id := PsIdentifier;
   WantTokenAndRead(TkRparen);
-  Found := FindName(Id.Name, {Required=}true)^;
-  if Found.Cls = SdncVariable then
-    Result := ExSizeof(Found.VarPtr^.TypePtr)
-  else if Found.Cls = SdncType then
-         Result := ExSizeof(Found.TypePtr)
+  Found := FindName(Id.Name, {Required=}true);
+  if Found^.Cls = SdcVariable then
+    Result := ExSizeof(Found^.VarDef.TypePtr)
+  else if Found^.Cls = SdcType then
+         Result := ExSizeof(@Found^.TypeDef)
   else
     CompileError('Expected a variable or a type identifier; got ' + Id.Name);
 end;

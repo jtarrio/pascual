@@ -12,11 +12,10 @@ begin
   PrimitiveTypes.PtReal := MakeBaseType('REAL', SdtcReal);
   PrimitiveTypes.PtChar := MakeBaseType('CHAR', SdtcChar);
   PrimitiveTypes.PtString := MakeBaseType('STRING', SdtcString);
-  PrimitiveTypes.PtText := AddTypeName('TEXT', MakeTextType)^.TypePtr;
+  PrimitiveTypes.PtText := MakeTextType;
   PrimitiveTypes.PtFile := MakeGenericFileType;
   PrimitiveTypes.PtEmptySet := MakeSetType(nil);
-  PrimitiveTypes.PtUntypedPtr := AddTypeName('POINTER', 
-                                 MakePointerType(nil))^.TypePtr;
+  PrimitiveTypes.PtUntypedPtr := MakePointerType(nil);
 
   { Mandatory constants }
   AddConstant(MakeConstant('FALSE', ExBooleanConstant(false)));

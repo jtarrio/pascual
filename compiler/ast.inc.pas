@@ -240,29 +240,8 @@ type
     IsActive : boolean;
   end;
 
-  { A name for a definition. }
-  TSDName = ^TSDNameDef;
-  TSDNameClass = (SdncConstant, SdncType, SdncVariable,
-                  SdncSubroutine, SdncPsfn);
-  TSDNameDef = record
-    { The name. }
-    Name : string;
-    { A pointer to the definition with this name. }
-    case Cls : TSDNameClass of 
-      { Untyped constant. }
-      SdncConstant : (ConstPtr : TSDConstant);
-      { Type. }
-      SdncType : (TypePtr : TSDType);
-      { Variable. }
-      SdncVariable : (VarPtr : TSDVariable);
-      { Subroutine. }
-      SdncSubroutine : (SrPtr : TSDSubroutine);
-      { Pseudo-function. }
-      SdncPsfn : (PsfnPtr : TSDPsfn)
-  end;
-
   { Definition class. }
-  TSDefClass = (SdcName, SdcType, SdcConstant, SdcVariable,
+  TSDefClass = (SdcType, SdcConstant, SdcVariable,
                 SdcSubroutine, SdcPsfn, SdcWithVar);
   { A defined type, constant, variable, etc. }
   TSDefEntry = record
@@ -284,8 +263,6 @@ type
       SdcPsfn : (PsfnDef : TSDPsfnDef);
       { Temporary variable. }
       SdcWithVar : (WithVarDef : TSDWithVarDef);
-      { Name. }
-      SdcName : (NameDef : TSDNameDef);
   end;
 
   { Element of an array value. }

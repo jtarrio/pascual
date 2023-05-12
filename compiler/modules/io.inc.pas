@@ -28,6 +28,7 @@ end;
 
 function _ModIoRead_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   First : boolean;
   ReadVar : TSExpression;
   InFile : TSExpression;
@@ -37,8 +38,8 @@ var
 begin
   NewLine := FnExpr^.PsfnPtr^.Name = 'READLN';
   ExDispose(FnExpr);
-  InFile := ExVariable(FindNameOfClass('INPUT',
-            SdncVariable, {Required=}true)^.VarPtr);
+  Def := FindNameOfClass('INPUT', SdcVariable, {Required=}true);
+  InFile := ExVariable(@Def^.VarDef);
   ArgList := nil;
   ArgAddPoint := List_GetAddPoint(ArgList);
   if Lexer.Token.Id = TkLparen then
@@ -89,6 +90,7 @@ end;
 
 function _ModIoWrite_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   First : boolean;
   WriteValue : TSEWriteArg;
   OutFile : TSExpression;
@@ -98,8 +100,8 @@ var
 begin
   NewLine := FnExpr^.PsfnPtr^.Name = 'WRITELN';
   ExDispose(FnExpr);
-  OutFile := ExVariable(FindNameOfClass('OUTPUT',
-             SdncVariable, {Required=}true)^.VarPtr);
+  Def := FindNameOfClass('OUTPUT', SdcVariable, {Required=}true);
+  OutFile := ExVariable(@Def^.VarDef);
   Result := nil;
   ArgList := nil;
   ArgAddPoint := List_GetAddPoint(ArgList);
@@ -163,6 +165,7 @@ end;
 
 function _ModIo_FileFun_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   Args : TSEFunctionArgs;
   FnName : string;
   SrPtr : TSDSubroutine;
@@ -170,7 +173,8 @@ begin
   FnName := FnExpr^.PsfnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
+  Def := FindNameOfClass(FnName, SdcSubroutine, {Required=}true);
+  SrPtr := @Def^.SrDef;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 1;
   Args.Values[Args.Size] := ExBooleanConstant(Options.CheckIoResult);
@@ -179,6 +183,7 @@ end;
 
 function _ModIo_FileResetFun_Parse(FnExpr : TSExpression) : TSExpression;
 var 
+  Def : TSDefinition;
   Args : TSEFunctionArgs;
   FnName : string;
   SrPtr : TSDSubroutine;
@@ -187,7 +192,8 @@ begin
   FnName := FnExpr^.PsfnPtr^.Name;
   _UpFirst(FnName);
   ExDispose(FnExpr);
-  SrPtr := FindNameOfClass(FnName, SdncSubroutine, {Required=}true)^.SrPtr;
+  Def := FindNameOfClass(FnName, SdcSubroutine, {Required=}true);
+  SrPtr := @Def^.SrDef;
   Args := PsFunctionArgs;
   Args.Size := Args.Size + 2;
   if Args.Values[1]^.Cls = SecToGenericFile then

@@ -788,7 +788,8 @@ begin
   Result^.TypePtr := TypePtr
 end;
 
-function ExRecordValue(TypePtr : TSDType; Fields : TSERecordField) : TSExpression;
+function ExRecordValue(TypePtr : TSDType;
+                       Fields : TSERecordField) : TSExpression;
 begin
   Result := _NewExpr(SecRecordValue);
   Result^.RecordField := Fields;
@@ -1262,9 +1263,8 @@ begin
     Replace :
               begin
                 Expr^.TypePtr := TypePtr;
-                if Expr^.Cls = SecSetValue then Expr^.SetBase^.TypePtr := 
-
-                                                                         TypePtr
+                if Expr^.Cls = SecSetValue then
+                  Expr^.SetBase^.TypePtr := TypePtr
               end;
     Pass : { do nothing };
   end;

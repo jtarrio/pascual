@@ -143,121 +143,74 @@ begin
   Result := Found
 end;
 
-function _DefIsName(var Item; var Ctx) : boolean;
+function _DefHasName(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
   Name : string absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcName) and (Name = Def^.NameDef.Name)
+  Result := ((Def^.Cls = SdcType) and (Def^.TypeDef.Name = Name))
+            or ((Def^.Cls = SdcConstant) and (Def^.ConstDef.Name = Name))
+            or ((Def^.Cls = SdcVariable) and (Def^.VarDef.Name = Name))
+            or ((Def^.Cls = SdcSubroutine) and (Def^.SrDef.Name = Name))
+            or ((Def^.Cls = SdcPsfn) and (Def^.PsfnDef.Name = Name))
 end;
 
 function _FindName(Name : string; Required : boolean;
-                   FromLocalScope : boolean) : TSDName;
+                   FromLocalScope : boolean) : TSDefinition;
 var 
   Def : TSDefinition;
 begin
-  if _FindDef(Def, @_DefIsName, Name, FromLocalScope) then
-    Result := @Def^.NameDef
+  if _FindDef(Def, @_DefHasName, Name, FromLocalScope) then Result := Def
   else if Required then CompileError('Unknown identifier: ' + Name)
   else Result := nil
 end;
 
-function _CheckNameClass(NamePtr : TSDName; Cls : TSDNameClass) : TSDName;
+procedure _CheckNameClass(Def : TSDefinition; Cls : TSDefClass;
+                          const Name : string);
 begin
-  if (NamePtr <> nil) and (NamePtr^.Cls <> Cls) then
+  if (Def <> nil) and (Def^.Cls <> Cls) then
     case Cls of 
-      SdncType : CompileError('Not a type: ' + NamePtr^.Name);
-      SdncVariable : CompileError('Not a variable: ' + NamePtr^.Name);
-      SdncSubroutine : CompileError('Not a procedure or function: ' +
-                                    NamePtr^.Name);
-      SdncPsfn : CompileError('Not a procedure or function: ' +
-                              NamePtr^.Name);
-      else InternalError('Name class mismatch for ' + NamePtr^.Name)
-    end;
-  _CheckNameClass := NamePtr
+      SdcType : CompileError('Not a type: ' + Name);
+      SdcVariable : CompileError('Not a variable: ' + Name);
+      SdcSubroutine : CompileError('Not a procedure or function: ' + Name);
+      SdcPsfn : CompileError('Not a procedure or function: ' + Name);
+      else InternalError('Name class mismatch for ' + Name)
+    end
 end;
 
 function FindNameInLocalScope(const Name : string;
-                              Required : boolean) : TSDName;
+                              Required : boolean) : TSDefinition;
 begin
   FindNameInLocalScope := _FindName(Name, Required, {FromLocalScope=}true)
 end;
 
-function FindNameOfClassInLocalScope(const Name : string; Cls : TSDNameClass;
-                                     Required : boolean) : TSDName;
+function FindNameOfClassInLocalScope(const Name : string; Cls : TSDefClass;
+                                     Required : boolean) : TSDefinition;
 begin
-  FindNameOfClassInLocalScope := _CheckNameClass(
-                                 FindNameInLocalScope(Name, Required), Cls)
+  Result := FindNameInLocalScope(Name, Required);
+  _CheckNameClass(Result, Cls, Name)
 end;
 
-function FindName(const Name : string; Required : boolean) : TSDName;
+function FindName(const Name : string; Required : boolean) : TSDefinition;
 begin
   FindName := _FindName(Name, Required, {FromLocalScope=}false)
 end;
 
-function FindNameOfClass(const Name : string; Cls : TSDNameClass;
-                         Required : boolean)
-: TSDName;
+function FindNameOfClass(const Name : string; Cls : TSDefClass;
+                         Required : boolean) : TSDefinition;
 begin
-  FindNameOfClass := _CheckNameClass(FindName(Name, Required), Cls)
-end;
-
-function _AddName(const Name : string; Cls : TSDNameClass) : TSDName;
-var Def : TSDefinition;
-begin
-  if FindNameInLocalScope(Name, {Required=}false) <> nil then
-    CompileError('Identifier ' + Name + ' already defined');
-  Def := _AddDef(SdcName);
-  Result := @Def^.NameDef;
-  Result^.Name := Name;
-  Result^.Cls := Cls
-end;
-
-function AddTypeName(const Name : string; Idx : TSDType) : TSDName;
-begin
-  Result := _AddName(Name, SdncType);
-  Result^.TypePtr := Idx
-end;
-
-function AddVariableName(const Name : string; Idx : TSDVariable) : TSDName;
-var 
-  Def : TSDName;
-begin
-  Def := _AddName(Name, SdncVariable);
-  Def^.VarPtr := Idx;
-  AddVariableName := Def
-end;
-
-function AddConstantName(const Name : string; Idx : TSDConstant) : TSDName;
-var 
-  Def : TSDName;
-begin
-  Def := _AddName(Name, SdncConstant);
-  Def^.ConstPtr := Idx;
-  Result := Def
-end;
-
-function AddFunctionName(const Name : string; Idx : TSDSubroutine) : TSDName;
-var 
-  Def : TSDName;
-begin
-  Def := _AddName(Name, SdncSubroutine);
-  Def^.SrPtr := Idx;
-  AddFunctionName := Def
+  Result := FindName(Name, Required);
+  _CheckNameClass(Result, Cls, Name)
 end;
 
 function AddPsfn(const Name : string;
                  Parse : TSDPsfnParser) : TSDPsfn;
-var 
-  NameDef : TSDName;
-  Def : TSDefinition;
+var Def : TSDefinition;
 begin
   Def := _AddDef(SdcPsfn);
   Def^.PsfnDef.Name := Name;
   Def^.PsfnDef.ParseFn := Parse;
-  NameDef := _AddName(Name, SdncPsfn);
-  NameDef^.PsfnPtr := @Def^.PsfnDef;
-  Result := NameDef^.PsfnPtr
+  Result := @Def^.PsfnDef
 end;
 
 function CopyType(TypePtr : TSDType) : TSDTypeDef;
@@ -625,7 +578,6 @@ begin
     CompileError('Identifier ' + Constant.Name + ' already defined');
   Def := _AddDef(SdcConstant);
   Result := @Def^.ConstDef;
-  AddConstantName(Constant.Name, Result);
   Result^ := Constant
 end;
 
@@ -636,7 +588,6 @@ begin
     CompileError('Identifier ' + VarDef.Name + ' already defined');
   Def := _AddDef(SdcVariable);
   Result := @Def^.VarDef;
-  AddVariableName(VarDef.Name, Result);
   Result^ := VarDef
 end;
 
@@ -671,35 +622,30 @@ begin
 end;
 
 function HasForwardDeclaration(const Name : string) : boolean;
-var 
-  NamePtr : TSDName;
+var Def : TSDefinition;
 begin
-  NamePtr := FindNameOfClassInLocalScope(Name,
-             SdncSubroutine, {Required=}false);
-  HasForwardDeclaration := (NamePtr <> nil)
-                           and (NamePtr^.SrPtr^.IsDeclaration)
+  Def := FindNameOfClassInLocalScope(Name, SdcSubroutine, {Required=}false);
+  HasForwardDeclaration := (Def <> nil) and (Def^.SrDef.IsDeclaration)
 end;
 
 function AddFunction(const Fun : TSDSubroutineDef) : TSDSubroutine;
 var 
   Def : TSDefinition;
-  NamePtr : TSDName;
   IsProcedure : boolean;
 begin
   IsProcedure := Fun.ReturnTypePtr = nil;
-  NamePtr := FindNameInLocalScope(Fun.Name, {Required=}false);
-  if NamePtr = nil then
+  Def := FindNameInLocalScope(Fun.Name, {Required=}false);
+  if Def = nil then
   begin
     Def := _AddDef(SdcSubroutine);
     Result := @Def^.SrDef;
-    Result^ := Fun;
-    AddFunctionName(Fun.Name, Result)
+    Result^ := Fun
   end
   else
   begin
-    if (NamePtr^.Cls <> SdncSubroutine) or Fun.IsDeclaration then
+    if (Def^.Cls <> SdcSubroutine) or Fun.IsDeclaration then
       CompileError('Identifier ' + Fun.Name + ' already defined');
-    Result := NamePtr^.SrPtr;
+    Result := @Def^.SrDef;
     if Result^.IsDeclaration then
     begin
       if ((Fun.Args.Count = 0) and (Fun.ReturnTypePtr = nil))
@@ -1012,8 +958,7 @@ end;
 function MakeBaseType(const Name : String; Cls : TSDTypeClass) : TSDType;
 begin
   Result := _NewType(Cls);
-  Result^.Name := Name;
-  AddTypeName(Name, Result)
+  Result^.Name := Name
 end;
 
 function _DefIsFileType(var Item; var Ctx) : boolean;
@@ -1051,7 +996,8 @@ end;
 
 function MakeTextType : TSDType;
 begin
-  Result := _MakeFileType(SdtfcText, nil)
+  Result := _MakeFileType(SdtfcText, nil);
+  Result^.Name := 'TEXT'
 end;
 
 function MakeFileType(TypePtr : TSDType) : TSDType;
@@ -1154,7 +1100,8 @@ begin
   else
   begin
     Result := _NewType(SdtcPointer);
-    Result^.PointedTypePtr := TypePtr
+    Result^.PointedTypePtr := TypePtr;
+    if TypePtr = nil then Result^.Name := 'POINTER'
   end
 end;
 
@@ -1251,6 +1198,5 @@ begin
   Result := _NewType(TypePtr^.Cls);
   Result^ := CopyType(TypePtr);
   Result^.Name := Name;
-  Result^.AliasFor := TypePtr;
-  AddTypeName(Name, Result)
+  Result^.AliasFor := TypePtr
 end;
