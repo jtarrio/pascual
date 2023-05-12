@@ -705,6 +705,44 @@ begin
   else FindFieldType := TypePtr^.RecPtr^.Fields[Pos].TypePtr
 end;
 
+function _DefIsTmpVar(var Item; var Ctx) : boolean;
+var 
+  Def : TSDefinition absolute Item;
+  VarDef : TSDVariableDef absolute Ctx;
+begin
+  Result := (Def^.Cls = SdcTmpVar)
+            and not Def^.TmpVarDef.InUse
+            and (Def^.TmpVarDef.VarDef.IsReference = VarDef.IsReference)
+            and (Def^.TmpVarDef.VarDef.TypePtr = VarDef.TypePtr)
+end;
+
+function GetTemporaryVariable(TypePtr : TSDType;
+                              IsReference : boolean) : TSDTmpVar;
+var 
+  Def : TSDefinition;
+  VarDef : TSDVariableDef;
+begin
+  VarDef.TypePtr := TypePtr;
+  VarDef.IsReference := IsReference;
+  if _FindDef(Def, @_DefIsTmpVar, VarDef, {FromLocalScope=}true) then
+    Result := @Def^.TmpVarDef
+  else
+  begin
+    VarDef.Name := 'tmp' + IntToStr(DefCounter(SctTmpVar));
+    VarDef.IsConstant := false;
+    VarDef.ConstantValue := nil;
+    VarDef.Location := nil;
+    VarDef.IsArgument := false;
+    VarDef.WasInitialized := true;
+    VarDef.WasUsed := true;
+    VarDef.IsAliasFor := nil;
+    Def := _AddDef(SdcTmpVar);
+    Result := @Def^.TmpVarDef;
+    Result^.VarDef := VarDef;
+  end;
+  Result^.InUse := true
+end;
+
 function _DefIsWithVar(var Item; var Ctx) : boolean;
 var 
   Def : TSDefinition absolute Item;
@@ -712,7 +750,7 @@ var
 begin
   Result := (Def^.Cls = SdcWithVar)
             and Def^.WithVarDef.IsActive
-            and (FindFieldType(Def^.WithVarDef.VarPtr^.TypePtr,
+            and (FindFieldType(Def^.WithVarDef.TmpVarPtr^.VarDef.TypePtr,
             Name, False) <> nil)
 end;
 
@@ -727,25 +765,15 @@ end;
 function AddWithVar(Base : TSExpression) : TSDWithVar;
 var 
   Def : TSDefinition;
-  TmpVar : TSDVariableDef;
-  TmpVarPtr : TSDVariable;
+  TmpVarPtr : TSDTmpVar;
 begin
   EnsureRecordExpr(Base);
 
-  TmpVar.Name := 'with' + IntToStr(DefCounter(SctTmpVar));
-  TmpVar.TypePtr := Base^.TypePtr;
-  TmpVar.IsConstant := false;
-  TmpVar.ConstantValue := nil;
-  TmpVar.IsReference := Base^.IsAddressable;
-  TmpVar.Location := nil;
-  TmpVar.IsArgument := false;
-  TmpVar.WasInitialized := true;
-  TmpVar.WasUsed := true;
-  TmpVar.IsAliasFor := ExCopy(Base);
-  TmpVarPtr := AddVariable(TmpVar);
+  TmpVarPtr := GetTemporaryVariable(Base^.TypePtr, Base^.IsAddressable);
+  TmpVarPtr^.VarDef.IsAliasFor := Base;
   Def := _AddDef(SdcWithVar);
   Result := @Def^.WithVarDef;
-  Result^.VarPtr := TmpVarPtr;
+  Result^.TmpVarPtr := TmpVarPtr;
   Result^.IsActive := true
 end;
 
@@ -817,13 +845,13 @@ begin
   Result.IsAliasFor := nil;
 end;
 
-function AddAliasVariable(const Prefix : string;
-                          TypePtr : TSDType;
+function AddAliasVariable(TypePtr : TSDType;
                           Expr : TSExpression) : TSDVariable;
+var TmpVar : TSDTmpVar;
 begin
-  Result := AddVariable(MakeVariable(Prefix + IntToStr(DefCounter(SctTmpVar)),
-            TypePtr));
-  Result^.IsAliasFor := ExCopy(Expr)
+  TmpVar := GetTemporaryVariable(TypePtr, {IsReference=}false);
+  Result := @TmpVar^.VarDef;
+  Result^.IsAliasFor := Expr
 end;
 
 function _MakeArg(const Name : string; TypePtr : TSDType;

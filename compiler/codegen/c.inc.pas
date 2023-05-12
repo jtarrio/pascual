@@ -1551,9 +1551,8 @@ procedure _CgC_OutDefinedTemporaryVariables(This : TCgC; Def : TSDefinition);
 begin
   while Def <> nil do
   begin
-    if (Def^.Cls = SdcVariable) and not Def^.VarDef.IsArgument
-       and (Def^.VarDef.IsAliasFor <> nil) then
-      _CgC_OutVariableDefinition(This, @Def^.VarDef);
+    if Def^.Cls = SdcTmpVar then
+      _CgC_OutVariableDefinition(This, @Def^.TmpVarDef.VarDef);
     Def := Def^.Newer
   end;
 end;

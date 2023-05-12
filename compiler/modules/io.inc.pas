@@ -134,7 +134,7 @@ begin
             ArgAddPoint := List_GetAddPoint(Result^.WriteArgs)
           end;
           Result := ExWithTmpVar(ExVariable(AddAliasVariable(
-                    'tmp', WriteValue.Arg^.TypePtr, WriteValue.Arg)),
+                    WriteValue.Arg^.TypePtr, WriteValue.Arg)),
                     WriteValue.Arg, Result);
           WriteValue.Arg := ExCopy(Result^.TmpVar)
         end;

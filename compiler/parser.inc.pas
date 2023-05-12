@@ -779,7 +779,7 @@ begin
   Found := FindName(Id.Name, {Required=}false);
   if WithVarPtr <> nil then
   begin
-    Expr := ExVariable(WithVarPtr^.VarPtr);
+    Expr := ExVariable(@WithVarPtr^.TmpVarPtr^.VarDef);
     Expr := ExFieldAccess(Expr,
             FindField(Expr^.TypePtr, Id.Name, {Required=}true))
   end
@@ -1300,8 +1300,9 @@ begin
     WantTokenAndRead(TkDo);
     Stmt := PsStatement
   end;
-  Result := StWith(ExVariable(WithVarPtr^.VarPtr), Base, Stmt);
-  WithVarPtr^.IsActive := false
+  Result := StWith(ExVariable(@WithVarPtr^.TmpVarPtr^.VarDef), Base, Stmt);
+  WithVarPtr^.IsActive := false;
+  WithVarPtr^.TmpVarPtr^.InUse := false
 end;
 
 

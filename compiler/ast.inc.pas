@@ -231,18 +231,27 @@ type
     ParseFn : TSDPsfnParser
   end;
 
+  { Temporary variable. }
+  TSDTmpVar = ^TSDTmpVarDef;
+  TSDTmpVarDef = record
+    { Temporary variable definition. }
+    VarDef : TSDVariableDef;
+    { Is this temporary variable in use? }
+    InUse : boolean
+  end;
+
   { "With" variable. }
   TSDWithVar = ^TSDWithVarDef;
   TSDWithVarDef = record
-    { Pointer to the "with" variable. }
-    VarPtr : TSDVariable;
+    { Pointer to the temporary variable. }
+    TmpVarPtr : TSDTmpVar;
     { Is this "with" variable active? }
-    IsActive : boolean;
+    IsActive : boolean
   end;
 
   { Definition class. }
   TSDefClass = (SdcType, SdcConstant, SdcVariable,
-                SdcSubroutine, SdcPsfn, SdcWithVar);
+                SdcSubroutine, SdcPsfn, SdcTmpVar, SdcWithVar);
   { A defined type, constant, variable, etc. }
   TSDefEntry = record
     { Older entry in the stack. }
@@ -261,6 +270,8 @@ type
       SdcSubroutine : (SrDef : TSDSubroutineDef);
       { Pseudo-function. }
       SdcPsfn : (PsfnDef : TSDPsfnDef);
+      { Temporary variable. }
+      SdcTmpVar : (TmpVarDef : TSDTmpVarDef);
       { "With" variable. }
       SdcWithVar : (WithVarDef : TSDWithVarDef);
   end;

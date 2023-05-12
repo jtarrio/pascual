@@ -1074,7 +1074,7 @@ begin
         if ArgDefs.Defs[Pos].IsConstant then
         begin
           Result := ExWithTmpVar(ExVariable(AddAliasVariable(
-                    'tmp', ArgDefs.Defs[Pos].TypePtr,
+                    ArgDefs.Defs[Pos].TypePtr,
                     FnCall^.CallArgs.Values[Pos])),
                     FnCall^.CallArgs.Values[Pos], Result);
           FnCall^.CallArgs.Values[Pos] := ExCopy(Result^.TmpVar)

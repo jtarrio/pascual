@@ -210,7 +210,7 @@ begin
   else Needle := ExCoerce(Needle, ElemType);
   if Needle^.IsFunctionResult then
   begin
-    TmpVar := AddAliasVariable('elem', ElemType, Needle);
+    TmpVar := AddAliasVariable(ElemType, Needle);
     Wanted := ExVariable(TmpVar)
   end
   else
