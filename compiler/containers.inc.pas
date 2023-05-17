@@ -1,15 +1,12 @@
-{ Stack. }
-{ They are designated by a "head" pointer which points to the last item in the }
-{ stack, or to nil if the stack is empty. }
+{ Linked stack. }
+{ Designated by a pointer to the last item in the stack, }
+{ or to nil if the stack is empty. }
 type 
   TStack = ^TStackPtrs;
   TStackPtrs = record
     { Link to the previous item in the stack. }
     { Points to nil if this is the first item in the stack. }
     Older : TStack;
-    { Link to the next item in the stack. }
-    { Points to nil item if this is the last item in the stack. }
-    Newer : TStack
   end;
   { A function that checks a predicate on an Item using a given Context. }
   TStackPredicate = function (var Item {: TStack};
@@ -22,8 +19,6 @@ var
   NewItem : TStack absolute Item;
 begin
   NewItem^.Older := TheHead;
-  NewItem^.Newer := Nil;
-  if TheHead <> nil then TheHead^.Newer := NewItem;
   TheHead := NewItem
 end;
 
@@ -61,6 +56,33 @@ begin
     else Item := Item^.Older
   end;
   Result := Found
+end;
+
+{ Double linked stack. }
+{ Designated by pointer to the last item in the stack, }
+{ or to nil if the stack is empty. }
+{ The Stack_GetOldest and Stack_Find functions also work for a TDStack. }
+type 
+  TDStack = ^TDStackPtrs;
+  TDStackPtrs = record
+    { Link to the previous item in the stack. }
+    { Points to nil if this is the first item in the stack. }
+    Older : TDStack;
+    { Link to the next item in the stack. }
+    { Points to nil item if this is the last item in the stack. }
+    Newer : TDStack
+  end;
+
+{ Adds the Item to the stack designated by Head. }
+procedure DStack_Push(var Head, Item {:TDStack});
+var 
+  TheHead : TDStack absolute Head;
+  NewItem : TDStack absolute Item;
+begin
+  NewItem^.Older := TheHead;
+  NewItem^.Newer := Nil;
+  if TheHead <> nil then TheHead^.Newer := NewItem;
+  TheHead := NewItem
 end;
 
 { Linked list. }

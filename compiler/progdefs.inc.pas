@@ -26,6 +26,7 @@ begin
   Defs^.Counters.RecordCtr := 0;
   Defs^.Counters.TmpVarCtr := 0;
   Defs^.CurrentFn := nil;
+  Defs^.WithVars := nil;
   CurrentScope := Defs
 end;
 
@@ -102,7 +103,7 @@ function _AddDef(Cls : TSDefClass) : TSDefinition;
 begin
   new(Result);
   Result^.Cls := Cls;
-  Stack_Push(CurrentScope^.LatestDef, Result)
+  DStack_Push(CurrentScope^.LatestDef, Result)
 end;
 
 procedure StartLocalScope(Defs : TSScope; NewFunction : TSDSubroutine);
@@ -111,6 +112,7 @@ begin
   Defs^.LatestDef := nil;
   Defs^.Counters := CurrentScope^.Counters;
   Defs^.CurrentFn := NewFunction;
+  Defs^.WithVars := nil;
   CurrentScope := Defs
 end;
 
@@ -735,36 +737,44 @@ end;
 
 function _DefIsWithVar(var Item; var Ctx) : boolean;
 var 
-  Def : TSDefinition absolute Item;
+  Def : TSWithVar absolute Item;
   Name : string absolute Ctx;
 begin
-  Result := (Def^.Cls = SdcWithVar)
-            and Def^.WithVarDef.IsActive
-            and (FindFieldType(Def^.WithVarDef.TmpVarPtr^.VarDef.TypePtr,
-            Name, False) <> nil)
+  Result := FindFieldType(Def^.TmpVarPtr^.VarDef.TypePtr, Name, False) <> nil
 end;
 
-function FindWithVar(Name : string) : TSDWithVar;
-var Def : TSDefinition;
+function FindWithVar(Name : string) : TSDVariable;
+var WithVar : TSWithVar;
 begin
-  if _FindDef(Def, @_DefIsWithVar, Name, {FromLocalScope=}true) then
-    Result := @Def^.WithVarDef
+  if Stack_Find(CurrentScope^.WithVars, WithVar, @_DefIsWithVar, Name) then
+    Result := @WithVar^.TmpVarPtr^.VarDef
   else Result := nil
 end;
 
-function AddWithVar(Base : TSExpression) : TSDWithVar;
-var 
-  Def : TSDefinition;
+function AddWithVar(Base : TSExpression) : TSDVariable;
+var
+  Def : TSWithVar;
   TmpVarPtr : TSDTmpVar;
 begin
   EnsureRecordExpr(Base);
 
   TmpVarPtr := GetTemporaryVariable(Base^.TypePtr, Base^.IsAddressable);
   TmpVarPtr^.VarDef.IsAliasFor := Base;
-  Def := _AddDef(SdcWithVar);
-  Result := @Def^.WithVarDef;
-  Result^.TmpVarPtr := TmpVarPtr;
-  Result^.IsActive := true
+  new(Def);
+  Def^.TmpVarPtr := TmpVarPtr;
+  Stack_Push(CurrentScope^.WithVars, Def);
+  Result := @TmpVarPtr^.VarDef
+end;
+
+procedure PopWithVar;
+var Def : TSWithVar;
+begin
+  Def := CurrentScope^.WithVars;
+  if Def <> nil then
+  begin
+    CurrentScope^.WithVars := Def^.Prev;
+    dispose(Def)
+  end
 end;
 
 function MakeConstant(const Name : string; Value : TSExpression)

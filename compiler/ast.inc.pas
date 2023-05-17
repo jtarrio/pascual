@@ -11,6 +11,8 @@ type
   TSExpression = ^TSExpressionObj;
   { A type. }
   TSDType = ^TSDTypeDef;
+  { A temporary variable. }
+  TSDTmpVar = ^TSDTmpVarDef;
   { A defined type, constant, variable, etc. }
   TSDefinition = ^TSDefEntry;
   { A subroutine. }
@@ -31,6 +33,15 @@ type
     TmpVarCtr : integer;
   end;
 
+  { An active "with" variable. }
+  TSWithVar = ^TSWithVarDef;
+  TSWithVarDef = record
+    { Pointer to the previous active definition. }
+    Prev : TSWithVar;
+    { Pointer to the temporary variable. }
+    TmpVarPtr : TSDTmpVar
+  end;
+
   { The set of defined objects for a function or global. }
   TSScope = ^TSScopeObj;
   TSScopeObj = record
@@ -42,6 +53,8 @@ type
     CurrentFn : TSDSubroutine;
     { Current state of the counters. }
     Counters : TSCounters;
+    { The current stack of active "with" variables. }
+    WithVars : TSWithVar;
   end;
 
   { An untyped constant. }
@@ -232,24 +245,14 @@ type
   end;
 
   { Temporary variable. }
-  TSDTmpVar = ^TSDTmpVarDef;
   TSDTmpVarDef = record
     { Temporary variable definition. }
     VarDef : TSDVariableDef
   end;
 
-  { "With" variable. }
-  TSDWithVar = ^TSDWithVarDef;
-  TSDWithVarDef = record
-    { Pointer to the temporary variable. }
-    TmpVarPtr : TSDTmpVar;
-    { Is this "with" variable active? }
-    IsActive : boolean
-  end;
-
   { Definition class. }
   TSDefClass = (SdcType, SdcConstant, SdcVariable,
-                SdcSubroutine, SdcPsfn, SdcTmpVar, SdcWithVar);
+                SdcSubroutine, SdcPsfn, SdcTmpVar);
   { A defined type, constant, variable, etc. }
   TSDefEntry = record
     { Older entry in the stack. }
@@ -270,8 +273,6 @@ type
       SdcPsfn : (PsfnDef : TSDPsfnDef);
       { Temporary variable. }
       SdcTmpVar : (TmpVarDef : TSDTmpVarDef);
-      { "With" variable. }
-      SdcWithVar : (WithVarDef : TSDWithVarDef);
   end;
 
   { Element of an array value. }

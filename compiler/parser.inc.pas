@@ -769,17 +769,17 @@ function _PsVariableInternal(ForStatement : boolean;
                              CallFns : boolean) : TSExpression;
 var 
   Id : TPsIdentifier;
-  WithVarPtr : TSDWithVar;
+  WithVar : TSDVariable;
   Found : TSDefinition;
   Expr : TSExpression;
   Done : boolean;
 begin
   Id := PsIdentifier;
-  WithVarPtr := FindWithVar(Id.Name);
+  WithVar := FindWithVar(Id.Name);
   Found := FindName(Id.Name, {Required=}false);
-  if WithVarPtr <> nil then
+  if WithVar <> nil then
   begin
-    Expr := ExVariable(@WithVarPtr^.TmpVarPtr^.VarDef);
+    Expr := ExVariable(WithVar);
     Expr := ExFieldAccess(Expr,
             FindField(Expr^.TypePtr, Id.Name, {Required=}true))
   end
@@ -1287,12 +1287,12 @@ end;
 function _PsWithStatementInner : TSStatement;
 var 
   Base : TSExpression;
-  WithVarPtr : TSDWithVar;
+  WithVar : TSDVariable;
   Stmt : TSStatement;
 begin
   ReadToken;
   Base := PsExpression;
-  WithVarPtr := AddWithVar(Base);
+  WithVar := AddWithVar(Base);
   WantToken2(TkComma, TkDo);
   if Lexer.Token.Id = TkComma then Stmt := _PsWithStatementInner
   else
@@ -1300,8 +1300,8 @@ begin
     WantTokenAndRead(TkDo);
     Stmt := PsStatement
   end;
-  Result := StWith(@WithVarPtr^.TmpVarPtr^.VarDef, Base, Stmt);
-  WithVarPtr^.IsActive := false
+  Result := StWith(WithVar, Base, Stmt);
+  PopWithVar
 end;
 
 
