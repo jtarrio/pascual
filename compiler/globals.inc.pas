@@ -43,6 +43,11 @@ begin
 
   { Misc subroutines }
   AddPsfn('RANDOM', @PfRandom_Parse);
+  AddFunction(MakeFunction0('ENVCOUNT', PrimitiveTypes.PtInteger));
+  AddFunction(MakeFunction1('ENVSTR', PrimitiveTypes.PtString,
+              MakeArg('I', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeFunction1('GETENV', PrimitiveTypes.PtString,
+              MakeConstArg('VARNAME', PrimitiveTypes.PtString)));
   AddFunction(MakeProcedure1('HALT',
               MakeArg('CODE', PrimitiveTypes.PtInteger)));
   AddFunction(MakeFunction0('PARAMCOUNT', PrimitiveTypes.PtInteger));
