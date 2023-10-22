@@ -670,6 +670,6 @@ begin
 end.
 ```
 
-Notice that type declarations use an equals sign (`=`) between the name and the definition.
+Notice that type declarations use an equals sign (`=`) between the name and the definition, while variable declarations use a colon (`:`). As far as we can tell, there is no reason for this difference other than being annoying for the sake of being annoying.
 
 (Also, notice that all the declared type names start with the letter `T`, a common practice by many programmers to avoid confusing type names with variable names. If we had named the type `Person` instead of `TPerson`, we wouldn't have been allowed to have a variable named `Person` too.)
