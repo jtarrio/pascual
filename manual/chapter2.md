@@ -117,7 +117,7 @@ $
 
 There are a couple of differences from the previous program that you may notice immediately.
 
-The first is the line starting with the keyword `var`. That keyword begins a _variable declaration block_.
+The first is the line starting with the `var` keyword. That keyword begins a _variable declaration block_.
 
 A variable is a portion of memory the program uses to store data. You can read data from variables and modify their content, so you can use them to store a value (either provided by the user or read from a file or the network), the results of calculations, intermediate steps, or generally anything that is not hardcoded into the program.
 
@@ -145,7 +145,7 @@ What happens if you try to use a variable you didn't declare beforehand?
 
 So far, we've seen calls to `writeln` with one and three parameters. How many parameters can `writeln` take? Can it take two? Four? Twenty? Zero? How do you even pass zero parameters to `writeln`? Do you need to use parentheses if you have zero parameters? What even _happens_ if you pass zero parameters to `writeln`?
 
-Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the keyword `var` twice, or can you get away with using it only once? (Hint: I said the keyword `var` _begins_ a variable declaration block.)
+Can you modify the program so it will also ask where the user is from? You may need to add another variable of type `string`. How do you think you can add another variable? Will semicolons be involved? Do you need to use the `var` keyword twice, or can you get away with using it only once? (Hint: I said the `var` keyword _begins_ a variable declaration block.)
 
 Do you need to have each statement in a separate line? How can you join them? Do you need to have each statement in a single line? Where can you split them?
 
@@ -466,7 +466,7 @@ The `for Count := 1 to Limit do` statement means: assign the value `1` to `Count
 
 So if the user entered `7` as the value of `Limit`, the output of this program would be: `1 2 fizz 4 buzz fizz 7`.
 
-In Pascal, the `for` statement can only count 1 at a time, up or down. If you want to count down, you need to use the keyword `downto` instead of `to`:
+In Pascal, the `for` statement can only count 1 at a time, up or down. If you want to count down, you need to use the `downto` keyword instead of `to`:
 
 ```pascal
 program Countdown;
@@ -480,36 +480,48 @@ end.
 
 ## Types
 
-Types are an essential concept in Pascal. Every possible value you can use in a program belongs to a type, which tells the compiler how much memory that value takes up in memory, what operations are allowed on the value, and how to represent that value in the program, in memory, and on the screen.
+Types are an essential concept in Pascal. Every value, every variable, and the result of every expression in a program belongs to a type, which tells the compiler what operations are allowed on the value, how much memory it takes up in memory, and how to represent that value in the source code, in memory, and on the screen.
 
-So far, we've seen variables defined as `string` and `integer`, but Pascal has three more built-in types: `boolean` (which handles true or false values), `real` (which works on floating-point numbers), and `char` (for single bytes in a `string`.)
+We have seen several types already: `integer`, to which values such as `0`, `5`, `-8`, and `42` belong; `string`, for values like `'Hello, world!`, `'Jacobo'`, or `''`; and `boolean`, for the values `false` and `true`. Pascal has two more built-in types: `real` (for numbers with decimal parts), and `char` (for single bytes in a `string`); if you'd like to know more about them, read the other chapters in this manual.
 
-Programmers can also create their types to use in their programs. This ability is something we take for granted now, but it was new when Pascal came out.
+Pascal also lets programmers create their own types to use in their programs. This ability is commonplace in modern languages but was new when Pascal was initially published.
 
 ### Enumerated types
 
-You can create an _enumerated type_, which can hold one value from a list of named values. Here is an example:
+You can create an _enumerated type_ by providing a list of allowed names for values enclosed in parentheses. Here is an example:
 
 ```pascal
-program EnumeratedTypes;
+program EnumeratedTypes1;
 var Direction : (North, South, East, West);
-    Month : (Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec);
-    Day : integer;
-    WeekDay : (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday);
 begin
   Direction := North;
   writeln('The direction is ', Direction);
   Direction := East;
-  writeln('Now the direction is ', Direction);
+  writeln('Now the direction is ', Direction)
+end.
+```
+
+In this example, the variable `Direction` can only take the values `North`, `South`, `East`, and `West`.
+
+A variable that belongs to an enumerated type cannot take values from a different enumerated type:
+
+```pascal
+program EnumeratedTypes2;
+var Month : (Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec);
+    Day : integer;
+    WeekDay : (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday);
+begin
   Month := Mar;
   Day := 24;
   WeekDay := Saturday;
   writeln('The date is ', Weekday, ', ', Month, ' ', Day);
-  { WeekDay := Jul;  // This is not valid! }
+  { WeekDay := Jul; <== This is not valid! }
 end.
 ```
 
-In the example above, the variables `Direction`, `Month`, and `WeekDay` belong to different enumerated types, and each one can only have a value from its list of enumerated values.
+In this example, the variables `Month` and `WeekDay` belong to different enumerated types. You can assign values such as `Jan` or `Aug` to `Month` and values like `Monday` or `Thursday` to `Weekday`, but you cannot assign `Jul` to `WeekDay` because that value belongs to the wrong type for the variable.
+
+You can compare two values from the same enumerated type, like comparing two numbers or strings. The order of the enumerated values is the order in which they appear in the type definition.
 
 ```pascal
 program EnumeratedTypeComparison;
@@ -522,8 +534,6 @@ begin
   writeln('Has improved: ', Improved)
 end.
 ```
-
-This example shows that you can compare two values from the same enumerated type, just like you can compare two numbers or two strings.
 
 You can also iterate through the values in an enumerated type, as in this example:
 
@@ -542,7 +552,9 @@ end.
 
 ### Arrays
 
-Another custom type you can create is an _array_, which is a series of values of a particular type that you can access through an index. Arrays are helpful when you need a list of values.
+Another custom type you can create is an _array_, which is a series of values of a particular type. You can access the values in an array through an index. Arrays are helpful when you need to hold a list of values.
+
+To show how arrays are declared and used, the following example will be a program that implements the sieve of Eratosthenes for all numbers up to 100:
 
 ```pascal
 program SieveOfEratosthenes;
@@ -566,15 +578,23 @@ begin
 end.
 ```
 
-The example above is an implementation of a Sieve of Eratosthenes. The `IsPrime` variable contains an array of booleans, numbered from 2 to 100; each boolean tells whether the boolean for its corresponding number is prime. Then, the first `for` loop sets all the booleans to `true`, and the second `for` loop executes the sieve, setting to `false` all the multiples of 2, 3, 4, all the way to 10. Finally, the last `for` loop iterates through the array, checking if each number is prime and writing it to the screen if so.
+(You might have built a sieve of Eratosthenes in school, but you may have forgotten how, so I'll remind you. You had to list all numbers from 2 to 100 and then strike out every number that's a multiple of 2 greater than 2, every number that's a multiple of 3 greater than 3, etc. When you finish, all the numbers remaining in the list are prime.)
 
-As in the example above, you can define an array with the syntax <code>array[_start_.._end_] of _type_</code>, where _start_ and _end_ are the first and last indexes of the array. You can access the values stored in an array with the syntax <code>_variable_[_index_]</code>.
+In this program, the `IsPrime` variable contains an array of booleans numbered from 2 to 100. Each element in `IsPrime` tells whether the corresponding number is prime.
 
-In other languages, arrays start at index 0 or 1, but in Pascal, you must always define the start index. In this example, we start at index 2 because we don't need to check if 1 is prime, so we don't need an array element.
+The first `for` loop sets all the elements of `IsPrime` to `true`, and the second `for` loop executes the sieve algorithm, setting to false all the multiples of 2, 3, 4, all the way to 10. Finally, the last `for` loop iterates through the array once more, checking if each number is prime and displaying it on the screen if so.
+
+To declare an array, you use the syntax <code>array[_start_.._end_] of _type_</code>, where _start_ and _end_ are the first and last indices of the array and _type_ is the type for each element of the array. You can access the elements of the array with the syntax <code>_variable_[_index_]</code>, where _index_ is a valid index in the array.
+
+Note that, in Pascal, you must declare the first and last indices of the array. In other languages, arrays always start at a particular index (typically 0 or 1, depending on the language). In this example, we use this by beginning the `IsPrime` array at index 2 because we don't need to check if 1 is prime.
+
+Try this at home: can you define arrays of arrays? How can you access an element in such a data type?
 
 ### Records
 
 Another common custom type is the _record_: a collection of values, possibly of different types, stored together. Records are helpful when you deal with structured data, such as entries in a file.
+
+A record contains one or more _fields_, each with a name and a type. Here is an example:
 
 ```pascal
 program RecordExample;
@@ -598,96 +618,58 @@ begin
 end.
 ```
 
-In this example, the variable `Person` is a record containing three fields: `FirstName` and `LastName` (both of type `string`), and `BirthDate`, a record with three fields.
+The variable `Person` is a record with three fields: `FirstName` and `LastName` (both of type `string`), and `BirthDate`, which is, in turn, another record with three fields.
 
 As you can see, you can access a field through the <code>_variable_._fieldname_</code> syntax, adding more <code>._fieldname_</code> as needed if you want to access a record within a record.
 
-You can combine all the custom types at will. For example, you can build an array of records as in this example:
-
-```pascal
-program CardDeck;
-var People : array [1..3] of record
-               Name : string;
-               Age : integer;
-              end;
-    I : integer;
-begin
-  People[1].Name := 'John Smith';
-  People[1].Age := 39;
-  People[2].Name := 'Mary Knight';
-  People[2].Age := 43;
-  People[3].Name := 'Pedro Ozores';
-  People[3].Age := 42;
-  for I := 1 to 3 do
-    writeln('Name: ', People[I].Name, ' ', People[I].Age)
-end.
-```
+You can combine all the custom types at will. You can build arrays of records, records with enumerated, array, or record fields, arrays of arrays, ...
 
 ### Type declarations
 
-In the previous examples, we defined our custom types with the variables that used them. That works well if we only need to use that type in one or two variables, but it breaks down if we use the same type in several variables in different parts of the program. You cannot define an enumeration type twice; trying to define the same record type twice will result in two different types that look the same.
+In the previous examples, we defined our custom types with the variables that used them. This works if we only need to use a custom type with one or two variables, but it breaks down if we want to use the same type in different parts of the program, which might force you to, for example, declare the same enumeration type twice, which is not allowed by Pascal.
 
-This example shows you what happens if you try to declare a `People` array of records and a `Person` variable holding a record of the same type as the `People` array:
-
-```pascal
-program DifferentTypesError;
-var People : array [1..3] of record
-               Name : string;
-               Age : integer;
-              end;
-    Person : record
-               Name : string;
-               Age : integer;
-              end;
-    I : integer;
-begin
-  People[1].Name := 'John Smith';
-  People[1].Age := 39;
-  People[2].Name := 'Mary Knight';
-  People[2].Age := 43;
-  People[3].Name := 'Pedro Ozores';
-  People[3].Age := 42;
-  for I := 1 to 3 do
-  begin
-    { Compile error: cannot assign People[I] to Person because they 
-      belong to different types, even if their definitions are identical. }
-    Person := People[I];
-    writeln('Name: ', Person.Name, ', Age: ', Person.Age)
-  end
-end.
-```
-
-In this example, the elements of the `People` array and the variable `Person` don't belong to the same type. They are both records and have the same fields with the same names and types; however, since they were declared separately, they are different types.
-
-If we want to use the same type for the elements of `People` and the variable `Person`, we need to create a name for our custom type and use it when we declare the variables:
+To solve this problem, you can use _type declarations_ to define your types and give them names to use elsewhere in your program. You put type declarations in a _type declaration block_, which starts with the `type` keyword.
 
 ```pascal
-program TypeDefinition;
-type TPerson = record
+program TypeDeclarations;
+type TMonth = Month : (Jan, Feb, Mar, Apr, May, Jun,
+                       Jul, Aug, Sep, Oct, Nov, Dec);
+     TDate = record
+               Year : integer;
+               Month : TMonth;
+               Day : integer;
+     end;
+     TPerson = record
                  Name : string;
-                 Age : integer;
-                end;
+                 Birthdate : TDate;
+               end;
 var People : array [1..3] of TPerson;
     Person : TPerson;
     I : integer;
 begin
   People[1].Name := 'John Smith';
-  People[1].Age := 39;
+  People[1].Birthdate.Year := 1983;
+  People[1].Birthdate.Month := Jun;
+  People[1].Birthdate.Day := 3;
   People[2].Name := 'Mary Knight';
-  People[2].Age := 43;
+  People[1].Birthdate.Year := 1979;
+  People[1].Birthdate.Month := Aug;
+  People[1].Birthdate.Day := 19;
   People[3].Name := 'Pedro Ozores';
-  People[3].Age := 42;
+  People[1].Birthdate.Year := 2004;
+  People[1].Birthdate.Month := Feb;
+  People[1].Birthdate.Day := 29;
   for I := 1 to 3 do
   begin
     Person := People[I];
-    writeln('Name: ', Person.Name, ', Age: ', Person.Age)
+    writeln('Name: ', Person.Name, ',
+            Birthdate: ', Person.Birthdate.Day, '-',
+                          Person.Birthdate.Month, '-',
+                          Person.Birthdate.Year)
   end
 end.
 ```
 
-In this example, the keyword `type` starts a _type declaration block_. It is similar to a variable declaration block but gives names to types. Notice that it uses an equals sign (`=`) between the type name and its definition; this tells us that `TPerson` is not a variable of that type; _it is_ that type.
+Notice that type declarations use an equals sign (`=`) between the name and the definition.
 
-After declaring the type `TPerson`, you can refer to it by name in variable declarations.
-
-(It is customary for declared type names to start with the letter `T` to avoid confusing them with variable names. If we had named the type `Person`, we wouldn't be allowed to have a variable named `Person` too.)
-
+(Also, notice that all the declared type names start with the letter `T`, a common practice by many programmers to avoid confusing type names with variable names. If we had named the type `Person` instead of `TPerson`, we wouldn't have been allowed to have a variable named `Person` too.)
