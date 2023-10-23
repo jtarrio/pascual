@@ -480,15 +480,23 @@ end.
 
 ## Types
 
-Types are an essential concept in Pascal. Every value, every variable, and the result of every expression in a program belongs to a type, which tells the compiler what operations are allowed on the value, how much memory it takes up in memory, and how to represent that value in the source code, in memory, and on the screen.
+Types are an essential concept in Pascal. Each piece of data that a program generates or uses has a type. When you declare a variable, you assign it a type. When you write a number or a string in your program, that number or string also has a type.
 
-We have seen several types already: `integer`, to which values such as `0`, `5`, `-8`, and `42` belong; `string`, for values like `'Hello, world!`, `'Jacobo'`, or `''`; and `boolean`, for the values `false` and `true`. Pascal has two more built-in types: `real` (for numbers with decimal parts), and `char` (for single bytes in a `string`); if you'd like to know more about them, read the other chapters in this manual.
+The type determines what operations are allowed on a value, how to store it in memory, how to represent it in the source code and on the screen, and how much memory it uses.
 
-Pascal also lets programmers create their own types to use in their programs. This ability is commonplace in modern languages but was new when Pascal was initially published.
+We've seen some of the built-in Pascal types in this chapter. For example, `integer` is the type to which whole numbers such as `42`, `5`, `-12`, or `0` belong. You can do arithmetic operations on integers, and you can compare them.
+
+Another type we've seen is `string`, which we use to hold text. You can specify `string` values in the source code by putting them between single quotes, like in `'Hello, world!'`. You can concatenate two strings, and you can also compare them.
+
+The third type we've seen in this chapter is `boolean`, which may contain the values `false` or `true`. The result of a comparison is a value of type `boolean`, and you can operate Boolean values using logical operators (`and`, `or`, and `not`).
+
+Pascal also has two other built-in types we haven't seen in this chapter: `real`, used for numbers with a decimal or fractional part, and `char`, used for single bytes.
+
+Pascal programmers are not limited to those five types: they can define their own to use in their programs. This ability to define new types is commonplace in modern programming languages but was new when Wirth published Pascal in 1970.
 
 ### Enumerated types
 
-You can create an _enumerated type_ by providing a list of allowed names for values enclosed in parentheses. Here is an example:
+Pascal's `boolean` type allows two values: `false` and `true`. You, too, can create your own _enumerated type_ that allows the values you specify. For example, you could create a type for cardinal directions that accepts the values `North`, `South`, `East`, and `West`:
 
 ```pascal
 program EnumeratedTypes1;
@@ -500,8 +508,6 @@ begin
   writeln('Now the direction is ', Direction)
 end.
 ```
-
-In this example, the variable `Direction` can only take the values `North`, `South`, `East`, and `West`.
 
 A variable that belongs to an enumerated type cannot take values from a different enumerated type:
 
@@ -521,7 +527,7 @@ end.
 
 In this example, the variables `Month` and `WeekDay` belong to different enumerated types. You can assign values such as `Jan` or `Aug` to `Month` and values like `Monday` or `Thursday` to `Weekday`, but you cannot assign `Jul` to `WeekDay` because that value belongs to the wrong type for the variable.
 
-You can compare two values from the same enumerated type, like comparing two numbers or strings. The order of the enumerated values is the order in which they appear in the type definition.
+You can compare two values from the same enumerated type. Their order is the same order in which you defined them.
 
 ```pascal
 program EnumeratedTypeComparison;
@@ -535,7 +541,7 @@ begin
 end.
 ```
 
-You can also iterate through the values in an enumerated type, as in this example:
+You can also use `for` loops to iterate through the values of an enumerated type. This program uses two `for` loops to show a list of all playing cards in a deck:
 
 ```pascal
 program CardDeck;
@@ -550,11 +556,15 @@ begin
 end.
 ```
 
+Try this at home: can you define two enumerated types with some values allowed in both types?
+
 ### Arrays
 
-Another custom type you can create is an _array_, which is a series of values of a particular type. You can access the values in an array through an index. Arrays are helpful when you need to hold a list of values.
+Sometimes, our programs need to work with lists of values. We could do this by defining as many variables as list elements, but it would soon become unwieldy. Instead, Pascal lets us define _array types_.
 
-To show how arrays are declared and used, the following example will be a program that implements the sieve of Eratosthenes for all numbers up to 100:
+An array is a series of values of a particular type. You can access the elements of the array (the values it contains) through an index.
+
+The following program implements a sieve of Eratosthenes for all natural numbers up to 100 to demonstrate how to declare and use arrays:
 
 ```pascal
 program SieveOfEratosthenes;
@@ -578,23 +588,25 @@ begin
 end.
 ```
 
-(You might have built a sieve of Eratosthenes in school, but you may have forgotten how, so I'll remind you. You had to list all numbers from 2 to 100 and then strike out every number that's a multiple of 2 greater than 2, every number that's a multiple of 3 greater than 3, etc. When you finish, all the numbers remaining in the list are prime.)
+(You may have forgotten what a sieve of Eratosthenes is, so I'll remind you. You build one by making a list of all numbers from 2 to 100 and then strike out every number that's a multiple of 2 greater than 2, then every multiple of 3 greater than 3, then 4, 5, etc. When you finish, all the numbers remaining in the list are prime.)
 
-In this program, the `IsPrime` variable contains an array of booleans numbered from 2 to 100. Each element in `IsPrime` tells whether the corresponding number is prime.
+The declaration for the `IsPrime` variable says it is an array of booleans numbered from 2 to 100. Each element of `IsPrime` tells whether the number corresponding to its index is prime.
 
-The first `for` loop sets all the elements of `IsPrime` to `true`, and the second `for` loop executes the sieve algorithm, setting to false all the multiples of 2, 3, 4, all the way to 10. Finally, the last `for` loop iterates through the array once more, checking if each number is prime and displaying it on the screen if so.
+This program has three `for` loops: the first sets all the elements of `IsPrime` to true, the second executes the sieve algorithm, and the third displays all the prime numbers in the sieve.
 
-To declare an array, you use the syntax <code>array[_start_.._end_] of _type_</code>, where _start_ and _end_ are the first and last indices of the array and _type_ is the type for each element of the array. You can access the elements of the array with the syntax <code>_variable_[_index_]</code>, where _index_ is a valid index in the array.
+As you can see, you declare an array type using the syntax <code>array[_start_.._end_] of _type_</code>, where _start_ and _end_ are the first and last indices of the array and _type_ is the type for each element of the array.
 
-Note that, in Pascal, you must declare the first and last indices of the array. In other languages, arrays always start at a particular index (typically 0 or 1, depending on the language). In this example, we use this by beginning the `IsPrime` array at index 2 because we don't need to check if 1 is prime.
+(In most other programming languages, all arrays start at index 0 or 1, but you must specify the starting index in Pascal. This lets you use the starting index that's most convenient for your program; in this example, we used 2 because we don't need to check if 1 is prime.)
+
+To access an array element, you use the syntax <code>_variable_[_index_]</code>, where _index_ is a valid index in the array. You can use a variable to specify the index, as in the `for` loops.
 
 Try this at home: can you define arrays of arrays? How can you access an element in such a data type?
 
 ### Records
 
-Another common custom type is the _record_: a collection of values, possibly of different types, stored together. Records are helpful when you deal with structured data, such as entries in a file.
+Sometimes, we don't need to manage multiple elements of the same type; instead, we need to manipulate several related values of different types. With Pascal, we can define _record types_ that let us hold and use all the related values together. Record types are helpful when we deal with structured data, such as entries in a file.
 
-A record contains one or more _fields_, each with a name and a type. Here is an example:
+The different values contained in a record are called _fields_, each with a name and a type. Here is an example of a program that declares and uses a variable belonging to a record type:
 
 ```pascal
 program RecordExample;
@@ -620,15 +632,15 @@ end.
 
 The variable `Person` is a record with three fields: `FirstName` and `LastName` (both of type `string`), and `BirthDate`, which is, in turn, another record with three fields.
 
-As you can see, you can access a field through the <code>_variable_._fieldname_</code> syntax, adding more <code>._fieldname_</code> as needed if you want to access a record within a record.
+As you can see, you can access a field through the <code>_variable_._fieldname_</code> syntax. To access fields inside a record-type field you can add more <code>._fieldname_</code> as needed.
 
-You can combine all the custom types at will. You can build arrays of records, records with enumerated, array, or record fields, arrays of arrays, ...
+Try this at home: you can combine all the custom types. You can build arrays of records, records with enumerated, array, or record fields, and arrays of arrays. How would you access an element in an array of records?
 
 ### Type declarations
 
-In the previous examples, we defined our custom types with the variables that used them. This works if we only need to use a custom type with one or two variables, but it breaks down if we want to use the same type in different parts of the program, which might force you to, for example, declare the same enumeration type twice, which is not allowed by Pascal.
+In the previous examples, we defined our custom types with the variables that used them. This works if we only need to use the custom types with one or two variables, but it breaks down if we need to use them in several parts of the program because we cannot declare the same custom type twice.
 
-To solve this problem, you can use _type declarations_ to define your types and give them names to use elsewhere in your program. You put type declarations in a _type declaration block_, which starts with the `type` keyword.
+To solve this problem, we can use _type declarations_ to define our types and give them names to use them elsewhere in our program. We put our type declarations in a _type declaration block_, which starts with the `type` keyword.
 
 ```pascal
 program TypeDeclarations;
@@ -670,6 +682,10 @@ begin
 end.
 ```
 
-Notice that type declarations use an equals sign (`=`) between the name and the definition, while variable declarations use a colon (`:`). As far as we can tell, there is no reason for this difference other than being annoying for the sake of being annoying.
+This example declares three custom types (one array type and two record types) and gives them the names `TMonth`, `TDate`, and `TPerson`. Those names are then used in the variable definitions to refer to those types.
 
-(Also, notice that all the declared type names start with the letter `T`, a common practice by many programmers to avoid confusing type names with variable names. If we had named the type `Person` instead of `TPerson`, we wouldn't have been allowed to have a variable named `Person` too.)
+(The names of the types in this example start with the letter `T`, which is a custom among many programmers to avoid confusing type names with variable names.)
+
+Note that there is an equals sign (`=`) between the type name and its definition, not a semicolon (`:`). Semicolons are for variable and field definitions, not for type definitions.
+
+Try this at home: can you define a type that is just another name for `integer`? Can you define a type for a previously defined type? Can you declare a variable with the same name as a type?
