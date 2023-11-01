@@ -664,13 +664,13 @@ begin
   People[1].Birthdate.Month := Jun;
   People[1].Birthdate.Day := 3;
   People[2].Name := 'Mary Knight';
-  People[1].Birthdate.Year := 1979;
-  People[1].Birthdate.Month := Aug;
-  People[1].Birthdate.Day := 19;
+  People[2].Birthdate.Year := 1979;
+  People[2].Birthdate.Month := Aug;
+  People[2].Birthdate.Day := 19;
   People[3].Name := 'Pedro Ozores';
-  People[1].Birthdate.Year := 2004;
-  People[1].Birthdate.Month := Feb;
-  People[1].Birthdate.Day := 29;
+  People[3].Birthdate.Year := 2004;
+  People[3].Birthdate.Month := Feb;
+  People[3].Birthdate.Day := 29;
   for I := 1 to 3 do
   begin
     Person := People[I];
