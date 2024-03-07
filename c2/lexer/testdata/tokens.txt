@@ -1,0 +1,14 @@
+123 $12aBfF 123.45 1.23e45 1.23e-45 1e+23
+foo bar alondra_123FOOBAR 123foobar
+'foo' 'b''ar' '''bar''' #10 #13#10 #$0d#$0A 'foo'^n'bar'
++ - * / ( )
+= < > <= >= <>
+:= [ ] . ^ @
+.. , : ;
+(* comment *)
+{ comment }
+ABSOLUTE and ARRAY begin CASE Const Div DO downto ELSE end FILE for
+fOrWaRd function goto IF IN label mod nil NOT OF OR PACKED PROCEDURE
+PROGRAM RECORD REPEAT SET SHL SHR THEN TO TYPE UNTIL VAR WHILE WITH XOR
+   
+END.
