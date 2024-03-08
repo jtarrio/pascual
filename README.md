@@ -14,6 +14,7 @@ Pascual currently supports a subset of the Turbo Pascal 3 syntax and features:
     * Missing nested functions and procedures.
     * Missing parameterized array bounds.
 * `While`, `repeat until`, `for`, `if`, `case`.
+    * Missing label ranges and multiple labels for `case`.
     * Missing `goto`.
 * `Write`, `writeln`, `read`, `readln`, `str`, `val`.
 * Compiler directives:
