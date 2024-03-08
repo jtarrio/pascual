@@ -94,6 +94,12 @@ begin
     ErrorForExpr('Expected an ordinal', Expr)
 end;
 
+procedure EnsureOrdinalOrPointerExpr(Expr : TSExpression);
+begin
+  if (not IsOrdinalType(Expr^.TypePtr)) and (not IsPointerType(Expr^.TypePtr)) then
+    ErrorForExpr('Expected an ordinal or a pointer', Expr)
+end;
+
 procedure EnsureAssignableExpr(Expr : TSExpression);
 begin
   if not Expr^.IsAssignable then

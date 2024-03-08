@@ -356,6 +356,12 @@ begin
     Result := _ExOp_MakeBinary(Left, Right, SeoMul, Left^.TypePtr)
 end;
 
+function _ExOpArithmetic_Pointer(Left, Right : TSExpression;
+                                  Op : TSEOperator) : TSExpression;
+begin
+  Result := _ExOp_MakeBinary(Left, Right, Op, Left^.TypePtr)
+end;
+
 function ExOpNeg(Expr : TSExpression) : TSExpression;
 begin
   EnsureNumericExpr(Expr);
@@ -380,6 +386,8 @@ begin
          Result := _ExOpAdd_Strings(Left, Right)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpUnion_Sets(Left, Right)
+  else if IsPointerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
+         Result := _ExOpArithmetic_Pointer(Left, Right, SeoAdd)
   else ErrorInvalidOperator2(Left, Right, SeoAdd)
 end;
 
@@ -391,6 +399,8 @@ begin
          Result := _ExOpArithmetic_Numbers(Left, Right, SeoSub)
   else if IsSetType(Left^.TypePtr) and IsSetType(Right^.TypePtr) then
          Result := _ExOpDifference_Sets(Left, Right)
+  else if IsPointerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
+         Result := _ExOpArithmetic_Pointer(Left, Right, SeoSub)
   else ErrorInvalidOperator2(Left, Right, SeoSub)
 end;
 

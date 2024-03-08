@@ -826,7 +826,7 @@ end;
 procedure _CgC_OutPred(This : TCgC; Expr : TSExpression);
 var TmpExpr : TSExpression;
 begin
-  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  EnsureOrdinalOrPointerExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
     if Expr^.CheckBounds then
@@ -840,7 +840,7 @@ begin
     else
     begin
       TmpExpr := ExOpSub(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
-                 ExIntegerConstant(1));
+                ExIntegerConstant(1));
       _CgC_OutExpression(This, TmpExpr);
       ExDispose(TmpExpr)
     end
@@ -848,7 +848,7 @@ begin
   else
   begin
     TmpExpr := ExOpSub(ExCopy(Expr^.Unary.Parent),
-               ExIntegerConstant(1));
+              ExIntegerConstant(1));
     _CgC_OutExpression(This, TmpExpr);
     ExDispose(TmpExpr)
   end
@@ -857,7 +857,7 @@ end;
 procedure _CgC_OutSucc(This : TCgC; Expr : TSExpression);
 var TmpExpr : TSExpression;
 begin
-  EnsureOrdinalExpr(Expr^.Unary.Parent);
+  EnsureOrdinalOrPointerExpr(Expr^.Unary.Parent);
   if IsBoundedType(Expr^.Unary.Parent^.TypePtr) then
   begin
     if Expr^.CheckBounds then
@@ -871,7 +871,7 @@ begin
     else
     begin
       TmpExpr := ExOpAdd(ExOpOrd(ExCopy(Expr^.Unary.Parent)),
-                 ExIntegerConstant(1));
+                ExIntegerConstant(1));
       _CgC_OutExpression(This, TmpExpr);
       ExDispose(TmpExpr)
     end
@@ -1016,6 +1016,11 @@ begin
                          SeoMod]
 end;
 
+function _CgC_IsPointerArithmeticOp(Op : TSEOperator) : boolean;
+begin
+  _CgC_IsPointerArithmeticOp := Op in [SeoAdd, SeoSub]
+end;
+
 function _CgC_GetArithmeticOp(Op : TSEOperator) : string;
 begin
   case Op of 
@@ -1141,6 +1146,14 @@ begin
     end
     else if IsSetType(Right^.TypePtr) then
            _CgC_OutExSetOperation(This, Left, Right, Op)
+    else if IsPointerType(Left^.TypePtr) and IsIntegerType(Right^.TypePtr) then
+    begin
+      _CgC_OutExpressionParens(This, Left, Expr);
+      if _CgC_IsPointerArithmeticOp(Op) then
+        write(This^.Output, ' ', _CgC_GetArithmeticOp(Op), ' ')
+      else ErrorInvalidOperator(Expr, Op);
+      _CgC_OutExpressionParensExtra(This, Right, Expr)
+    end
     else
     begin
       _CgC_OutExpressionParens(This, Left, Expr);

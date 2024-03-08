@@ -20,7 +20,7 @@ end;
 function ExOpPred(Expr : TSExpression) : TSExpression;
 var OutOfBounds : boolean;
 begin
-  EnsureOrdinalExpr(Expr);
+  EnsureOrdinalOrPointerExpr(Expr);
   if ExIsImmediate(Expr) then
   begin
     OutOfBounds := false;
@@ -45,7 +45,7 @@ end;
 function ExOpSucc(Expr : TSExpression) : TSExpression;
 var OutOfBounds : boolean;
 begin
-  EnsureOrdinalExpr(Expr);
+  EnsureOrdinalOrPointerExpr(Expr);
   if ExIsImmediate(Expr) then
   begin
     OutOfBounds := false;

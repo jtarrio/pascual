@@ -59,6 +59,20 @@ echo "program foo;
           p : pointer;
       begin i := 65; p := @i; write(RetAsCh(p)) end." | outputs 'A'
 
+# Pointer arithmetic
+echo "program foo; var A : array[1..5] of integer; P : ^integer; I : integer;
+      begin A[1] := 10; A[2] := 21; A[3] := 32; A[4] := 43; A[5] := 54;
+            P := @A[1]; for I := 1 to 5 do begin write(P^); P := P + 1 end end." | outputs "1021324354"
+echo "program foo; var A : array[1..5] of integer; P : ^integer; I : integer;
+      begin A[1] := 10; A[2] := 21; A[3] := 32; A[4] := 43; A[5] := 54;
+            P := @A[1]; for I := 1 to 5 do begin write(P^); P := succ(p) end end." | outputs "1021324354"
+echo "program foo; var A : array[1..5] of integer; P : ^integer; I : integer;
+      begin A[1] := 10; A[2] := 21; A[3] := 32; A[4] := 43; A[5] := 54;
+            P := @A[5]; for I := 1 to 5 do begin write(P^); P := P - 1 end end." | outputs "5443322110"
+echo "program foo; var A : array[1..5] of integer; P : ^integer; I : integer;
+      begin A[1] := 10; A[2] := 21; A[3] := 32; A[4] := 43; A[5] := 54;
+            P := @A[5]; for I := 1 to 5 do begin write(P^); P := pred(p) end end." | outputs "5443322110"
+
 # Longer program showing pointer manipulation.
 echo "program foo;
       type TP = ^T;
