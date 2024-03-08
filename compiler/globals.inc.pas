@@ -31,9 +31,10 @@ begin
   AddPsfn('DISPOSE', @PfDispose_Parse);
   AddPsfn('NEW', @PfNew_Parse);
   AddPsfn('SIZEOF', @PfSizeof_Parse);
-  AddFunction(MakeProcedure1('Dispose',
-              MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr)));
-  AddFunction(MakeProcedure2('New',
+  AddFunction(MakeProcedure2('FREEMEM',
+              MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr),
+              MakeArg('SIZE', PrimitiveTypes.PtInteger)));
+  AddFunction(MakeProcedure2('GETMEM',
               MakeVarArg('PTR', PrimitiveTypes.PtUntypedPtr),
               MakeArg('SIZE', PrimitiveTypes.PtInteger)));
 

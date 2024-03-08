@@ -13,6 +13,14 @@ echo "program foo; type TP = ^integer; var P : TP;
 echo "program foo; type T = integer; TP = ^T; var P : TP;
       begin new(P); P^ := 3; write(P^); dispose(P) end." | outputs 3
 
+# Getmem/freemem
+echo "program foo; var P : ^integer;
+      begin getmem(P, sizeof(integer)); P^ := 3; write(P^); freemem(P, sizeof(integer)) end." | outputs 3
+echo "program foo; type TP = ^integer; var P : TP;
+      begin getmem(P, sizeof(integer)); P^ := 3; write(P^); freemem(P, sizeof(integer)) end." | outputs 3
+echo "program foo; type T = integer; TP = ^T; var P : TP;
+      begin getmem(P, sizeof(T)); P^ := 3; write(P^); freemem(P, sizeof(T)) end." | outputs 3
+
 # Address operator
 echo "program foo; var I : integer; P : ^integer;
       begin I := 3; P := @I; write(P^) end." | outputs 3

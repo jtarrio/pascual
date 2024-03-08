@@ -19,6 +19,6 @@ PInteger succ(PInteger value, PInteger low, PInteger high) {
   return value + 1;
 }
 
-void New(void** ptr, PInteger size) { *ptr = malloc(size); }
+void GETMEM(void** ptr, PInteger size) { *ptr = malloc(size); }
 
-void Dispose(void** ptr) { free(*ptr); }
+void FREEMEM(void** ptr, PInteger size) { free(*ptr); }

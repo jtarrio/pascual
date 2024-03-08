@@ -84,9 +84,10 @@ begin
   ExMarkInitialized(Ptr);
 
   ExDispose(FnExpr);
-  Args.Size := 1;
+  Args.Size := 2;
   Args.Values[1] := Ptr;
-  Def := FindNameOfClass('Dispose', SdcSubroutine, {Required=}true);
+  Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
+  Def := FindNameOfClass('FREEMEM', SdcSubroutine, {Required=}true);
   SrPtr := @Def^.SrDef;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;
@@ -107,7 +108,7 @@ begin
   Args.Size := 2;
   Args.Values[1] := Ptr;
   Args.Values[2] := ExSizeof(Ptr^.TypePtr^.PointedTypePtr);
-  Def := FindNameOfClass('New', SdcSubroutine, {Required=}true);
+  Def := FindNameOfClass('GETMEM', SdcSubroutine, {Required=}true);
   SrPtr := @Def^.SrDef;
   Result := ExFunctionCall(ExFnRef(SrPtr), Args)
 end;

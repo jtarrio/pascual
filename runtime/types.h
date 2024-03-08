@@ -79,7 +79,9 @@ PInteger subrange(PInteger value, PInteger low, PInteger high);
 PInteger pred(PInteger value, PInteger low, PInteger high);
 PInteger succ(PInteger value, PInteger low, PInteger high);
 
-void New(void** ptr, PInteger size);
-void Dispose(void** ptr);
+#define New(ptr, size) GETMEM(ptr, size)
+#define Dispose(ptr) FREEMEM(ptr, 0)
+void GETMEM(void** ptr, PInteger size);
+void FREEMEM(void** ptr, PInteger size);
 
 #endif  // __PASCUAL_TYPES_H
