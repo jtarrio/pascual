@@ -1,3 +1,4 @@
+{ Unit tests for bytebuffer.pas }
 program bytebuffer_tests;
 
 {$I utils.inc.pas}
@@ -76,10 +77,44 @@ begin
     ByteBuffer_Dispose(bb)
 end;
 
+procedure Test_ByteBuffer_FromBinaryFile;
+var
+    f : file of char;
+    bb : ByteBuffer;
+    Actual : string;
+const
+    Expected : string = '{ Unit tests for bytebuffer.pas }'#10'program bytebuffer_tests;'#10;
+begin
+    Assign(f, 'bytebuffer.tests.pas');
+    Reset(f);
+    bb := ByteBuffer_FromBinaryFile(f);
+    Close(f);
+    Actual := ByteBuffer_GetString(bb, 0, Length(Expected));
+    AssertEqStr(Expected, Actual, 'wrong start of the unit test file')
+end;
+
+procedure Test_ByteBuffer_FromTextFile;
+var
+    f : text;
+    bb : ByteBuffer;
+    Actual : string;
+const
+    Expected : string = '{ Unit tests for bytebuffer.pas }'#10'program bytebuffer_tests;'#10;
+begin
+    Assign(f, 'bytebuffer.tests.pas');
+    Reset(f);
+    bb := ByteBuffer_FromTextFile(f);
+    Close(f);
+    Actual := ByteBuffer_GetString(bb, 0, Length(Expected));
+    AssertEqStr(Expected, Actual, 'wrong start of the unit test file')
+end;
+
 begin
     RunTest('Test_ByteBuffer_GetChar', @Test_ByteBuffer_GetChar);
     RunTest('Test_ByteBuffer_SetChar', @Test_ByteBuffer_SetChar);
     RunTest('Test_ByteBuffer_GetString', @Test_ByteBuffer_GetString);
     RunTest('Test_ByteBuffer_SetString', @Test_ByteBuffer_SetString);
     RunTest('Test_ByteBufferBuilder', @Test_ByteBufferBuilder);
+    RunTest('Test_ByteBuffer_FromBinaryFile', @Test_ByteBuffer_FromBinaryFile);
+    RunTest('Test_ByteBuffer_FromTextFile', @Test_ByteBuffer_FromTextFile);
 end.

@@ -1,3 +1,5 @@
+{ Dynamically-sized buffers that contain bytes. }
+
 type
     { A piece of memory that contains bytes. }
     ByteBuffer = record
@@ -191,4 +193,47 @@ begin
             dispose(Prev)
         until Next = nil;
     end
+end;
+
+type
+    _bbBinaryFile = file of char;
+
+{ Reads the given binary file into a new buffer. }
+function ByteBuffer_FromBinaryFile(f : _bbBinaryFile) : ByteBuffer;
+var
+    i : integer;
+    Ptr : ^char;
+    Err : boolean;
+begin
+    Err := false;
+    Result := ByteBuffer_New(FileSize(f));
+    Ptr := Result.Ptr;
+    for i := 1 to Result.Size do
+    begin
+        if not err then
+        begin
+            Read(f, Ptr^);
+            err := err or (IoResult <> 0)
+        end;
+        Ptr := Succ(Ptr)
+    end
+end;
+
+{ Reads the given text file into a new buffer. }
+function ByteBuffer_FromTextFile(f : text) : ByteBuffer;
+var
+    bbb : ByteBufferBuilder;
+    line : string;
+    Err : boolean;
+begin
+    Err := false;
+    bbb := ByteBufferBuilder_New;
+    while (not Eof(f)) and (not Err) do
+    begin
+        Readln(f, line);
+        err := err or (IoResult <> 0);
+        if not err then
+            ByteBufferBuilder_AddString(bbb, line + #10)
+    end;
+    Result := ByteBufferBuilder_Build(bbb)
 end;

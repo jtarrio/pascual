@@ -20,7 +20,7 @@ begin
     test();
     write(name, ' ');
     if TestErrors = nil then
-        writeln('OK')
+        writeln('ok')
     else
     begin
         writeln('FAILED');
