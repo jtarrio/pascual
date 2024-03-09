@@ -1,5 +1,6 @@
 { Requires ../types.inc.pas }
 { Requires ../utils.inc.pas }
+{ Requires ../bytebuffer.inc.pas }
 
 type
     TTokenId = (TkUnknown, TkError, TkEof, TkBlank, TkComment, TkIdentifier, TkInteger, TkReal,
@@ -22,34 +23,37 @@ type
         Lexer: TLexer;
     end;
     TLexerObj = record
-        Input: file of char;
         Name: string;
+        Buffer: ByteBuffer;
         Pos: TPos;
+        BufferPtr: ^char;
+        EofPtr: ^char;
         LastChar: char;
-        Eof: boolean;
         Token: TToken;
         Error: string;
     end;
 
-function TLexer_New(name: string): TLexer;
-var f : file of char;
+function TLexer_New(name: string; buffer: ByteBuffer): TLexer;
 begin
     new(Result);
     Result^.Name := name;
     TPos_Reset(Result^.Pos);
-    Assign(f, name);
-    Reset(f);
-    Result^.Input := f;
-    Result^.Eof := Eof(Result^.Input);
+    Result^.Buffer := buffer;
+    Result^.BufferPtr := Result^.Buffer.Ptr;
+    Result^.EofPtr := Result^.Buffer.Ptr + Result^.Buffer.Size;
     Result^.Token.Id := TkUnknown;
     Result^.Token.Pos := Result^.Pos;
     Result^.Token.Size := 0;
     Result^.Token.Lexer := Result;
-    if not Result^.Eof then Read(Result^.Input, Result^.LastChar)
+    if Result^.Buffer.Size = 0 then
+        Result^.LastChar := #0
+    else
+        Result^.LastChar := Result^.BufferPtr^
 end;
 
 procedure TLexer_Dispose(var self: TLexer);
 begin
+    ByteBuffer_Dispose(self^.Buffer);
     Dispose(self);
     self := nil
 end;
@@ -61,22 +65,20 @@ begin
         #10 : TPos_NewLine(self^.Pos);
         else TPos_Advance(self^.Pos)
     end;
-    if Eof(self^.Input) then
+    if self^.BufferPtr = self^.EofPtr then self^.LastChar := #0
+    else
     begin
-        self^.LastChar := #0;
-        self^.Eof := true
+        self^.BufferPtr := Succ(self^.BufferPtr);
+        self^.LastChar := self^.BufferPtr^
     end
-    else Read(self^.Input, self^.LastChar)
 end;
 
 function _TLexer_PeekChar(self: TLexer): char;
+var Ptr : ^char;
 begin
-    if Eof(self^.Input) then Result := #0
-    else
-    begin
-        Read(self^.Input, Result);
-        Seek(self^.Input, self^.Pos.Offset + 1)
-    end
+    Ptr := Succ(self^.BufferPtr);
+    if Ptr = self^.EofPtr then Result := #0
+    else Result := Ptr^
 end;
 
 function _TLexer_GetChar(self: TLexer): char;
@@ -86,7 +88,7 @@ end;
 
 function _TLexer_Eof(self: TLexer): boolean;
 begin
-    Result := self^.Eof
+    Result := self^.BufferPtr = self^.EofPtr
 end;
 
 function _TLexer_SavePos(self: TLexer): TPos;
@@ -97,22 +99,12 @@ end;
 procedure _TLexer_RestorePos(self: TLexer; const Pos: TPos);
 begin
     self^.Pos := Pos;
-    Seek(self^.Input, self^.Pos.Offset + 1)
+    self^.BufferPtr := self^.Buffer.Ptr + self^.Pos.Offset;
 end;
 
 function _TLexer_ReadToken(self: TLexer; const Token: TToken) : string;
-var
-    c : char;
-    i : integer;
 begin
-    Result[0] := Chr(Token.Size);
-    Seek(self^.Input, Token.Pos.Offset);
-    for i := 1 to Token.Size do
-    begin
-        Read(self^.Input, c);
-        Result[i] := c;
-    end;
-    Seek(self^.Input, self^.Pos.Offset + 1)
+    Result := ByteBuffer_GetString(self^.Buffer, Token.Pos.Offset, Token.Size)
 end;
 
 procedure _TLexer_MakeToken(self: TLexer; Id: TTokenId; Size: integer);

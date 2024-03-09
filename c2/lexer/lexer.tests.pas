@@ -2,6 +2,7 @@ program lexer_tests;
 
 {$I ../types.inc.pas}
 {$I ../utils.inc.pas}
+{$I ../bytebuffer.inc.pas}
 {$I lexer.inc.pas}
 {$I ../tests.inc.pas}
 
@@ -54,7 +55,7 @@ end;
 procedure ReadEmptyFile;
 var lexer: TLexer;
 begin
-    lexer := TLexer_New('testdata/empty.txt');
+    lexer := TLexer_New('testdata/empty.txt', ByteBuffer_New(0));
     AssertEof(lexer);
     TLexer_Dispose(lexer)
 end;
@@ -62,7 +63,7 @@ end;
 procedure ReadOneCharacter;
 var lexer: TLexer;
 begin
-    lexer := TLexer_New('testdata/onechar.txt');
+    lexer := TLexer_New('testdata/onechar.txt', ByteBuffer_FromString('a'));
     AssertNotEof(lexer);
     _TLexer_NextChar(lexer);
     AssertEof(lexer);
@@ -72,7 +73,7 @@ end;
 procedure GetCharacters;
 var lexer: TLexer;
 begin
-    lexer := TLexer_New('testdata/content.txt');
+    lexer := TLexer_New('testdata/content.txt', ByteBuffer_FromString('abc'#10'd	e'#10'f'));
     AssertNotEof(lexer);
     AssertGetChar(lexer, 'a', 1, 1, 0);
     AssertPeekChar(lexer, 'b');
@@ -107,9 +108,26 @@ begin
 end;
 
 procedure ReadTokens;
-var lexer: TLexer;
+var
+    bbb: ByteBufferBuilder;
+    lexer: TLexer;
 begin
-    lexer := TLexer_New('testdata/tokens.txt');
+    bbb := ByteBufferBuilder_New;
+    ByteBufferBuilder_AddString(bbb, '123 $12aBfF 123.45 1.23e45 1.23e-45 1e+23 ');
+    ByteBufferBuilder_AddString(bbb, 'foo bar alondra_123FOOBAR 123foobar ');
+    ByteBufferBuilder_AddString(bbb, '''foo'' ''b''''ar'' ''''''bar'''''' #10 #13#10 #$0d#$0A ''foo''^n''bar'' ');
+    ByteBufferBuilder_AddString(bbb, '+ - * / ( ) ');
+    ByteBufferBuilder_AddString(bbb, '= < > <= >= <> ');
+    ByteBufferBuilder_AddString(bbb, ':= [ ] . ^ @ ');
+    ByteBufferBuilder_AddString(bbb, '.. , : ; ');
+    ByteBufferBuilder_AddString(bbb, '(* comment *) ');
+    ByteBufferBuilder_AddString(bbb, '{ comment } ');
+    ByteBufferBuilder_AddString(bbb, 'ABSOLUTE and ARRAY begin CASE Const Div DO downto ELSE end FILE for ');
+    ByteBufferBuilder_AddString(bbb, 'fOrWaRd function goto IF IN label mod nil NOT OF OR PACKED PROCEDURE ');
+    ByteBufferBuilder_AddString(bbb, 'PROGRAM RECORD REPEAT SET SHL SHR THEN TO TYPE UNTIL VAR WHILE WITH XOR ');
+    ByteBufferBuilder_AddString(bbb, 'END.');
+
+    lexer := TLexer_New('testdata/tokens.txt', ByteBufferBuilder_Build(bbb));
     AssertToken(lexer, TkInteger, '123');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkInteger, '$12aBfF');
@@ -121,7 +139,7 @@ begin
     AssertToken(lexer, TkReal, '1.23e-45');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkReal, '1e+23');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkIdentifier, 'foo');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkIdentifier, 'bar');
@@ -130,7 +148,7 @@ begin
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkInteger, '123');
     AssertToken(lexer, TkIdentifier, 'foobar');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkString, '''foo''');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkString, '''b''''ar''');
@@ -144,7 +162,7 @@ begin
     AssertToken(lexer, TkString, '#$0d#$0A');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkString, '''foo''^n''bar''');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkPlus, '+');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkMinus, '-');
@@ -156,7 +174,7 @@ begin
     AssertToken(lexer, TkLparen, '(');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkRparen, ')');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkEquals, '=');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkLessthan, '<');
@@ -168,7 +186,7 @@ begin
     AssertToken(lexer, TkMoreOrEquals, '>=');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkNotEquals, '<>');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkAssign, ':=');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkLbracket, '[');
@@ -180,7 +198,7 @@ begin
     AssertToken(lexer, TkCaret, '^');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkAt, '@');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkRange, '..');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkComma, ',');
@@ -188,11 +206,11 @@ begin
     AssertToken(lexer, TkColon, ':');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkSemicolon, ';');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkComment, '(* comment *)');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkComment, '{ comment }');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkAbsolute, 'ABSOLUTE');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkAnd, 'and');
@@ -218,7 +236,7 @@ begin
     AssertToken(lexer, TkFile, 'FILE');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkFor, 'for');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkForward, 'fOrWaRd');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkFunction, 'function');
@@ -244,7 +262,7 @@ begin
     AssertToken(lexer, TkPacked, 'PACKED');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkProcedure, 'PROCEDURE');
-    AssertToken(lexer, TkBlank, #10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkProgram, 'PROGRAM');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkRecord, 'RECORD');
@@ -272,7 +290,7 @@ begin
     AssertToken(lexer, TkWith, 'WITH');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkXor, 'XOR');
-    AssertToken(lexer, TkBlank, #10'   '#10);
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkEnd, 'END');
     AssertToken(lexer, TkDot, '.');
     AssertToken(lexer, TkEof, '');
