@@ -17,8 +17,7 @@ type
     TLexer = ^TLexerObj;
     TToken = record
         Id: TTokenId;
-        Pos: TPos;
-        Size: integer;
+        Block: TBlock;
         Ident: String;
         Lexer: TLexer;
     end;
@@ -37,13 +36,12 @@ function TLexer_New(name: string; buffer: ByteBuffer): TLexer;
 begin
     new(Result);
     Result^.Name := name;
-    TPos_Reset(Result^.Pos);
+    Result^.Pos := TPos_Zero;
     Result^.Buffer := buffer;
     Result^.BufferPtr := Result^.Buffer.Ptr;
     Result^.EofPtr := Result^.Buffer.Ptr + Result^.Buffer.Size;
     Result^.Token.Id := TkUnknown;
-    Result^.Token.Pos := Result^.Pos;
-    Result^.Token.Size := 0;
+    Result^.Token.Block := TBlock_Zero;
     Result^.Token.Lexer := Result;
     if Result^.Buffer.Size = 0 then
         Result^.LastChar := #0
@@ -104,19 +102,18 @@ end;
 
 function _TLexer_ReadToken(self: TLexer; const Token: TToken) : string;
 begin
-    Result := ByteBuffer_GetString(self^.Buffer, Token.Pos.Offset, Token.Size)
+    Result := ByteBuffer_GetString(self^.Buffer, Token.Block.Offset, Token.Block.Size)
 end;
 
 procedure _TLexer_MakeToken(self: TLexer; Id: TTokenId; Size: integer);
 begin
     self^.Token.Id := Id;
-    self^.Token.Pos := self^.Pos;
-    self^.Token.Size := Size
+    self^.Token.Block := TBlock_Make(self^.Pos, Size);
 end;
 
 procedure _TLexer_FinishToken(self: TLexer);
 begin
-    self^.Token.Size := self^.Pos.Offset - self^.Token.Pos.Offset
+    self^.Token.Block.Size := self^.Pos.Offset - self^.Token.Block.Offset
 end;
 
 procedure _TLexer_T_Blank(self: TLexer);
