@@ -27,7 +27,6 @@ type
         Pos: TPos;
         BufferPtr: ^char;
         EofPtr: ^char;
-        LastChar: char;
         Token: TToken;
         Error: string;
     end;
@@ -42,11 +41,7 @@ begin
     Result^.EofPtr := Result^.Buffer.Ptr + Result^.Buffer.Size;
     Result^.Token.Id := TkUnknown;
     Result^.Token.Block := TBlock_Zero;
-    Result^.Token.Lexer := Result;
-    if Result^.Buffer.Size = 0 then
-        Result^.LastChar := #0
-    else
-        Result^.LastChar := Result^.BufferPtr^
+    Result^.Token.Lexer := Result
 end;
 
 procedure TLexer_Dispose(var self: TLexer);
@@ -58,16 +53,14 @@ end;
 
 procedure _TLexer_NextChar(self: TLexer);
 begin
-    case self^.LastChar of
-        #9 : TPos_Tab(self^.Pos);
-        #10 : TPos_NewLine(self^.Pos);
-        else TPos_Advance(self^.Pos)
-    end;
-    if self^.BufferPtr = self^.EofPtr then self^.LastChar := #0
-    else
+    if self^.BufferPtr <> self^.EofPtr then
     begin
-        self^.BufferPtr := Succ(self^.BufferPtr);
-        self^.LastChar := self^.BufferPtr^
+        case self^.BufferPtr^ of
+            #9 : TPos_Tab(self^.Pos);
+            #10 : TPos_NewLine(self^.Pos);
+            else TPos_Advance(self^.Pos)
+        end;
+        self^.BufferPtr := Succ(self^.BufferPtr)
     end
 end;
 
@@ -81,7 +74,8 @@ end;
 
 function _TLexer_GetChar(self: TLexer): char;
 begin
-    Result := self^.LastChar
+    if self^.BufferPtr = self^.EofPtr then Result := #0
+    else Result := self^.BufferPtr^
 end;
 
 function _TLexer_Eof(self: TLexer): boolean;
