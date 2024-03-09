@@ -1,3 +1,5 @@
+{Requires utils.inc.pas}
+
 type
     TestProc = procedure;
     TestError = ^TestErrorObj;
