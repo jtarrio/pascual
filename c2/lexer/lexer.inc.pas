@@ -3,6 +3,7 @@
 { Requires ../bytebuffer.inc.pas }
 
 type
+    { Token identifiers. }
     TTokenId = (TkUnknown, TkError, TkEof, TkBlank, TkComment, TkIdentifier, TkInteger, TkReal,
                 TkString, TkPlus, TkMinus, TkAsterisk, TkSlash, TkEquals,
                 TkLessthan, TkMorethan, TkLbracket, TkRbracket, TkDot, TkComma,
@@ -14,19 +15,32 @@ type
                 TkOf, TkOr, TkPacked, TkProcedure, TkProgram, TkRecord,
                 TkRepeat, TkSet, TkShl, TkShr, TkThen, TkTo, TkType, TkUntil,
                 TkVar, TkWhile, TkWith, TkXor);
+    { A lexer. }
     TLexer = ^TLexerObj;
+    { A token that was parsed from the lexer. }
     TToken = record
+        { Token identifier. }
         Id: TTokenId;
+        { Location and size of the token in the source code. }
         Block: TBlock;
+        { Lexer that the token comes from. }
         Lexer: TLexer;
     end;
+    { The underlying record for a lexer. }
     TLexerObj = record
+        { The name of the file that is being read. }
         FileName: string;
+        { The content of the file that is being read. }
         Buffer: ByteBuffer;
+        { Current position in the file. }
         Pos: TPos;
+        { Pointer to the current character in the buffer. }
         BufferPtr: ^char;
+        { Pointer past the last character in the buffer. }
         EofPtr: ^char;
+        { The last parsed token. }
         Token: TToken;
+        { The message for the last parsing error. }
         Error: string;
     end;
 
