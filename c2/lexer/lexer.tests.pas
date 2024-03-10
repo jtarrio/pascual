@@ -114,6 +114,7 @@ var
 begin
     bbb := ByteBufferBuilder_New;
     ByteBufferBuilder_AddString(bbb, '   '#10#9'   '#10);
+    ByteBufferBuilder_AddString(bbb, '%! ');
     ByteBufferBuilder_AddString(bbb, '123 $12aBfF 123.45 1.23e45 1.23e-45 1e+23 ');
     ByteBufferBuilder_AddString(bbb, 'foo bar alondra_123FOOBAR 123foobar ');
     ByteBufferBuilder_AddString(bbb, '''foo'' ''b''''ar'' ''''''bar'''''' #10 #13#10 #$0d#$0A ''foo''^n''bar'' ');
@@ -130,6 +131,9 @@ begin
 
     lexer := TLexer_New('testdata/tokens.txt', ByteBufferBuilder_Build(bbb));
     AssertToken(lexer, TkBlank, '   '#10#9'   '#10);
+    AssertToken(lexer, TkError, '%');
+    AssertToken(lexer, TkError, '!');
+    AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkInteger, '123');
     AssertToken(lexer, TkBlank, ' ');
     AssertToken(lexer, TkInteger, '$12aBfF');

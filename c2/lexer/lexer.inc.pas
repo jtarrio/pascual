@@ -18,11 +18,10 @@ type
     TToken = record
         Id: TTokenId;
         Block: TBlock;
-        Ident: String;
         Lexer: TLexer;
     end;
     TLexerObj = record
-        Name: string;
+        FileName: string;
         Buffer: ByteBuffer;
         Pos: TPos;
         BufferPtr: ^char;
@@ -31,12 +30,15 @@ type
         Error: string;
     end;
 
-function TLexer_New(name: string; buffer: ByteBuffer): TLexer;
+{ Creates a lexer that reads from the given ByteBuffer.
+  FileName: the name of the file the data comes from.
+  Buffer: the ByteBuffer to read from. Ownership passes to the lexer. }
+function TLexer_New(FileName: string; Buffer: ByteBuffer): TLexer;
 begin
     new(Result);
-    Result^.Name := name;
+    Result^.FileName := FileName;
     Result^.Pos := TPos_Zero;
-    Result^.Buffer := buffer;
+    Result^.Buffer := Buffer;
     Result^.BufferPtr := Result^.Buffer.Ptr;
     Result^.EofPtr := Result^.Buffer.Ptr + Result^.Buffer.Size;
     Result^.Token.Id := TkUnknown;
@@ -44,6 +46,7 @@ begin
     Result^.Token.Lexer := Result
 end;
 
+{ Frees the memory used by the lexer. }
 procedure TLexer_Dispose(var self: TLexer);
 begin
     ByteBuffer_Dispose(self^.Buffer);
@@ -51,6 +54,7 @@ begin
     self := nil
 end;
 
+{ Reads the next character, advancing the position. }
 procedure _TLexer_NextChar(self: TLexer);
 begin
     if self^.BufferPtr <> self^.EofPtr then
@@ -64,6 +68,8 @@ begin
     end
 end;
 
+{ Returns the next character from the buffer, if available.
+  If unavailable, returns NUL. }
 function _TLexer_PeekChar(self: TLexer): char;
 var Ptr : ^char;
 begin
@@ -72,55 +78,65 @@ begin
     else Result := Ptr^
 end;
 
+{ Returns the last read character.
+  If we've reached the end of the buffer, returns NUL. }
 function _TLexer_GetChar(self: TLexer): char;
 begin
     if self^.BufferPtr = self^.EofPtr then Result := #0
     else Result := self^.BufferPtr^
 end;
 
+{ Returns whether we've reached the end of the buffer. }
 function _TLexer_Eof(self: TLexer): boolean;
 begin
     Result := self^.BufferPtr = self^.EofPtr
 end;
 
+{ Returns a variable containing the current position. }
 function _TLexer_SavePos(self: TLexer): TPos;
 begin
     Result := self^.Pos
 end;
 
+{ Sets the current position from the given variable. }
 procedure _TLexer_RestorePos(self: TLexer; const Pos: TPos);
 begin
     self^.Pos := Pos;
     self^.BufferPtr := self^.Buffer.Ptr + self^.Pos.Offset;
 end;
 
+{ Returns the text of a token as a string. }
 function _TLexer_ReadToken(self: TLexer; const Token: TToken) : string;
 begin
     Result := ByteBuffer_GetString(self^.Buffer, Token.Block.Offset, Token.Block.Size)
 end;
 
-procedure _TLexer_MakeToken(self: TLexer; Id: TTokenId; Size: integer);
+{ Marks the starting position of a token of the given type. }
+procedure _TLexer_StartToken(self: TLexer; Id: TTokenId);
 begin
     self^.Token.Id := Id;
-    self^.Token.Block := TBlock_Make(self^.Pos, Size);
+    self^.Token.Block := TBlock_Make(self^.Pos, 0);
 end;
 
+{ Marks the ending position of the last started token. }
 procedure _TLexer_FinishToken(self: TLexer);
 begin
     self^.Token.Block.Size := self^.Pos.Offset - self^.Token.Block.Offset
 end;
 
+{ Parses a 'blank' token. }
 procedure _TLexer_T_Blank(self: TLexer);
 begin
-    _TLexer_MakeToken(self, TkBlank, 0);
+    _TLexer_StartToken(self, TkBlank);
     while _TLexer_GetChar(self) in [' ', #9, #10, #13] do _TLexer_NextChar(self);
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a 'number' token. }
 procedure _TLexer_T_Number(self: TLexer);
 var Pos : TPos;
 begin
-    _TLexer_MakeToken(self, TkInteger, 0);
+    _TLexer_StartToken(self, TkInteger);
     if _TLexer_GetChar(self) = '$' then
     begin
         repeat
@@ -157,62 +173,67 @@ begin
     _TLexer_FinishToken(self)
 end;
 
-function _TLexer_T_FindKeyword(const Id : string) : TTokenId;
-const Keywords : string =
+{ Checks if the given identifier corresponds to a reserved word.
+  Returns the token id for the reserved word, or TkUnknown if there is no match. }
+function _TLexer_T_FindReservedWord(const Id : string) : TTokenId;
+{ Compact encoding: one digit with the length of the word, then the word. }
+{ The words must be sorted so the search can be faster. }
+const ReservedWords : string =
     '8ABSOLUTE3AND5ARRAY5BEGIN4CASE5CONST3DIV2DO6DOWNTO4ELSE3END4FILE3FOR7FORWARD8FUNCTION4GOTO2IF2IN5LABEL3MOD3NIL3NOT2OF2OR6PACKED9PROCEDURE7PROGRAM6RECORD6REPEAT3SET3SHL3SHR4THEN2TO4TYPE5UNTIL3VAR5WHILE4WITH3XOR';
 var
     t : TTokenId;
-    kw: string;
-    ki, kl : integer;
+    rw: string;
+    rwi, rwl : integer;
     il : integer;
 begin
     Result := TkUnknown;
     t := TkAbsolute;
     il := Length(Id);
-    ki := 1;
-    while (ki < Length(Keywords)) and (Result = TkUnknown) do
+    rwi := 1;
+    while (rwi < Length(ReservedWords)) and (Result = TkUnknown) do
     begin
-        if Keywords[ki + 1] > Id[1] then
-            ki := Length(Keywords)
+        if ReservedWords[rwi + 1] > Id[1] then
+            rwi := Length(ReservedWords)
         else
         begin
-            kl := Ord(Keywords[ki]) - Ord('0');
-            if (kl = il) and (Keywords[ki + 1] = Id[1]) then
+            rwl := Ord(ReservedWords[rwi]) - Ord('0');
+            if (rwl = il) and (ReservedWords[rwi + 1] = Id[1]) then
             begin
-                kw := Copy(Keywords, ki + 1, kl);
-                if kw = Id then Result := t;
+                rw := Copy(ReservedWords, rwi + 1, rwl);
+                if rw = Id then Result := t;
             end;
             if t < TkXor then t := Succ(t);
-            ki := ki + kl + 1
+            rwi := rwi + rwl + 1
         end
     end
 end;
 
+{ Parses an 'identifier' token. }
 procedure _TLexer_T_Identifier(self: TLexer);
 var
     Id : string;
     TokenId : TTokenId;
 begin
     Id := '';
-    _TLexer_MakeToken(self, TkIdentifier, 0);
+    _TLexer_StartToken(self, TkIdentifier);
     while _TLexer_GetChar(self) in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do
     begin
         Id := Id + UpCase(_Tlexer_GetChar(self));
         _TLexer_NextChar(self)
     end;
-    self^.Token.Ident := Id;
     _TLexer_FinishToken(self);
-    TokenId := _TLexer_T_FindKeyword(Id);
+    TokenId := _TLexer_T_FindReservedWord(Id);
     if TokenId <> TkUnknown then self^.Token.Id := TokenId;
 end;
 
+{ Parses a 'string' token. }
 procedure _TLexer_T_String(self: TLexer);
 var
     Chr : char;
     State : (None, QuotedStr, Hash, NumCharDec, NumCharHex, Caret, Done, Error);
 begin
     State := None;
-    _TLexer_MakeToken(self, TkString, 0);
+    _TLexer_StartToken(self, TkString);
     repeat
         Chr := _TLexer_GetChar(self);
         if State = None then
@@ -266,15 +287,18 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a single-character 'symbol' token. }
 procedure _TLexer_T_Symbol(self: TLexer; Id: TTokenId);
 begin
-    _TLexer_MakeToken(self, Id, 1);
-    _TLexer_NextChar(self)
+    _TLexer_StartToken(self, Id);
+    _TLexer_NextChar(self);
+    _TLexer_FinishToken(self)
 end;
 
+{ Parses a token starting with a '<' sign: either '<', '<=', or '<>'. }
 procedure _TLexer_T_LessThan(self: TLexer);
 begin
-    _TLexer_MakeToken(self, TkLessthan, 1);
+    _TLexer_StartToken(self, TkLessthan);
     _TLexer_NextChar(self);
     if _TLexer_GetChar(self) = '=' then
     begin
@@ -289,9 +313,10 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a token starting with a '>' sign: either '>' or '>='. }
 procedure _TLexer_T_MoreThan(self: TLexer);
 begin
-    _TLexer_MakeToken(self, TkMorethan, 1);
+    _TLexer_StartToken(self, TkMorethan);
     _TLexer_NextChar(self);
     if _TLexer_GetChar(self) = '=' then
     begin
@@ -301,9 +326,10 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a token starting with a '.' sign: either '.' or '..'. }
 procedure _TLexer_T_Dot(self: TLexer);
 begin
-    _TLexer_MakeToken(self, TkDot, 1);
+    _TLexer_StartToken(self, TkDot);
     _TLexer_NextChar(self);
     if _TLexer_GetChar(self) = '.' then
     begin
@@ -313,9 +339,10 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a token starting with a ':' sign: either ':' or ':='. }
 procedure _TLexer_T_Colon(self: TLexer);
 begin
-    _TLexer_MakeToken(self, TkColon, 1);
+    _TLexer_StartToken(self, TkColon);
     _TLexer_NextChar(self);
     if _TLexer_GetChar(self) = '=' then
     begin
@@ -325,11 +352,12 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a token starting with a '(' sign: either '(' or a comment enclosed by '(* *)'. }
 procedure _TLexer_T_LParen(self: TLexer);
 var
     State : (Comment, Star, Done, Eof);
 begin
-    _TLexer_MakeToken(self, TkLparen, 1);
+    _TLexer_StartToken(self, TkLparen);
     _TLexer_NextChar(self);
     if _TLexer_GetChar(self) = '*' then
     begin
@@ -356,10 +384,11 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses a comment starting with a '{' sign: either '{' or a comment enclosed by brackets. }
 procedure _TLexer_T_Comment(self: TLexer);
 var State : (Comment, Done, Eof);
 begin
-    _TLexer_MakeToken(self, TkComment, 1);
+    _TLexer_StartToken(self, TkComment);
     State := Comment;
     repeat
         if _TLexer_GetChar(self) = '}' then State := Done
@@ -374,16 +403,33 @@ begin
     _TLexer_FinishToken(self)
 end;
 
+{ Parses EOF as an EOF token. }
+procedure _TLexer_T_Eof(self: TLexer);
+begin
+    _TLexer_StartToken(self, TkEof)
+end;
+
+{ Parses an invalid character as an 'error' token. }
+procedure _TLexer_T_InvalidChar(self: TLexer);
+begin
+    _TLexer_StartToken(self, TKError);
+    self^.Error := 'Invalid character: ' + EscapeChar(_TLexer_GetChar(self));
+    _TLexer_NextChar(self);
+    _TLexer_FinishToken(self)
+end;
+
+{ Returns a copy of the last parsed token. }
 function TLexer_Token(self: TLexer): TToken;
 begin
     Result := self^.Token
 end;
 
+{ Parses the next token. }
 procedure TLexer_NextToken(self: TLexer);
 var Chr : char;
 begin
     Chr := _TLexer_GetChar(self);
-    if _TLexer_Eof(self) then _TLexer_MakeToken(self, TkEof, 0)
+    if _TLexer_Eof(self) then _TLexer_T_Eof(self)
     else if Chr in [' ', #9, #10, #13] then _TLexer_T_Blank(self)
     else if Chr in ['0'..'9', '$'] then _TLexer_T_Number(self)
     else if Chr in ['a'..'z', 'A'..'Z', '_'] then _TLexer_T_Identifier(self)
@@ -407,10 +453,6 @@ begin
         '(' : _TLexer_T_LParen(self);
         ')' : _TLexer_T_Symbol(self, TkRparen);
         '{' : _TLexer_T_Comment(self);
-        else
-        begin
-            _TLexer_MakeToken(self, TKError, 1);
-            self^.Error := 'Invalid character: ' + EscapeChar(_TLexer_GetChar(self));
-        end
+        else _TLexer_T_InvalidChar(self)
     end
 end;

@@ -196,6 +196,7 @@ begin
 end;
 
 type
+    { Dummy type to pass a binary file as an argument. }
     _bbBinaryFile = file of char;
 
 { Reads the given binary file into a new buffer. }
