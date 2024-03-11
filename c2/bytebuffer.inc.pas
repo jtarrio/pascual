@@ -1,5 +1,7 @@
 { Dynamically-sized buffers that contain bytes. }
 
+{ Requires: containers.inc.pas }
+
 type
     { A piece of memory that contains bytes. }
     ByteBuffer = record
@@ -129,47 +131,36 @@ type
     { A builder for ByteBuffers, that lets you create a large one piecewise without knowing its final size. }
     ByteBufferBuilder = ^ByteBufferBuilderObj;
     ByteBufferBuilderObj = record
+        _ : TListNode;
         { This piece of data. }
         Piece : ByteBuffer;
         { The size of the entire buffer. }
         Size : integer;
         { Pointer to the first piece. }
         First : ByteBufferBuilder;
-        { Pointer to the next piece. }
-        Next : ByteBufferBuilder;
     end;
 
 { Returns a new builder. }
 function ByteBufferBuilder_New : ByteBufferBuilder;
 begin
-    Result := nil
+    TList_New(Result)
 end;
 
 { Adds a string to the builder. }
 procedure ByteBufferBuilder_AddString(var bb : ByteBufferBuilder; Data : string);
-var Next : ByteBufferBuilder;
+var Elem : ByteBufferBuilder;
 begin
-    New(Next);
-    Next^.Piece := ByteBuffer_FromString(Data);
-    Next^.Next := nil;
-    if bb = nil then
-    begin
-        Next^.First := Next;
-        Next^.Size := Next^.Piece.Size
-    end
-    else
-    begin
-        Next^.First := bb^.First;
-        Next^.Size := bb^.Size + Next^.Piece.Size;
-        bb^.Next := Next;
-    end;
-    bb := Next
+    New(Elem);
+    Elem^.Piece := ByteBuffer_FromString(Data);
+    if bb <> nil then Elem^.Size := bb^.Size;
+    Elem^.Size := Elem^.Size + Elem^.Piece.Size;
+    TList_Push(bb, Elem)
 end;
 
 { Returns a ByteBuffer built from all the pieces. }
 function ByteBufferBuilder_Build(var bb : ByteBufferBuilder) : ByteBuffer;
 var
-    Prev, Next : ByteBufferBuilder;
+    Elem : ByteBufferBuilder;
     InPtr, OutPtr : ^char;
     i : integer;
 begin
@@ -178,20 +169,20 @@ begin
     begin
         Result := ByteBuffer_New(bb^.Size);
         OutPtr := Result.Ptr;
-        Next := bb^.First;
-        repeat
-            InPtr := Next^.Piece.Ptr;
-            for i := 1 to Next^.Piece.Size do
+        TList_Shift(bb, Elem);
+        while Elem <> nil do
+        begin
+            InPtr := Elem^.Piece.Ptr;
+            for i := 1 to Elem^.Piece.Size do
             begin
                 OutPtr^ := InPtr^;
                 OutPtr := Succ(OutPtr);
                 InPtr := Succ(InPtr)
             end;
-            ByteBuffer_Dispose(Next^.Piece);
-            Prev := Next;
-            Next := Next^.Next;
-            dispose(Prev)
-        until Next = nil;
+            ByteBuffer_Dispose(Elem^.Piece);
+            dispose(Elem);
+            TList_Shift(bb, Elem)
+        end
     end
 end;
 

@@ -2,6 +2,7 @@
 program bytebuffer_tests;
 
 {$I utils.inc.pas}
+{$I containers.inc.pas}
 {$I bytebuffer.inc.pas}
 {$I tests.inc.pas}
 
