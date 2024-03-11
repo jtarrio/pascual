@@ -1,6 +1,6 @@
 { A list with O(1) addition. }
 { To implement, make your nodes have as their first field a pointer to the next element.
-  Alternatively, you can make TListNode the first field. }
+  Alternatively, you can make TListNode the first field. See ByteBufferBuilder for an example. }
 type
     TList = ^TListNode;
     TListNode = record
