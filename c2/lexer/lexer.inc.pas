@@ -1,5 +1,6 @@
 { Requires ../types.inc.pas }
 { Requires ../utils.inc.pas }
+{ Requires ../containers.inc.pas (for bytebuffer) }
 { Requires ../bytebuffer.inc.pas }
 
 type
@@ -44,6 +45,9 @@ type
         Error: string;
     end;
 
+{ Forward definitions. }
+procedure TLexer_NextToken(self: TLexer); forward;
+
 { Creates a lexer that reads from the given ByteBuffer.
   FileName: the name of the file the data comes from.
   Buffer: the ByteBuffer to read from. Ownership passes to the lexer. }
@@ -55,9 +59,8 @@ begin
     Result^.Buffer := Buffer;
     Result^.BufferPtr := Result^.Buffer.Ptr;
     Result^.EofPtr := Result^.Buffer.Ptr + Result^.Buffer.Size;
-    Result^.Token.Id := TkUnknown;
-    Result^.Token.Block := TBlock_Zero;
-    Result^.Token.Lexer := Result
+    Result^.Token.Lexer := Result;
+    TLexer_NextToken(Result)
 end;
 
 { Frees the memory used by the lexer. }

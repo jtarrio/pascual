@@ -2,39 +2,16 @@ program lexer_tests;
 
 {$I ../types.inc.pas}
 {$I ../utils.inc.pas}
+{$I ../containers.inc.pas}
 {$I ../bytebuffer.inc.pas}
 {$I lexer.inc.pas}
 {$I ../tests.inc.pas}
-
-procedure AssertEof(lexer: TLexer);
-begin
-    Assert(_TLexer_Eof(lexer), 'Expected EOF');
-end;
-
-procedure AssertNotEof(lexer: TLexer);
-begin
-    Assert(not _TLexer_Eof(lexer), 'Expected not EOF');
-end;
-
-procedure AssertGetChar(lexer: TLexer; c: char; row, col, offset: integer);
-begin
-    AssertEqChar(_TLexer_GetChar(lexer), c, '_TLexer_GetChar returned the wrong value');
-    AssertEqInteger(lexer^.Pos.Row, row, 'Row does not match');
-    AssertEqInteger(lexer^.Pos.Col, col, 'Column does not match');
-    AssertEqInteger(lexer^.Pos.Offset, offset, 'Offset does not match')
-end;
-
-procedure AssertPeekChar(lexer: TLexer; c: char);
-begin
-    AssertEqChar(_TLexer_PeekChar(lexer), c, '_TLexer_PeekChar returned the wrong value')
-end;
 
 procedure AssertToken(lexer: TLexer; TokenId: TTokenId; Content : string);
 var
     tkn : TToken;
     exp, act : string;
 begin
-    TLexer_NextToken(lexer);
     tkn := TLexer_Token(lexer);
     if TokenId <> tkn.Id then
     begin
@@ -49,61 +26,15 @@ begin
     begin
         act := _TLexer_ReadToken(lexer, tkn);
         AssertEqStr(Content, act, 'Mismatch in token content')
-    end
+    end;
+    TLexer_NextToken(lexer)
 end;
 
 procedure ReadEmptyFile;
 var lexer: TLexer;
 begin
     lexer := TLexer_New('testdata/empty.txt', ByteBuffer_New(0));
-    AssertEof(lexer);
-    TLexer_Dispose(lexer)
-end;
-
-procedure ReadOneCharacter;
-var lexer: TLexer;
-begin
-    lexer := TLexer_New('testdata/onechar.txt', ByteBuffer_FromString('a'));
-    AssertNotEof(lexer);
-    _TLexer_NextChar(lexer);
-    AssertEof(lexer);
-    TLexer_Dispose(lexer)
-end;
-
-procedure GetCharacters;
-var lexer: TLexer;
-begin
-    lexer := TLexer_New('testdata/content.txt', ByteBuffer_FromString('abc'#10'd	e'#10'f'));
-    AssertNotEof(lexer);
-    AssertGetChar(lexer, 'a', 1, 1, 0);
-    AssertPeekChar(lexer, 'b');
-    AssertPeekChar(lexer, 'b');
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, 'b', 1, 2, 1);
-    AssertPeekChar(lexer, 'c');
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, 'c', 1, 3, 2);
-    AssertPeekChar(lexer, #10);
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, #10, 1, 4, 3);
-    AssertPeekChar(lexer, 'd');
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, 'd', 2, 1, 4);
-    AssertPeekChar(lexer, #9);
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, #9, 2, 2, 5);
-    AssertPeekChar(lexer, 'e');
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, 'e', 2, 5, 6);
-    AssertPeekChar(lexer, #10);
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, #10, 2, 6, 7);
-    AssertPeekChar(lexer, 'f');
-    _TLexer_NextChar(lexer);
-    AssertGetChar(lexer, 'f', 3, 1, 8);
-    AssertPeekChar(lexer, #0);
-    _TLexer_NextChar(lexer);
-    AssertEof(lexer);
+    AssertToken(lexer, TkEof, '');
     TLexer_Dispose(lexer)
 end;
 
@@ -304,7 +235,5 @@ end;
 
 begin
     RunTest('ReadEmptyFile', @ReadEmptyFile);
-    RunTest('ReadOneCharacter', @ReadOneCharacter);
-    RunTest('GetCharacters', @GetCharacters);
     RunTest('ReadTokens', @ReadTokens);
 end.
