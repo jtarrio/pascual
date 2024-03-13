@@ -23,7 +23,7 @@ type
         { Token identifier. }
         Id: TTokenId;
         { Location and size of the token in the source code. }
-        Block: TBlock;
+        Location: TBlock;
         { Lexer that the token comes from. }
         Lexer: TLexer;
     end;
@@ -125,20 +125,20 @@ end;
 { Returns the text of a token as a string. }
 function _TLexer_ReadToken(self: TLexer; const Token: TToken) : string;
 begin
-    Result := ByteBuffer_GetString(self^.Buffer, Token.Block.Offset, Token.Block.Size)
+    Result := ByteBuffer_GetString(self^.Buffer, Token.Location.Offset, Token.Location.Size)
 end;
 
 { Marks the starting position of a token of the given type. }
 procedure _TLexer_StartToken(self: TLexer; Id: TTokenId);
 begin
     self^.Token.Id := Id;
-    self^.Token.Block := TBlock_Make(self^.Pos, 0);
+    self^.Token.Location := TBlock_Make(self^.Pos, 0);
 end;
 
 { Marks the ending position of the last started token. }
 procedure _TLexer_FinishToken(self: TLexer);
 begin
-    self^.Token.Block.Size := self^.Pos.Offset - self^.Token.Block.Offset
+    self^.Token.Location.Size := self^.Pos.Offset - self^.Token.Location.Offset
 end;
 
 { Parses a 'blank' token. }
@@ -435,12 +435,6 @@ begin
     _TLexer_FinishToken(self)
 end;
 
-{ Returns a copy of the last parsed token. }
-function TLexer_Token(self: TLexer): TToken;
-begin
-    Result := self^.Token
-end;
-
 { Parses the next token. }
 procedure TLexer_NextToken(self: TLexer);
 var Chr : char;
@@ -472,4 +466,10 @@ begin
         '{' : _TLexer_T_Comment(self);
         else _TLexer_T_InvalidChar(self)
     end
+end;
+
+{ Returns a copy of the last parsed token. }
+function TLexer_Token(self: TLexer): TToken;
+begin
+    Result := self^.Token
 end;
