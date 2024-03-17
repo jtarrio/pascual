@@ -15,7 +15,7 @@ begin
 end;
 
 { Pushes an element onto the end of a TList. }
-procedure TList_Push(var self {:TList}; var Elem {:^TListNode});
+procedure TList_Push_Back(var self {:TList}; var Elem {:^TListNode});
 var
     List : TList absolute self;
     Node : TList absolute Elem;
@@ -32,7 +32,7 @@ end;
 { Removes the first element of the given TList.
   out_Removed: the argument where the removed element will be stored.
   This will be nil if the list is empty. }
-procedure TList_Shift(var self {:TList}; var out_Removed {:^TListNode});
+procedure TList_Pop_Front(var self {:TList}; var out_Removed {:^TListNode});
 var
     List : TList absolute self;
     Node : TList absolute out_Removed;

@@ -77,7 +77,6 @@ begin
     if self^.BufferPtr <> self^.EofPtr then
     begin
         case self^.BufferPtr^ of
-            #9 : TPos_Tab(self^.Pos);
             #10 : TPos_NewLine(self^.Pos);
             else TPos_Advance(self^.Pos)
         end;

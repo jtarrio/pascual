@@ -24,7 +24,7 @@ begin
     begin
         New(elem);
         elem^.value := i;
-        TList_Push(list, elem)
+        TList_Push_Back(list, elem)
     end;
     i := 1;
     TList_First(list, elem);
@@ -37,13 +37,13 @@ begin
     AssertEqInteger(11, i, 'wrong number of elements in list');
 
     i := 1;
-    TList_Shift(list, elem);
+    TList_Pop_Front(list, elem);
     while elem <> nil do
     begin
         AssertEqInteger(i, elem^.value, 'shifted list element mismatch');
         Dispose(elem);
         i := Succ(i);
-        TList_Shift(list, elem)
+        TList_Pop_Front(list, elem)
     end;
 
     Assert(list = nil, 'list pointer was not nil after shifts, got ' + PtrToStr(list));

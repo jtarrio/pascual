@@ -154,7 +154,7 @@ begin
     Elem^.Piece := ByteBuffer_FromString(Data);
     if bb <> nil then Elem^.Size := bb^.Size;
     Elem^.Size := Elem^.Size + Elem^.Piece.Size;
-    TList_Push(bb, Elem)
+    TList_Push_Back(bb, Elem)
 end;
 
 { Returns a ByteBuffer built from all the pieces. }
@@ -169,7 +169,7 @@ begin
     begin
         Result := ByteBuffer_New(bb^.Size);
         OutPtr := Result.Ptr;
-        TList_Shift(bb, Elem);
+        TList_Pop_Front(bb, Elem);
         while Elem <> nil do
         begin
             InPtr := Elem^.Piece.Ptr;
@@ -181,7 +181,7 @@ begin
             end;
             ByteBuffer_Dispose(Elem^.Piece);
             dispose(Elem);
-            TList_Shift(bb, Elem)
+            TList_Pop_Front(bb, Elem)
         end
     end
 end;

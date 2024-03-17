@@ -24,14 +24,6 @@ begin
     Pos.Col := Pos.Col + 1
 end;
 
-{ Advances the position by one tabulation. }
-procedure TPos_Tab(var Pos: TPos);
-const TabSize = 4;
-begin
-    Pos.Offset := Pos.Offset + 1;
-    Pos.Col := 1 + TabSize * (1 + (Pos.Col - 1) div TabSize)
-end;
-
 { Advances the position by one newline. }
 procedure TPos_NewLine(var Pos: TPos);
 begin
