@@ -229,3 +229,37 @@ begin
     end;
     Result := ByteBufferBuilder_Build(bbb)
 end;
+
+{ Outputs a portion of the buffer into the given text file.
+  f: the output file.
+  Offset: the position in the buffer (the first byte has position 0).
+  Size: the size of the string to read.
+  If the offset or size go beyond bounds, the out-of-bounds bytes are not read.
+  For example, if you set Offset=-3 and Size=10, it is the same as Offset=0 and Size=7. }
+procedure ByteBuffer_ToTextFile_Partial(const bb : ByteBuffer; f : text; Offset, Size : integer);
+var
+    Ptr : ^char;
+    i : integer;
+begin
+    if Offset < 0 then
+    begin
+        Size := Size + Offset;
+        Offset := 0
+    end;
+    if Offset > bb.Size then Offset := bb.Size;
+    if Size < 0 then Size := 0;
+    if Offset + Size > bb.Size then Size := bb.Size - Offset;
+    Ptr := bb.Ptr + Offset;
+    for i := 1 to Size do
+    begin
+        write(f, Ptr^);
+        Ptr := Succ(Ptr)
+    end
+end;
+
+{ Outputs the buffer into the given text file.
+  f: the output file. }
+procedure ByteBuffer_ToTextFile(const bb : ByteBuffer; f : text);
+begin
+    ByteBuffer_ToTextFile_Partial(bb, f, 0, bb.Size)
+end;
