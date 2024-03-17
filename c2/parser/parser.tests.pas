@@ -45,7 +45,7 @@ begin
     errors := TParseError_New;
     ast := TParser_Parse_Program(parser, errors);
     Assert(errors = nil, 'expected empty error list');
-    TAst_Write(output, ast);
+    TAstWrite(output, ast);
     TAst_Dispose(ast)    
 end;
 

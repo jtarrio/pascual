@@ -52,7 +52,7 @@ end;
 
 procedure TAst_SetEndLocation(self: TAst; const EndLoc : TBlock);
 begin
-    self^.Location.Size := EndLoc.Offset - self^.Location.Offset
+    self^.Location.Size := EndLoc.Offset + EndLoc.Size - self^.Location.Offset
 end;
 
 procedure TAst_AddChild(var self: TAst; Child : TAst);

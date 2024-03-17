@@ -16,6 +16,8 @@ type
         InputFile: text;
         OutputFileName: string;
         OutputFile: text;
+        DisplayComments: boolean;
+        DisplayNodeSource: boolean;
     end;
 
 procedure Usage(Msg : string);
@@ -30,6 +32,10 @@ begin
     writeln;
     writeln('If you specify "-" as the input or output file, ',
             'stdin/stdout will be used.');
+    writeln;
+    writeln('Options:');
+    writeln('   -c     : display comments.');
+    writeln('   -s     : display every AST node''s source code.');
     halt(0)
 end;
 
@@ -52,6 +58,8 @@ var
 begin
     Result.InputFileName := '';
     Result.OutputFileName := '';
+    Result.DisplayComments := false;
+    Result.DisplayNodeSource := false;
 
     for Pos := 1 to ParamCount do
     begin
@@ -59,6 +67,8 @@ begin
         if (Param[1] = '-') and (Param <> '-') then
         begin
             if Param = '-o' then Flag := FlagOutput
+            else if Param = '-c' then Result.DisplayComments := true
+            else if Param = '-s' then Result.DisplayNodeSource := true
             else if Param = '-h' then Usage('')
             else Usage('Unknown option: ' + Param)
         end
@@ -98,8 +108,11 @@ begin
 end;
 
 procedure WriteOutput(const options: Options; const ast: TAst; var errors: TParseError);
+var awo : TAstWriteOptions;
 begin
-    if errors = nil then TAst_Write(options.OutputFile, ast)
+    awo.ShowComments := options.DisplayComments;
+    awo.ShowSource := options.DisplayNodeSource;
+    if errors = nil then TAstWrite(options.OutputFile, ast, awo)
     else TParseError_DisplayList(errors, stderr)
 end;
 
