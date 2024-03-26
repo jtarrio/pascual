@@ -140,6 +140,48 @@ begin
     self^.Token.Location.Size := self^.Pos.Offset - self^.Token.Location.Offset
 end;
 
+{ A string containing the names of all the tokens. }
+const _TLexer_NameStr : string =
+    '()*+,-../:=;<=<>=@[]^absoluteofileandivarraybegintegerrorecordownto' +
+    'blankcasetypecommentconstringotoforwardfunctionilabelseidentifierepeat' +
+    'packedprocedurealprogramodshlshrunknownotuntilwhilewithendxor';
+{ Starting position of each token's name within the string. }
+const _TLexer_NamePos : array[TkUnknown..TkXor] of integer = (
+    170, 53, 29, 68, 81, 123, 48, 151, 91, 4, 6, 3, 9, 11, 13, 16, 19, 20, 7, 5,
+    10, 12, 21, 1, 2, 15, 13, 16, 10, 7, 18, 22, 35, 40, 45, 73, 88, 37, 62, 62,
+    119, 193, 31, 100, 100, 107, 96, 128, 48, 116, 161, 114, 176, 30, 56, 138,
+    144, 155, 57, 132, 75, 164, 167, 191, 66, 77, 179, 39, 184, 189, 196);
+{ Length of each token's name. }
+const _TLexer_NameLen : array[TkUnknown..TkXor] of integer = (
+    7, 5, 3, 5, 7, 10, 7, 4, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 2, 2, 2, 2, 2, 1, 8, 3, 5, 5, 4, 5, 3, 2, 6, 4, 3, 4, 3, 7, 8, 4, 2,
+    2, 5, 3, 3, 3, 2, 2, 6, 9, 7, 6, 6, 3, 3, 3, 4, 2, 4, 5, 3, 5, 4, 3);
+
+function TLexer_GetTokenName(id: TTokenId): string;
+begin
+    Result := Copy(_TLexer_NameStr, _TLexer_NamePos[id], _TLexer_NameLen[id]);
+end;
+
+function TLexer_GetIdentifierToken(Id: string): TTokenId;
+var
+    i : integer;
+    Cur : TTokenId;
+    Pos, Len : integer;
+    Cp : string;
+begin
+    for i := 1 to Length(Id) do Id[i] := LowerCase(Id[i]);
+    Result := TkBlank;
+    Cur := TkAbsolute;
+    repeat
+        Pos := _TLexer_NamePos[Cur];
+        Len := _TLexer_NameLen[Cur];
+        if _TLexer_NameStr[Pos] > Id[1] then Result := TkUnknown
+        else if (Len = Length(Id)) and (_TLexer_NameStr[Pos] = Id[1]) and (Copy(_TLexer_NameStr, Pos, Len) = Id) then Result := Cur
+        else if Cur < TkXor then Cur := Succ(Cur)
+        else Result := TkUnknown
+    until Result <> TkBlank
+end;
+
 { Parses a 'blank' token. }
 procedure _TLexer_T_Blank(self: TLexer);
 begin
@@ -189,41 +231,6 @@ begin
     _TLexer_FinishToken(self)
 end;
 
-{ Checks if the given identifier corresponds to a reserved word.
-  Returns the token id for the reserved word, or TkUnknown if there is no match. }
-function _TLexer_T_FindReservedWord(const Id : string) : TTokenId;
-{ Compact encoding: one digit with the length of the word, then the word. }
-{ The words must be sorted so the search can be faster. }
-const ReservedWords : string =
-    '8ABSOLUTE3AND5ARRAY5BEGIN4CASE5CONST3DIV2DO6DOWNTO4ELSE3END4FILE3FOR7FORWARD8FUNCTION4GOTO2IF2IN5LABEL3MOD3NIL3NOT2OF2OR6PACKED9PROCEDURE7PROGRAM6RECORD6REPEAT3SET3SHL3SHR4THEN2TO4TYPE5UNTIL3VAR5WHILE4WITH3XOR';
-var
-    t : TTokenId;
-    rw: string;
-    rwi, rwl : integer;
-    il : integer;
-begin
-    Result := TkUnknown;
-    t := TkAbsolute;
-    il := Length(Id);
-    rwi := 1;
-    while (rwi < Length(ReservedWords)) and (Result = TkUnknown) do
-    begin
-        if ReservedWords[rwi + 1] > Id[1] then
-            rwi := Length(ReservedWords)
-        else
-        begin
-            rwl := Ord(ReservedWords[rwi]) - Ord('0');
-            if (rwl = il) and (ReservedWords[rwi + 1] = Id[1]) then
-            begin
-                rw := Copy(ReservedWords, rwi + 1, rwl);
-                if rw = Id then Result := t;
-            end;
-            if t < TkXor then t := Succ(t);
-            rwi := rwi + rwl + 1
-        end
-    end
-end;
-
 { Parses an 'identifier' token. }
 procedure _TLexer_T_Identifier(self: TLexer);
 var
@@ -234,11 +241,11 @@ begin
     _TLexer_StartToken(self, TkIdentifier);
     while _TLexer_GetChar(self) in ['a'..'z', 'A'..'Z', '0'..'9', '_'] do
     begin
-        Id := Id + UpCase(_Tlexer_GetChar(self));
+        Id := Id + _TLexer_GetChar(self);
         _TLexer_NextChar(self)
     end;
     _TLexer_FinishToken(self);
-    TokenId := _TLexer_T_FindReservedWord(Id);
+    TokenId := TLexer_GetIdentifierToken(Id);
     if TokenId <> TkUnknown then self^.Token.Id := TokenId;
 end;
 
