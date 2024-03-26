@@ -1,0 +1,279 @@
+Pascual's grammar
+-----------------
+
+program := program_heading ';' program_block '.' .
+
+program_heading := 'program' identifier [ '(' program_parameter_list ')' ] .
+
+program_parameter_list := identifier_list .
+
+identifier_list := identifier { ',' identifier } .
+
+program_block := block .
+
+block := { declaration_part } statement_part .
+
+declaration_part := type_definition_part | variable_declaration_part | constant_definition_part | subroutine_declaration_part .
+
+type_definition_part := 'type' type_definition ';' { type_definition ';' } .
+
+type_definition := identifier '=' type_denoter .
+
+type_denoter := type_identifier | new_type .
+
+type_identifier := identifier .
+
+new_type := new_ordinal_type | new_structured_type | new_pointer_type .
+
+new_ordinal_type := enumerated_type | subrange_type .
+
+enumerated_type := '(' identifier_list ')' .
+
+subrange_type := constant '..' constant .
+
+new_structured_type := [ 'packed' ] unpacked_structured_type .
+
+unpacked_structured_type := array_type | record_type | set_type | file_type | text_type .
+
+array_type := 'array' '[' index_type { ',' index_type } ']' 'of' component_type .
+
+index_type := ordinal_type .
+
+ordinal_type := new_ordinal_type | ordinal_type_identifier .
+
+ordinal_type_identifier := type_identifier .
+
+component_type := type_denoter .
+
+record_type := 'record' field_list 'end' .
+
+field_list := [ ( fixed_part [ ';' variant_part ] | variant_part ) [ ';' ] ] .
+
+fixed_part := record_section { ';' record_section } .
+
+record_section := identifier_list ':' type_denoter .
+
+variant_part := 'case' variant_selector 'of' variant { ';' variant } .
+
+variant_selector := [ tag_field ':' ] tag_type .
+
+tag_field := identifier .
+
+tag_type := ordinal_type_identifier .
+
+variant := case_constant_list ':' '(' field_list ')' .
+
+case_constant_list := case_constant { ',' case_constant } .
+
+case_constant := constant .
+
+set_type := 'set' 'of' base_type .
+
+base_type := ordinal_type .
+
+file_type := 'file' 'of' component_type .
+
+text_type := 'text' .
+
+new_pointer_type := '^' pointer_type .
+
+pointer_type := new_pointer_type | pointer_type_identifier .
+
+pointer_type_identifier := type_identifier .
+
+variable_declaration_part := 'var' variable_declaration ';' { variable_declaration ';' } .
+
+variable_declaration := identifier_list ':' type_denoter .
+
+constant_definition_part := 'const' constant_definition ';' { constant_definition ';' } .
+
+constant_definition := untyped_constant_definition | typed_constant_definition .
+
+untyped_constant_definition := identifier '=' constant .
+
+typed_constant_definition := identifier ':' type_denoter '=' constant_initializer .
+
+constant := constant_expression.
+
+constant_expression := expression.
+
+constant_initializer := constant | array_constant | record_constant | set_constant .
+
+array_constant := '(' constant_initializer { ',' constant_initializer } ')' .
+
+record_constant := '(' record_constant_element { ',' record_constant_element } ')' .
+
+record_constant_element := field_identifier ':' constant_initializer .
+
+field_identifier := identifier .
+
+set_constant := '[' [ set_constant_element { ',' set_constant_element } ] ']' .
+
+set_constant_element := constant [ '..' constant ] .
+
+subroutine_declaration_part := ( procedure_declaration | function_declaration ) ';' .
+
+procedure_declaration := procedure_heading ';' directive | procedure_heading ';' procedure_block .
+
+procedure_heading := 'procedure' identifier [ formal_parameter_list ] .
+
+formal_parameter_list := '(' formal_parameter_section { ';' formal_parameter_section } ')' .
+
+formal_parameter_section := value_parameter_specification | variable_parameter_specification | const_parameter_specification .
+
+value_parameter_specification := identifier_list ':' type_identifier .
+
+variable_parameter_specification := 'var' identifier_list ':' type_identifier .
+
+const_parameter_specification := 'const' identifier_list ':' type_identifier .
+
+directive := 'forward' .
+
+procedure_block := block .
+
+function_declaration := function_heading ';' directive | function_heading ';' function_block .
+
+function_heading := 'function' identifier [ formal_parameter_list ] ':' result_type .
+
+result_type := simple_type_identifier | pointer_type_identifier .
+
+simple_type_identifier := type_identifier .
+
+function_block := block .
+
+statement_part := compound_statement .
+
+compound_statement := 'begin' statement_sequence 'end' .
+
+statement_sequence := statement { ';' statement } .
+
+statement := simple_statement | structured_statement .
+
+simple_statement := empty_statement | assignment_statement | procedure_statement .
+
+empty_statement := .
+
+assignment_statement := ( variable_access | function_identifier ) ':=' expression .
+
+variable_access := entire_variable | component_variable | identified_variable .
+
+entire_variable := variable_identifier .
+
+variable_identifier := identifier .
+
+component_variable := indexed_variable | field_designator .
+
+indexed_variable := array_variable '[' index_expression { ',' index_expression } ']' .
+
+array_variable := variable_access .
+
+index_expression := expression .
+
+field_designator := record_variable '.' field_specifier | field_designator_identifier .
+
+record_variable := variable_access .
+
+field_specifier := field_identifier .
+
+field_designator_identifier := identifier .
+
+identified_variable := pointer_variable '^' .
+
+pointer_variable := variable_access .
+
+function_identifier := identifier .
+
+expression := simple_expression [ relational_operator simple_expression ] .
+
+relational_operator := '=' | '<>' | '<' | '>' | '<=' | '>=' | 'in' .
+
+simple_expression := [ sign ] term { adding_operator } term .
+
+sign := '+' | '-' .
+
+adding_operator := '+' | '-' | 'or' | 'xor' .
+
+term := factor { multiplying_operator factor } .
+
+multiplying_operator := '*' | '/' | 'div' | 'mod' | 'and' | 'shl' | 'shr' .
+
+factor := variable_access | unsigned_constant | function_designator | set_constructor | '(' expression ')' | 'not' factor .
+
+unsigned_constant := unsigned_number | character_string | constant_identifier | 'nil' .
+
+unsigned_number := unsigned_integer | unsigned_real .
+
+constant_identifier := identifier .
+
+function_designator := function_identifier [ actual_parameter_list ] .
+
+actual_parameter_list := '(' actual_parameter { ',' actual_parameter } ')' .
+
+actual_parameter := expression | variable_access .
+
+set_constructor := '[' member_designator { ',' member_designator } ']' .
+
+member_designator := expression [ '..' expression ] .
+
+procedure_statement := regular_procedure_statement | read_procedure_statement | write_procedure_statement | str_procedure_statement .
+
+regular_procedure_statement := procedure_identifier [ actual_parameter_list ] .
+
+procedure_identifier := identifier .
+
+read_procedure_statement := read_procedure_identifier read_parameter_list | readln_procedure_identifier [ read_parameter_list ] .
+
+read_procedure_identifier := procedure_identifier .
+
+readln_procedure_identifier := procedure_identifier .
+
+read_parameter_list := '(' [ file_variable ',' ] variable_access { ',' variable_access }) .
+
+file_variable := variable_access .
+
+write_procedure_statement := write_procedure_identifier write_parameter_list | writeln_procedure_identifier [ write_parameter_list ] .
+
+write_procedure_identifier := procedure_identifier .
+
+writeln_procedure_identifier := procedure_identifier .
+
+write_parameter_list := '(' [ file_variable ',' ] write_parameter { ',' write_parameter } ')' .
+
+write_parameter := expression [ ':' expression [ ':' expression ] ] .
+
+str_procedure_statement := str_procedure_identifier '(' write_parameter ',' variable_access ')' .
+
+structured_statement := compound_statement | conditional_statement | repetitive_statement | with_statement .
+
+conditional_statement := if_statement | case_statement .
+
+if_statement := 'if' boolean_expression 'then' statement [ else_part ] .
+
+boolean_expression := expression .
+
+else_part := 'else' statement .
+
+case_statement := 'case' case_index 'of' case_list_element { ';' case_list_element } [ ';' ] 'end' .
+
+case_index := expression .
+
+case_list_element := case_constant_list ':' statement .
+
+repetitive_statement := repeat_statement | while_statement | for_statement .
+
+repeat_statement := 'repeat' statement_sequence 'until' boolean_expression .
+
+while_statement := 'while' boolean_expression 'do' statement .
+
+for_statement := 'for' control_variable ':=' initial_value ( 'to' | 'downto' ) final_value 'do' statement .
+
+control_variable := entire_variable .
+
+initial_value := expression .
+
+final_value := expression .
+
+with_statement := 'with' record_variable_list 'do' statement .
+
+record_variable_list := record_variable { ',' record_variable } .
+
